@@ -1,0 +1,167 @@
+{% if section.blocks.size > 0 %}
+<div class="page-width">
+  {% if template contains 'product' %} <div class="row">{% endif %}
+  <div class="ishi-product-tab">
+    <ul class="ishi-tabs nav ishi-nav-tabs tab-id">
+      {% assign i = 1 %}
+      {% for block in section.blocks %}
+      {%- case block.type -%}
+      {%- when 'description-tab' -%}
+      <li class="{% if i == 1 %} active {% endif %} ishi-tab-item "><a class="ishi-nav-link" data-href="#tab-{{i}}">{{ 'products.product.description' | t }}</a></li>
+      {%- when 'review-tab' -%}
+      <li class="{% if i == 1 %} active {% endif %} ishi-tab-item"><a class="ishi-nav-link review-tab" data-href="#tab-{{i}}">{{ 'products.product.review' | t }}</a></li>
+      {% when 'html-tab' %}
+      {% if block.settings.html_title %}
+      <li class="{% if i == 1 %} active {% endif %} ishi-tab-item"><a class="ishi-nav-link" data-href="#tab-{{i}}">{{ block.settings.html_title }}</a></li>
+      {% endif %}
+      {% else %}
+      {% if block.settings.tab_title and block.settings.tab_description %}
+      <li class="{% if i == 1 %} active {% endif %} ishi-tab-item"><a class="ishi-nav-link" data-href="#tab-{{i}}">{{ block.settings.tab_title }}</a></li>
+      {% endif %}
+
+      {%- endcase -%}
+      {% assign i = i | plus: 1 %}
+      {% endfor %}
+    </ul>
+    <div class="ishi-tab-content">
+      {% assign i = 1 %}
+      {% for block in section.blocks %}
+      {%- case block.type -%}
+      {%- when 'description-tab' -%}
+      <div id="tab-{{i}}" class="{% if i == 1 %} active {% endif %} ishi-tab-pane ishi-fade">
+        {{ product.description }}
+      </div>
+      {% when 'review-tab' %}
+      <div id="tab-{{i}}" class="{% if i == 1 %} active {% endif %} ishi-tab-pane ishi-fade">
+        <div id="shopify-product-reviews" data-id="{{product.id}}">{{ product.metafields.spr.reviews }}</div>
+      </div>
+      {% when 'html-tab' %}
+      {% if block.settings.html_description %}
+      <div id="tab-{{i}}" class="{% if i == 1 %} active {% endif %} ishi-tab-pane ishi-fade">
+        {{ block.settings.html_description }}
+      </div>
+      {% endif %}
+      {% else %}
+      {% if block.settings.tab_description %}
+      <div id="tab-{{i}}" class="{% if i == 1 %} active {% endif %} ishi-tab-pane ishi-fade">
+        {{ block.settings.tab_description.content }}
+      </div>
+      {% endif %}
+      {%- endcase -%}
+      {% assign i = i | plus: 1 %}
+      {% endfor %}
+    </div>
+  </div>
+ {% if template contains 'product' %}  </div>{% endif %}
+</div>
+{% endif %}
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+  {
+    "name": "Product Tabs",
+    "tag": "section",
+    "settings": [
+	  {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+	],
+	"blocks": [
+      { 
+        "type": "custom-tab",
+        "name": "Custom Tab",
+        "settings": [
+          {
+            "type": "text",
+            "id": "tab_title",
+            "label": "Tab Title",
+            "default": "Tab Title"
+          },
+          {
+            "type": "page",
+            "id": "tab_description",
+            "label": "Tab Description"
+          }
+        ]
+      },
+	  { 
+        "type": "html-tab",
+        "name": "HTML Tab",
+        "settings": [
+          {
+            "type": "text",
+            "id": "html_title",
+            "label": "Tab Title",
+            "default": "Tab Title"
+          },
+          {
+            "type": "html",
+            "id": "html_description",
+            "label": "Tab Description"
+          }
+        ]
+      },
+	  { 
+        "type": "description-tab",
+        "name": "Description Tab",
+		"limit": 1
+      },
+	  { 
+        "type": "review-tab",
+        "name": "Review Tab",
+		"limit": 1,
+        "settings": [
+          {
+            "type": "paragraph",
+            "content": "You need to install [Shopify's free Product Reviews](https://apps.shopify.com/product-reviews) app."
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "Product Tabs",
+        "blocks": [
+          {
+            "type": "description-tab"
+          },
+          {
+            "type": "html-tab"
+          },
+          {
+            "type": "custom-tab"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}

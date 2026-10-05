@@ -1,0 +1,63 @@
+<div class="{% if section.settings.include_margins %}page-width{% endif %}"> 
+  {%- for block in section.blocks -%}
+    {% render block %}
+  {%- endfor -%}
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "t:sections.apps.name",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "include_margins",
+      "default": true,
+      "label": "Make section margins the same as theme"
+    },
+    {
+      "type": "header",
+      "content": "Section Bottom Spacing"
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_desktop",
+      "label": "Desktop",
+      "min": 0,
+      "max": 70,
+      "step": 10,
+      "default": 70
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_mobile",
+      "label": "Mobile",
+      "min": 0,
+      "max": 50,
+      "step": 10,
+      "default": 30
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:sections.apps.presets.name"
+    }
+  ]
+}
+{% endschema %}

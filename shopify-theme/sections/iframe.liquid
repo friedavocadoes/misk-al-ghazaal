@@ -1,0 +1,79 @@
+<div class="contact-map">
+  {% if section.settings.hometitle != blank or section.settings.subtitle != blank  %}
+    <div class="section-header center">
+      {% if section.settings.subtitle != blank %}
+      <div class="sub-title {{ settings.subtitlefont }}">{{ section.settings.subtitle }}</div>
+      {% endif %}
+      {% if section.settings.hometitle != blank %}
+      <h2 class="title">{{ section.settings.hometitle }}</h2>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if section.settings.google_map_code != blank %}
+    <div id="iframe-map">
+      {{ section.settings.google_map_code }}
+    </div>
+  {% endif %}
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+  {
+    "name": "Iframe",
+    "tag": "section",
+    "settings": [
+	  {
+        "type": "text",
+        "id": "subtitle",
+        "label": "Sub Title"
+      },
+	  {
+        "type": "text",
+        "id": "hometitle",
+        "label": "Main Title"
+      },
+      {
+        "type": "textarea",
+        "id": "google_map_code",
+        "label": "Google Map Code"
+       },
+	   {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 30
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 0
+      }
+	],
+    "presets": [
+        {
+          "name": "Iframe"
+        }
+     ]
+  }
+{% endschema %}

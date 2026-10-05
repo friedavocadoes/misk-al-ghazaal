@@ -1,0 +1,16 @@
+{%- if cart != empty -%}
+<div class="cart-footer">
+  <span class="subtotal">
+    {{ 'sections.cart.headings.total' | t }}
+  </span>
+  <span class="total_price">
+    {{ cart.total_price | money }}
+  </span>
+</div>
+<p>{{ 'sections.cart.taxes_and_shipping_at_checkout' | t }}</p>
+<div class="cart-notification__links">
+  <a href="{{ routes.cart_url }}" class="button button--secondary"> {{ 'general.cart.view' | t }}</a>
+  <a href="/checkout" class="button">{{ 'sections.cart.checkout' | t }}</a>
+</div>
+
+{%- endif -%}

@@ -1,0 +1,195 @@
+{{ 'page-account.css' | asset_url | stylesheet_tag }}
+<div class="customer login ishi-panel-container">
+  
+  <div id="ishi-login-panel" class="ishi-panel-data ishi-panel-data-default active">
+    <h2>
+    {{ 'customer.login_page.title' | t }}
+  </h2>
+    {%- if recover_success == true -%}
+        {{ 'customer.recover_password.success' | t }}
+    {%- endif -%}
+    {%- form 'customer_login', novalidate: 'novalidate' -%}
+      {%- if form.errors -%}
+       
+        {{ form.errors | default_errors }}
+      {%- endif -%}
+
+      <div class="field">        
+        <input
+          type="email"
+          name="customer[email]"
+          id="CustomerEmail"
+          autocomplete="email"
+          autocorrect="off"
+          autocapitalize="off"
+          {% if form.errors contains 'form' %}
+            aria-invalid="true"
+          {% endif %}
+          placeholder="{{ 'customer.login_page.email' | t }}"
+        >
+        <label for="CustomerEmail">
+          {{ 'customer.login_page.email' | t }}
+        </label>
+      </div>
+
+      {%- if form.password_needed -%}
+        <div class="field">          
+          <input
+            type="password"
+            value=""
+            name="customer[password]"
+            id="CustomerPassword"
+            autocomplete="current-password"
+            {% if form.errors contains 'form' %}
+              aria-invalid="true"
+            {% endif %}
+            placeholder="{{ 'customer.login_page.password' | t }}"
+          >
+          <label for="CustomerPassword">
+            {{ 'customer.login_page.password' | t }}
+          </label>
+        </div>
+
+         <p data-action="ishi-panel" aria-controls="#ishi-recover-panel" class="forgot">{{ 'customer.login_page.forgot_password' | t }}</p>
+          
+      {%- endif -%}
+
+      <button class="btn">
+        {{ 'customer.login_page.sign_in' | t }}
+      </button>
+
+    <p data-action="ishi-panel" aria-controls="#ishi-register-panel"> {{ 'customer.login_page.create_account' | t }}</p>
+      
+    {%- endform -%}
+  </div>
+  
+  <div id="ishi-recover-panel" class="ishi-panel-data ishi-panel-data-slide">
+    <h2>
+    {{ 'customer.recover_password.title' | t }}
+    </h2>
+    <p>
+      {{ 'customer.recover_password.subtext' | t }}
+    </p>
+    {%- form 'recover_customer_password' -%}
+      {% assign recover_success = form.posted_successfully? %}
+     {%- if form.errors -%}
+        {{ form.errors | default_errors }}
+      {%- endif -%}
+      <div class="field">
+        <input type="email"
+          value=""
+          name="email"
+          id="RecoverEmail"
+          autocorrect="off"
+          autocapitalize="off"
+          autocomplete="email"
+          {% if form.errors %}
+            aria-invalid="true"
+            aria-describedby="RecoverEmail-email-error"
+            autofocus
+          {% endif %}
+          placeholder="{{ 'customer.login_page.email' | t }}"
+        >
+        <label for="RecoverEmail">
+          {{ 'customer.login_page.email' | t }}
+        </label>
+      </div>
+      <button>
+        {{ 'customer.login_page.submit' | t }}
+      </button>
+
+     <p data-action="ishi-panel" aria-controls="#ishi-login-panel" >{{ 'customer.login_page.cancel' | t }}</p>
+    {%- endform -%}
+  </div>
+  
+  <div id="ishi-register-panel" class="ishi-panel-data ishi-panel-data-slide">
+    <h2>
+     {{ 'customer.register.title' | t }}
+    </h2>
+    {%- form 'create_customer', novalidate: 'novalidate' -%}
+    {%- if form.errors -%}
+   {{ form.errors | default_errors }}
+    {%- endif -%}
+    <div class="field">      
+      <input
+        type="text"
+        name="customer[first_name]"
+        id="RegisterForm-FirstName"
+        {% if form.first_name %}value="{{ form.first_name }}"{% endif %}
+        autocomplete="given-name"
+        placeholder="{{ 'customer.register.first_name' | t }}"
+      >
+      <label for="RegisterForm-FirstName">
+        {{ 'customer.register.first_name' | t }}
+      </label>
+    </div>
+    <div class="field">
+      <input
+        type="text"
+        name="customer[last_name]"
+        id="RegisterForm-LastName"
+        {% if form.last_name %}value="{{ form.last_name }}"{% endif %}
+        autocomplete="family-name"
+        placeholder="{{ 'customer.register.last_name' | t }}"
+      >
+      <label for="RegisterForm-LastName">
+        {{ 'customer.register.last_name' | t }}
+      </label>
+    </div>
+    <div class="field">      
+      <input
+        type="email"
+        name="customer[email]"
+        id="RegisterForm-email"
+        {% if form.email %} value="{{ form.email }}"{% endif %}
+        spellcheck="false"
+        autocapitalize="off"
+        autocomplete="email"
+        aria-required="true"
+        {% if form.errors contains 'email' %}
+          aria-invalid="true"
+          aria-describedby="RegisterForm-email-error"
+        {% endif %}
+        placeholder="{{ 'customer.register.email' | t }}"
+      >
+      <label for="RegisterForm-email">
+        {{ 'customer.register.email' | t }}
+      </label>
+    </div>
+    <div class="field">     
+      <input
+        type="password"
+        name="customer[password]"
+        id="RegisterForm-password"
+        aria-required="true"
+        {% if form.errors contains 'password' %}
+          aria-invalid="true"
+          aria-describedby="RegisterForm-password-error"
+        {% endif %}
+        placeholder="{{ 'customer.register.password' | t }}"
+      >
+      <label for="RegisterForm-password">
+        {{ 'customer.register.password' | t }}
+      </label>
+    </div>
+    <button class="btn">
+      {{ 'customer.register.submit' | t }}
+    </button>
+     <p data-action="ishi-panel" aria-controls="#ishi-login-panel" class="new-account">{{ 'customer.new_register' | t }}</p>
+   
+  {%- endform -%}
+  </div>
+  
+  {%- if shop.checkout.guest_login -%}
+    <div>
+      <hr>
+      <h2>{{ 'customer.login_page.guest_title' | t }}</h2>
+
+      {%- form 'guest_login' -%}
+        <button>
+          {{ 'customer.login_page.guest_continue' | t }}
+        </button>
+      {%- endform -%}
+    </div>
+  {%- endif -%}
+</div>

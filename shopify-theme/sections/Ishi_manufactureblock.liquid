@@ -1,0 +1,125 @@
+<div class="page-width manufacturer-main">
+  
+  <div class="manufacturer-block">
+    {% if section.blocks.size > 0 %}
+      <div  class="manufacturer-carousel manufacturer-carousel-{{ section.id }} owl-carousel slider-with-options owl-theme logo-bar"
+           data-small="2" 
+           data-mobile="2" 
+           data-tablet="3" 
+           data-laptop="4"  
+           data-desktop="5"
+           data-autoplay="true"
+           data-nav="false"
+           data-dots="false"
+           data-loop="true"
+           data-autoplaytimeout="4000"
+           data-smartSpeed="2500">
+        {% for block in section.blocks %}
+          <div class="logo-bar__item" {{ block.shopify_attributes }}>
+            {% if block.settings.link2 != blank %}
+              <a href="{{ block.settings.link2 }}" class="logo-bar__link">
+            {% endif %}
+            {% if block.settings.image2 != blank %}
+             <img
+                           class="lazyload"
+                           data-src="{{ block.settings.image2 | img_url: '200x60', scale: 2 }}"
+                  			alt="Brand Logo">
+            {% else %}
+              {{ 'logo' | placeholder_svg_tag: 'ishi-placeholder' }}
+            {% endif %}
+            {% if block.settings.link2 != blank %}
+              </a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+
+<style type="text/css">
+  
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }}{
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+
+{% schema %}
+  {
+    "name": "Ishi Manufacture Block",
+	"tag": "section",
+    "class": "ishi-manufacturer-block",
+    "max_blocks": 20,
+    "settings": [
+     { 
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+    ],
+    "blocks": [
+      {
+        "type": "logo_image",
+        "name": "Logo",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "image2",
+            "label": "Brand Logo Image",
+            "info": "Size: 200px X 60px"
+          },
+          {
+            "type": "url",
+            "id": "link2",
+            "label": "Link",
+            "info": "Optional"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "Ishi Manufacturer Block",
+        "blocks": [
+          {
+            "type": "logo_image"
+          },
+          {
+            "type": "logo_image"
+          },
+          {
+            "type": "logo_image"
+          },
+          {
+            "type": "logo_image"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}

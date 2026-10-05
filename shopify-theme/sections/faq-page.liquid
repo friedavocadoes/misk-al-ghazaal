@@ -1,0 +1,115 @@
+<div class="faq-block">
+  <div class="page-width">
+    <div class="accordion">
+      {% assign i = 1 %}
+      {% if section.blocks.size > 0 %}
+      {% for block in section.blocks %}
+      <div class="ishi-collapse in summary rotate {% if forloop.first == true %} ishi-collapse{% else %}ishi-collapsed {% endif %}" data-href="#faq-container-{{i}}" data-toggle="collapse" aria-expanded="{% if forloop.first == true %}true{% else %}false{% endif %}">
+        <div class="summary__title">
+          <h2 class="h4 accordion__title faq-title">
+            {% if section.settings.show_counter %}
+            <span class="category-count">{{i}}.</span>
+            {% endif %}
+            {{ block.settings.faq-title }}
+          </h2>
+          {% include 'icons' with 'caret' %}
+        </div>
+      </div>
+      <div id="faq-container-{{i}}" class="ishi-collapse {% if forloop.first == true %}in {% endif %}" {% if forloop.first == true %}style="display:block"{% endif %}>
+        {% if block.settings.faq-subtitle != blank %}
+        <div class="accordion__content rte">
+          {{ block.settings.faq-subtitle }}
+        </div>
+        {% endif %}
+      </div>
+      {% assign i = i | plus: 1 %}
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "FAQs Section",
+  "tag": "section",
+  "max_blocks": 30,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_counter",
+      "label": "Show FAQ Count",
+      "default": true
+    },
+	{
+      "type": "header",
+      "content": "Section Bottom Spacing"
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_desktop",
+      "label": "Desktop",
+      "min": 0,
+      "max": 70,
+      "step": 10,
+      "default": 70
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_mobile",
+      "label": "Mobile",
+      "min": 0,
+      "max": 50,
+      "step": 10,
+      "default": 30
+    }
+  ],
+  "blocks": [
+      { 
+        "type": "faq-block",
+        "name": "FAQs Block",
+        "settings": [
+          {
+            "type": "text",
+            "id": "faq-title",
+            "label": "FAQs Question",
+            "default": "faq-title"
+          },
+          {
+            "type": "html",
+            "id": "faq-subtitle",
+            "label": "FAQs Answer",
+            "default": "faq-subtitle"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "FAQ Page",
+        "blocks": [
+          {
+            "type": "faq-block"
+          },
+          {
+            "type": "faq-block"
+          },
+          {
+            "type": "faq-block"
+          }
+        ]
+      }
+    ]
+}
+{% endschema %}

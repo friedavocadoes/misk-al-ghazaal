@@ -1,0 +1,241 @@
+
+<div class="page-width">
+  <div class="row">
+    <div class="banner col-xl-7 col-lg-6  col-md-5 col-sm-12">
+      <div class="image-container">
+        {% if section.settings.bannerimage1 != blank %}
+        <a  href="{% if section.settings.banner1_link != blank %}{{ section.settings.banner1_link }}{% else %}/{% endif %}">
+          <img 
+               data-src="{{ section.settings.bannerimage1 | img_url: 'master' }}"
+               class="lazyload"
+               alt="Banner Image">
+          {% else%}
+          {{ 'image' | placeholder_svg_tag: 'ishi-placeholder' }}
+          {% endif %}
+        </a>
+      </div>
+    </div>
+    <div class="ishitestimonial col-xl-5 col-lg-6 col-md-5 col-sm-12">
+
+      <div class="testimonial-inner {% if section.settings.testimonialimages %}testimonialimages lazyload{% else %}testimonial-color{% endif %}" 
+           {% if section.settings.testimonialimages %} data-bg="{{ section.settings.testimonialimages | img_url: 'master' }}" {% endif %} >
+        {% if section.blocks.size > 0 %}
+        <div class="ishitestimonials-carousel-{{ section.id }} ishitestimonials-carousel slider-with-options owl-carousel owl-theme" 
+             data-small="1" 
+             data-mobile="1" 
+             data-tablet="1" 
+             data-laptop="1"  
+             data-desktop="1"
+             data-autoplay="true"
+             data-nav="false"
+             data-dots="true"
+             data-loop="true"
+             data-autoplay="true"
+             data-rewind="true"
+             data-margin="30">
+          {% for block in section.blocks %}
+          <div class="ishitestimonials-container">
+            <div class="user-info">
+              <div class="testimonial-img">
+                {% if block.settings.image != blank %}
+                <img 
+                     data-src="{{ block.settings.image | img_url: '120x120' }}"
+                     class="lazyload"
+                     alt="Testimonial Image">
+                {% else%}
+                {{ 'image' | placeholder_svg_tag: 'ishi-placeholder' }}
+                {% endif %}
+              </div>
+              <div class="user-container">
+                <div class="desc">
+                  {% if block.settings.title != blank %}
+                  <h3 class="user-name">{{ block.settings.title | escape }}</h3>
+                  {% endif %}
+                  {% if block.settings.subtitle != blank %}
+                  <div class="user-designation">{{ block.settings.subtitle | escape }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="user-content">
+              {% if block.settings.text != blank %}
+              <div class="user-description">{{ block.settings.text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+
+
+  </div>
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+   @media (min-width: 1200px) {
+    #shopify-section-{{ section.id }} {
+      margin-top: {{ section.settings.section_top_spacing_desktop }}px;
+    }
+   }
+   #shopify-section-{{ section.id }} .ishitestimonial  .user-description,
+   #shopify-section-{{ section.id }} .ishitestimonial  .user-description p,
+   #shopify-section-{{ section.id }} .ishitestimonial .desc .user-designation{
+    color:{{ section.settings.testimonial_textcolor1 }};
+  }
+   #shopify-section-{{ section.id }} .ishitestimonial .desc .user-name{
+    color:{{ section.settings.testimonial_textcolor2 }};
+  }
+  #shopify-section-{{ section.id }} .testimonial-color{
+    background:{{ section.settings.testimonial_background }};
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+
+
+{% schema %}
+  {
+    "name": "Banner + Testimonial",
+	"tag": "section",
+    "class": "bannerwithtestimonial",
+    "settings": [
+      
+      {
+        "type": "header",
+        "content": "banner"
+      },
+      {
+        "type": "image_picker",
+        "id": "bannerimage1",
+        "label": "Image",
+        "info": "Size: 630px X 500px"
+      },
+      {
+        "type": "url",
+        "id": "banner_link1",
+        "label": "Link"
+      },
+     {
+        "type": "header",
+        "content": "Testimonial Settings"
+      },
+      {
+        "type": "image_picker",
+        "id": "testimonialimages",
+        "label": "Background Image",
+        "info": "Size: 960px X624px"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_background",
+        "label": "Background Color",
+        "default": "#fafafa"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_textcolor1",
+        "label": "Text Color1",
+        "default": "#666666"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_textcolor2",
+        "label": "Text Color2",
+        "default": "#232323"
+      },
+     {
+        "type": "header",
+        "content": "Section Top Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_top_spacing_desktop",
+        "label": "Desktop",
+        "min": -150,
+        "max": 70,
+        "step": 5,
+        "default": 0
+      },
+      {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 140,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 100,
+        "step": 10,
+        "default": 30
+      }
+    ],
+	"blocks": [
+	  {
+        "type": "testimonials_block",
+        "name": "Testimonials Block",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Image",
+            "info": "Size: 120px X 120px"
+          },
+          {
+            "type": "text",
+            "id": "title",
+            "label": "Name",
+            "default": "Stephan Robot"
+          },
+          {
+            "type": "text",
+            "id": "subtitle",
+            "label": "Profession",
+            "default": "Web Designer"
+          },
+          {
+            "type": "richtext",
+            "id": "text",
+            "label": "Text",
+            "default": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Quis ipsum suspendisse ultrices gravida. Risus commodo viverra maecenas accumsan lacus vel facilisis. </p>"
+          }
+        ]
+      }
+    ],
+    "presets": [
+      {
+        "name": "Banner + Testimonial",
+        "blocks": [
+              {
+                "type": "testimonials_block"
+              },
+              {
+                "type": "testimonials_block"
+              },
+              {
+                "type": "testimonials_block"
+              }
+            ]
+      }
+    ]
+  }
+{% endschema %}

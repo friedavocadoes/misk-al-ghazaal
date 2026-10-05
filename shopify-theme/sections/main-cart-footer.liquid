@@ -1,0 +1,208 @@
+
+<div class="page-width{% if cart == empty %} is-empty{% endif %}" id="main-cart-footer" data-id="{{ section.id }}">
+    <div class="row cart__footer">
+      <div class="cart_reassurance col-lg-8 col-md-6">
+        {% if section.settings.enable_cartpage %}
+        {% render 'cart-reassurance'%}
+        {% endif %}
+      </div>
+      <div class="cart__blocks col-lg-4 col-md-6">
+        {%- if section.settings.show_cart_note -%}
+          <cart-note class="cart__note field">
+            <label for="Cart-note">{{ 'sections.cart.note' | t }}</label>
+            <textarea class="text-area text-area--resize-vertical field__input" name="note" id="Cart-note" placeholder="{{ 'sections.cart.note' | t }}">{{ cart.note }}</textarea>
+          </cart-note>
+        {%- endif -%}
+        {% for block in section.blocks %}
+          {%- case block.type -%}
+            {%- when '@app' -%}
+              {% render block %}
+            {%- when 'subtotal' -%}
+              <div class="js-contents" {{ block.shopify_attributes }}>
+                {%- if cart.cart_level_discount_applications.size > 0 -%}
+                <div>
+                    <ul class="discounts list-unstyled" role="list" aria-label="{{ 'customer.order.discount' | t }}">
+                      {%- for discount in cart.cart_level_discount_applications -%}
+                        <li class="discounts__discount discounts__discount--end">
+                          {% render 'icons' with 'discount' %}
+                          {{ discount.title }}
+                          (-{{ discount.total_allocated_amount | money }})
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                </div>
+                    {%- endif -%}
+                <small class="tax-note caption-large rte">
+                  {%- if cart.taxes_included and shop.shipping_policy.body != blank -%}
+                    {{ 'sections.cart.taxes_included_and_shipping_policy_html' | t: link: shop.shipping_policy.url }}
+                  {%- elsif cart.taxes_included -%}
+                    {{ 'sections.cart.taxes_included_but_shipping_at_checkout' | t }}
+                  {%- elsif shop.shipping_policy.body != blank -%}
+                    {{ 'sections.cart.taxes_and_shipping_policy_at_checkout_html' | t: link: shop.shipping_policy.url }}
+                  {%- else -%}
+                    {{ 'sections.cart.taxes_and_shipping_at_checkout' | t }}
+                  {%- endif -%}
+                </small>
+              </div>
+            {%- else -%}
+              <div class="cart__ctas" {{ block.shopify_attributes }}>
+                <noscript>
+                  <button type="submit" class="cart__update-button button button--secondary" form="cart">
+                    {{ 'sections.cart.update' | t }}
+                  </button>
+                </noscript>
+
+                <button type="submit" class="cart__checkout-button button" name="checkout"{% if cart == empty %} disabled{% endif %} form="cart">
+                  {{ 'sections.cart.checkout' | t }}
+                </button>
+                  <a href="{{ routes.all_products_collection_url }}" class="underlined-link">{{ 'general.continue_shopping' | t }}</a>
+              </div>
+
+              {%- if additional_checkout_buttons -%}
+                <div class="cart__dynamic-checkout-buttons additional-checkout-buttons">
+                  {{ content_for_additional_checkout_buttons }}
+                </div>
+              {%- endif -%}
+          {%- endcase -%}
+        {% endfor %}
+
+        <div id="cart-errors"></div>
+      </div>
+    </div>
+</div>
+
+{% javascript %}
+  class CartNote extends HTMLElement {
+    constructor() {
+      super();
+
+      this.addEventListener('change', debounce((event) => {
+        const body = JSON.stringify({ note: event.target.value });
+        fetch(`${routes.cart_update_url}`, {...fetchConfig(), ...{ body }});
+      }, 300))
+    }
+  }
+
+  customElements.define('cart-note', CartNote);
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Reassurance and Subtotal",
+  "class": "cart__footer-wrapper spaced-section",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_cart_note",
+      "default": false,
+      "label": "t:sections.main-cart-footer.settings.show_cart_note.label"
+    },
+	{
+        "type": "checkbox",
+        "id": "enable_cartpage",
+        "label": "Enabled Reassurance?",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "reassurance Item 1"
+      },
+      {
+        "type": "image_picker",
+        "id": "reassurance-image1",
+        "label": "Image"
+      },
+      {
+        "type": "text",
+        "id": "reassurance-title1",
+        "label": "Title",
+        "default": "Reassurance Title"
+      },
+      {
+        "type": "textarea",
+        "id": "reassurance-desc1",
+        "label": "Sub Title",
+        "default": "Lorem Ipsum dummy"
+      },
+      {
+        "type": "header",
+        "content": "reassurance Item 2"
+      },
+      {
+        "type": "image_picker",
+        "id": "reassurance-image2",
+        "label": "Image"
+      },
+      {
+        "type": "text",
+        "id": "reassurance-title2",
+        "label": "Title",
+        "default": "Reassurance Title"
+      },
+      {
+        "type": "textarea",
+        "id": "reassurance-desc2",
+        "label": "Sub Title",
+        "default": "Lorem Ipsum dummy"
+      },
+      {
+        "type": "header",
+        "content": "reassurance Item 3"
+      },
+      {
+        "type": "image_picker",
+        "id": "reassurance-image3",
+        "label": "Image"
+      },
+      {
+        "type": "text",
+        "id": "reassurance-title3",
+        "label": "Title",
+        "default": "Reassurance Title"
+      },
+      {
+        "type": "textarea",
+        "id": "reassurance-desc3",
+        "label": "Sub Title",
+        "default": "Lorem Ipsum dummy"
+      },
+      {
+        "type": "header",
+        "content": "reassurance Item 4"
+      },
+      {
+        "type": "image_picker",
+        "id": "reassurance-image4",
+        "label": "Image"
+      },
+      {
+        "type": "text",
+        "id": "reassurance-title4",
+        "label": "Title",
+        "default": "Reassurance Title"
+      },
+      {
+        "type": "textarea",
+        "id": "reassurance-desc4",
+        "label": "Sub Title",
+        "default": "Lorem Ipsum dummy"
+      }
+  ],
+  "blocks": [
+    {
+      "type": "subtotal",
+      "name": "t:sections.main-cart-footer.blocks.subtotal.name",
+      "limit": 1
+    },
+    {
+      "type": "buttons",
+      "name": "t:sections.main-cart-footer.blocks.buttons.name",
+      "limit": 1
+    },
+    {
+      "type": "@app"
+    }
+  ]
+}
+{% endschema %}
+{% comment %}<!-- ymq option done -->{% endcomment %}

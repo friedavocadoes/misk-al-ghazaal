@@ -1,0 +1,66 @@
+
+
+<div class="template-search spaced-section{% unless search.performed and search.results.size > 0 %} template-search--empty{% endunless %}">
+  <div class="center search_page">
+    {%- if search.performed -%}
+      <h1 class="h2">{{ 'templates.search.title' | t }}</h1>
+    {%- else -%}
+      <h1 class="h2">{{ 'general.search.search' | t }}</h1>
+    {%- endif -%}
+    <div class="template-search__search">
+      <form action="{{ routes.search_url }}" method="get" role="search" class="search">
+        <div class="field">
+          <input
+            class="search__input field__input"
+            id="Search-In-Template"
+            type="search"
+            name="q"
+            value="{{ search.terms | escape }}"
+            {% if search.performed %}autofocus{% endif %}
+            placeholder="{{ 'general.search.search' | t }}"
+          >
+          <label class="field__label" for="Search-In-Template" aria-hidden="true">{{ 'general.search.search' | t }}</label>
+          <input name="options[prefix]" type="hidden" value="last">
+          <button type="submit" class="search__button btn" aria-label="{{ 'general.search.search' | t }}">
+            {{ 'general.search.submit' | t }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {%- if search.performed and search.results.size > 0 -%}
+    {% paginate search.results by 16 %}
+      <div class="template-search__results">
+        <ul class="row" role="list">
+          {%- for item in search.results -%}
+            <li class="list__item col-lg-12 col-md-12 col-sm-12 col-xs-12">
+              {%- case item.object_type -%}
+                {%- when 'product' -%}
+                  {%- capture product_settings -%}{%- if section.settings.product_show_vendor -%}vendor,{%- endif -%}title,price{%- endcapture -%}
+                  {% render 'product-card-grid-search',
+                    product_card_product: item,
+                    media_size: settings.image_ratio,
+                    show_secondary_image: settings.show_secondary_image,
+                    show_vendor: settings.show_vendor
+                  %}
+              {%- endcase -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+        {%- if paginate.pages > 1 -%}
+          {% render 'pagination', paginate: paginate, class: '' %}
+        {%- endif -%}
+      </div>
+    {% endpaginate %}
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Search Results",
+  "tag": "section",
+  "class": "spaced-section",
+  "settings": [
+  ]
+}
+{% endschema %}

@@ -1,0 +1,91 @@
+{{ 'page-blog.css' | asset_url | stylesheet_tag }}
+
+
+{%- paginate blog.articles by 6 -%}
+
+  <div class="main-blog page-width">
+    <h1 class="page-title center">
+      {{ blog.title | escape }}
+      {%- if section.settings.show_rss -%}
+      	<a href="{{ blog.url }}.atom" target="_blank" class="blog-rss">{% render 'icons' with 'rss' %}</a>
+      {%- endif -%}
+    </h1>
+
+    <div class="blog-articles-list">
+      <div class="row">
+      {%- for article in blog.articles -%}
+      <div class="col-lg-4 col-md-6 col-xs-12 blog-articles-list-item">
+        <div class="blog-articles__article article">
+          {%- render 'article-card', article: article, show_date: section.settings.show_date, show_author: section.settings.show_author -%}
+        </div>
+      </div>
+      {%- endfor -%}
+      </div>
+    </div>
+    {%- if section.settings.show_tags and blog.all_tags.size > 0 or paginate.pages > 1 -%}
+      <div class="tags-pagination">
+        {%- if section.settings.show_tags and blog.all_tags.size > 0 -%}
+          <div class="blog-tags-list col-md-6">
+            <div class="tag-title">{{ 'blogs.tags_title' | t }}</div>
+            <div class="blog-tags {% if current_tags == blank %}is-active{% endif %}">
+              <a href="/blogs/{{ blog.handle }}" class="blog-tag-title">{{ 'blogs.all_tag' | t }}</a>
+            </div>
+
+            {%- for tag in blog.all_tags -%}
+            <div class="blog-tags {% if current_tags contains tag %}is-active{% endif %}">
+              <a href="/blogs/{{ blog.handle }}/tagged/{{ tag | handle }}" class="blog-tag-title ">{{ tag }}</a>
+            </div>
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+        {%- if paginate.pages > 1 -%}
+          <div class="{%- if section.settings.show_tags and blog.all_tags.size > 0 -%}col-md-6{% else %}col-md-12 pagination-full{% endif %} blog-pagination">
+              {%- render 'pagination', paginate: paginate -%}
+          </div>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "t:sections.main-blog.name",
+  "tag": "section",
+  "class": "spaced-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.main-blog.settings.header.content"
+    },
+	{
+      "type": "checkbox",
+      "id": "show_rss",
+      "label": "Show RSS",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_tags",
+      "label": "Show Filters",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_date",
+      "default": true,
+      "label": "Show Date"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_author",
+      "default": true,
+      "label": "Show Author"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:sections.main-blog.settings.paragraph.content"
+    }
+  ]
+}
+{% endschema %}

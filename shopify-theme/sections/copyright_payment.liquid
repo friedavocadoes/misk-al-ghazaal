@@ -1,0 +1,85 @@
+
+{% if section.settings.copyright != blank or section.settings.payment_enable %}
+      <div class="footer-bottom">
+        <div class="page-width">
+          <div class="row">
+            {% if section.settings.copyright != blank %}
+            <div class="footer-left {% if section.settings.payment_enable %}col-lg-6 col-md-12 col-sm-12{% else %}col-lg-12 col-md-12 col-sm-12 center{% endif %}">
+              <div class="footer__copyright">
+                {{ section.settings.copyright }}
+              </div>
+            </div>
+            {% endif %}
+
+            {% if section.settings.payment_enable %} 
+            <div class="footer-right {% if section.settings.copyright != blank %}col-lg-6 col-md-12 col-sm-12{% else %}col-lg-12 col-md-12 col-sm-12 center{% endif %}">
+              <div class="payment-icons">
+                <ul class="list list-payment" role="list">
+                   {% assign enabled_payment_types = 'apple_pay,visa,master' | remove: ' ' | split: ',' %}
+                  {%- for type in enabled_payment_types -%}
+                  <li class="list-payment__item">
+                    {{ type | payment_type_svg_tag: class: 'icon icon--full-color' }}
+                  </li>
+                  {%- endfor -%}
+                  
+                  {% if section.blocks.size > 0 %}
+                  {% for block in section.blocks %}
+                  {% if block.settings.image != blank %}
+                  <li class="list-payment__item">
+                    <img class="logo-bar__image lazyload"
+                         data-src="{{ block.settings.image | img_url: '44x33', scale: 2}}"
+                         alt="Payment Logo">
+                  </li>
+                  {% endif %}
+                  {% endfor %}
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+{% schema %}
+  {
+    "name": "Copyright and Payment",
+    "settings": [
+      {
+        "type": "header",
+        "content": "Copyright setting"
+      },
+      {
+        "type": "text",
+        "id": "copyright",
+        "label": "Copyright Text",
+        "default": "© 2021, Fabulous Sectioned Shopify Theme"
+      },
+      {
+        "type": "header",
+        "content": "Payment setting"
+      },
+      {
+        "type": "checkbox",
+        "id": "payment_enable",
+        "label": "Show Payment Icon",
+        "default": true
+      }
+    ],
+    "blocks": [
+      {
+        "type": "logo_image",
+        "name": "Payment Logo",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Payment Logo Image",
+            "info": "Size: 44px X 33px"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}

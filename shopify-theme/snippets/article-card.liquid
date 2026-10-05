@@ -1,0 +1,76 @@
+{% comment %}
+    Renders an article card for a given blog with settings to either show the image or not.
+
+    Accepts:
+    - blog: {Object} Blog object
+    - article: {Object} Article object
+    - show_date: {String} The setting either show the article date or not. If it's not included it will not show the image by default
+    - show_author: {String} The setting either show the article author or not. If it's not included it will not show the author by default
+
+    Usage:
+    {% render 'article-card' blog: blog, article: article %}
+{% endcomment %}
+
+<article class="article-card-info{% if article.image == blank %} article-card--no-image{% endif %}" aria-labelledby="Article-{{ article.id }}">
+  <a href="{{ article.url }}" class="article-content motion-reduce">
+    {%- if article.image -%}
+      <div class="article-card__image-wrapper">
+        <div class="article-card__image media media--landscape">
+          <img srcset="
+            {%- if article.image.src.width >= 165 -%}{{ article.image.src | img_url: '165x' }} 165w,{%- endif -%}
+            {%- if article.image.src.width >= 360 -%}{{ article.image.src | img_url: '360x' }} 360w,{%- endif -%}
+            {%- if article.image.src.width >= 533 -%}{{ article.image.src | img_url: '533x' }} 533w,{%- endif -%}
+            {%- if article.image.src.width >= 720 -%}{{ article.image.src | img_url: '720x' }} 720w,{%- endif -%}
+            {%- if article.image.src.width >= 940 -%}{{ article.image.src | img_url: '940x' }} 940w,{%- endif -%}
+            {%- if article.image.src.width >= 1066 -%}{{ article.image.src | img_url: '1066x' }} 1066w{%- endif -%}"
+            data-src="{{ article.image.src | img_url: 'master' }}"
+            sizes="(min-width: 1100px) 535px, (min-width: 750px) calc((100vw - 130px) / 2), calc((100vw - 50px) / 2)"
+            alt="{{ article.image.src.alt | escape }}"
+            width="{{ article.image.width }}"
+            height="{{ article.image.height }}"
+            loading="lazy"
+            class="motion-reduce lazyload"
+          >
+        </div>
+      </div>
+    {%- endif -%}
+
+    <div class="article-card-content">
+      <header class="article-card__header">
+        <h2 class="article-card__title" id="Article-{{ article.id }}">
+          {{ article.title | escape }}
+        </h2>
+        {%- if show_date -%}
+          <span class="caption-with-letter-spacing">
+            <i class="fa fa-calendar" aria-hidden="true"></i>
+             {{- article.published_at | time_tag: format: 'month_day_year' -}}
+          </span>
+        {%- endif -%}
+        {%- if show_author -%}
+        <span class="caption-with-letter-spacing">
+          <i class="fa fa-user" aria-hidden="true"></i>
+          {{ article.author -}}
+        </span>
+        {%- endif -%}
+        
+      </header>
+      {%- if article.excerpt.size > 0 or article.content.size > 0 -%}
+        <p class="article-card__excerpt">
+          {%- if article.excerpt.size > 0 -%}
+            {{ article.excerpt | strip_html | truncatewords: 20 }}
+          {%- else -%}
+            {{ article.content | strip_html | truncatewords: 20 }}
+          {%- endif -%}
+        </p>
+      {%- endif -%}
+      <div class="article-card__footer">
+       
+        <div class="article__meta-buttons">
+            <span class="btn r_more">
+              {{ 'blogs.article.read_more_title' | t }}
+            </span>
+        </div>
+      </div>
+    </div>
+  </a>
+</article>

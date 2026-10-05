@@ -1,0 +1,215 @@
+
+<div class="ishiparallaxbanner {% if section.settings.parallaximage %}parallax-image lazyload {% elsif section.settings.parallaxcolor %}parallax-color{% endif %} {% if section.settings.fixed %}fixed{% endif %}"
+     {% if section.settings.parallaximage %} data-bg="{{ section.settings.parallaximage | img_url: 'master' }}" {% endif %}>
+  <div class="page-width">
+    <div class="row">
+      <div class="image-container hidden-xl-down">
+        {% if section.settings.image != blank %}
+        <img class="lazyload" 
+             data-src="{{ section.settings.image | img_url: 'master' }}"
+             alt="Parallax Banner">
+        {% endif %}
+      </div>
+      <div class="parallax-list col-lg-6  col-md-12 col-sm-12 parallax-text-{{section.settings.parallax_text_position}}">
+        {% if section.settings.subtitle1 != blank %}
+        <div class="parallax-title1">{{ section.settings.subtitle1 }}</div>
+        {% endif %}
+        {% if section.settings.main-title1 != blank %}
+        <div class="parallax-subtitle ">{{ section.settings.main-title1 }}</div>
+        {% endif %}
+        {% if section.settings.subtitle != blank %}
+        <div class="parallax-info">{{ section.settings.subtitle }}</div>
+        {% endif %}
+        {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a class="btn btn-primary theme-button" href="{{ section.settings.button_link }}">{{ section.settings.button_label | escape }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<style type="text/css">
+  
+  #shopify-section-{{ section.id }}{
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+ #shopify-section-{{ section.id }} .parallax-color{
+  	background-color: {{ section.settings.parallaxcolor }};
+  }
+  #shopify-section-{{ section.id }} .ishiparallaxbanner{
+  	padding: {{ section.settings.parallaxpadding }}px 0;
+  }
+  #shopify-section-{{ section.id }} .parallax-text-right{
+    float: right;
+    text-align: left;
+  }
+ #shopify-section-{{ section.id }} .parallax-text-left{
+    float: left;
+    text-align: left;
+  }
+  #shopify-section-{{ section.id }} .parallax-text-center{
+    margin: 0 auto;
+    float: none;
+    text-align: center;
+    display:inline-block;
+  }
+   #shopify-section-{{ section.id }} .parallax-list{
+    text-align:{{ section.settings.parallaxtextalignment }};
+   }
+ 
+   #shopify-section-{{ section.id }} .parallax-list .parallax-info{
+      color:{{ section.settings.parallaxtextcolor3 }};
+  }
+  #shopify-section-{{ section.id }} .parallax-list .parallax-subtitle{
+     color:{{ section.settings.parallaxtextcolor1 }};
+  }
+   @media (max-width: 991px) {
+    #shopify-section-{{ section.id }} .ishiparallaxbanner{
+     padding: {{ section.settings.parallaxpadding | divided_by: 2 }}px 0;
+    }
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }}{
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+
+{% schema %}
+  {
+    "name": "Parallax Block Style 2",
+	"tag":"section",
+    "class": "parallax-block-style2",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "parallaximage",
+        "label": "Background Image",
+        "info": "Size: 1920px X 850px"
+      },
+      {
+        "type": "image_picker",
+        "id": "image",
+        "label": "Image"
+      },
+      {
+        "type": "color",
+        "id": "parallaxcolor",
+        "label": "Background Color",
+        "default": "#ffede5"
+      },
+      {
+        "type": "color",
+        "id": "parallaxtextcolor1",
+        "label": "Text Color 1",
+        "default": "#000000"
+      },
+      {
+        "type": "color",
+        "id": "parallaxtextcolor3",
+        "label": "Text Color 2",
+        "default": "#666666"
+      },
+      {
+        "type": "range",
+        "id": "parallaxpadding",
+        "min": 0,
+        "max": 200,
+        "step": 20,
+        "label": "Internal Box Space/Padding",
+        "default": 160
+      },
+      {
+        "type": "checkbox",
+        "id": "fixed",
+        "label": "Background Attachment Fixed ?",
+        "default": true
+      },
+      {
+        "type": "header",
+        "content": "Section Settings"
+      },
+	     {
+        "type": "select",
+        "id": "parallax_text_position",
+        "label": "Text Position",
+        "default": "left",
+        "options": [
+          { "value": "left", "label": "Left"},
+		  { "value": "center", "label": "Center"},
+          { "value": "right", "label": "Right"}
+        ]
+      },
+      {
+        "type": "select",
+        "id": "parallaxtextalignment",
+        "label": "Text Alignment",
+        "default": "right",
+        "options": [
+          { "value": "left", "label": "Left"},
+          { "value": "center", "label": "Center"},
+          { "value": "right", "label": "Right"}
+        ]
+      },
+     {
+        "type": "text",
+        "id": "subtitle1",
+        "label": "Parallax Sub Title",
+        "default": "Our Winter Care"
+      },
+      {
+        "type": "text",
+        "id": "main-title1",
+        "label": "Parallax Title",
+        "default": "Body Care Product."
+      },
+	  {
+        "type": "text",
+        "id": "subtitle",
+        "label": "Description",
+		 "default": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s."
+      },
+      {
+        "type": "text",
+        "id": "button_label",
+        "label": "Button Label",
+		    "default": "SHOP NOW"
+      },
+      {
+        "type": "url",
+        "id": "button_link",
+        "label": "Button Link"
+      },
+      {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+    ],
+    "presets": [
+      {
+        "name": "Parallax Block Style 2"
+      }
+    ]
+  }
+{% endschema %}

@@ -1,0 +1,232 @@
+<div class="{% if section.settings.news_background == 'box'  %}page-width newsletter-box{% endif %}">
+  <div class="newsletter {% if section.settings.newsletterimage %}newsletter-image lazyload {% else %}newsletter-color{% endif %} {% if section.settings.fixed %}fixed{% endif %}"
+       {% if section.settings.newsletterimage %} data-bg="{{ section.settings.newsletterimage | img_url: 'master' }}" {% endif %}>  
+    <div {% if section.settings.news_background == 'full' %}class="page-width"{% endif %}>
+      <div id="newsletter-container" class="block_newsletter newsletter-inner">
+        <div id="ishinewsletter-container">
+          <div class="newsletter_text">  
+            {% if section.settings.title1 != blank or section.settings.subtitle != blank or section.settings.title-desc != blank %}
+              <div class="section-header center">
+                {% if section.settings.subtitle != blank %}
+                  <div class="sub-title {{ settings.subtitlefont }}">{{ section.settings.subtitle | escape }}</div>
+                {% endif %}
+                {% if section.settings.title1 != blank %}
+                  <h2 class="home-title">{{ section.settings.title1 | escape }}</h2>
+                {% endif %}
+                 {% if section.settings.title-desc != blank %}
+                <div class="title-desc">
+                  {{ section.settings.title-desc }}
+                </div>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+          <div class="site-footer__newsletter">
+             {% form 'customer', class: 'newsletter-form' %}
+              <input type="hidden" name="contact[tags]" value="newsletter">
+              <div class="newsletter-form__field-wrapper">
+                <div class="field">
+                  <input
+                    id="NewsletterForm--{{ section.id }}"
+                    type="email"
+                    name="contact[email]"
+                    class="field__input"
+                    value="{{ form.email }}"
+                    aria-required="true"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    autocomplete="email"
+                    {% if form.errors %}
+                      autofocus
+                      aria-invalid="true"
+                      aria-describedby="Newsletter-error--{{ section.id }}"
+                    {% elsif form.posted_successfully? %}
+                      aria-describedby="Newsletter-success--{{ section.id }}"
+                    {% endif %}
+                    placeholder="{{ 'newsletter.label' | t }}"
+                    required
+                  >
+                  <label class="field__label" for="NewsletterForm--{{ section.id }}">
+                    {{ 'newsletter.label' | t }}
+                  </label>
+                </div>
+                {%- if form.errors -%}
+                  <small class="newsletter-form__message form__message alert alert-danger" id="Newsletter-error--{{ section.id }}">{% include 'icons' with 'error' %} {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}</small>
+                {%- endif -%}
+              </div>
+              <button type="submit" class="newsletter__button button" name="commit">
+                <span class="hidden-sm-down">{{ 'newsletter.button_label' | t }}</span>
+                      <span class="hidden-sm-up">{{ 'newsletter.small_button_label' | t }}</span>
+              </button>
+              {%- if form.posted_successfully? -%}
+                <h3 class="newsletter-form__message newsletter-form__message--success form__message alert alert-success" id="Newsletter-success--{{ section.id }}" tabindex="-1" autofocus>{% include 'icons' with 'success' %}{{ 'newsletter.success' | t }}</h3>
+              {%- endif -%}
+            {% endform %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>  
+
+<style type="text/css"> 
+  
+  #shopify-section-{{ section.id }} .newsletter-color{
+    background-color: {{ section.settings.newslettercolor }};
+  }
+  #shopify-section-{{ section.id }} .newsletter{
+    padding: {{ section.settings.newsletter_padding }}px 0;
+  }
+  @media (max-width: 991px) {
+    #shopify-section-{{ section.id }} .newsletter{
+      padding: {{ section.settings.newsletter_padding | divided_by: 2 }}px 0;
+    }
+  }
+  #shopify-section-{{ section.id }} .newsletter .block_newsletter .newsletter_text .title-desc p{
+    color:{{ section.settings.newslettertextcolor }};
+  }
+
+   #shopify-section-{{ section.id }} .newsletter .block_newsletter .newsletter__button{
+    background-color:{{ section.settings.button-bg-color1 }};
+  }
+  #shopify-section-{{ section.id }} .newsletter .block_newsletter .newsletter__button{
+    color:{{ section.settings.button-text-color1 }};
+  }
+  #shopify-section-{{ section.id }} .newsletter .block_newsletter .newsletter__button:hover{
+    background-color:{{ section.settings.button-bg-hover-color1 }};
+  }
+   #shopify-section-{{ section.id }} .newsletter .block_newsletter .newsletter__button:hover{
+    color:{{ section.settings.button-text-hover-color1 }};
+  }
+   #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+  {
+    "name": "Ishi Newsletter Block",
+	"tag": "section",
+    "class": "ishi-newsletter-block",
+    "settings": [
+      {
+        "type": "select",
+        "id": "news_background",
+        "label": "Layout",
+        "default": "full",
+        "options": [
+          { "value": "full", "label": "Full"},
+          { "value": "box", "label": "Box"}
+        ]
+      },
+      {
+        "type": "image_picker",
+        "id": "newsletterimage",
+        "label": "Background Image",
+        "info": "Size: 1920px X 850px"
+      },
+      {
+        "type": "color",
+        "id": "newslettercolor",
+        "label": "Background Color",
+        "default": "#222222"
+      },
+      {
+        "type": "color",
+        "id": "newslettertextcolor",
+        "label": "Text Color",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "button-bg-color1",
+        "label": "Button Background Color",
+        "default": "#9cb067"
+      },
+      {
+        "type": "color",
+        "id": "button-text-color1",
+        "label": "Button Text Color",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "color",
+        "id": "button-bg-hover-color1",
+        "label": "Button Background Hover Color",
+        "default": "#232323"
+      },
+      {
+        "type": "color",
+        "id": "button-text-hover-color1",
+        "label": "Button Text Hover Color",
+        "default": "#FFFFFF"
+      },
+      {
+        "type": "range",
+        "id": "newsletter_padding",
+        "min": 0,
+        "max": 200,
+        "step": 20,
+        "label": "Internal Box Space/Padding",
+        "default": 100
+      },
+      {
+        "type": "checkbox",
+        "id": "fixed",
+        "label": "Background Attachment Fixed ?",
+        "default": false
+      },
+      {
+          "type": "text",
+          "id": "subtitle",
+          "label": "Sub Title",
+          "default": "Sign - up"
+      },
+      {
+        "type": "text",
+        "id": "title1",
+        "label": "Main Title", 
+        "default": "Join Our Newsletter"
+      },
+      {
+        "type": "html",
+        "id": "title-desc",
+        "label": "Description",
+        "default": "<p>Lorem ipsum dolor sit amet. Etiam ac ex sit amet arcu ultricies rhoncus vel ut nislimply Dummy Text.</p>"
+      },
+		{
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+    ],
+    "presets": [
+      {
+        "name": "Ishi Newsletter Block"
+      }
+    ]
+  }
+{% endschema %}

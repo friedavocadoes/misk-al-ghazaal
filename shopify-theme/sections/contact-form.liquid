@@ -1,0 +1,129 @@
+<div class="contact-form-bottom page-width">
+  <div class="title-container">
+    {% if section.settings.formheading != blank %}
+    <h3 class="heading">{{ section.settings.formheading | escape }}</h3>
+    {% endif %}
+    {% if section.settings.formsubheading != blank %}
+    <span class="subheading">{{ section.settings.formsubheading | escape }}</span>
+    {% endif %}
+
+  </div>
+  {%- form 'contact', id: 'ContactForm' -%}
+    {%- if form.posted_successfully? -%}
+      <div class="form-status form-status-list form__message alert alert-success" tabindex="-1" autofocus>{% include 'icons' with 'success' %} {{ 'templates.contact.form.post_success' | t }}</div>
+    {%- elsif form.errors -%}
+      <ul class="form-status-list caption-large alert alert-danger" role="list">
+        <li>
+            {% include 'icons' with 'error' %}
+            {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}
+        </li>
+      </ul>
+    {%- endif -%}
+    <div class="contact__fields">
+      <div class="field">
+        <input class="field__input" autocomplete="name" type="text" id="ContactForm-name" name="contact[{{ 'templates.contact.form.name' | t }}]" value="{% if form.name %}{{ form.name }}{% elsif customer %}{{ customer.name }}{% endif %}" placeholder="{{ 'templates.contact.form.name' | t }}">
+        <label class="field__label" for="ContactForm-name">{{ 'templates.contact.form.name' | t }}</label>
+      </div>
+      <div class="field field--with-error">
+        <input
+          autocomplete="email"
+          type="email"
+          id="ContactForm-email"
+          class="field__input {% if form.errors contains 'email' %}label--error{% endif %}"
+          name="contact[email]"
+          spellcheck="false"
+          autocapitalize="off"
+          value="{% if form.email %}{{ form.email }}{% elsif customer %}{{ customer.email }}{% endif %}"
+          aria-required="true"
+          {% if form.errors contains 'email' %}
+            aria-invalid="true"
+            aria-describedby="ContactForm-email-error"
+          {% endif %}
+          placeholder="{{ 'templates.contact.form.email' | t }}"
+        >
+        <label class="field__label {% if form.errors contains 'email' %}label--error{% endif %}" for="ContactForm-email">{{ 'templates.contact.form.email' | t }} <span aria-hidden="true">*</span></label>
+      </div>
+      <div class="field">
+      <input type="tel" id="ContactForm-phone" class="field__input" autocomplete="tel" name="contact[{{ 'templates.contact.form.phone' | t }}]" pattern="[0-9\-]*" value="{% if form.phone %}{{ form.phone }}{% elsif customer %}{{ customer.phone }}{% endif %}" placeholder="{{ 'templates.contact.form.phone' | t }}">
+      <label class="field__label" for="ContactForm-phone">{{ 'templates.contact.form.phone' | t }}</label>
+    </div>
+    </div>
+    
+    <div class="field">
+      <textarea
+        rows="10"
+        id="ContactForm-body"
+        class="text-area field__input"
+        name="contact[{{ 'templates.contact.form.comment' | t }}]"
+        placeholder="{{ 'templates.contact.form.comment' | t }}"
+      >
+        {{- form.body -}}
+      </textarea>
+      <label class="form__label field__label" for="ContactForm-body">{{ 'templates.contact.form.comment' | t }}</label>
+    </div>
+    <div class="submit-button">
+      <button type="submit" class="button">
+        {{ 'templates.contact.form.send' | t }}
+      </button>
+    </div>
+  {%- endform -%}
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Contact Form",
+  "tag": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "formheading",
+      "label": "Title",
+      "default": "LEAVE US A MESSAGE"
+    },
+    {
+      "type": "text",
+      "id": "formsubheading",
+      "label": "Subtitle",
+      "default": "-Good For Nature, Good For You-"
+    },
+	{
+      "type": "header",
+      "content": "Section Bottom Spacing"
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_desktop",
+      "label": "Desktop",
+      "min": 0,
+      "max": 70,
+      "step": 10,
+      "default": 70
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_mobile",
+      "label": "Mobile",
+      "min": 0,
+      "max": 50,
+      "step": 10,
+      "default": 30
+    }
+  ],
+  "presets": [
+    {
+      "name": "Contact Form"
+    }
+  ]
+}
+{% endschema %}

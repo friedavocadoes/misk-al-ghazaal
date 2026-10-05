@@ -1,0 +1,186 @@
+
+<div id="_desktop_top_menu" class="menu js-top-menu hidden-sm-down" role="navigation">
+      {% assign i = 1 %}
+      <ul class="top-menu" id="top-menu">
+        {% if section.blocks.size > 0 %}
+        {% for block in section.blocks %}
+        {% case block.type %}
+        {% when 'text_block' %}
+        <li class="category">
+          {% if block.settings.title != blank %}
+          <span class="float-xs-right hidden-lg-up">
+           {% if block.settings.navbar != blank %}
+           <span data-href="#_n_child-one{{ i }}" data-toggle="collapse" class="ishi-collapse in navbar-toggler ishi-collapsed rotate" aria-expanded="false">
+            {% include 'icons' with 'caret' %}
+          </span>
+          {% endif %}
+        </span>
+        <a href="{{ block.settings.button_link }}" class="dropdown-item">
+          <h3 class="title">{{ block.settings.title | escape }}</h3>
+          {% if block.settings.blog_show_new %}
+          <span class="new"> {{ 'general.mainmenu.new' | t }}</span>
+          {% endif %}
+          {% if block.settings.blog_show_sale %}
+          <span class="sale">{{ 'general.mainmenu.sale' | t }}</span>
+          {% endif %}
+          {% if block.settings.blog_show_hot %}
+          <span class="hot">{{ 'general.mainmenu.hot' | t }}</span>
+          {% endif %}
+        </a>
+
+        {% endif %}
+        {% if block.settings.navbar != blank %}
+        {% assign a = 0 %}
+        <div class="popover sub-menu js-sub-menu ishi-collapse desktop-collapse" id="_n_child-one{{ i }}">
+          <ul class="top-menu mainmenu-dropdown">
+            {% if block.settings.navbar != blank %}
+            <li class="sub-category">
+              {%- assign navbar = block.settings.navbar -%}
+              {% if block.settings.navbar != blank %}
+              <span class="float-xs-right hidden-lg-up">
+                {% if linklists[navbar].links != blank %}
+                <span data-href="#_n_grand-child-one{{ i }}" data-toggle="collapse" class="ishi-collapse in navbar-toggler ishi-collapsed rotate" aria-expanded="false">
+                 {% include 'icons' with 'caret' %}
+                </span>
+                {% endif %}
+              </span>
+              <a href="{{ block.settings.button_link1 }}" class="dropdown-item dropdown-submenu">
+                <h3 class="inner-title">{{ linklists[navbar].title  }}</h3>
+              </a>
+              <div class="top-menu ishi-collapse desktop-collapse" id="_n_grand-child-one{{ i }}">
+                <ul class="top-menu">
+                  {% for link in linklists[navbar].links %}
+                  <li class="category">
+                    <a href="{{ link.url }}" class="dropdown-item">{{ link.title }}</a>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% assign a = a | plus: 1 %}
+              {% endif %}
+            </li>
+            {% endif %}
+            {% if block.settings.navbar1 != blank %}
+            <li class="sub-category">
+              {%- assign navbar1 = block.settings.navbar1 -%}
+              {% if block.settings.navbar1 != blank %}
+              <span class="float-xs-right hidden-lg-up">
+                {% if linklists[navbar1].links != blank %}
+                <span data-href="#_n_grand-child-two{{ i }}" data-toggle="collapse" class="ishi-collapse in navbar-toggler ishi-collapsed rotate" aria-expanded="false">
+                  {% include 'icons' with 'caret' %}
+                </span>
+                {% endif %}
+              </span>
+              <a href="{{ block.settings.button_link2 }}" class="dropdown-item dropdown-submenu">
+                <h3 class="inner-title">{{ linklists[navbar1].title  }}</h3>
+              </a>
+              <div class="top-menu ishi-collapse desktop-collapse" id="_n_grand-child-two{{ i }}">
+                <ul class="top-menu">
+                  {% for link in linklists[navbar1].links %}
+                  <li class="category">
+                    <a href="{{ link.url }}" class="dropdown-item">{{ link.title }}</a>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% assign a = a | plus: 1 %}
+              {% endif %}
+            </li>
+            {% endif %}
+            {% if block.settings.navbar2 != blank %}
+            <li class="sub-category">
+              {%- assign navbar2 = block.settings.navbar2 -%}
+              {% if block.settings.navbar2 != blank %}
+              <span class="float-xs-right hidden-lg-up">
+               {% if linklists[navbar2].links != blank %}
+               <span data-href="#_n_grand-child-three{{ i }}" data-toggle="collapse" class="ishi-collapse in navbar-toggler ishi-collapsed rotate" aria-expanded="false">
+                {% include 'icons' with 'caret' %}
+              </span>
+              {% endif %}
+            </span>
+            <a href="{{ block.settings.button_link3 }}" class="dropdown-item dropdown-submenu">
+              <h3 class="inner-title">{{ linklists[navbar2].title  }}</h3>
+            </a>
+            <div class="top-menu ishi-collapse desktop-collapse" id="_n_grand-child-three{{ i }}">
+              <ul class="top-menu">
+                {% for link in linklists[navbar2].links %}
+                <li class="category">
+                  <a href="{{ link.url }}" class="dropdown-item">{{ link.title }}</a>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% assign a = a | plus: 1 %}
+            {% endif %}
+          </li>
+          {% endif %}
+          {% if block.settings.blog_show_collection %}
+          <li class="sub-category product_container hidden-lg-down">
+            {% if block.settings.collection-title != blank %}
+            <a href="{{ block.settings.button_link5 }}" class="dropdown-item dropdown-submenu">
+              <h3 class="inner-title">{{ block.settings.collection-title | escape }}</h3>
+            </a>
+            {% endif %}
+            {% if block.settings.product != blank %}
+            {%- assign product = all_products[block.settings.product] -%}
+            <div class="grid__item grid__item--Ishi_megamenu">
+              {% render 'menu-productcard',
+                product_card_product: product,
+                media_size: settings.image_ratio
+              %}
+            </div>
+            {% else %}
+            {% render 'product-card-placeholder' %}
+            {% endif %}
+          </li>
+          {% endif %}
+        </ul>
+        {% if block.settings.image1 != blank or block.settings.image2 != blank %}
+        <div class="img-container row">
+          {% if block.settings.image1 != blank %}
+          <div class="{% if block.settings.image2 != blank %}col-xs-6{% else%}col-xs-12{% endif %} imagecontainer1">
+            {% if block.settings.bannerlink1 != blank %}
+            <a href="{{ block.settings.bannerlink1 }}" class="link">
+              {% endif %}
+              <img 
+              class="feature-row__image lazyload"
+              data-src="{{ block.settings.image1 | img_url: 'master' }}"
+              data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 2048]"
+              data-aspectratio="{{ block.settings.image1.aspect_ratio }}"
+              data-sizes="auto"
+              alt="Menu Banner Image">
+              {% if block.settings.bannerlink1 != blank %}
+            </a>
+            {% endif %}
+          </div>
+          {% endif %}
+          {% if block.settings.image2 != blank %}
+          <div class="{% if block.settings.image1 != blank %}col-xs-6{% else%}col-xs-12{% endif %} imagecontainer2">
+            {% if block.settings.bannerlink2 != blank %}
+            <a href="{{ block.settings.bannerlink2 }}" class="link">
+              {% endif %}
+              <img 
+                   class="feature-row__image lazyload"
+                   data-src="{{ block.settings.image2 | img_url: 'master' }}"
+                   data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 2048]"
+                   data-aspectratio="{{ block.settings.image2.aspect_ratio }}"
+                   data-sizes="auto"
+                   alt="Menu Banner Image">
+              {% if block.settings.bannerlink2 != blank %}
+            </a>
+            {% endif %}
+          </div>
+          {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% assign i = i | plus: 1 %}
+  </li>
+        {% endcase %} 
+  {% endfor %}
+  {% endif %}
+</ul>
+</div>
+
+

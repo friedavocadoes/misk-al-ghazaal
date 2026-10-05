@@ -1,0 +1,107 @@
+<div class="jas-container page-width">
+  <div class="table-wrapper">
+  <table class="wishlist_table">
+    <thead>
+      <tr>
+        <th class="product-remove"><span class="nobr">{{ 'products.wishlist.delete' | t }}</span></th>
+        <th class="product-thumbnail"><span class="nobr">{{ 'products.wishlist.image' | t }}</span></th>
+        <th class="product-name"><span class="nobr">{{ 'products.wishlist.productname' | t }}</span></th>
+        <th class="product-price"> <span class="nobr">{{ 'products.wishlist.unitprice' | t }}</span></th>
+        <th class="product-add-to-cart"><span class="nobr">{{ 'products.wishlist.action' | t }}</span></th>
+      </tr>
+    </thead>
+    <tbody class="wishlist-box">
+    </tbody>
+  </table>
+    <div class="wishlist-item-clear" style="display:none">
+    <a href="#" class="remove remove_from_wishlist product-remove-js" title="Remove this product"> {% include 'icons' with 'remove' %}</a>
+  </div>
+  <div class="wishlist-item" style="display:none">
+    <a class="wishlist-item-link" href="#">
+      <img class="img-responsive" src="#" alt="">                 
+    </a>
+  </div>
+  <span class="table-wishlist-1__product-price" style="display:none">#</span>
+  <!-- /img -->
+  <div class="wishlist-item-name" style="display:none">
+    <a class="wishlist-item-link" href="#">#</a>
+  </div>
+  <div class="wishlist-item-continue" style="display:none">
+    <a class="button wishlist-item-link btn" href="#" rel="nofollow">#</a>
+  </div>
+</div>
+</div>
+
+
+<script>
+  $(function() {
+    //try
+   // {
+      if(getTheCookie("wishlist") != null && getTheCookie("wishlist") != '__' && getTheCookie("wishlist") != '') {
+        var str = String(getTheCookie("wishlist")).split("__");
+        for(var i=0; i<str.length; i++) {
+          if(str[i] != ''){
+            jQuery.getJSON('/products/' + str[i] + '.js', function (product) {
+            	addProductToTable(product);
+            });
+
+          }
+        }
+      } else {
+        emptyWishlist();
+      }
+    //}
+    //catch (err) {} // ignore errors reading cookies
+                         
+    function addProductToTable(product) {
+      var $cloneitem = $(".wishlist-item").clone();
+      $cloneitem.find(".wishlist-item-link").attr("href", product.url);
+      $cloneitem.find(".img-responsive").attr("src", product.featured_image);
+      var $cloneitemname = $(".wishlist-item-name").clone();
+      $cloneitemname.find(".wishlist-item-link").attr("href", product.url);
+      $cloneitemname.find(".wishlist-item-link").text(product.title);
+
+      var $cloneitemprice = $(".table-wishlist-1__product-price").clone();
+      $cloneitemprice.html('<span class="money">'+ convertToMoney(product.price) +'</span>');
+
+      var $cloneitemclear = $(".wishlist-item-clear").clone();
+      var $cloneitemcontinue = $(".wishlist-item-continue").clone();
+      $cloneitemcontinue.find(".wishlist-item-link").attr("href", product.url);
+
+      var $cloneitemstock = $(".wishlist-stock").clone();
+
+      if (product.available) {
+        $cloneitemstock.find(".wishlist-in-stock").text(window.in_stock);
+        $cloneitemcontinue.find(".wishlist-item-link").text('{{ 'products.wishlist.view_product' | t }}');
+      } else {
+        $cloneitemstock.find(".wishlist-in-stock").addClass("wishlist-out-of-stock").text(window.out_of_stock);
+        $cloneitemcontinue.find(".wishlist-item-link").text('{{ 'products.wishlist.view_product' | t }}');
+      }
+
+      $('.wishlist-box').append("<tr class='"+product.handle+"'>"+"<td class='product-remove'>"+$cloneitemclear.html()+"</td>"+"<td class='product-thumbnail' style='width:100px;'>"+$cloneitem.html()+"</td>"+"<td class='product-name'>"+$cloneitemname.html()+"</td>"+"<td class='wishlist-product-price product-price'>"+$cloneitemprice.html()+"</td>"+"<td class='product-add-to-cart'>"+$cloneitemcontinue.html()+"</td>"+"</tr>")
+      $('.wishlist-box').find("."+product.handle).find('.product-remove-js').click(function(event) {
+        event.preventDefault();
+        $(this).unbind();
+        var item = $(this).parent().parent();
+        var str = getTheCookie("wishlist");
+        str = str.replace(item.attr("class"), '');
+        str = str.replace('____', '__');
+        setTheCookie("wishlist", str, 14);
+        item.fadeOut(500);
+        setTimeout(removeItemFromWishlist, 500, item);
+      });
+    }
+    
+    function emptyWishlist(){
+      $(".wishlist_table").remove();
+      $(".table-wrapper").append("<div class='center alert alert-info empty-wishlist'>{{ 'products.wishlist.wishlist_empty' | t }}</div>");
+    }
+       
+    function removeItemFromWishlist(item) {
+      item.remove();
+      if(getTheCookie("wishlist") == '__' || getTheCookie("wishlist") == ''){
+        emptyWishlist();
+      }
+    }
+});
+</script>

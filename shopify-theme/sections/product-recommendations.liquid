@@ -1,0 +1,159 @@
+
+
+<product-recommendations class="product-recommendations collection" data-url="{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{section.settings.products_to_show}}">
+  {% if recommendations.performed and recommendations.products_count > 0 %}
+    {% if section.settings.hometitle != blank or section.settings.subtitle != blank  %}
+      <div class="section-header center">
+        {% if section.settings.subtitle != blank %}
+        <div class="sub-title {{ settings.subtitlefont }}">{{ section.settings.subtitle }}</div>
+        {% endif %}
+        {% if section.settings.hometitle != blank %}
+        <h2 class="title">{{ section.settings.hometitle }}</h2>
+        {% endif %}
+      </div>
+    {% endif %}
+  
+    
+  {% case section.settings.grid %}
+   {% when '2' %}
+    {%- assign grid_item_width = 'col-md-6 col-sm-6 col-xs-6' -%}
+    {%- assign image_size = '530x' -%}
+  {% when '3' %}
+    {%- assign grid_item_width = 'col-lg-4 col-md-6 col-sm-6 col-xs-6' -%}
+    {%- assign image_size = '350x' -%}
+  {% when '4' %}
+    {%- assign grid_item_width = 'col-lg-3 col-md-6 col-sm-6 col-xs-6' -%}
+    {%- assign image_size = '250x' -%}
+  {% endcase %}
+  
+  {%- liquid
+    assign products_to_display = section.settings.collection.all_products_count
+
+    if section.settings.collection.all_products_count > section.settings.products_to_show
+      assign products_to_display = section.settings.products_to_show
+    endif
+  %}
+  
+    <slider-component class="slider-mobile-gutter">
+    <ul class="{% if settings.show_product %}with-sidebar{% endif %} row product-list grid product-width-{{section.settings.grid}}{% if section.settings.swipe_on_mobile and section.settings.products_to_show > 2 %} slider slider--tablet grid--peek{% endif %}" role="list">
+      {% assign i = 1 %}
+      {% for recommendation in recommendations.products %}
+        <li class="grid__item {{ grid_item_width }}{% if section.settings.swipe_on_mobile and section.settings.products_to_show > 2 %} slider__slide{% endif %}">
+          {% render 'product-card-grid',
+            product_card_product: recommendation,
+            media_size: settings.image_ratio,
+          	product_count: {{i}},
+            show_secondary_image: settings.show_secondary_image,
+            show_vendor: settings.show_vendor
+          %}
+          {% assign i = i | plus: 1 %}
+        </li>
+      {% endfor %}
+    </ul>
+       {%- if section.settings.swipe_on_mobile and section.settings.products_to_show > 2 -%}
+      <div class="slider-buttons no-js-hidden{% if section.settings.products_to_show < 4 %} medium-hide{% endif %}{% if section.settings.products_to_show < 3 %} small-hide{% endif %}">
+        <div class="slider-counter caption">
+          <span class="slider-counter--current">1</span>
+          <span aria-hidden="true"> / </span>
+          <span class="visually-hidden">{{ 'accessibility.of' | t }}</span>
+          <span class="slider-counter--total">{{ products_to_display }}</span>
+        </div>
+        <button type="button" class="slider-button slider-button--prev" name="previous" aria-label="{{ 'accessibility.previous_slide' | t }}">{% include 'icons' with 'caret' %}</button>
+        <button type="button" class="slider-button slider-button--next" name="next" aria-label="{{ 'accessibility.next_slide' | t }}">{% include 'icons' with 'caret' %}</button>
+      </div>
+    {%- endif -%}
+    </slider-component>
+  {% endif %}
+</product-recommendations>
+
+{% javascript %}
+  class ProductRecommendations extends HTMLElement {
+    constructor() {
+      super();
+
+      const handleIntersection = (entries, observer) => {
+        if (!entries[0].isIntersecting) return;
+        observer.unobserve(this);
+
+        fetch(this.dataset.url)
+          .then(response => response.text())
+          .then(text => {
+            const html = document.createElement('div');
+            html.innerHTML = text;
+            const recommendations = html.querySelector('product-recommendations');
+            if (recommendations && recommendations.innerHTML.trim().length) {
+              this.innerHTML = recommendations.innerHTML;
+            }
+          })
+          .catch(e => {
+            console.error(e);
+          });
+      }
+
+      new IntersectionObserver(handleIntersection.bind(this), {rootMargin: '0px 0px 200px 0px'}).observe(this);
+    }
+  }
+
+  customElements.define('product-recommendations', ProductRecommendations);
+{% endjavascript %}
+
+{% schema %}
+{
+  "name": "Product Recommendations",
+  "tag": "section",
+  "class": "spaced-section product-recommendations",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Dynamic recommendations use order and product information to change and improve over time. [Learn more](https:\/\/help.shopify.com\/en\/themes\/development\/recommended-products)"
+    },
+    {
+      "type": "text",
+      "id": "hometitle",
+      "label": "Title",
+      "default": "You May Also Like"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Sub Title",
+      "default": "THE PRODUCTS"
+    },
+    {
+      "type": "range",
+      "id": "products_to_show",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 4,
+      "label": "Maximum Products To show"
+    },
+    {
+      "type": "select",
+      "id": "grid",
+      "label": "Number Of Column",
+      "default": "4",
+      "options": [
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "swipe_on_mobile",
+      "default": false,
+      "label": "Enable Swipe on Mobile"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,253 @@
+<div class="page-width"> 
+  <div class="row"> 
+    <div class="contact-form-information">
+      {% if section.settings.image!= blank %}
+      <div class="contact-banner col-lg-6 col-md-12">
+        <div class="image-container">
+          <a href="javascript:void(0);">
+            <img class="lazyload"
+                 data-src="{{ section.settings.image | img_url: 'master' }}"
+                 alt="Contact Banner Image">
+          </a>
+        </div>
+      </div>
+      {% endif %}
+      <div class="information-container {% if section.settings.image!= blank %}col-lg-6 col-md-12{% else%}col-md-12{% endif %}">
+        <div class="title-container">
+          {% if section.settings.heading != blank %}
+          <h3 class="heading">{{ section.settings.heading | escape }}</h3>
+          {% endif %}
+          {% if section.settings.subheading != blank %}
+          <span class="subheading">{{ section.settings.subheading | escape }}</span>
+          {% endif %}
+        </div>
+        <div class="list-contact-info col-xs-12">
+          {% if section.settings.show_address %}
+          <div class="contact_info_item col-xs-6">
+            <h3>{{ section.settings.address | escape }}</h3>
+            <p>{{shop.address.street | escape }}</p>
+            <p>{{shop.address.country }}</p>
+          </div>
+          {% endif %} 
+          {% if section.settings.show_phone and shop.phone != blank %}
+          <div class="contact_info_item col-xs-6">
+            <h3>{{ section.settings.phone | escape }}</h3>
+            <p>{{shop.phone}}</p>
+          </div>
+          {% endif %} 
+          {% if section.settings.show_email and shop.email != blank %}
+          <div class="contact_info_item col-xs-6">
+            <h3>{{ section.settings.email | escape }}</h3>
+            <p>
+              <a href="mailto:{{shop.email}}">
+                {{shop.email}}
+              </a> 
+            </p>
+          </div>
+          {% endif %} 
+          {% if section.settings.info != blank %}
+          <div class="contact_info_item col-xs-6">
+            <h3>{{ section.settings.additional_information | escape }}</h3>
+            {{ section.settings.info }}
+          </div>
+          {% endif %}  
+          {% if section.settings.show_followus %}
+          <div class="contact_info_item col-xs-12">
+            <h3>{{ section.settings.social | escape }}</h3>
+            <ul class="social-icons">
+              {% if settings.social_facebook_link != blank %}
+              <li class="facebook">
+                <a class="social-icons__link" href="{{ settings.social_facebook_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Facebook' }}" target="_blank">
+                  <i class="fa fa-facebook" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_twitter_link != blank %}
+              <li class="twitter">
+                <a class="social-icons__link" href="{{ settings.social_twitter_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Twitter' }}" target="_blank">
+                  <i class="fa fa-twitter" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_pinterest_link != blank %}
+              <li class="pinterest">
+                <a class="social-icons__link" href="{{ settings.social_pinterest_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Pinterest' }}" target="_blank">
+                  <i class="fa fa-pinterest-p" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_instagram_link != blank %}
+              <li class="instagram">
+                <a class="social-icons__link" href="{{ settings.social_instagram_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Instagram' }}" target="_blank">
+                  <i class="fa fa-instagram" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {%- if settings.social_tiktok_link != blank -%}
+              <li class="tiktok">
+                <a class="social-icons__link" href="{{ settings.social_tiktok_link }}"  title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Tiktok' }}" target="_blank">
+                  {% include 'icons' with 'tiktok' %}
+                </a>
+              </li>
+              {%- endif -%}
+              {% if settings.social_tumblr_link != blank %}
+              <li class="tumblr">
+                <a class="social-icons__link" href="{{ settings.social_tumblr_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Tumblr' }}" target="_blank">
+                  <i class="fa fa-tumblr" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_snapchat_link != blank %}
+              <li class="snapchat">
+                <a class="social-icons__link" href="{{ settings.social_snapchat_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Snapchat' }}" target="_blank">
+                  <i class="fa fa-snapchat-ghost" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_youtube_link != blank %}
+              <li class="youtube">
+                <a class="social-icons__link" href="{{ settings.social_youtube_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'YouTube' }}" target="_blank">
+                  <i class="fa fa-youtube-play" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+              {% if settings.social_vimeo_link != blank %}
+              <li class="vimeo">
+                <a class="social-icons__link" href="{{ settings.social_vimeo_link | escape }}" title="{{ 'sections.footer.social_platform' | t: name: shop.name, platform: 'Vimeo' }}" target="_blank">
+                  <i class="fa fa-vimeo" aria-hidden="true"></i>
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </div>
+          {% endif %}  
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+  {
+    "name": "Contact Banner",
+    "tag": "section",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "image",
+        "label": "Contact Banner Image",
+        "info": "Size: 570px X 570px"
+      },
+      {
+        "type": "text",
+        "id": "heading",
+        "label": "Heading",
+        "default": "Get In Touch"
+      },
+      {
+        "type": "text",
+        "id": "subheading",
+        "label": "SubHeading",
+        "default": "We'd Love to Hear From You, Lets Get In Touch!"
+     },
+     {
+        "type": "checkbox",
+        "id": "show_address",
+        "label": "Show Address",
+        "default": true
+     },
+	 {
+        "type": "text",
+        "id": "address",
+        "label": "Title",
+        "default": "Address"
+     },
+     {
+        "type": "checkbox",
+        "id": "show_phone",
+        "label": "Show Phone Number",
+        "default": true
+     },
+	 {
+        "type": "text",
+        "id": "phone",
+        "label": "Title",
+        "default": "Phone"
+     },
+     {
+        "type": "checkbox",
+        "id": "show_email",
+        "label": "Show Email ID",
+        "default": true
+     },
+	 {
+        "type": "text",
+        "id": "email",
+        "label": "Title",
+        "default": "Email"
+     },
+	 {
+        "type": "text",
+        "id": "additional_information",
+        "label": "Title",
+        "default": "Additional Information"
+     },
+	 {
+        "type": "richtext",
+        "id": "info",
+        "label": "Additional Info",
+        "default": "<p>We are open: Monday - Saturday, 10AM - 5PM and closed on sunday sorry for that.</p>"
+     },
+     {
+        "type": "checkbox",
+        "id": "show_followus",
+        "label": "Show Social Follow",
+        "default": true
+     },
+     {
+        "type": "text",
+        "id": "social",
+        "label": "Title",
+        "default": "Social"
+     },
+     {
+      "type": "header",
+      "content": "Section Bottom Spacing"
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_desktop",
+      "label": "Desktop",
+      "min": 0,
+      "max": 70,
+      "step": 10,
+      "default": 70
+    },
+    {
+      "type": "range",
+      "id": "section_bottom_spacing_mobile",
+      "label": "Mobile",
+      "min": 0,
+      "max": 50,
+      "step": 10,
+      "default": 30
+    }
+	],
+	"presets": [
+      {
+        "name": "Contact Banner"
+      }
+    ]
+  }
+{% endschema %}

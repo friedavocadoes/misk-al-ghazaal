@@ -1,0 +1,113 @@
+<div class="page-width">
+    <div class="empty-page row">
+    {% if section.settings.image != blank %}
+      <div class="banner-image col-lg-6 col-md-12">
+        <div class="image-container">
+          <a href="{% if section.settings.button_link != blank %}{{ section.settings.button_link }}{% else %}/{% endif %}">
+            <img class="lazyload"
+                 data-src="{{ section.settings.image | img_url: 'master' }}"
+                 alt="Banner Image">
+            </a>
+        </div>
+      </div>
+    {% endif %}
+    <div class="empty-page-content col-lg-6 col-md-12 {% if section.settings.image == blank %}empty-page-center{% endif %}">
+       {% if section.settings.hometitle != blank %}
+        <h1 class="home-title">{{ section.settings.hometitle | escape }}</h1>
+       {% endif %}
+       {% if section.settings.subtitle != blank %}
+        <div class="sub-title">{{ section.settings.subtitle | escape }}</div>
+       {% endif %}
+       {% if section.settings.description != blank %}
+         <div class="description">{{ section.settings.description }}</div>
+       {% endif %}
+        {% if section.settings.button_label != blank and section.settings.button_link != blank %}
+        <a href="{{ section.settings.button_link }}" class="btn">
+          {{ section.settings.button_label | escape }}
+        </a>
+        {% endif %}
+      </div>
+    </div>
+</div>
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+{% schema %}
+  {
+    "name": "404 Page Not Found",
+    "tag": "section",
+    "settings": [
+      {
+        "type": "image_picker",
+        "id": "image",
+        "label": "Image"
+      },
+      {
+        "type": "text",
+        "id": "hometitle",
+        "label": "Title", 
+        "default": "404"
+      },
+      {
+        "type": "text",
+        "id": "subtitle",
+        "label": "Sub Title", 
+        "default": "UH OH! You're lost."
+      },
+      {
+        "type": "textarea",
+        "id": "description",
+        "label": "Description", 
+        "default": "The page you are looking for does not exist. How you got here is a mystery. But you can click the button below to go back to the homepage."
+      },
+      {
+        "type": "text",
+        "id": "button_label",
+        "label": "Button Label",
+        "default": "HOME"
+      },
+      {
+        "type": "url",
+        "id": "button_link",
+        "label": "Button Link"
+      },
+	  {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+
+     ],
+      "presets": [
+          {
+            "name": "404 Page Not Found"
+          }
+       ]
+  }
+{% endschema %}

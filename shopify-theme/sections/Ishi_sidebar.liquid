@@ -1,0 +1,398 @@
+<div data-section-id="{{ section.id }}" data-section-type="sidebar-section">
+   {% assign i = 1 %}
+   {%- for block in section.blocks -%}
+   {%- case block.type -%}
+   {%- when 'sidebar_link' -%}
+   {%- if template.name == 'collection' or template.name == 'product' -%}
+   {% assign iscategory = 0 %}
+   {% for link1 in linklists[block.settings.sidebar_link].links %}
+   {% assign iscategory = iscategory | plus: 1 %}
+   {% endfor %}
+   {%- if iscategory != 0 -%}
+   <div class="left-column sidebar-categories">
+      <div class="left-title clearfix hidden-lg-up ishi-collapsed ishi-collapse in rotate" data-href="#subcategories-container" data-toggle="collapse" aria-expanded="false">
+         <span class="h3 block-heading">  
+         {{ 'general.category_title.title' | t }} 
+         </span>
+         <span class="navbar-toggler">
+         {% include 'icons' with 'caret' %}
+         </span>    
+      </div>
+      <div class="section-header sidebar-title hidden-lg-down">
+         {{ 'general.category_title.title' | t }} 
+      </div>
+      <div id="subcategories-container" class="left-inner block-categories categories desktop-collapse ishi-collapse">
+         <div class="panel-group categories-menu" id="accordion" role="tablist" aria-multiselectable="true">
+            {% assign catcount = 0 %}
+            {% for link1 in linklists[block.settings.sidebar_link].links %}
+            {% assign catcount = catcount | plus: 1 %}
+            {% assign low_title1 = collection.title | downcase %}
+            {% assign low_title2 = link1.title | downcase %}
+            <div class="panel panel-custom categories-items">
+               <div class="panel-heading" role="tab" id="headingOne-{{catcount}}">
+                  <h4 class="panel-title link-title">
+                     <a href="{{link1.url}}">
+                     {{ link1.title }}
+                     </a>
+                     {% if linklists[link1.handle].links.size > 0 %}
+                     <a class="collapse-icon {% if low_title1 != low_title2 %}rotate ishi-collapse ishi-collapsed in{% endif %}" data-toggle="collapse" data-href="#collapse-{{catcount}}" aria-expanded="false">
+                     {% include 'icons' with 'caret' %}
+                     </a>
+                     {% endif %}
+                  </h4>
+               </div>
+               {% assign low_title1 = collection.title | downcase %}
+               {% assign low_title2 = link1.title | downcase %}
+               <div id="collapse-{{catcount}}" class="panel-collapse dropdown-submenu {% if low_title1== low_title2 %} ishi-collapsed {% else %} ishi-collapse {% endif %}" role="tabpanel" aria-labelledby="headingOne-{{catcount}}">
+                  {% for link in linklists[link1.handle].links %}
+                  <div class="panel-body category_submenu">
+                     <a href="{{ link.url }}" class="dropdown-item">
+                     {{ link.title }} 
+                     </a>
+                  </div>
+                  {% endfor %}
+               </div>
+            </div>
+            {% endfor %}
+         </div>
+      </div>
+   </div>
+   {% endif %}
+   {% endif %}
+   {%- when 'filter' -%}
+   {%- if template.name == 'collection' -%}
+   {%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+   {%- assign total_active_values = 0 -%}
+   <collection-filters-form class="facets small-hide left-column hidden-lg-down">
+      <form id="CollectionFiltersFormSidebar">
+         <div class="collection-facets section-header">
+            {%- unless collection.filters == empty -%}
+            <h2 class="facets__heading sidebar-title">{{ 'sections.collection_template.filter_by_label' | t }}</h2>
+            {%- endunless -%}
+            <a class="btn clear-all" href="{{ collection.url }}" style="display:none;">{{ 'sections.collection_template.clear_all' | t }}</a>
+            {%- for filter in collection.filters -%}
+            {%- assign total_active_values = total_active_values | plus: filter.active_values.size -%}
+            {% case filter.type %}
+            {% when 'list' %}
+            <div class="disclosure-has-popup facets__disclosure js-filter {{ filter.label | remove:" " | downcase }}" data-index="{{ forloop.index }}">
+            <div class="facets__summary">
+               <span>{{ filter.label | escape }}</span>
+               <span class="count-bubble" style="display: none;">{%- if filter.active_values.size > 0 -%}{{ filter.active_values.size }}{%- endif -%}</span>
+            </div>
+            <div class="facets__displays">
+               <div class="facets__header" style="display: none;">
+                  <span class="facets__selected no-js-hidden">{{ 'sections.collection_template.filters_selected' | t: count: filter.active_values.size }}</span>
+                  <facet-remove>
+                     <a href="{{ filter.url_to_remove }}" class="facets__reset link underlined-link">
+                     {{ 'sections.collection_template.reset' | t }}
+                     </a>
+                  </facet-remove>
+               </div>
+               <input type="checkbox" class="more_toggle hidden" id="filter-{{ filter.label | remove:" " | downcase }}"/>
+               {%- assign color_label = 'color,colour,couleur,colore,farbe,색,色,färg,farve' | split: ',' -%}
+               {%- assign downcase_option = filter.label | downcase -%}
+               <ul class="facets__list list-unstyled {% if block.settings.show_color_swatches and color_label contains downcase_option %} color-swatch{% endif %} " role="list">
+                  {%- for value in filter.values -%}
+                  {%- assign downcase_value = value | downcase -%}
+                  {%- assign color_swatch_name = value.value | append: '.png' -%}
+                  {%- assign color_swatch_image = images[color_swatch_name] -%}
+                  <li class="list-menu__item facets__item">
+                     <label for="Filter-{{ filter.label | escape }}-{{ forloop.index }}" class="facet-checkbox{% if value.count == 0 and value.active == false %} facet-checkbox--disabled{% endif %}">
+                        <input type="checkbox"
+                        name="{{ value.param_name }}"
+                        value="{{ value.value }}"
+                        id="Filter-{{ filter.label | escape }}-{{ forloop.index }}"
+                        {% if value.active %}checked{% endif %}
+                        {% if value.count == 0 and value.active == false %}disabled{% endif %}
+                        >
+                        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+                           <rect width="14" height="14" stroke="currentColor" fill="none" stroke-width="1"></rect>
+                        </svg>
+                        <svg class="icon icon-checkmark"
+                           width="11"
+                           height="7"
+                           viewBox="0 0 11 7"
+                           fill="none"
+                           xmlns="http://www.w3.org/2000/svg">
+                           <path d="M1.5 3.5L2.83333 4.75L4.16667 6L9.5 1"
+                              stroke="currentColor"
+                              stroke-width="1.75"
+                              stroke-linecap="round"
+                              stroke-linejoin="round" />
+                        </svg>
+                        </svg>
+                        {% if block.settings.show_color_swatches %}
+                        {% if color_label contains downcase_option %}
+                        <span class="filter-color" style="{% if color_swatch_image != blank %}background-image: url({{ color_swatch_image | img_url: '64x64' }});{% else %}background-color: {{ value.label | replace: ' ', '' | downcase }}; {% endif %}">
+                        </span>
+                        {% else %}
+                        <span>
+                        {{ value.label | escape }} ({{ value.count }})
+                        </span>
+                        {% endif%}
+                        {% else %}
+                        <span>
+                        {{ value.label | escape }} ({{ value.count }})
+                        </span>
+                        {% endif%}
+                     </label>
+                  </li>
+                  {%- endfor -%}
+               </ul>
+               {% unless color_label contains downcase_option and block.settings.show_color_swatches %}
+               {% if filter.values.size > 5 %}
+               <label class="more-filter" for="filter-{{ filter.label | remove:" " | downcase }}">
+               <span class="open">{{ 'sections.collection_template.showmore' | t }}</span>
+               <span class="close">{{ 'sections.collection_template.showless' | t }}</span>
+               </label>
+               {% endif %}
+               {% endunless %}
+            </div>
+         </div>
+         {% when 'price_range' %}
+         {% liquid
+         assign currencies_using_comma_decimals = 'ANG,ARS,BRL,BYN,BYR,CLF,CLP,COP,CRC,CZK,DKK,EUR,HRK,HUF,IDR,ISK,MZN,NOK,PLN,RON,RUB,SEK,TRY,UYU,VES,VND' | split: ','
+         assign uses_comma_decimals = false
+         if currencies_using_comma_decimals contains cart.currency.iso_code
+         assign uses_comma_decimals = true
+         endif
+         %}
+         <div class="disclosure-has-popup facets__disclosure js-filter {{ filter.label | remove:" " | downcase }}" data-index="{{ forloop.index }}">
+         <div class="facets__summary">
+            <div>
+               <span>{{ filter.label | escape }}</span>
+               <span class="count-bubble{%- if filter.min_value.value or filter.max_value.value -%}{{ filter.active_values.size }} count-bubble--dot{% endif %}"></span>
+            </div>
+         </div>
+         <div class="facets__displays">
+            <div class="facets__header" style="display: none;">
+               {%- assign max_price_amount = filter.range_max | money | escape -%}
+               <span class="facets__selected">{{ "sections.collection_template.max_price" | t: price: max_price_amount }}</span>
+               <facet-remove>
+                  <a href="{{ filter.url_to_remove }}" class="facets__reset link underlined-link" >
+                  {{ 'sections.collection_template.reset' | t }}
+                  </a>
+               </facet-remove>
+            </div>
+            <price-range class="facets__price">
+               <div class="field">
+                  <span class="field__currency">{{ cart.currency.symbol }}</span>
+                  <input class="field__input"
+                  name="{{ filter.min_value.param_name }}"
+                  id="Filter-{{ filter.label | escape }}-GTE"
+                  {%- if filter.min_value.value -%}
+                  {%- if uses_comma_decimals -%}
+                  value="{{ filter.min_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                  {%- else -%}
+                  value="{{ filter.min_value.value | money_without_currency | replace: ',', '' }}"
+                  {% endif %}
+                  {%- endif -%}
+                  type="number"
+                  placeholder="0"
+                  min="0"
+                  max="{{ filter.range_max | money_without_currency | replace: ',', '' }}">
+                  </input>
+                  <label class="field__label" for="Filter-{{ filter.label | escape }}-GTE">{{ 'sections.collection_template.from' | t }}</label>
+               </div>
+               <div class="field">
+                  <span class="field__currency">{{ cart.currency.symbol }}</span>
+                  <input class="field__input"
+                  name="{{ filter.max_value.param_name }}"
+                  id="Filter-{{ filter.label | escape }}-LTE"
+                  {%- if filter.max_value.value -%}
+                  {%- if uses_comma_decimals -%}
+                  value="{{ filter.max_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                  {%- else -%}
+                  value="{{ filter.max_value.value | money_without_currency | replace: ',', '' }}"
+                  {% endif %}
+                  {%- endif -%}
+                  type="number"
+                  placeholder="{{ filter.range_max | money_without_currency | replace: ',', '' }}"
+                  min="0"
+                  max="{{ filter.range_max | money_without_currency | replace: ',', '' }}">
+                  </input>
+                  <label class="field__label" for="Filter-{{ filter.label | escape }}-LTE">{{ 'sections.collection_template.to' | t }}</label>
+               </div>
+         </div>
+         </price-range>
+</div>
+{% endcase %}
+{%- endfor -%}
+</div>
+</form>
+</collection-filters-form>
+{% endif %}
+{%- when 'collection' -%}
+<div class="left-column collection-left">
+   <div class="left-title clearfix hidden-lg-up ishi-collapse in rotate" data-href="#left-colletion-container-{{i}}" data-toggle="collapse" aria-expanded="true">
+      <span class="h3 block-heading">{{ block.settings.product_title | escape }}</span>
+      <span class="navbar-toggler collapse-icons">
+      {% include 'icons' with 'caret' %}
+      </span>
+   </div>
+   <div id="left-colletion-container-{{i}}" class="left-inner left-dropdown ishi-collapse in rotate">
+      <div class="sidebar-collection">
+         {% if block.settings.product_title != blank %}
+         <div class="section-header  hidden-lg-down">
+            <h2 class="sidebar-title">{{ block.settings.product_title | escape }}</h2>
+         </div>
+         {% endif %}
+         {%- assign collection = collections[block.settings.collection] -%}
+         {%- assign product_limit = block.settings.grid  -%}
+         <div class="grid grid--uniform grid--view-items products-display">
+            {% for product in collection.products limit: product_limit %}
+            <div class="grid__item grid__item--{{section.id}}">
+               {% render 'product-card-left', 
+               product_card_product: product,
+               media_size: settings.image_ratio,
+               show_secondary_image: settings.show_secondary_image
+               %}
+            </div>
+            {% else %}
+            {% for i in (1..product_limit) %}
+            <div class="grid__item grid__item--{{section.id}}">
+               {% render 'product-card-placeholder' %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+         </div>
+         {% if block.settings.show_view_all %}
+         <div class="view-all">
+            <a href="{{ collection.url }}" class="view-all-link">
+            {{ 'collections.general.view_all' | t }} {% include 'icons' with 'arrow' %}
+            </a>
+         </div>
+         {% endif %}
+      </div>
+   </div>
+</div>
+{%- when 'banner' -%}
+<div class="left-column banner">
+   <div class="left-banner">
+      {% if block.settings.image != blank %}
+      <a class="ishi-customhover-{{ block.settings.hover1 }} {% if block.settings.scale_enable1 %}scale{% endif %}" href="{% if block.settings.banner_link != blank %}{{ block.settings.banner_link }}{% else %}/{% endif %}">
+      <img 
+         class="feature-row__image lazyload"
+         data-src="{{ block.settings.image | img_url: 'master' }}"
+         alt="Banner Image">
+      </a>
+      {% else %}
+        {{ 'image' | placeholder_svg_tag: 'ishi-placeholder' }}
+      {% endif %} 
+   </div>
+</div>
+{% assign i = i | plus: 1 %}
+{%- endcase -%}
+{%- endfor -%}
+</div>
+
+{% schema %}
+  {
+    "name": "Sidebar",
+    "blocks": [
+	  {
+        "type": "sidebar_link",
+        "name": "Sidebar Link",
+        "limit": 1,
+        "settings": [
+          {
+            "type": "link_list",
+            "id": "sidebar_link",
+            "label": "Category Links"
+          }
+        ]
+      },
+	  {
+        "type": "filter",
+        "name": "Filter",
+        "limit": 1,
+        "settings": [
+		  {
+            "type": "checkbox",
+            "id": "show_color_swatches",
+            "label": "Show Color Filter As Swatches",
+            "default": true
+          }
+        ]
+      },
+	  {
+        "type": "collection",
+        "name": "Collection",
+		"settings":[
+		  {
+            "type": "text",
+            "id": "product_title",
+            "label": "Main Title",
+            "default": "Collection Title"
+          },
+          {
+            "id": "collection",
+            "type": "collection",
+            "label": "Collection"
+          },
+          {
+            "type": "range",
+            "id": "grid",
+            "label": "Products To Display In Collection",
+            "min": 2,
+            "max": 5,
+            "step": 1,
+            "default": 3
+          },     
+          {
+            "type": "checkbox",
+            "id": "show_view_all",
+            "label": "Show 'View All' Button For Collection",
+            "default": false
+          }
+		]
+      },
+	  {
+        "type": "banner",
+        "name": "Banner",
+		"settings":[
+		  {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Image",
+            "info":"Size : 270px X 350px"
+          },
+          {
+             "type": "select",
+             "id": "hover1",
+             "default": "fadeinrotate3D",
+             "options": [
+              { "value": "fadeinnormal", "label": "FadeIn Normal"},
+              { "value": "fadeinflip", "label": "FadeIn Flip"},
+              { "value": "fadeinrotate", "label": "FadeIn Rotate"},
+              { "value": "fadeinrotate3D", "label": "FadeIn Rotate3D"},
+              { "value": "fadeintop", "label": "FadeIn Top"},
+              { "value": "fadeinbottom", "label": "FadeIn Bottom"},
+              { "value": "fadeintopbottom", "label": "FadeIn Top Bottom"},
+              { "value": "fadeoutcenter", "label": "FadeOut Center"},
+              { "value": "fadeinoutbordercorner", "label": "FadeInOut BorderCorner"},
+              { "value": "doublefadeincenter", "label": "Double FadeInOut Center"},
+              { "value": "fadeinoutsingle", "label": "FadeInOut Single Scroll"},
+              { "value": "fadeinoutdoublevertical", "label": "FadeInOut Double Scroll"},
+              { "value": "perspective", "label": "Perspective"},
+              { "value": "fadeinoutrotatevertical", "label": "FadeInOut Rotate Vertical"}
+             ],
+             "label": "Hover"
+          },
+		  {
+            "type": "checkbox",
+            "id": "scale_enable1",
+            "label": "Scale Banner",
+            "default": false
+          },
+          {
+            "type": "url",
+            "id": "banner_link",
+            "label": "Link"
+          }
+		]
+      }
+    ]
+  }
+  
+{% endschema %}

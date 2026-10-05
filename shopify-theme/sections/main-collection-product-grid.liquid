@@ -1,0 +1,346 @@
+{%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+<div class="collection-filters" id="main-collection-filters" data-id="{{ section.id }}">
+  <div class="collection-view col-lg-6 col-md-7 col-sm-6 col-xs-3">
+    <div class="collectiongrid-layout column-2" data-id="collectiongrid-layout-2" data-class="grid__item col-md-6 col-sm-6 col-xs-6">
+      {% include 'icons' with 'collection-views-2' %}
+    </div>
+    <div class="grid-layout-default collectiongrid-layout column-3 hidden-lg-down" data-id="collectiongrid-layout-3" data-class="grid__item col-lg-4 col-md-6 col-sm-6 col-xs-6">
+      {% include 'icons' with 'collection-views-3' %}
+    </div>
+    <div class="collectiongrid-layout column-4 hidden-lg-down" data-id="collectiongrid-layout-4" data-class="grid__item col-lg-3 col-md-6 col-sm-6 col-xs-6">
+      {% include 'icons' with 'collection-views-4' %}
+    </div>
+    <div class="grid__list collectiongrid-layout column-1" data-id="collectiongrid-layout-1" data-class="list__item col-lg-12 col-md-12 col-sm-12 col-xs-12">
+      {% include 'icons' with 'collection-views-1' %}
+    </div>
+    
+  <div class="collection-product-count hidden-sm-down" role="status">
+    {{ 'sections.collection_template.product_count' | t: product_count: collection.products_count, count: collection.all_products_count }}
+  </div>
+  </div>
+  {%- if section.settings.enable_sorting -%}
+    {%- assign total_active_values = 0 -%}
+    <collection-filters-form class="facets small-hide col-lg-6 hidden-lg-down">
+      <form id="CollectionFiltersForm" class="facets__form">
+        <div class="active-facets active-facets-desktop" style="display: none;">
+            <facet-remove>
+              <a href="{{ collection.url }}?sort_by={{ sort_by }}" class="active-facets__button">
+                <span class="active-facets__button-inner button button--secondary">
+                  {{ 'sections.collection_template.clear_all' | t }}
+                 {% include 'icons' with 'close-small' %}
+                </span>
+              </a>
+            </facet-remove>
+            {%- for filter in collection.filters -%}
+              {%- for value in filter.active_values -%}
+                <facet-remove>
+                  <a href="{{ value.url_to_remove }}" class="active-facets__button active-facets__button--light">
+                    <span class="active-facets__button-inner button button--tertiary">
+                      {{ value.label | escape }}
+                       {% include 'icons' with 'close-small' %}
+                    </span>
+                  </a>
+                </facet-remove>
+              {%- endfor -%}
+              {% if filter.type == "price_range" %}
+                {%- if filter.min_value.value != nil or filter.max_value.value != nil -%}
+                  <facet-remove>
+                    <a href="{{ filter.url_to_remove }}" class="active-facets__button active-facets__button--light">
+                      <span class="active-facets__button-inner button button--tertiary">
+                        {%- if filter.min_value.value -%}{{ filter.min_value.value | money }}{%- else -%}{{ 0 | money }}{%- endif -%}-{%- if filter.max_value.value -%}{{ filter.max_value.value | money }}{%- else -%}{{ filter.range_max | money }}{%- endif -%}
+                        {% include 'icons' with 'close-small' %}
+                      </span>
+                    </a>
+                  </facet-remove>
+                {%- endif -%}
+              {% endif %}
+            {%- endfor -%}
+          </div>
+        {% if collection.current_vendor or collection.current_type %}
+          <input type="hidden" name="q" value="{{ collection.current_vendor }}{{ collection.current_type }}">
+        {% endif %}
+        <div class="collection-filters__item sorting">
+          <div class="collection-filters__field">
+            <label class="collection-filters__label" for="SortBy">{{ 'sections.collection_template.sort_by_label' | t }}</label>
+            <div class="select">
+              {%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+              <select name="sort_by" class="select__select collection-filters__sort" id="SortBy" aria-describedby="a11y-refresh-page-message">
+                {%- for option in collection.sort_options -%}
+                <option value="{{ option.value | escape }}"{% if option.value == sort_by %} selected="selected"{% endif %}>{{ option.name | escape }}</option>
+                {%- endfor -%}
+              </select>
+              {% include 'icons' with 'caret' %}
+            </div>
+          </div>
+
+          <noscript>
+            <button type="submit" class="button button--small">{{ 'sections.collection_template.sort_button' | t }}</button>
+          </noscript>
+        </div>
+      </form>
+    </collection-filters-form>
+    <menu-drawer class="mobile-facets__wrapper col-md-5 col-sm-6 col-xs-9 hidden-lg-up" data-breakpoint="mobile">
+      <details class="disclosure-has-popup hidden-lg-up">
+        <summary>
+          <span class="mobile-facets__open button">
+             {% include 'icons' with 'setup' %}
+            <span>{{ 'sections.collection_template.filter_and_sort' | t }}</span>
+<!--             <span class="count-bubble">
+              {%- if total_active_values > 0 -%}{{ total_active_values }}{%- endif -%}
+            </span> -->
+          </span>
+          <span tabindex="0" class="mobile-facets__close mobile-facets__close--no-js">{% include 'icons' with 'close' %}</span>
+        </summary>
+        <collection-filters-form>
+          <form id="CollectionFiltersFormMobile" class="mobile-facets">
+            <div class="mobile-facets__inner">
+              <div class="mobile-facets__header">
+                <div class="mobile-facets__header-inner">
+                  <h2 class="mobile-facets__heading">{{ 'sections.collection_template.filter_and_sort' | t }}</h2>
+                  <p class="mobile-facets__count">{{ 'sections.collection_template.product_count' | t: product_count: collection.products_count, count: collection.all_products_count }}</p>
+                </div>
+              </div>
+              <div class="mobile-facets__main">
+                {%- for filter in collection.filters -%}
+                  {% case filter.type %}
+                  {% when 'list' %}
+                    <details class="mobile-facets__details js-filter" data-index="mobile-{{ forloop.index }}">
+                      <summary class="mobile-facets__summary">
+                        <div>
+                          <span>{{ filter.label | escape }}</span>
+                          <span class="count-bubble">
+                            {%- if filter.active_values.size > 0 -%}{{ filter.active_values.size }}{%- endif -%}
+                          </span>
+                          <span class="mobile-facets__arrow no-js-hidden">{% render 'icons' with 'arrow' %}</span>
+                          <noscript>{% include 'icons' with 'caret' %}</noscript>
+                        </div>
+                      </summary>
+                      <div class="mobile-facets__submenu">
+                        <button class="mobile-facets__close-button link link--text focus-inset" aria-expanded="true" type="button">
+                          {% render 'icons' with 'arrow' %}
+                          {{ filter.label | escape }}
+                        </button>
+                        <ul class="mobile-facets__list list-unstyled" role="list">
+                          {%- for value in filter.values -%}
+                            <li class="mobile-facets__item list-menu__item">
+                              <label for="Filter-{{ filter.label | escape }}-mobile-{{ forloop.index }}" class="mobile-facets__label{% if value.count == 0 and value.active == false %} mobile-facets__label--disabled{% endif %}">
+                                <input class="mobile-facets__checkbox" type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}" id="Filter-{{ filter.label | escape }}-mobile-{{ forloop.index }}"
+                                  {% if value.active %}checked{% endif %}
+                                  {% if value.count == 0 and value.active == false %}disabled{% endif %}
+                                >
+
+                                <span class="mobile-facets__highlight"></span>
+
+                                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                  <rect width="16" height="16" stroke="currentColor" fill="none" stroke-width="1"></rect>
+                                </svg>
+
+                                <svg class="icon icon-checkmark" width="11" height="7" viewBox="0 0 11 7" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1.5 3.5L2.83333 4.75L4.16667 6L9.5 1" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+
+                                {{ value.label | escape }} ({{ value.count }})
+                              </label>
+                            </li>
+                          {%- endfor -%}
+                        </ul>
+
+                        <div class="no-js-hidden mobile-facets__footer">
+                          <facet-remove>
+                            <a href="{{ collection.url }}" class="mobile-facets__clear button button--secondary">{{ 'sections.collection_template.clear' | t }}</a>
+                          </facet-remove>
+                          <button type="button" class="no-js-hidden button button--primary" onclick="this.closest('.mobile-facets__wrapper').querySelector('summary').click()">{{ 'sections.collection_template.apply' | t }}</button>
+                          <noscript><button class="button button--primary">{{ 'sections.collection_template.apply' | t }}</button></noscript>
+                        </div>
+                      </div>
+                    </details>
+                  {% when 'price_range' %}
+                    <details class="mobile-facets__details js-filter" data-index="mobile-{{ forloop.index }}">
+                      <summary class="mobile-facets__summary">
+                        <div>
+                          <span>{{ filter.label | escape }}</span>
+                          <span class="count-bubble{%- if filter.min_value.value or filter.max_value.value -%}{{ filter.active_values.size }} count-bubble--dot{% endif %}"></span>
+                          <span class="mobile-facets__arrow no-js-hidden">{% render 'icons' with 'arrow' %}</span>
+                          <noscript>{% include 'icons' with 'caret' %}</noscript>
+                        </div>
+                      </summary>
+                      <div class="mobile-facets__submenu">
+                        <button class="mobile-facets__close-button link link--text focus-inset" aria-expanded="true" type="button">
+                          {% render 'icons' with 'arrow' %}
+                          {{ filter.label | escape }}
+                        </button>
+
+                        <p class="mobile-facets__info">{{ "sections.collection_template.max_price" | t: price: max_price_amount }}</p>
+
+                        <price-range class="facets__price">
+                          <div class="field">
+                            <span class="field__currency">{{ cart.currency.symbol }}</span>
+                            <input class="field__input"
+                              name="{{ filter.min_value.param_name }}"
+                              id="Mobile-Filter-{{ filter.label | escape }}-GTE"
+                              {%- if filter.min_value.value -%}
+                                {%- if uses_comma_decimals -%}
+                                  value="{{ filter.min_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                                {%- else -%}
+                                  value="{{ filter.min_value.value | money_without_currency | replace: ',', '' }}"
+                                {% endif %}
+                              {%- endif -%}
+                              type="number"
+                              placeholder="0"
+                              min="0"
+                              max="{{ filter.range_max | divided_by: 100 | ceil }}">
+                            <label class="field__label" for="Mobile-Filter-{{ filter.label | escape }}-GTE">{{ 'sections.collection_template.from' | t }}</label>
+                          </div>
+                          <div class="field">
+                            <span class="field__currency">{{ cart.currency.symbol }}</span>
+                            <input class="field__input"
+                              name="{{ filter.max_value.param_name }}"
+                              id="Mobile-Filter-{{ filter.label | escape }}-LTE"
+                              {%- if filter.max_value.value -%}
+                                {%- if uses_comma_decimals -%}
+                                  value="{{ filter.max_value.value | money_without_currency | replace: '.', '' | replace: ',', '.' }}"
+                                {%- else -%}
+                                  value="{{ filter.max_value.value | money_without_currency | replace: ',', '' }}"
+                                {% endif %}
+                              {%- endif -%}
+                              type="number"
+                              placeholder="{{ filter.range_max | divided_by: 100 | ceil }}"
+                              min="0"
+                              max="{{ filter.range_max | divided_by: 100 | ceil }}">
+                            <label class="field__label" for="Mobile-Filter-{{ filter.label | escape }}-LTE">{{ 'sections.collection_template.to' | t }}</label>
+                          </div>
+                        </price-range>
+                      </div>
+                    </details>
+                  {% endcase %}
+                {%- endfor -%}
+
+                {%- if section.settings.enable_sorting -%}
+                  <div class="mobile-facets__details js-filter" data-index="mobile-{{ forloop.index }}">
+                    <div class="mobile-facets__summary">
+                      <div class="mobile-facets__sort">
+                        <label for="SortBy-mobile">{{ 'sections.collection_template.sort_by_label' | t }}</label>
+                        <div class="select">
+                          <select name="sort_by" class="select__select" id="SortBy-mobile" aria-describedby="a11y-refresh-page-message">
+                            {%- for option in collection.sort_options -%}
+                              <option value="{{ option.value | escape }}"{% if option.value == sort_by %} selected="selected"{% endif %}>{{ option.name | escape }}</option>
+                            {%- endfor -%}
+                          </select>
+                         {% include 'icons' with 'caret' %}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {%- endif -%}
+
+                <div class="mobile-facets__footer">
+                  <facet-remove>
+                    <a href="{{ collection.url }}" class="mobile-facets__clear button button--secondary">{{ 'sections.collection_template.clear' | t }}</a>
+                  </facet-remove>
+                  <button type="button" class="no-js-hidden button button--primary" onclick="this.closest('.mobile-facets__wrapper').querySelector('summary').click()">{{ 'sections.collection_template.apply' | t }}</button>
+                  <noscript><button class="button button--primary">{{ 'sections.collection_template.apply' | t }}</button></noscript>
+                </div>
+              </div>
+
+              {% if collection.current_vendor or collection.current_type %}
+                <input type="hidden" name="q" value="{{ collection.current_vendor }}{{ collection.current_type }}">
+              {% endif %}
+            </div>
+          </form>
+        </collection-filters-form>
+      </details>
+    </menu-drawer>
+  {%- endif -%}
+</div>
+<script src="{{ 'collection-filters-form.js' | asset_url }}" defer="defer"></script>
+
+<div id="CollectionProductGrid">
+  {%- paginate collection.products by section.settings.products_per_page -%}
+    {%- if collection.products.size == 0 -%}
+      <div class="collection collection--empty" id="main-collection-product-grid" data-id="{{ section.id }}">
+        <div class="loading-overlay">
+          <div class="loading-overlay__spinner">
+            <svg aria-hidden="true" focusable="false" role="presentation" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+              <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+            </svg>
+          </div>
+        </div>
+
+        <div class="title-wrapper center">
+          <div class="title alert-danger alert">
+            {{ 'sections.collection_template.empty' | t }}
+          
+        </div>
+          <a class="btn" href="{{ collection.url }}">{{ 'sections.collection_template.clear_all' | t }}</a>
+      </div>
+    {%- else -%}
+      <div class="collection">
+        <div class="loading-overlay">
+          <div class="loading-overlay__spinner">
+            <svg aria-hidden="true" focusable="false" role="presentation" class="spinner" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+              <circle class="path" fill="none" stroke-width="6" cx="33" cy="33" r="30"></circle>
+            </svg>
+          </div>
+        </div>
+        
+        <p class="collection-product-count light" role="status" style="display: none;">
+          {{ 'sections.collection_template.product_count' | t: product_count: collection.products_count, count: collection.all_products_count }}
+        </p>
+
+        <ul id="main-collection-product-grid" data-id="{{ section.id }}" class="row">
+          {% assign i = 1 %}
+          {%- for product in collection.products -%}
+            <li>
+              {% render 'product-card-grid',
+                product_card_product: product,
+                media_size: settings.image_ratio,
+              	product_count: {{i}},
+                show_secondary_image: settings.show_secondary_image,
+                show_vendor: settings.show_vendor
+              %}
+              {% assign i = i | plus: 1 %}
+            </li>
+          {%- endfor -%}
+        </ul>
+        <div class="pagination-block">
+          <p class="collection-product-count col-md-6 " role="status" >
+            {{ 'sections.collection_template.product_count' | t: product_count: collection.products_count, count: collection.all_products_count }}
+          </p>
+          {%- if paginate.pages > 1 -%}
+           <div class="col-md-6 pagination-view">
+            {% render 'pagination', paginate: paginate, anchor: '', class: '' %}
+             </div>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+  {%- endpaginate -%}
+</div>
+
+{% schema %}
+{
+  "name": "t:sections.main-collection-product-grid.name",
+  "class": "collection-grid-section",
+  "settings": [
+    {
+      "type": "range",
+      "id": "products_per_page",
+      "min": 8,
+      "max": 24,
+      "step": 4,
+      "default": 16,
+      "label": "t:sections.main-collection-product-grid.settings.products_per_page.label"
+    },
+    {
+      "type": "header",
+      "content": "Sorting"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sorting",
+      "default": true,
+      "label": "t:sections.main-collection-product-grid.settings.enable_sorting.label"
+    }
+  ]
+}
+{% endschema %}

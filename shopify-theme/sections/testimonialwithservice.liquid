@@ -1,0 +1,302 @@
+
+<div class="page-width">
+  <div class="row">
+    <div class="ishitestimonial  {% if section.settings.show == 'both' %}col-lg-6 col-md-12 col-sm-12 col-xs-12{% elsif section.settings.show == 'test' %}col-lg-12 col-md-12 col-sm-12 col-xs-12 test-full{% else %}not-show{% endif %}">
+
+      <div class="testimonial-inner testimonial-color">
+        {% if section.settings.testtitle != blank %}
+        <div class="section-header center">
+          <h2 class="home-title">{{ section.settings.testtitle | escape }}</h2>
+        </div>
+        {% endif %}
+        {% if section.blocks.size > 0 %}
+        <div class="ishitestimonials-carousel-{{ section.id }} ishitestimonials-carousel slider-with-options owl-carousel owl-theme"
+             data-small="1" 
+             data-mobile="1" 
+             data-tablet="1" 
+             data-laptop="1"  
+             data-desktop="1"
+             data-nav="false"
+             data-dots="true"
+             data-loop="true"
+             data-autoplay="true"
+             data-rewind="true"
+             data-margin="30">
+          {% for block in section.blocks %}
+          {% case block.type %}
+          {% when 'testimonials_block' %}
+          <div class="ishitestimonials-container">
+
+            <div class="user-info">
+              <div class="testimonial-img">
+                {% if block.settings.image != blank %}
+                <img 
+                     data-src="{{ block.settings.image | img_url: '120x120' }}"
+                     class="lazyload"
+                     alt="Testimonial Image">
+                {% else%}
+                {{ 'image' | placeholder_svg_tag: 'ishi-placeholder' }}
+                {% endif %}
+              </div>
+              <div class="user-container">
+                <div class="desc">
+                  {% if block.settings.title != blank %}
+                  <h3 class="user-name">{{ block.settings.title | escape }}</h3>
+                  {% endif %}
+                  {% if block.settings.subtitle != blank %}
+                  <div class="user-designation">{{ block.settings.subtitle | escape }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="user-content">
+              {% if block.settings.text != blank %}
+              <div class="user-description">{{ block.settings.text }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endcase %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ishiservices {% if section.settings.show == 'both' %}col-lg-6 col-md-12 col-sm-12 col-xs-12{% elsif section.settings.show == 'service' %}col-lg-12 col-md-12 col-sm-12 col-xs-12 deal-full{% else %}not-show{% endif %}">
+      {% if section.blocks.size > 0 %}
+      <div class="ishiservices-content">
+        <div class="service-block" id="services-{{ section.id }}">
+          {% for block in section.blocks %} 
+          {% case block.type %}
+          {% when 'service_block' %}
+          <div class="services col-md-6 col-sm-6 col-xs-6">
+            <div class="services-part">
+              <a href="{% if block.settings.link != blank %}{{ block.settings.link }}{% else %}/{% endif %}">
+
+                {% if block.settings.service-image != blank %}
+                <div class="service-img-outer">
+                  <div class="service-img">
+                    <img
+                         class="lazyload"
+                         data-src="{{ block.settings.service-image | img_url: 'master' }}"
+                         alt="Service Image">
+
+                  </div>
+                </div>
+
+                {% endif %}
+                <div class="service-text">
+                  {% if block.settings.service-title != blank %}
+                  <div class="service-title">{{ block.settings.service-title | escape }}</div>
+                  {% endif %}
+                  {% if block.settings.service-desc != blank %}
+                  <div class="service-desc">{{ block.settings.service-desc | escape }}</div>
+                  {% endif %}
+                </div> 
+              </a>
+            </div>
+          </div>
+          {% endcase %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+
+
+<style type="text/css">
+  #shopify-section-{{ section.id }} {
+    margin-bottom: {{ section.settings.section_bottom_spacing_desktop }}px;
+  }
+ #shopify-section-{{ section.id }} .testimonial-color{
+    background:{{ section.settings.testimonial_background }};
+  }
+   #shopify-section-{{ section.id }} .ishitestimonial  .section-header .home-title{
+  	color:{{ section.settings.testimonial_title }};
+  }
+   #shopify-section-{{ section.id }} .ishitestimonial  .user-description,
+   #shopify-section-{{ section.id }} .ishitestimonial  .user-description p,
+   #shopify-section-{{ section.id }} .ishitestimonial .desc .user-designation{
+    color:{{ section.settings.testimonial_textcolor1 }};
+  }
+   #shopify-section-{{ section.id }} .ishitestimonial .desc .user-name{
+    color:{{ section.settings.testimonial_textcolor2 }};
+  }
+  @media (max-width: 767px) {
+    #shopify-section-{{ section.id }} {
+      margin-bottom: {{ section.settings.section_bottom_spacing_mobile }}px;
+    }
+  }
+</style>
+
+
+{% schema %}
+  {
+    "name": "Testimonial + Service",
+	"tag": "section",
+    "class": "testimonial-with-service",
+    "settings": [
+     {
+        "type": "select",
+        "id": "show",
+        "label": "Show",
+        "default": "both",
+        "options": [
+          { "value": "both", "label": "Testimonials + Service"},
+          { "value": "test", "label": "Only Testimonials Section"},
+          { "value": "service", "label": "Only Service Section"}
+        ]
+      },
+	  {
+        "type": "header",
+        "content": "Testimonial Settings"
+      },
+      {
+        "type": "text",
+        "id": "testtitle",
+        "label": "Main Title",
+        "default": "Our Testimonials"
+      },
+	{
+        "type": "color",
+        "id": "testimonial_background",
+        "label": "Background Color",
+        "default": "#f6f8f8"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_title",
+        "label": "Main Title Color",
+        "default": "#232323"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_textcolor1",
+        "label": "Text Color1",
+        "default": "#666666"
+      },
+      {
+        "type": "color",
+        "id": "testimonial_textcolor2",
+        "label": "Text Color2",
+        "default": "#232323"
+      },
+      {
+        "type": "header",
+        "content": "Section Bottom Spacing"
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_desktop",
+        "label": "Desktop",
+        "min": 0,
+        "max": 70,
+        "step": 10,
+        "default": 70
+      },
+      {
+        "type": "range",
+        "id": "section_bottom_spacing_mobile",
+        "label": "Mobile",
+        "min": 0,
+        "max": 50,
+        "step": 10,
+        "default": 30
+      }
+    ],
+	 "blocks": [
+      { 
+        "type": "service_block",
+        "name": "Ishi Service Block",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "service-image",
+            "label": "Image",
+            "info": "Size: 60px X 60px"
+          },
+          {
+            "type": "text",
+            "id": "service-title",
+            "label": "Heading",
+            "default": "Service Title"
+          },
+          {
+            "type": "text",
+            "id": "service-desc",
+            "label": "Sub Title",
+            "default": "Lorem Ipsum is simply dummy"
+          },
+          {
+            "type": "url",
+            "id": "link",
+            "label": "Link" 
+          }
+        ]
+      },
+	  {
+        "type": "testimonials_block",
+        "name": "Testimonials Block",
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "image",
+            "label": "Image",
+            "info": "Size: 120px X 120px"
+          },
+          {
+            "type": "text",
+            "id": "title",
+            "label": "Name",
+            "default": "Stephan Robot"
+          },
+          {
+            "type": "text",
+            "id": "subtitle",
+            "label": "Profession",
+            "default": "Web Designer"
+          },
+          {
+            "type": "richtext",
+            "id": "text",
+            "label": "Text",
+            "default": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Quis ipsum suspendisse ultrices gravida. Risus commodo viverra maecenas accumsan lacus vel facilisis. </p>"
+          }
+        ]
+      }
+    ],
+	"presets": [
+      {
+        "name": "Testimonial + Service",
+        "blocks": [
+          {
+            "type": "testimonials_block"
+          },
+          {
+            "type": "testimonials_block"
+          },
+          {
+            "type": "testimonials_block"
+          },
+		  {
+            "type": "service_block"
+          },
+          {
+            "type": "service_block"
+          },
+          {
+            "type": "service_block"
+          },
+          {
+            "type": "service_block"
+          }
+        ]
+      }
+    ]
+  }
+{% endschema %}
+

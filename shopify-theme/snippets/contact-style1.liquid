@@ -1,0 +1,41 @@
+<ul class="site-footer__linklist">
+  {% if block.settings.show_contact and shop.phone != blank %}
+  <li class="site-footer__linklist-item shop-contact">
+    
+      {% if block.settings.contact_title != blank %}
+      <div class="title">{{ block.settings.contact_title }}</div>
+      {% endif %}
+    <div class="content">
+      <a href="/">
+        {{shop.phone}}
+      </a>
+    </div>
+  </li>
+  {% endif %}
+  {% if block.settings.show_address and shop.address != blank %}
+  <li class="site-footer__linklist-item shop-address">
+    
+      {% if block.settings.address_title != blank %}
+      <div class="title">{{ block.settings.address_title }}</div>
+      {% endif %}
+    <div class="content">
+      <p>{{shop.address.street | escape }}</p>
+      <p>{{shop.address.country}}</p>
+    </div>
+  </li>
+  {% endif %}
+
+  {% if block.settings.show_email and shop.email != blank %}
+  <li class="site-footer__linklist-item shop-email">
+    
+      {% if block.settings.email_title != blank %}
+      <div class="title">{{ block.settings.email_title }}</div>
+      {% endif %}
+    <div class="content">
+      <a href="mailto:{{shop.email}}">
+        {{shop.email}}
+      </a>  
+    </div>
+  </li>
+  {% endif %}
+</ul>
