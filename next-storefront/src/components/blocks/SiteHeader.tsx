@@ -1,77 +1,352 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import Image from "next/image";
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Globe,
+  Menu,
+  Search,
+  ShoppingBag,
+  User,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MegaMenu } from "@/components/layout/MegaMenu";
 import { CartDrawer } from "./CartDrawer";
-import { SITE, getMegaMenu } from "@/lib/site";
+import { SITE, getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
+
+const SCROLL_RANGE = 140;
 
 export function SiteHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const menu = getMegaMenu();
+  const [locale, setLocale] = useState<"en" | "ar">("en");
+  const raf = useRef(0);
+
+  useEffect(() => {
+    const saved =
+      typeof window !== "undefined" ? window.localStorage.getItem("locale") : null;
+    if (saved === "ar" || saved === "en") {
+      setLocale(saved);
+      document.documentElement.lang = saved === "ar" ? "ar" : "en";
+    }
+    const onScroll = () => {
+      cancelAnimationFrame(raf.current);
+      raf.current = requestAnimationFrame(() => {
+        const y = Math.min(window.scrollY, SCROLL_RANGE);
+        setProgress(y / SCROLL_RANGE);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf.current);
+    };
+  }, []);
+
+  const pickLocale = (next: "en" | "ar") => {
+    setLocale(next);
+    window.localStorage.setItem("locale", next);
+    document.documentElement.lang = next === "ar" ? "ar" : "en";
+    setLangOpen(false);
+  };
+
+  const left = getNavLeft();
+  const right = getNavRight();
+  const shop = getShopMenu();
+
+  const logoSize = Math.round(88 - 46 * progress);
+  const iconSize = Math.round(20 - 5 * progress);
+  const rowH = Math.round(104 - 36 * progress);
+  const stackedFS = 15 - 2 * progress;
+  const stackedLS = 0.24 - 0.1 * progress;
+
+  const shopPanel = (positionClass: string) => (
+    <div
+      className={`z-50 w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-white p-8 text-left shadow-[0_32px_70px_-28px_rgba(28,25,23,0.4)] ${positionClass}`}
+    >
+      <div className="grid grid-cols-3 gap-8">
+        {shop.map((col) => (
+          <div key={col.heading}>
+            <Link
+              href={col.href}
+              onClick={() => setShopOpen(false)}
+              className="font-display text-lg italic text-ink transition hover:text-gold"
+            >
+              {col.heading}
+            </Link>
+            <span className="mt-2.5 block h-px w-9 bg-gold-soft" />
+            <ul className="mt-3.5 space-y-2.5">
+              {col.links.map((l) =>
+                l.external ? (
+                  <li key={l.href}>
+                    <a
+                      href={l.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[13px] text-espresso transition hover:text-gold"
+                    >
+                      {l.label}
+                      <ArrowUpRight className="size-3.5" />
+                    </a>
+                  </li>
+                ) : (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      onClick={() => setShopOpen(false)}
+                      className="text-[13px] text-espresso transition hover:text-gold"
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                )
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const stackedLink = (label: string, href: string, hasMenu = false) => (
+    <span
+      key={label}
+      className="relative"
+      onMouseEnter={() => hasMenu && setShopOpen(true)}
+      onMouseLeave={() => hasMenu && setShopOpen(false)}
+    >
+      <Link
+        href={href}
+        onClick={() => setShopOpen(false)}
+        className="inline-flex items-center gap-1 font-bold text-ink transition-colors hover:text-gold"
+        style={{
+          fontSize: `${stackedFS}px`,
+          letterSpacing: `${stackedLS}em`,
+          fontWeight: progress > 0.55 ? 600 : 700,
+        }}
+      >
+        {label.toUpperCase()}
+        {hasMenu && <ChevronDown className="size-3.5 text-gold" />}
+      </Link>
+      {hasMenu && shopOpen && shopPanel("absolute left-1/2 top-full")}
+    </span>
+  );
+
+  const inlineLink = (label: string, href: string, hasMenu = false) => (
+    <span
+      key={label}
+      className="relative hidden lg:inline"
+      onMouseEnter={() => hasMenu && setShopOpen(true)}
+      onMouseLeave={() => hasMenu && setShopOpen(false)}
+    >
+      <Link
+        href={href}
+        onClick={() => setShopOpen(false)}
+        className="whitespace-nowrap font-semibold text-ink transition-colors hover:text-gold"
+        style={{ fontSize: "12px", letterSpacing: "0.14em" }}
+      >
+        {label.toUpperCase()}
+      </Link>
+      {hasMenu && shopOpen && shopPanel("fixed left-1/2 top-28")}
+    </span>
+  );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink/10 bg-cream/95 backdrop-blur">
-      <div className="bg-ink px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85">
-        {SITE.announcement}
+    <header className="sticky top-0 z-50 border-b border-ink/10 bg-cream/95 backdrop-blur-md">
+      {/* Announcement — collapses on scroll */}
+      <div
+        className="overflow-hidden bg-ink"
+        style={{ maxHeight: `${(1 - progress) * 40}px`, opacity: 1 - progress }}
+      >
+        <p className="whitespace-nowrap px-4 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85">
+          {SITE.announcement}
+        </p>
       </div>
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-2 px-5 md:px-8">
-        <button
-          className="border border-transparent p-2 text-ink hover:border-ink/20 lg:hidden"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
-        <Link
-          href="/"
-          className="font-display text-[26px] tracking-[0.08em] text-ink"
-          aria-label="Gazaal home"
-        >
-          GAZAAL
-        </Link>
-        <div className="ml-8 hidden lg:block">
-          <MegaMenu items={menu} />
-        </div>
-        <div className="ml-auto flex items-center gap-0.5">
+
+      {/* Main crest row */}
+      <div
+        className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 lg:grid"
+        style={{ height: `${rowH + 16}px` }}
+      >
+        {/* Left: language + search + inline links */}
+        <div className="flex items-center gap-1">
+          <span className="relative">
+            <button
+              onClick={() => setLangOpen((v) => !v)}
+              aria-label="Language"
+              className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
+            >
+              <Globe style={{ width: iconSize, height: iconSize }} />
+              <span
+                className="font-semibold uppercase"
+                style={{ fontSize: "11px", letterSpacing: "0.14em" }}
+              >
+                {locale}
+              </span>
+            </button>
+            {langOpen && (
+              <span className="absolute left-0 top-full z-50 border border-ink/10 bg-white py-1 shadow-lg">
+                {(["en", "ar"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => pickLocale(l)}
+                    className={`block w-full px-5 py-2 text-left text-[12px] font-semibold uppercase tracking-[0.14em] transition hover:bg-sand ${
+                      locale === l ? "text-gold" : "text-espresso"
+                    }`}
+                  >
+                    {l === "en" ? "English" : "العربية"}
+                  </button>
+                ))}
+              </span>
+            )}
+          </span>
           <button
-            className="p-2.5 text-espresso transition hover:text-gold"
             onClick={() => setSearchOpen((v) => !v)}
             aria-label="Search"
+            className="p-2 text-espresso transition hover:text-gold"
           >
-            <Search className="size-[18px]" />
+            <Search style={{ width: iconSize, height: iconSize }} />
           </button>
+          <span
+            className="flex items-center gap-5 overflow-hidden pl-3"
+            style={{
+              maxWidth: `${progress * 300}px`,
+              opacity: progress,
+              transform: `translateX(${(1 - progress) * -14}px)`,
+            }}
+          >
+            {left.map((l) =>
+              inlineLink(l.label, l.href, l.label === "Shop")
+            )}
+          </span>
+        </div>
+
+        {/* Crest */}
+        <Link
+          href="/"
+          aria-label="Misk Al Ghazaal home"
+          className="justify-self-center py-1"
+        >
+          <Image
+            src="/logo.webp"
+            alt="Misk Al Ghazaal"
+            width={176}
+            height={176}
+            priority
+            className="rounded-full object-cover"
+            style={{ width: logoSize, height: logoSize }}
+          />
+        </Link>
+
+        {/* Right: inline links + login + cart */}
+        <div className="flex items-center justify-end gap-1">
+          <span
+            className="flex items-center justify-end gap-5 overflow-hidden pr-3"
+            style={{
+              maxWidth: `${progress * 340}px`,
+              opacity: progress,
+              transform: `translateX(${(1 - progress) * 14}px)`,
+            }}
+          >
+            {right.map((l) => inlineLink(l.label, l.href))}
+          </span>
           <Link
             href="/account"
-            className="hidden p-2.5 text-espresso transition hover:text-gold sm:block"
             aria-label="Account"
+            className="p-2 text-espresso transition hover:text-gold"
           >
-            <User className="size-[18px]" />
+            <User style={{ width: iconSize, height: iconSize }} />
           </Link>
           <button
-            className="relative p-2.5 text-espresso transition hover:text-gold"
             onClick={() => setCartOpen(true)}
-            aria-label="Open cart"
+            aria-label="Open bag"
+            className="relative p-2 text-espresso transition hover:text-gold"
           >
-            <ShoppingBag className="size-[18px]" />
+            <ShoppingBag style={{ width: iconSize, height: iconSize }} />
             <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
               2
             </span>
           </button>
         </div>
       </div>
+
+      {/* Stacked nav — tall at top, melts away on scroll */}
+      <nav
+        aria-label="Primary"
+        className="hidden overflow-hidden lg:block"
+        style={{ maxHeight: `${(1 - progress) * 64}px`, opacity: 1 - progress }}
+      >
+        <div
+          className="flex items-center justify-center gap-10 pb-4"
+          style={{ transform: `translateY(${progress * -10}px)` }}
+        >
+          {stackedLink(left[0].label, left[0].href)}
+          {stackedLink(left[1].label, left[1].href, true)}
+          <span
+            aria-hidden
+            className="inline-block w-px bg-gold-soft"
+            style={{ height: `${30 - 10 * progress}px`, opacity: 0.8 }}
+          />
+          {stackedLink(right[0].label, right[0].href)}
+          {stackedLink(right[1].label, right[1].href)}
+        </div>
+      </nav>
+
+      {/* Mobile bar */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 lg:hidden">
+        <button
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open menu"
+          className="justify-self-start p-2 text-ink"
+        >
+          <Menu className="size-5" />
+        </button>
+        <Link href="/" aria-label="Misk Al Ghazaal home" className="justify-self-center">
+          <Image
+            src="/logo.webp"
+            alt="Misk Al Ghazaal"
+            width={96}
+            height={96}
+            priority
+            className="rounded-full object-cover"
+            style={{ width: 52, height: 52 }}
+          />
+        </Link>
+        <span className="flex items-center justify-end">
+          <button
+            onClick={() => setSearchOpen((v) => !v)}
+            aria-label="Search"
+            className="p-2 text-espresso"
+          >
+            <Search className="size-5" />
+          </button>
+          <button
+            onClick={() => setCartOpen(true)}
+            aria-label="Open bag"
+            className="relative p-2 text-espresso"
+          >
+            <ShoppingBag className="size-5" />
+            <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
+              2
+            </span>
+          </button>
+        </span>
+      </div>
+
+      {/* Search drawer row */}
       {searchOpen && (
         <div className="border-t border-ink/10 bg-cream px-5 py-4">
-          <form
-            action="/search"
-            method="get"
-            className="mx-auto flex max-w-2xl gap-2"
-          >
+          <form action="/search" method="get" className="mx-auto flex max-w-2xl gap-2">
             <Input
               name="q"
               placeholder="Search perfumes, bakhoor, oudh…"
@@ -84,11 +359,74 @@ export function SiteHeader() {
           </form>
         </div>
       )}
+
+      {/* Mobile menu overlay */}
       {menuOpen && (
-        <nav className="max-h-[65vh] overflow-y-auto border-t border-ink/10 bg-cream px-5 py-4 lg:hidden">
-          <MegaMenu items={menu} />
-        </nav>
+        <div className="fixed inset-0 z-[60] flex flex-col bg-cream lg:hidden" role="dialog" aria-modal="true">
+          <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
+            <Image src="/logo.webp" alt="Misk Al Ghazaal" width={44} height={44} className="rounded-full object-cover" />
+            <button onClick={() => setMenuOpen(false)} aria-label="Close menu" className="p-2 text-ink">
+              <X className="size-5" />
+            </button>
+          </div>
+          <nav className="flex-1 overflow-y-auto px-6 py-6" aria-label="Mobile">
+            <Link href={left[0].href} onClick={() => setMenuOpen(false)} className="block py-3 font-display text-2xl text-ink">
+              {left[0].label}
+            </Link>
+            <button
+              onClick={() => setMobileShopOpen((v) => !v)}
+              className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
+            >
+              Shop
+              <ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} />
+            </button>
+            {mobileShopOpen && (
+              <span className="block pb-2">
+                {shop.map((col) => (
+                  <span key={col.heading} className="block py-2">
+                    <Link href={col.href} onClick={() => setMenuOpen(false)} className="font-display text-lg italic text-gold">
+                      {col.heading}
+                    </Link>
+                    {col.links.map((l) =>
+                      l.external ? (
+                        <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="block py-1.5 pl-3 text-sm text-espresso">
+                          {l.label} ↗
+                        </a>
+                      ) : (
+                        <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} className="block py-1.5 pl-3 text-sm text-espresso">
+                          {l.label}
+                        </Link>
+                      )
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
+            {right.map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} className="block py-3 font-display text-2xl text-ink">
+                {l.label}
+              </Link>
+            ))}
+            <span className="mt-6 flex gap-2 border-t border-ink/10 pt-6">
+              {(["en", "ar"] as const).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => pickLocale(l)}
+                  className={`border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
+                    locale === l ? "border-ink bg-ink text-white" : "border-ink/20 text-espresso"
+                  }`}
+                >
+                  {l === "en" ? "English" : "العربية"}
+                </button>
+              ))}
+            </span>
+            <Link href="/account" onClick={() => setMenuOpen(false)} className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+              Login / Account
+            </Link>
+          </nav>
+        </div>
       )}
+
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
     </header>
   );

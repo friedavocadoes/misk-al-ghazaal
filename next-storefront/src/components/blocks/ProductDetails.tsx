@@ -121,7 +121,7 @@ export function ProductInfo({
       {layout === "miskalgazaal" ? (
         <div className="mt-8 border-t border-ink/10 pt-6">
           <p className="text-xs text-fog">
-            Maison Gazaal · {product.categorySlugs[0]} · SKU{" "}
+            Maison Misk Al Ghazaal · {product.categorySlugs[0]} · SKU{" "}
             {variant?.sku ?? product.slug}
           </p>
           <div className="mt-4">

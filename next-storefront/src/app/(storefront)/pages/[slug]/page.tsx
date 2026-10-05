@@ -2,33 +2,32 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
-  ContactBlocks,
   FaqAccordion,
   WishlistGrid,
 } from "@/components/blocks/ContentBlocks";
+import { ContactExperience, type ContactTopic } from "@/components/blocks/ContactExperience";
 import { getProducts } from "@/lib/store";
 import { getFaqs } from "@/lib/site";
-
 // Static info pages — mirrors page.wholesale.json, page.contact.json,
 // page.faq.json (+ remaining page.*.json templates).
 const PAGES: Record<string, { title: string; eyebrow: string; html: string }> = {
   wholesale: {
     title: "Wholesale",
     eyebrow: "Trade",
-    html: "<p><strong>Bulk orders accepting.</strong> Partner with Gazaal for retail and distribution of Misk Al Ghazaal perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:gazaalperfumes@gmail.com'>gazaalperfumes@gmail.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
+    html: "<p><strong>Bulk orders accepting.</strong> Partner with Misk Al Ghazaal for retail and distribution of fine perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:gazaalperfumes@gmail.com'>gazaalperfumes@gmail.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
   },
-  contact: { title: "Contact", eyebrow: "Maison", html: "" },
+  contact: { title: "Write to the Maison", eyebrow: "Correspondence", html: "" },
   faq: { title: "Questions, Answered", eyebrow: "Client Care", html: "" },
   wishlist: { title: "Wishlist", eyebrow: "Saved", html: "" },
   about: {
     title: "Our Story",
-    eyebrow: "Maison Gazaal",
+    eyebrow: "Maison Misk Al Ghazaal",
     html: "<p>Misk Al Ghazaal perfumes, dukhoon and holy oudh — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates, and cash on delivery.</p>",
   },
   brands: {
     title: "Our Brands",
     eyebrow: "Maisons",
-    html: "<p>Misk Al Ghazaal · Noorjes · Holy Oudh · Gazaal exclusive blends.</p>",
+    html: "<p>Misk Al Ghazaal · Noorjes · Holy Oudh · plus our maison exclusive blends.</p>",
   },
   women: {
     title: "The Women's Edit",
@@ -70,8 +69,19 @@ export default async function StaticInfoPage(
   props: PageProps<"/pages/[slug]">
 ) {
   const { slug } = await props.params;
+  const searchParams = await props.searchParams;
   const page = PAGES[slug];
   if (!page) notFound();
+
+  const topicParam = searchParams?.topic;
+  const initialTopic: ContactTopic | null =
+    topicParam === "meeting" || topicParam === "review" || topicParam === "complaint"
+      ? topicParam
+      : null;
+  const productList = (await getProducts()).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+  }));
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12 md:px-8">
@@ -81,7 +91,9 @@ export default async function StaticInfoPage(
       </h1>
       <span className="mx-auto mt-5 block h-px w-12 bg-gold-soft" />
       <div className="mt-10">
-        {slug === "contact" && <ContactBlocks />}
+        {slug === "contact" && (
+          <ContactExperience products={productList} initialTopic={initialTopic} />
+        )}
         {slug === "faq" && <FaqAccordion items={getFaqs()} />}
         {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}
         {slug !== "contact" && slug !== "faq" && slug !== "wishlist" && (

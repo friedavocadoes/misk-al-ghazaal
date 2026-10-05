@@ -120,7 +120,7 @@ function buildProduct(i: number, r: Raw): Product {
     id: `p${i + 1}`,
     slug,
     title,
-    descriptionHtml: `<p>${blurb}</p><p>100% authentic Gazaal product. Free samples on orders above 200 AED, 2–3 day delivery within the UAE, cash on delivery available.</p>`,
+    descriptionHtml: `<p>${blurb}</p><p>100% authentic Misk Al Ghazaal creation. Free samples on orders above 200 AED, 2–3 day delivery within the UAE, cash on delivery available.</p>`,
     price,
     ...(compareAt ? { compareAtPrice: compareAt } : {}),
     images,
@@ -211,6 +211,20 @@ export const collections: Category[] = [
     image: px("al-aqeedha-from-misk-al-ghazal-best-bakhoor", 1),
     description: "Festive bundles on bakhoor and dukhoon.",
   },
+  {
+    id: "c10",
+    slug: "for-him",
+    title: "For Him",
+    image: px("the-legend-eau-de-parfum-100ml-unisex", 1),
+    description: "Bold ouds, woods and spices.",
+  },
+  {
+    id: "c11",
+    slug: "for-her",
+    title: "For Her",
+    image: px("floral-garden-eau-de-parfum-100ml-for-women", 1),
+    description: "Florals, musks and soft bouquets.",
+  },
 ];
 
 /** @deprecated Use `collections`. Kept so older blocks keep compiling. */
@@ -296,8 +310,8 @@ export const brandBanners: Banner[] = [
   {
     src: "/banners/9.png",
     fallback: px("noorjes-imagine", 2),
-    alt: "Gazaal exclusives",
-    title: "Gazaal Exclusives",
+    alt: "Maison exclusives",
+    title: "Maison Exclusives",
     href: "/collection/best-sellers",
   },
 ];
@@ -309,7 +323,7 @@ export const articles: Article[] = [
     excerpt: "Charcoal, burners, ventilation — the ritual done right.",
     image: "/theme-assets/comment-blog.jpg",
     date: "2026-08-12",
-    author: "Gazaal",
+    author: "Misk Al Ghazaal",
     contentHtml:
       "<p>Start with a quality charcoal disc, let it ash over, then place a single Jawhara tablet…</p><p>Ventilate lightly and move the mabkhara room to room for even scent.</p>",
   },
@@ -319,7 +333,7 @@ export const articles: Article[] = [
     excerpt: "Origins, scent profiles and how to choose.",
     image: "/theme-assets/comment-blog.jpg",
     date: "2026-07-28",
-    author: "Gazaal",
+    author: "Misk Al Ghazaal",
     contentHtml:
       "<p>Misk Al Ghazaal refers to a specific traditional blend…</p>",
   },
@@ -329,7 +343,7 @@ export const articles: Article[] = [
     excerpt: "A connoisseur's quick guide to pure dehn al oud.",
     image: "/theme-assets/comment-blog.jpg",
     date: "2026-06-15",
-    author: "Gazaal",
+    author: "Misk Al Ghazaal",
     contentHtml: "<p>Hindi oudh is deep and balsamic; Cambodi is sweeter…</p>",
   },
 ];
@@ -343,8 +357,42 @@ export function getProductsByCategory(slug: string): Product[] {
   if (slug === "new-arrivals") return products.filter((p) => p.isNew);
   if (slug === "ramadan-bakhoor-sale")
     return products.filter((p) => p.categorySlugs.includes("dukhoon"));
+  if (slug === "for-him") return products.filter((p) => FOR_HIM.has(p.slug));
+  if (slug === "for-her") return products.filter((p) => FOR_HER.has(p.slug));
   return products.filter((p) => p.categorySlugs.includes(slug));
 }
+
+const FOR_HIM = new Set([
+  "abukhalid",
+  "amber-oud-100ml-unisex",
+  "amber-wood",
+  "classic-oud",
+  "diwaan-natural-perfume-for-men-and-women-success",
+  "gazaal-chancellor-edp-100ml",
+  "grand-hall",
+  "louvre",
+  "m05",
+  "naajih-eau-de-parfum-100ml-unisex",
+  "no-7-zabeel-eau-de-parfum-100ml",
+  "opulence",
+  "sulthan-variamkunnan-1921",
+  "the-legend-eau-de-parfum-100ml-unisex",
+]);
+
+const FOR_HER = new Set([
+  "ajayal",
+  "anfasic-al-ward",
+  "be-musky-100ml-unisex",
+  "floral-garden-eau-de-parfum-100ml-for-women",
+  "gazaal-my-wish-edp-100ml",
+  "golden-musk-100ml-unisex",
+  "hob-al-banaat",
+  "noorjes-imagine",
+  "noorjes-maya-eau-de-parfum-100ml",
+  "petals",
+  "pink-bouquet",
+  "white-mood-eau-de-parfum-100ml-unisex",
+]);
 
 export function getCategory(slug: string): Category | undefined {
   return collections.find((c) => c.slug === slug);

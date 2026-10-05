@@ -5,8 +5,6 @@ import Image from "next/image";
 import { Star } from "lucide-react";
 import type { Article, Product } from "@/lib/types";
 import type { Testimonial } from "@/lib/site";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Accordion,
   AccordionContent,
@@ -30,52 +28,6 @@ export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
         </AccordionItem>
       ))}
     </Accordion>
-  );
-}
-
-export function ContactBlocks() {
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="bg-ink p-8 text-white md:p-10">
-        <p className="eyebrow text-gold-soft">Maison Gazaal</p>
-        <h2 className="mt-3 font-display text-3xl">Get In Touch</h2>
-        <p className="mt-3 text-sm leading-relaxed text-white/75">
-          We&apos;d love to hear from you. Open Monday to Saturday, 10AM to 5PM.
-        </p>
-        <ul className="mt-8 space-y-4 text-sm">
-          <li className="border-b border-white/15 pb-4">
-            <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Visit</span>
-            <span className="mt-1 block">Mamzar Centre, Dubai, UAE</span>
-          </li>
-          <li className="border-b border-white/15 pb-4">
-            <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Call</span>
-            <span className="mt-1 block">+971 4 000 0000</span>
-          </li>
-          <li>
-            <span className="block text-[11px] uppercase tracking-[0.2em] text-white/50">Write</span>
-            <span className="mt-1 block">gazaalperfumes@gmail.com</span>
-          </li>
-        </ul>
-      </div>
-      <form
-        className="border border-ink/10 bg-white p-8"
-        onSubmit={(e) => e.preventDefault()}
-      >
-        <h2 className="font-display text-2xl text-ink">Leave us a message</h2>
-        <div className="mt-5 grid gap-3">
-          <Input placeholder="Name" required aria-label="Name" />
-          <Input placeholder="Email" type="email" required aria-label="Email" />
-          <Input placeholder="Subject" aria-label="Subject" />
-          <textarea
-            placeholder="Message"
-            rows={4}
-            aria-label="Message"
-            className="w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none"
-          />
-          <Button type="submit">Send Message</Button>
-        </div>
-      </form>
-    </div>
   );
 }
 
@@ -149,13 +101,13 @@ export function InstagramFeed() {
   ];
   return (
     <section className="mx-auto max-w-7xl px-5 py-14 md:px-8">
-      <SectionHeading eyebrow="@gazaal.perfumes" title="Follow the Ritual" />
+      <SectionHeading eyebrow="@misk.al.ghazaal" title="Follow the Ritual" />
       <div className="grid grid-cols-3 gap-1 md:grid-cols-6">
         {shots.map((src) => (
           <span key={src} className="relative block aspect-square overflow-hidden bg-sand">
             <Image
               src={src}
-              alt="Gazaal ritual"
+              alt="Misk Al Ghazaal ritual"
               fill
               sizes="200px"
               className="object-cover"

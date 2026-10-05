@@ -22,8 +22,8 @@ export function StoryBlock() {
           </h2>
           <span className="mt-4 block h-px w-12 bg-gold-soft" />
           <p className="mt-4 max-w-md text-sm leading-relaxed text-espresso">
-            Gazaal brings Misk Al Ghazaal perfumes, dukhoon and holy oudh
-            direct from the source — no middlemen, no compromises. Every batch
+            Misk Al Ghazaal crafts its own perfume maison line and manufactures
+            for select partners — no middlemen, no compromises. Every batch
             is sealed at origin and delivered across the UAE with complimentary
             samples in every order.
           </p>

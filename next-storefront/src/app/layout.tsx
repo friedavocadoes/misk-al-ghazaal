@@ -15,7 +15,7 @@ const display = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Gazaal — Misk Al Ghazaal Perfumes, Dukhoon & Holy Oudh",
+  title: "Misk Al Ghazaal — Perfumes, Dukhoon, Bakhoor & Holy Oudh",
   description:
     "Authentic Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — direct from manufacturer, delivered across the UAE.",
 };

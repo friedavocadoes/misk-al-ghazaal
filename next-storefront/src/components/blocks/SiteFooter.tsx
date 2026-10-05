@@ -10,7 +10,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:grid-cols-2 md:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <p className="font-display text-2xl tracking-[0.08em] text-ink">
-            GAZAAL
+            MISK AL GHAZAAL
           </p>
           <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-espresso">
             {SITE.tagline} Crafted for the Emirates.
@@ -42,7 +42,7 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-ink/10 py-5 text-center text-[11px] uppercase tracking-[0.18em] text-fog">
-        © 2026 Gazaal Perfumes · Prices in AED · Cash on Delivery within UAE
+        © 2026 Misk Al Ghazaal · Prices in AED · Cash on Delivery within UAE
       </div>
     </footer>
   );

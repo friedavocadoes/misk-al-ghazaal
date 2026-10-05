@@ -1,6 +1,7 @@
 import { HeroSlider } from "@/components/sections/HeroSlider";
 import { BannerSplit } from "@/components/sections/BannerSplit";
 import { StoryBlock } from "@/components/sections/StoryBlock";
+import { DualFeature } from "@/components/sections/DualFeature";
 import { CollectionGrid } from "@/components/blocks/CollectionBlocks";
 import {
   ProductCarousel,
@@ -68,6 +69,7 @@ export default async function HomePage() {
         ]}
       />
       <StoryBlock />
+      <DualFeature />
       <Testimonials items={getTestimonials()} />
       <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
         <SectionHeading eyebrow="Journal" title="Notes on Scent" />
