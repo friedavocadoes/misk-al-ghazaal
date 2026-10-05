@@ -1,42 +1,51 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { BlogCardGrid } from "@/components/blocks/ContentBlocks";
-import { articles } from "@/lib/mock-data";
+import { getArticleBySlug, getArticles } from "@/lib/store";
 
-export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
+export async function generateStaticParams() {
+  const all = await getArticles();
+  return all.map((a) => ({ slug: a.slug }));
 }
 
 export default async function ArticlePage(
   props: PageProps<"/blog/[slug]">
 ) {
   const { slug } = await props.params;
-  const article = articles.find((a) => a.slug === slug);
+  const article = await getArticleBySlug(slug);
   if (!article) notFound();
+  const rest = (await getArticles()).filter((a) => a.slug !== article.slug);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/blog" className="text-sm font-semibold text-emerald-900">
-        ← All articles
+    <article className="mx-auto max-w-3xl px-5 py-12 md:px-8">
+      <Link
+        href="/blog"
+        className="link-underline text-[11px] font-semibold uppercase tracking-[0.2em] text-gold"
+      >
+        ← Journal
       </Link>
-      <h1 className="mt-3 text-3xl font-bold text-stone-900">{article.title}</h1>
-      <p className="mt-2 text-sm text-stone-500">
+      <p className="eyebrow mt-6 text-fog">
         {article.date} · {article.author}
       </p>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={article.image}
-        alt={article.title}
-        className="mt-6 aspect-[16/9] w-full rounded-3xl object-cover"
-      />
+      <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
+        {article.title}
+      </h1>
+      <span className="relative mt-6 block aspect-[16/9] overflow-hidden bg-sand">
+        <Image
+          src={article.image}
+          alt={article.title}
+          fill
+          sizes="(min-width:768px) 768px, 100vw"
+          className="object-cover"
+        />
+      </span>
       <div
-        className="prose mt-6 max-w-none text-stone-700"
+        className="prose mt-8 max-w-none text-espresso"
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
       />
-      <h2 className="mb-4 mt-12 text-xl font-bold">Keep reading</h2>
-      <BlogCardGrid
-        articles={articles.filter((a) => a.slug !== article.slug)}
-      />
+      <h2 className="mb-6 mt-16 font-display text-2xl text-ink">Keep Reading</h2>
+      <BlogCardGrid articles={rest} />
     </article>
   );
 }

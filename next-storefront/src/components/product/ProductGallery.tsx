@@ -40,7 +40,7 @@ export function ProductGallery({
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-3xl border border-stone-100 bg-stone-100">
+      <div className="relative overflow-hidden border border-ink/10 bg-sand">
         <div ref={mainRef} className="overflow-hidden">
           <div className="flex">
             {images.map((src, i) => (
@@ -62,14 +62,14 @@ export function ProductGallery({
             <button
               onClick={() => mainApi?.scrollPrev()}
               aria-label="Previous image"
-              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white"
+              className="absolute left-3 top-1/2 -translate-y-1/2 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
             >
               <ChevronLeft className="size-5" />
             </button>
             <button
               onClick={() => mainApi?.scrollNext()}
               aria-label="Next image"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow hover:bg-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -78,7 +78,7 @@ export function ProductGallery({
         <button
           onClick={() => setZoom(true)}
           aria-label="View fullscreen"
-          className="absolute bottom-3 right-3 rounded-full bg-white/90 p-2 shadow hover:bg-white"
+          className="absolute bottom-3 right-3 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
         >
           <Expand className="size-4" />
         </button>
@@ -93,8 +93,8 @@ export function ProductGallery({
                 onClick={() => scrollTo(i)}
                 aria-label={`View image ${i + 1}`}
                 className={cn(
-                  "relative size-20 shrink-0 overflow-hidden rounded-xl border-2",
-                  i === selected ? "border-emerald-900" : "border-transparent"
+                  "relative size-20 shrink-0 overflow-hidden border-2",
+                  i === selected ? "border-gold" : "border-transparent"
                 )}
               >
                 <Image
@@ -118,7 +118,7 @@ export function ProductGallery({
           aria-modal="true"
           aria-label="Product image fullscreen"
         >
-          <div className="relative aspect-square w-full max-w-3xl overflow-hidden rounded-2xl">
+          <div className="relative aspect-square w-full max-w-3xl overflow-hidden">
             <Image
               src={images[selected]}
               alt={title}

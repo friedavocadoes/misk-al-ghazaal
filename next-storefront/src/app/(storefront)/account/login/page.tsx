@@ -6,16 +6,17 @@ import { Input } from "@/components/ui/input";
 export default function LoginPage() {
   return (
     <form
-      className="mx-auto max-w-md px-4 py-12"
+      className="mx-auto max-w-md px-5 py-16"
       onSubmit={(e) => e.preventDefault()}
     >
-      <h1 className="text-2xl font-bold">Login</h1>
-      <p className="mt-1 text-sm text-stone-500">Stub only — Supabase Auth in Phase 2.</p>
-      <div className="mt-5 grid gap-3">
-        <Input placeholder="Email" type="email" required />
-        <Input placeholder="Password" type="password" required />
+      <p className="eyebrow text-gold">Maison</p>
+      <h1 className="mt-3 font-display text-4xl text-ink">Login</h1>
+      <p className="mt-2 text-sm text-fog">Stub only — Supabase Auth in Phase 2.</p>
+      <div className="mt-6 grid gap-3">
+        <Input placeholder="Email" type="email" required aria-label="Email" />
+        <Input placeholder="Password" type="password" required aria-label="Password" />
         <Button type="submit" disabled>
-          Sign in (Phase 2)
+          Sign in
         </Button>
       </div>
     </form>

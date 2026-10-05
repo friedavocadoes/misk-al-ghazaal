@@ -14,60 +14,63 @@ import {
   Testimonials,
 } from "@/components/blocks/ContentBlocks";
 import {
-  articles,
-  brandBanners,
-  collections,
-  getProductsByCategory,
-  heroSlides,
-  products,
-} from "@/lib/mock-data";
+  getArticles,
+  getBrandBanners,
+  getCollections,
+  getHeroSlides,
+  getProductsByCollection,
+} from "@/lib/store";
+import { getTestimonials } from "@/lib/site";
 
-export default function HomePage() {
-  const bestSellers = getProductsByCategory("best-sellers");
-  const newArrivals = getProductsByCategory("new-arrivals");
-  const featured = products.filter((p) => p.featured);
+export default async function HomePage() {
+  const [slides, brands, collections, bestSellers, newArrivals, featured, articles] =
+    await Promise.all([
+      getHeroSlides(),
+      getBrandBanners(),
+      getCollections(),
+      getProductsByCollection("best-sellers"),
+      getProductsByCollection("new-arrivals"),
+      getProductsByCollection("best-sellers"),
+      getArticles(),
+    ]);
+  const trending = featured.filter((p) => p.featured);
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 pt-6">
-        <HeroSlider slides={heroSlides} />
-      </div>
+      <HeroSlider slides={slides} />
 
-      {/* FeaturedShelves (Ishi_featured_product_style1/2 → product_tab blocks) */}
       <ProductCarousel
-        eyebrow="Don't miss out"
-        title="Best Offers"
+        eyebrow="The Icons"
+        title="Best Sellers"
         products={bestSellers}
         viewAllHref="/collection/best-sellers"
       />
-      <BannerSplit banners={brandBanners} />
+      <BannerSplit banners={brands} />
       <ProductCarousel
-        eyebrow="New season"
+        eyebrow="Just Landed"
         title="New Arrivals"
         products={newArrivals}
         viewAllHref="/collection/new-arrivals"
       />
       <ParallaxCTA />
 
-      {/* CategoryGrid (Ishi_serviceblock + Ishi_collection_list) */}
-      <section className="mx-auto max-w-7xl px-4 py-10">
-        <SectionHeading title="Our Products" />
+      <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <SectionHeading eyebrow="The Library" title="Shop by Ritual" />
         <CollectionGrid categories={collections.slice(0, 6)} />
       </section>
 
       <ProductTabs
-        eyebrow=""
-        title="Trending Products"
+        title="Trending Now"
         tabs={[
           { label: "Best Sellers", value: "best", products: bestSellers },
           { label: "New Arrivals", value: "new", products: newArrivals },
-          { label: "Featured", value: "featured", products: featured },
+          { label: "Featured", value: "featured", products: trending },
         ]}
       />
       <StoryBlock />
-      <Testimonials />
-      <section className="mx-auto max-w-7xl px-4 py-10">
-        <h2 className="mb-6 text-2xl font-bold text-stone-900">Latest Blog</h2>
+      <Testimonials items={getTestimonials()} />
+      <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <SectionHeading eyebrow="Journal" title="Notes on Scent" />
         <BlogCardGrid articles={articles} />
       </section>
       <InstagramFeed />

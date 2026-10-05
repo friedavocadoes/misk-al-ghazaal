@@ -6,74 +6,65 @@ import {
   FaqAccordion,
   WishlistGrid,
 } from "@/components/blocks/ContentBlocks";
-import { products } from "@/lib/mock-data";
+import { getProducts } from "@/lib/store";
+import { getFaqs } from "@/lib/site";
 
 // Static info pages — mirrors page.wholesale.json, page.contact.json,
 // page.faq.json (+ remaining page.*.json templates).
-const PAGES: Record<string, { title: string; html: string }> = {
+const PAGES: Record<string, { title: string; eyebrow: string; html: string }> = {
   wholesale: {
-    title: "Wholesale — Bulk Orders Accepting",
-    html: "<p><strong>Bulk orders accepting!</strong> Partner with Gazaal for retail and distribution of Misk Al Ghazaal perfumes, dukhoon and bakhoor.</p><p>Contact us at <a href='mailto:gazaalperfumes@gmail.com'>gazaalperfumes@gmail.com</a> or visit our Mamzar Centre store (Ajman? Dubai, UAE — Al Qiyadah Metro Station, Mamzar Centre, ground floor shop no 8).</p><p>See our privacy & terms notice in-store for data handling details.</p>",
+    title: "Wholesale",
+    eyebrow: "Trade",
+    html: "<p><strong>Bulk orders accepting.</strong> Partner with Gazaal for retail and distribution of Misk Al Ghazaal perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:gazaalperfumes@gmail.com'>gazaalperfumes@gmail.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
   },
-  contact: { title: "Contact", html: "" },
-  faq: { title: "FAQ & Shipping", html: "" },
-  wishlist: { title: "Wishlist", html: "" },
+  contact: { title: "Contact", eyebrow: "Maison", html: "" },
+  faq: { title: "Questions, Answered", eyebrow: "Client Care", html: "" },
+  wishlist: { title: "Wishlist", eyebrow: "Saved", html: "" },
   about: {
-    title: "About Gazaal",
-    html: "<p>Misk Al Ghazaal perfumes, dukhoon and holy oudh — crafted for the UAE. Direct from manufacturer, authentic and long-lasting.</p>",
+    title: "Our Story",
+    eyebrow: "Maison Gazaal",
+    html: "<p>Misk Al Ghazaal perfumes, dukhoon and holy oudh — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates, and cash on delivery.</p>",
   },
   brands: {
     title: "Our Brands",
+    eyebrow: "Maisons",
     html: "<p>Misk Al Ghazaal · Noorjes · Holy Oudh · Gazaal exclusive blends.</p>",
   },
   women: {
-    title: "Women's Edit",
-    html: "<p>Soft florals, white musk and rose picks.</p>",
+    title: "The Women's Edit",
+    eyebrow: "Edit",
+    html: "<p>Soft florals, white musk and rose picks — chosen for grace and lightness.</p>",
   },
   "new-arrivals": {
     title: "New Arrivals",
-    html: "<p>The latest seasonal drops.</p>",
+    eyebrow: "Edit",
+    html: "<p>The latest seasonal drops from the maison.</p>",
   },
   terms: {
     title: "Returns & Terms",
-    html: "<p>30-day returns on unopened items with receipt. Refunds to original payment method within 10–45 days depending on bank.</p>",
+    eyebrow: "Client Care",
+    html: "<p>30-day returns on unopened items with receipt. Refunds return to the original payment method within 10–45 days depending on the issuing bank.</p><p>Damaged or incorrect items are always made right — write to gazaalperfumes@gmail.com.</p>",
   },
   sitemap: {
     title: "Sitemap",
-    html: "<p>Shop, collections, blog, account and support pages.</p>",
+    eyebrow: "Index",
+    html: "<p>Shop, collections, journal, account and client-care pages.</p>",
   },
   "holy-oudh": {
     title: "Holy Oudh",
+    eyebrow: "Rare Oils",
     html: "<p>Rare Hindi and Cambodi dehn al oud for connoisseurs.</p>",
   },
   "ramadan-offer": {
-    title: "Ramadan Bakhoor Offer",
-    html: "<p>Special Ramadan bundles on Misk Al Ghazaal perfumes and bakhoors with free UAE delivery.</p>",
+    title: "The Ramadan Offer",
+    eyebrow: "Season",
+    html: "<p>Festive bundles on Misk Al Ghazaal perfumes and bakhoors with complimentary UAE delivery.</p>",
   },
 };
 
 export function generateStaticParams() {
   return Object.keys(PAGES).map((slug) => ({ slug }));
 }
-
-const FAQ_ITEMS = [
-  {
-    q: "How long does delivery take?",
-    a: "1–3 working days within UAE, up to 5 days for remote areas. Middle East shipping 5–15 days.",
-  },
-  {
-    q: "What are the shipping charges?",
-    a: "Free above AED 400, AED 26 standard below AED 400.",
-  },
-  {
-    q: "Can I pay cash on delivery?",
-    a: "Yes, COD is available within the UAE.",
-  },
-  {
-    q: "What is your return policy?",
-    a: "Unopened items within 7 days (30 days with receipt for eligible items). Contact gazaalperfumes@gmail.com.",
-  },
-];
 
 export default async function StaticInfoPage(
   props: PageProps<"/pages/[slug]">
@@ -83,23 +74,25 @@ export default async function StaticInfoPage(
   if (!page) notFound();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-center text-3xl font-bold text-stone-900">
+    <div className="mx-auto max-w-5xl px-5 py-12 md:px-8">
+      <p className="eyebrow text-center text-gold">{page.eyebrow}</p>
+      <h1 className="mt-3 text-center font-display text-4xl text-ink md:text-5xl">
         {page.title}
       </h1>
-      <div className="mt-8">
+      <span className="mx-auto mt-5 block h-px w-12 bg-gold-soft" />
+      <div className="mt-10">
         {slug === "contact" && <ContactBlocks />}
-        {slug === "faq" && <FaqAccordion items={FAQ_ITEMS} />}
-        {slug === "wishlist" && <WishlistGrid products={products} />}
+        {slug === "faq" && <FaqAccordion items={getFaqs()} />}
+        {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}
         {slug !== "contact" && slug !== "faq" && slug !== "wishlist" && (
           <div
-            className="prose max-w-none text-stone-600"
+            className="prose max-w-none text-espresso"
             dangerouslySetInnerHTML={{ __html: page.html }}
           />
         )}
       </div>
       {slug === "wholesale" && (
-        <div className="mt-8 text-center">
+        <div className="mt-10 text-center">
           <Button asChild>
             <Link href="/pages/contact">Contact Now</Link>
           </Button>

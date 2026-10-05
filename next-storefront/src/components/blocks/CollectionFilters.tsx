@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 // React port of assets/collection-filters-form.js facets:
-// availability, price range, sorting + active-facet pills. Submits as GET
-// params (?avail=in&max=150&sort=price-asc) which the server page applies.
+// availability, price range, sorting. Writes GET params
+// (?avail=in&max=150&sort=price-asc) which the server page applies.
 export function CollectionFilters({
   basePath,
   maxPrice,
@@ -30,59 +30,60 @@ export function CollectionFilters({
     (avail ? 1 : 0) + (max ? 1 : 0) + (sort !== "featured" ? 1 : 0);
 
   return (
-    <aside className="h-fit rounded-3xl border border-stone-200 bg-white p-5 lg:sticky lg:top-32">
+    <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-32">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-stone-900">
-          Filters {activeCount > 0 && `(${activeCount})`}
+        <h2 className="text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+          Refine {activeCount > 0 && `(${activeCount})`}
         </h2>
         {activeCount > 0 && (
           <button
             onClick={() => router.push(basePath)}
-            className="text-xs font-semibold text-emerald-900 underline-offset-2 hover:underline"
+            className="link-underline text-[11px] font-semibold uppercase tracking-[0.16em] text-gold"
           >
-            Clear all
+            Clear
           </button>
         )}
       </div>
 
-      <div className="mt-4 border-t border-stone-100 pt-4">
-        <p className="text-sm font-semibold">Availability</p>
-        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm text-stone-600">
+      <div className="mt-5 border-t border-ink/10 pt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
+          Availability
+        </p>
+        <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-espresso">
           <input
             type="checkbox"
             checked={avail}
             onChange={(e) => set("avail", e.target.checked ? "in" : null)}
-            className="size-4 accent-emerald-900"
+            className="size-4 accent-[#8a6d2f]"
           />
           In stock only
         </label>
       </div>
 
-      <div className="mt-4 border-t border-stone-100 pt-4">
-        <p className="text-sm font-semibold">Max price (AED)</p>
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            type="range"
-            min={50}
-            max={maxPrice}
-            step={10}
-            value={max ? Number(max) : maxPrice}
-            onChange={(e) => set("max", e.target.value)}
-            className="w-full accent-emerald-900"
-            aria-label="Maximum price"
-          />
-          <span className="w-12 text-right text-sm font-semibold">
-            {max || maxPrice}
-          </span>
-        </div>
+      <div className="mt-5 border-t border-ink/10 pt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
+          Max price · AED {max || maxPrice}
+        </p>
+        <input
+          type="range"
+          min={50}
+          max={maxPrice}
+          step={10}
+          value={max ? Number(max) : maxPrice}
+          onChange={(e) => set("max", e.target.value)}
+          className="mt-3 w-full accent-[#8a6d2f]"
+          aria-label="Maximum price"
+        />
       </div>
 
-      <div className="mt-4 border-t border-stone-100 pt-4">
-        <p className="text-sm font-semibold">Sort by</p>
+      <div className="mt-5 border-t border-ink/10 pt-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
+          Sort by
+        </p>
         <select
           value={sort}
           onChange={(e) => set("sort", e.target.value)}
-          className="mt-2 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm"
+          className="mt-3 w-full rounded-[2px] border border-ink/20 bg-white px-3 py-2.5 text-sm text-ink"
           aria-label="Sort products"
         >
           <option value="featured">Featured</option>

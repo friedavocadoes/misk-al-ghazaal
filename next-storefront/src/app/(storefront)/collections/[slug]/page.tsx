@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { collections } from "@/lib/mock-data";
+import { getCollections } from "@/lib/store";
 
-export function generateStaticParams() {
-  return collections.map((c) => ({ slug: c.slug }));
+export async function generateStaticParams() {
+  const all = await getCollections();
+  return all.map((c) => ({ slug: c.slug }));
 }
 
 // Legacy plural path — canonical route is now /collection/[slug].

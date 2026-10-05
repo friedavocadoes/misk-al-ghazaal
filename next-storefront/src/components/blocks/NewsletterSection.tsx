@@ -5,24 +5,26 @@ import { Input } from "@/components/ui/input";
 
 export function NewsletterSection() {
   return (
-    <section className="border-b border-stone-200 bg-emerald-950 px-4 py-10 text-center">
-      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
-        Join our newsletter
-      </p>
-      <h2 className="mx-auto mt-2 max-w-md text-2xl font-bold text-white">
-        Special offers & store events
+    <section className="border-b border-ink/10 px-5 py-14 text-center">
+      <p className="eyebrow text-gold">Correspondence</p>
+      <h2 className="mx-auto mt-3 max-w-md font-display text-3xl text-ink md:text-4xl">
+        Letters from the Maison
       </h2>
+      <p className="mx-auto mt-3 max-w-md text-sm text-espresso">
+        Private offers, new arrivals and rituals — once a month, never more.
+      </p>
       <form
-        className="mx-auto mt-5 flex max-w-md gap-2"
+        className="mx-auto mt-6 flex max-w-md gap-2"
         onSubmit={(e) => e.preventDefault()}
       >
         <Input
           type="email"
           required
           placeholder="Email address"
-          className="border-white/20 bg-white text-stone-900"
+          className="h-12 bg-white"
+          aria-label="Email address"
         />
-        <Button type="submit" variant="gold">
+        <Button type="submit" className="h-12 shrink-0">
           Join
         </Button>
       </form>

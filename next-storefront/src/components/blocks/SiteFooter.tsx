@@ -1,47 +1,47 @@
 import Link from "next/link";
 import { NewsletterSection } from "./NewsletterSection";
+import { SITE, getFooterColumns } from "@/lib/site";
 
 export function SiteFooter() {
+  const columns = getFooterColumns();
   return (
-    <footer className="mt-16 border-t border-stone-200 bg-stone-50">
+    <footer className="mt-20 border-t border-ink/10 bg-sand/60">
       <NewsletterSection />
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:grid-cols-2 md:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <p className="text-lg font-bold text-emerald-950">GAZAAL.</p>
-          <p className="mt-2 text-sm text-stone-600">
-            Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — crafted
-            for the UAE.
+          <p className="font-display text-2xl tracking-[0.08em] text-ink">
+            GAZAAL
+          </p>
+          <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-espresso">
+            {SITE.tagline} Crafted for the Emirates.
+          </p>
+          <p className="mt-4 text-[12px] text-fog">
+            {SITE.address}
+            <br />
+            {SITE.hours}
           </p>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-stone-900">Shop</p>
-          <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/collection/best-sellers" className="hover:text-emerald-900">Best Sellers</Link></li>
-            <li><Link href="/collection/new-arrivals" className="hover:text-emerald-900">New Arrivals</Link></li>
-            <li><Link href="/collection/dukhoon" className="hover:text-emerald-900">Dukhoon / Bakhoor</Link></li>
-            <li><Link href="/collection/holy-oudh" className="hover:text-emerald-900">Holy Oudh</Link></li>
-          </ul>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-stone-900">Support</p>
-          <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/pages/contact" className="hover:text-emerald-900">Contact</Link></li>
-            <li><Link href="/pages/faq" className="hover:text-emerald-900">FAQ & Shipping</Link></li>
-            <li><Link href="/pages/terms" className="hover:text-emerald-900">Returns & Terms</Link></li>
-            <li><Link href="/pages/wishlist" className="hover:text-emerald-900">Wishlist</Link></li>
-          </ul>
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-stone-900">Company</p>
-          <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/pages/about" className="hover:text-emerald-900">About Us</Link></li>
-            <li><Link href="/blog" className="hover:text-emerald-900">Journal</Link></li>
-            <li><Link href="/pages/wholesale" className="hover:text-emerald-900">Wholesale</Link></li>
-            <li><Link href="/pages/sitemap" className="hover:text-emerald-900">Sitemap</Link></li>
-          </ul>
-        </div>
+        {columns.map((col) => (
+          <nav key={col.heading} aria-label={col.heading}>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-fog">
+              {col.heading}
+            </p>
+            <ul className="mt-4 space-y-2.5">
+              {col.links.map((l) => (
+                <li key={l.href + l.label}>
+                  <Link
+                    href={l.href}
+                    className="text-[13px] text-espresso transition hover:text-gold"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       </div>
-      <div className="border-t border-stone-200 py-5 text-center text-xs text-stone-500">
+      <div className="border-t border-ink/10 py-5 text-center text-[11px] uppercase tracking-[0.18em] text-fog">
         © 2026 Gazaal Perfumes · Prices in AED · Cash on Delivery within UAE
       </div>
     </footer>

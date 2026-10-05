@@ -25,7 +25,7 @@ function SheetContent({
         )}
         {...props}
       >
-        <SheetClose className="absolute right-4 top-4 rounded-full p-1.5 text-stone-500 hover:bg-stone-100">
+        <SheetClose className="absolute right-4 top-4 rounded-[2px] border border-ink/15 bg-white p-1.5 text-espresso hover:border-ink hover:text-ink">
           <X className="size-5" />
           <span className="sr-only">Close</span>
         </SheetClose>
@@ -41,7 +41,7 @@ function SheetHeader({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("border-b border-stone-100 px-6 py-5", className)}
+      className={cn("border-b border-ink/10 px-6 py-5", className)}
       {...props}
     />
   );
@@ -53,7 +53,7 @@ function SheetTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-semibold text-stone-900", className)}
+      className={cn("font-display text-xl text-ink", className)}
       {...props}
     />
   );

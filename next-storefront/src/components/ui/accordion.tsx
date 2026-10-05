@@ -13,7 +13,7 @@ function AccordionItem({
 }: React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>) {
   return (
     <AccordionPrimitive.Item
-      className={cn("border-b border-stone-200", className)}
+      className={cn("border-b border-ink/10", className)}
       {...props}
     />
   );
@@ -28,13 +28,13 @@ function AccordionTrigger({
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
         className={cn(
-          "flex flex-1 items-center justify-between py-4 text-left text-sm font-semibold text-stone-900 [&[data-state=open]>svg]:rotate-180",
+          "flex flex-1 items-center justify-between py-4 text-left font-display text-lg text-ink [&[data-state=open]>svg]:rotate-180",
           className
         )}
         {...props}
       >
         {children}
-        <ChevronDown className="size-4 shrink-0 text-stone-500 transition-transform" />
+        <ChevronDown className="size-4 shrink-0 text-gold transition-transform" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );
@@ -50,7 +50,7 @@ function AccordionContent({
       className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
       {...props}
     >
-      <div className={cn("pb-4 text-stone-600", className)}>{children}</div>
+      <div className={cn("pb-5 text-sm leading-relaxed text-espresso", className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }

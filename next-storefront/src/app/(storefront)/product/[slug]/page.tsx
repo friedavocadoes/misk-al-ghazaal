@@ -1,30 +1,44 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import {
   ProductInfo,
   ProductTabsAccordion,
 } from "@/components/blocks/ProductDetails";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
-import { getProduct, getProductsByCategory, products } from "@/lib/mock-data";
+import {
+  getProductBySlug,
+  getProducts,
+  getRelatedProducts,
+} from "@/lib/store";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const all = await getProducts();
+  return all.map((p) => ({ slug: p.slug }));
 }
 
 export default async function ProductPage(props: PageProps<"/product/[slug]">) {
   const { slug } = await props.params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = getProductsByCategory(
-    product.categorySlugs[0] ?? "best-sellers"
-  )
-    .filter((p) => p.slug !== product.slug)
-    .slice(0, 4);
+  const related = await getRelatedProducts(slug, 4);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="grid gap-10 lg:grid-cols-2">
+    <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+      <nav aria-label="Breadcrumb" className="mb-8 text-[11px] uppercase tracking-[0.18em] text-fog">
+        <Link href="/" className="hover:text-gold">Home</Link>
+        <span className="mx-2">/</span>
+        <Link
+          href={`/collection/${product.categorySlugs[0]}`}
+          className="hover:text-gold"
+        >
+          {product.categorySlugs[0]?.replace(/-/g, " ")}
+        </Link>
+        <span className="mx-2">/</span>
+        <span className="text-ink">{product.title}</span>
+      </nav>
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         <ProductGallery images={product.images} title={product.title} />
         <ProductInfo
           product={product}
@@ -32,7 +46,7 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
         />
       </div>
       <ProductTabsAccordion product={product} />
-      <ProductCarousel title="Related Products" products={related} />
+      <ProductCarousel title="You May Also Adore" products={related} />
     </div>
   );
 }

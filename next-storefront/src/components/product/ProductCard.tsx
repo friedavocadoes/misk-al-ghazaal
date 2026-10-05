@@ -3,17 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Heart, ShoppingBag, Star } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { PriceTag } from "./PriceTag";
 
 // Consolidates snippets/product-card-grid.liquid,
 // product-card-grid-style2.liquid and product-card-left.liquid.
-//  - grid   → classic card: hover secondary image, sale flag, wishlist +
-//             quickview/add-to-cart hover buttons, title, review badge, price
-//  - style2 → overlay style: image with bottom gradient info panel
-//  - left   → horizontal: thumbnail left, info right (cart/search/upsell rows)
+// Quiet-luxury styling: sharp edges, hairline borders, restrained badges.
 export function ProductCard({
   product,
   layoutVariant = "grid",
@@ -33,13 +30,13 @@ export function ProductCard({
     return (
       <div
         className={cn(
-          "flex gap-4 rounded-2xl border border-stone-100 bg-white p-3",
+          "flex gap-4 border border-ink/10 bg-white p-3",
           className
         )}
       >
         <Link
           href={`/product/${product.slug}`}
-          className="relative h-24 w-20 shrink-0 overflow-hidden rounded-xl bg-stone-100"
+          className="relative h-28 w-24 shrink-0 overflow-hidden bg-sand"
         >
           <Image
             src={primary}
@@ -49,15 +46,15 @@ export function ProductCard({
             className="object-cover"
           />
         </Link>
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col py-1">
           <Link
             href={`/product/${product.slug}`}
-            className="truncate text-sm font-semibold text-stone-900 hover:text-emerald-900"
+            className="truncate text-sm font-medium text-ink hover:text-gold"
           >
             {product.title}
           </Link>
-          <span className="mt-0.5 flex items-center gap-1 text-xs text-stone-500">
-            <Star className="size-3 fill-amber-400 text-amber-400" />
+          <span className="mt-1 flex items-center gap-1 text-xs text-fog">
+            <Star className="size-3 fill-gold text-gold" />
             {product.rating.toFixed(1)} ({product.reviewCount})
           </span>
           <span className="mt-auto flex items-center justify-between">
@@ -68,10 +65,10 @@ export function ProductCard({
               showBadges={false}
             />
             <button
-              className="rounded-full bg-emerald-950 p-2 text-white hover:bg-emerald-800"
+              className="border border-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink transition hover:bg-ink hover:text-white"
               aria-label={`Add ${product.title} to cart`}
             >
-              <ShoppingBag className="size-3.5" />
+              Add
             </button>
           </span>
         </div>
@@ -83,10 +80,7 @@ export function ProductCard({
     return (
       <Link
         href={`/product/${product.slug}`}
-        className={cn(
-          "group relative block overflow-hidden rounded-2xl bg-stone-100",
-          className
-        )}
+        className={cn("group relative block overflow-hidden bg-sand", className)}
       >
         <span className="block aspect-[3/4]">
           <Image
@@ -94,25 +88,25 @@ export function ProductCard({
             alt={product.title}
             fill
             sizes="(min-width:1024px) 25vw, 50vw"
-            className="object-cover transition duration-300 group-hover:scale-105"
+            className="object-cover transition duration-500 group-hover:scale-[1.04]"
           />
         </span>
-        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-4 pt-10">
+        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-4 pt-12">
           {onSale && (
-            <span className="mb-1 inline-block rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+            <span className="mb-1.5 inline-block bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink">
               Sale
             </span>
           )}
-          <span className="block truncate text-sm font-semibold text-white">
+          <span className="block truncate text-sm font-medium text-white">
             {product.title}
           </span>
-          <span className="mt-0.5 block text-sm font-bold text-amber-300">
+          <span className="mt-0.5 block">
             <PriceTag
               price={product.price}
               compareAtPrice={product.compareAtPrice}
               size="sm"
               showBadges={false}
-              className="[&_s]:text-white/60 [&_span]:!text-amber-300"
+              className="[&_s]:text-white/60 [&_span]:!text-gold-wash"
             />
           </span>
         </span>
@@ -122,13 +116,8 @@ export function ProductCard({
 
   // grid (default) — mirrors product-card-grid.liquid structure
   return (
-    <div
-      className={cn(
-        "card-wrapper group overflow-hidden rounded-2xl border border-stone-100 bg-white transition hover:shadow-lg",
-        className
-      )}
-    >
-      <div className="relative aspect-square overflow-hidden bg-stone-100">
+    <div className={cn("group bg-transparent", className)}>
+      <div className="relative aspect-[3/4] overflow-hidden bg-sand">
         <Link href={`/product/${product.slug}`} aria-label={product.title}>
           <Image
             src={primary}
@@ -136,7 +125,7 @@ export function ProductCard({
             fill
             sizes="(min-width:1024px) 25vw, 50vw"
             className={cn(
-              "object-cover transition duration-300",
+              "object-cover transition duration-500 group-hover:scale-[1.04]",
               secondary && "group-hover:opacity-0"
             )}
           />
@@ -147,58 +136,53 @@ export function ProductCard({
               aria-hidden
               fill
               sizes="(min-width:1024px) 25vw, 50vw"
-              className="object-cover opacity-0 transition duration-300 group-hover:opacity-100"
+              className="object-cover opacity-0 transition duration-500 group-hover:scale-[1.04] group-hover:opacity-100"
             />
           )}
         </Link>
-        {onSale && (
-          <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-            Sale
-          </span>
-        )}
-        {product.isNew && (
-          <span className="absolute left-2 top-8 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-            New
-          </span>
-        )}
+        <span className="absolute left-0 top-3 flex flex-col gap-1">
+          {onSale && (
+            <span className="bg-[#9c2b2e] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+              Sale
+            </span>
+          )}
+          {product.isNew && (
+            <span className="bg-ink px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+              New
+            </span>
+          )}
+        </span>
         <button
           onClick={() => setWished((w) => !w)}
           aria-label="Add to wishlist"
-          className={cn(
-            "absolute right-2 top-2 rounded-full bg-white/90 p-2 shadow hover:text-red-600",
-            wished ? "text-red-600" : "text-stone-500"
-          )}
+          aria-pressed={wished}
+          className="absolute right-3 top-3 border border-ink/10 bg-white p-2 text-espresso shadow-sm transition hover:border-ink hover:text-ink"
         >
-          <Heart className={cn("size-4", wished && "fill-red-600")} />
+          <Heart className={cn("size-4", wished && "fill-[#9c2b2e] text-[#9c2b2e]")} />
         </button>
-        <span className="absolute inset-x-2 bottom-2 hidden gap-2 group-hover:flex">
-          <span className="flex flex-1 items-center justify-center gap-1 rounded-full bg-white/95 py-2 text-xs font-semibold text-stone-900 shadow">
-            <Eye className="size-3.5" /> Quick view
-          </span>
-          <button
-            className="flex flex-1 items-center justify-center gap-1 rounded-full bg-emerald-950 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-800"
-            aria-label={`Add ${product.title} to cart`}
-          >
-            <ShoppingBag className="size-3.5" /> Add to cart
-          </button>
-        </span>
+        <button
+          className="absolute inset-x-0 bottom-0 translate-y-full bg-ink/95 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition-transform duration-300 group-hover:translate-y-0"
+          aria-label={`Add ${product.title} to cart`}
+        >
+          Add to Cart
+        </button>
       </div>
-      <div className="p-4">
+      <div className="pt-3 text-center">
         <Link
           href={`/product/${product.slug}`}
-          className="line-clamp-2 min-h-10 text-sm font-semibold text-stone-900 hover:text-emerald-900"
+          className="line-clamp-1 text-[13px] font-medium uppercase tracking-[0.08em] text-ink hover:text-gold"
         >
           {product.title}
         </Link>
-        <span className="mt-1 flex items-center gap-1 text-xs text-stone-500">
-          <Star className="size-3 fill-amber-400 text-amber-400" />
-          {product.rating.toFixed(1)} ({product.reviewCount.toLocaleString()})
+        <span className="mt-1 flex items-center justify-center gap-1 text-[11px] text-fog">
+          <Star className="size-3 fill-gold text-gold" />
+          {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString()} reviews
         </span>
         <PriceTag
           price={product.price}
           compareAtPrice={product.compareAtPrice}
           size="sm"
-          className="mt-1.5"
+          className="mt-1 justify-center"
         />
       </div>
     </div>

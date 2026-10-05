@@ -7,74 +7,86 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MegaMenu } from "@/components/layout/MegaMenu";
 import { CartDrawer } from "./CartDrawer";
+import { SITE, getMegaMenu } from "@/lib/site";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const menu = getMegaMenu();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
-      <div className="bg-emerald-950 px-4 py-1.5 text-center text-[11px] font-medium tracking-wide text-emerald-50">
-        Free delivery across UAE on orders above AED 200 · Cash on Delivery
-        available
+    <header className="sticky top-0 z-40 border-b border-ink/10 bg-cream/95 backdrop-blur">
+      <div className="bg-ink px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85">
+        {SITE.announcement}
       </div>
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-2 px-5 md:px-8">
         <button
-          className="rounded-full p-2 hover:bg-stone-100 lg:hidden"
+          className="border border-transparent p-2 text-ink hover:border-ink/20 lg:hidden"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
         >
           {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
-        <Link href="/" className="text-xl font-bold tracking-tight text-emerald-950">
-          GAZAAL<span className="text-amber-600">.</span>
+        <Link
+          href="/"
+          className="font-display text-[26px] tracking-[0.08em] text-ink"
+          aria-label="Gazaal home"
+        >
+          GAZAAL
         </Link>
-        <div className="ml-6 hidden lg:block">
-          <MegaMenu />
+        <div className="ml-8 hidden lg:block">
+          <MegaMenu items={menu} />
         </div>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-0.5">
           <button
-            className="rounded-full p-2 hover:bg-stone-100"
+            className="p-2.5 text-espresso transition hover:text-gold"
             onClick={() => setSearchOpen((v) => !v)}
             aria-label="Search"
           >
-            <Search className="size-5" />
+            <Search className="size-[18px]" />
           </button>
           <Link
             href="/account"
-            className="hidden rounded-full p-2 hover:bg-stone-100 sm:block"
+            className="hidden p-2.5 text-espresso transition hover:text-gold sm:block"
             aria-label="Account"
           >
-            <User className="size-5" />
+            <User className="size-[18px]" />
           </Link>
           <button
-            className="relative rounded-full p-2 hover:bg-stone-100"
+            className="relative p-2.5 text-espresso transition hover:text-gold"
             onClick={() => setCartOpen(true)}
             aria-label="Open cart"
           >
-            <ShoppingBag className="size-5" />
-            <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-emerald-900 text-[10px] font-bold text-white">
+            <ShoppingBag className="size-[18px]" />
+            <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
               2
             </span>
           </button>
         </div>
       </div>
       {searchOpen && (
-        <div className="border-t border-stone-100 px-4 py-3">
+        <div className="border-t border-ink/10 bg-cream px-5 py-4">
           <form
             action="/search"
             method="get"
             className="mx-auto flex max-w-2xl gap-2"
           >
-            <Input name="q" placeholder="Search perfumes, bakhoor, oudh…" autoFocus />
-            <Button type="submit">Search</Button>
+            <Input
+              name="q"
+              placeholder="Search perfumes, bakhoor, oudh…"
+              autoFocus
+              className="h-12 bg-white"
+            />
+            <Button type="submit" className="h-12">
+              Search
+            </Button>
           </form>
         </div>
       )}
       {menuOpen && (
-        <nav className="max-h-[60vh] overflow-y-auto border-t border-stone-100 px-4 py-3 lg:hidden">
-          <MegaMenu />
+        <nav className="max-h-[65vh] overflow-y-auto border-t border-ink/10 bg-cream px-5 py-4 lg:hidden">
+          <MegaMenu items={menu} />
         </nav>
       )}
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />

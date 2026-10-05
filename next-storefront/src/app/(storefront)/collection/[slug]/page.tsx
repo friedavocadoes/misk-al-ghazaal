@@ -1,12 +1,9 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { Pagination } from "@/components/ui/pagination";
-import {
-  collections,
-  getCategory,
-  getProductsByCategory,
-} from "@/lib/mock-data";
+import { getCollectionBySlug, getCollections, getProductsByCollection } from "@/lib/store";
 
 // Canonical collection route (singular /collection — mirrors Shopify /collections
 // handles: collection.json, collection.holy-odh.json,
@@ -16,8 +13,9 @@ const ALIASES: Record<string, string> = {
   "misk-al-ghazaal-from-manufacturer": "misk-al-ghazaal",
 };
 
-export function generateStaticParams() {
-  return collections.map((c) => ({ slug: c.slug }));
+export async function generateStaticParams() {
+  const all = await getCollections();
+  return all.map((c) => ({ slug: c.slug }));
 }
 
 const PAGE_SIZE = 12;
@@ -28,33 +26,22 @@ export default async function CollectionPage(
   const { slug: raw } = await props.params;
   const searchParams = await props.searchParams;
   const slug = ALIASES[raw] ?? raw;
-  const category = getCategory(slug);
+  const category = await getCollectionBySlug(slug);
   if (!category) notFound();
 
-  let items = getProductsByCategory(slug);
-  const maxPrice = Math.max(...items.map((p) => p.price), 200);
-
-  if (searchParams?.avail === "in") {
-    items = items.filter((p) =>
-      p.variants.some((v) => v.stock > 0)
-    );
-  }
-  if (searchParams?.max) {
-    const cap = Number(searchParams.max);
-    if (!Number.isNaN(cap)) items = items.filter((p) => p.price <= cap);
-  }
-  const sort = searchParams?.sort;
-  if (sort === "price-asc") items = [...items].sort((a, b) => a.price - b.price);
-  if (sort === "price-desc")
-    items = [...items].sort((a, b) => b.price - a.price);
-  if (sort === "rating")
-    items = [...items].sort((a, b) => b.rating - a.rating);
+  const maxParam = searchParams?.max ? Number(searchParams.max) : null;
+  const items = await getProductsByCollection(slug, {
+    sort: typeof searchParams?.sort === "string" ? searchParams.sort : null,
+    maxPrice: maxParam != null && !Number.isNaN(maxParam) ? maxParam : null,
+    inStockOnly: searchParams?.avail === "in",
+  });
+  const full = await getProductsByCollection(slug);
+  const maxPrice = Math.max(...full.map((p) => p.price), 200);
 
   const page = Math.max(1, Number(searchParams?.page ?? 1) || 1);
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
   const visible = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // Keep active filters when paginating.
   const filterParams = new URLSearchParams();
   if (searchParams?.avail) filterParams.set("avail", String(searchParams.avail));
   if (searchParams?.max) filterParams.set("max", String(searchParams.max));
@@ -62,33 +49,42 @@ export default async function CollectionPage(
   const filterQuery = filterParams.toString();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="rounded-3xl bg-emerald-950 px-6 py-10 text-center">
-        <h1 className="text-3xl font-bold text-white md:text-4xl">
+    <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
+      <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.18em] text-fog">
+        <Link href="/" className="hover:text-gold">Home</Link>
+        <span className="mx-2">/</span>
+        <Link href="/collections" className="hover:text-gold">Collections</Link>
+        <span className="mx-2">/</span>
+        <span className="text-ink">{category.title}</span>
+      </nav>
+
+      <div className="border-b border-ink/10 pb-8 pt-6 text-center">
+        <p className="eyebrow text-gold">The Collection</p>
+        <h1 className="mt-3 font-display text-4xl text-ink md:text-5xl">
           {category.title}
         </h1>
         {category.description && (
-          <p className="mx-auto mt-2 max-w-xl text-sm text-emerald-100/80">
+          <p className="mx-auto mt-3 max-w-xl text-sm text-espresso">
             {category.description}
           </p>
         )}
-        <p className="mt-3 text-xs font-medium uppercase tracking-widest text-emerald-300">
-          {items.length} products
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-fog">
+          {items.length} pieces
         </p>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[240px_1fr]">
+      <div className="mt-10 grid gap-8 lg:grid-cols-[240px_1fr]">
         <CollectionFilters basePath={`/collection/${raw}`} maxPrice={maxPrice} />
         <div>
           {visible.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-stone-300 py-16 text-center">
-              <p className="font-semibold">No products match these filters</p>
-              <p className="mt-1 text-sm text-stone-500">
+            <div className="border border-dashed border-ink/25 py-16 text-center">
+              <p className="font-display text-xl text-ink">No pieces match</p>
+              <p className="mt-1 text-sm text-fog">
                 Try widening the price range.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-5 gap-y-10 xl:grid-cols-3">
               {visible.map((p) => (
                 <ProductCard key={p.id} product={p} layoutVariant="grid" />
               ))}
