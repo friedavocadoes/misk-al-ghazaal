@@ -20,20 +20,43 @@ import { SITE, getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 
 const SCROLL_RANGE = 140;
 
+type LinkKey = "about" | "shop" | "manufacture" | "contact";
+
+const easeInOut = (t: number) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
 export function SiteHeader() {
   const [progress, setProgress] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  const [shopEntered, setShopEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [locale, setLocale] = useState<"en" | "ar">("en");
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+
   const raf = useRef(0);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stackedRefs = useRef<Record<LinkKey, HTMLElement | null>>({
+    about: null,
+    shop: null,
+    manufacture: null,
+    contact: null,
+  });
+  const inlineRefs = useRef<Record<LinkKey, HTMLElement | null>>({
+    about: null,
+    shop: null,
+    manufacture: null,
+    contact: null,
+  });
 
   useEffect(() => {
     const saved =
-      typeof window !== "undefined" ? window.localStorage.getItem("locale") : null;
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("locale")
+        : null;
     if (saved === "ar" || saved === "en") {
       setLocale(saved);
       document.documentElement.lang = saved === "ar" ? "ar" : "en";
@@ -43,6 +66,7 @@ export function SiteHeader() {
       raf.current = requestAnimationFrame(() => {
         const y = Math.min(window.scrollY, SCROLL_RANGE);
         setProgress(y / SCROLL_RANGE);
+        setShopOpen(false);
       });
     };
     onScroll();
@@ -52,6 +76,75 @@ export function SiteHeader() {
       cancelAnimationFrame(raf.current);
     };
   }, []);
+
+  // FLIP: each link physically travels from the stacked row to its side slot,
+  // scrubbed by scroll progress, snapping into place at the ends.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
+    const k =
+      progress <= 0.02 ? 0 : progress >= 0.97 ? 1 : easeInOut(progress);
+    const keys: LinkKey[] = ["about", "shop", "manufacture", "contact"];
+    for (const key of keys) {
+      const from = stackedRefs.current[key];
+      const to = inlineRefs.current[key];
+      if (!from || !to) continue;
+      const s = from.getBoundingClientRect();
+      const t = to.getBoundingClientRect();
+      const dx = s.left + s.width / 2 - (t.left + t.width / 2);
+      const dy = s.top + s.height / 2 - (t.top + t.height / 2);
+      const travel = 1 - k;
+      to.style.transform = `translate(${dx * travel}px, ${dy * travel}px)`;
+      to.style.opacity = progress <= 0.02 ? "0" : String(Math.min(1, Math.max(0, (progress - 0.12) / 0.5)));
+      to.style.fontSize = `${15 - 3 * k}px`;
+      to.style.letterSpacing = `${0.24 - 0.1 * k}em`;
+      from.style.opacity = String(Math.max(0, 1 - progress * 2.2));
+    }
+  }, [progress]);
+
+  // Dropdown enter animation
+  useEffect(() => {
+    if (shopOpen) {
+      const id = requestAnimationFrame(() =>
+        requestAnimationFrame(() => setShopEntered(true))
+      );
+      return () => {
+        cancelAnimationFrame(id);
+        setShopEntered(false);
+      };
+    }
+    setShopEntered(false);
+  }, [shopOpen]);
+
+  const scheduleClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setShopOpen(false), 140);
+  };
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const openShop = (key: LinkKey) => {
+    cancelClose();
+    const el =
+      key === "shop"
+        ? progress > 0.5
+          ? inlineRefs.current.shop
+          : stackedRefs.current.shop
+        : null;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const cx = Math.min(
+        Math.max(r.left + r.width / 2, 340),
+        window.innerWidth - 340
+      );
+      setAnchor({ x: cx, y: r.bottom + 10 });
+    }
+    setShopOpen(true);
+  };
 
   const pickLocale = (next: "en" | "ar") => {
     setLocale(next);
@@ -69,96 +162,47 @@ export function SiteHeader() {
   const rowH = Math.round(104 - 36 * progress);
   const stackedFS = 15 - 2 * progress;
   const stackedLS = 0.24 - 0.1 * progress;
+  const linkFor = (key: LinkKey): string =>
+    key === "about"
+      ? left[0].href
+      : key === "shop"
+        ? left[1].href
+        : key === "manufacture"
+          ? right[0].href
+          : right[1].href;
 
-  const shopPanel = (positionClass: string) => (
-    <div
-      className={`z-50 w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-white p-8 text-left shadow-[0_32px_70px_-28px_rgba(28,25,23,0.4)] ${positionClass}`}
+  const stackedLink = (key: LinkKey, label: string) => (
+    <Link
+      key={key}
+      ref={(el) => {
+        stackedRefs.current[key] = el;
+      }}
+      href={linkFor(key)}
+      onClick={() => setShopOpen(false)}
+      onMouseEnter={() => key === "shop" && openShop(key)}
+      onMouseLeave={() => key === "shop" && scheduleClose()}
+      className="inline-flex items-center gap-1.5 font-bold text-ink transition-colors hover:text-gold"
+      style={{ fontSize: `${stackedFS}px`, letterSpacing: `${stackedLS}em` }}
     >
-      <div className="grid grid-cols-3 gap-8">
-        {shop.map((col) => (
-          <div key={col.heading}>
-            <Link
-              href={col.href}
-              onClick={() => setShopOpen(false)}
-              className="font-display text-lg italic text-ink transition hover:text-gold"
-            >
-              {col.heading}
-            </Link>
-            <span className="mt-2.5 block h-px w-9 bg-gold-soft" />
-            <ul className="mt-3.5 space-y-2.5">
-              {col.links.map((l) =>
-                l.external ? (
-                  <li key={l.href}>
-                    <a
-                      href={l.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[13px] text-espresso transition hover:text-gold"
-                    >
-                      {l.label}
-                      <ArrowUpRight className="size-3.5" />
-                    </a>
-                  </li>
-                ) : (
-                  <li key={l.href}>
-                    <Link
-                      href={l.href}
-                      onClick={() => setShopOpen(false)}
-                      className="text-[13px] text-espresso transition hover:text-gold"
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
-                )
-              )}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
+      {label.toUpperCase()}
+      {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
+    </Link>
   );
 
-  const stackedLink = (label: string, href: string, hasMenu = false) => (
-    <span
-      key={label}
-      className="relative"
-      onMouseEnter={() => hasMenu && setShopOpen(true)}
-      onMouseLeave={() => hasMenu && setShopOpen(false)}
+  const inlineLink = (key: LinkKey, label: string) => (
+    <Link
+      key={key}
+      ref={(el) => {
+        inlineRefs.current[key] = el;
+      }}
+      href={linkFor(key)}
+      onClick={() => setShopOpen(false)}
+      onMouseEnter={() => key === "shop" && openShop(key)}
+      onMouseLeave={() => key === "shop" && scheduleClose()}
+      className="whitespace-nowrap font-bold text-ink transition-colors hover:text-gold"
     >
-      <Link
-        href={href}
-        onClick={() => setShopOpen(false)}
-        className="inline-flex items-center gap-1 font-bold text-ink transition-colors hover:text-gold"
-        style={{
-          fontSize: `${stackedFS}px`,
-          letterSpacing: `${stackedLS}em`,
-          fontWeight: progress > 0.55 ? 600 : 700,
-        }}
-      >
-        {label.toUpperCase()}
-        {hasMenu && <ChevronDown className="size-3.5 text-gold" />}
-      </Link>
-      {hasMenu && shopOpen && shopPanel("absolute left-1/2 top-full")}
-    </span>
-  );
-
-  const inlineLink = (label: string, href: string, hasMenu = false) => (
-    <span
-      key={label}
-      className="relative hidden lg:inline"
-      onMouseEnter={() => hasMenu && setShopOpen(true)}
-      onMouseLeave={() => hasMenu && setShopOpen(false)}
-    >
-      <Link
-        href={href}
-        onClick={() => setShopOpen(false)}
-        className="whitespace-nowrap font-semibold text-ink transition-colors hover:text-gold"
-        style={{ fontSize: "12px", letterSpacing: "0.14em" }}
-      >
-        {label.toUpperCase()}
-      </Link>
-      {hasMenu && shopOpen && shopPanel("fixed left-1/2 top-28")}
-    </span>
+      {label.toUpperCase()}
+    </Link>
   );
 
   return (
@@ -178,7 +222,6 @@ export function SiteHeader() {
         className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 lg:grid"
         style={{ height: `${rowH + 16}px` }}
       >
-        {/* Left: language + search + inline links */}
         <div className="flex items-center gap-1">
           <span className="relative">
             <button
@@ -219,19 +262,13 @@ export function SiteHeader() {
           </button>
           <span
             className="flex items-center gap-5 overflow-hidden pl-3"
-            style={{
-              maxWidth: `${progress * 300}px`,
-              opacity: progress,
-              transform: `translateX(${(1 - progress) * -14}px)`,
-            }}
+            style={{ maxWidth: `${progress * 300}px` }}
           >
-            {left.map((l) =>
-              inlineLink(l.label, l.href, l.label === "Shop")
-            )}
+            {inlineLink("about", left[0].label)}
+            {inlineLink("shop", left[1].label)}
           </span>
         </div>
 
-        {/* Crest */}
         <Link
           href="/"
           aria-label="Misk Al Ghazaal home"
@@ -248,17 +285,13 @@ export function SiteHeader() {
           />
         </Link>
 
-        {/* Right: inline links + login + cart */}
         <div className="flex items-center justify-end gap-1">
           <span
             className="flex items-center justify-end gap-5 overflow-hidden pr-3"
-            style={{
-              maxWidth: `${progress * 340}px`,
-              opacity: progress,
-              transform: `translateX(${(1 - progress) * 14}px)`,
-            }}
+            style={{ maxWidth: `${progress * 340}px` }}
           >
-            {right.map((l) => inlineLink(l.label, l.href))}
+            {inlineLink("manufacture", right[0].label)}
+            {inlineLink("contact", right[1].label)}
           </span>
           <Link
             href="/account"
@@ -280,25 +313,29 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Stacked nav — tall at top, melts away on scroll */}
+      {/* Stacked nav — grid halves keep the divider exactly under the crest */}
       <nav
         aria-label="Primary"
         className="hidden overflow-hidden lg:block"
         style={{ maxHeight: `${(1 - progress) * 64}px`, opacity: 1 - progress }}
       >
         <div
-          className="flex items-center justify-center gap-10 pb-4"
-          style={{ transform: `translateY(${progress * -10}px)` }}
+          className="grid grid-cols-[1fr_auto_1fr] items-center pb-4"
+          style={{ transform: `translateY(${progress * -8}px)` }}
         >
-          {stackedLink(left[0].label, left[0].href)}
-          {stackedLink(left[1].label, left[1].href, true)}
+          <span className="flex items-center justify-end gap-10 pr-8">
+            {stackedLink("about", left[0].label)}
+            {stackedLink("shop", left[1].label)}
+          </span>
           <span
             aria-hidden
-            className="inline-block w-px bg-gold-soft"
-            style={{ height: `${30 - 10 * progress}px`, opacity: 0.8 }}
+            className="w-px justify-self-center bg-gold-soft"
+            style={{ height: `${30 - 10 * progress}px`, opacity: 0.9 }}
           />
-          {stackedLink(right[0].label, right[0].href)}
-          {stackedLink(right[1].label, right[1].href)}
+          <span className="flex items-center justify-start gap-10 pl-8">
+            {stackedLink("manufacture", right[0].label)}
+            {stackedLink("contact", right[1].label)}
+          </span>
         </div>
       </nav>
 
@@ -357,6 +394,72 @@ export function SiteHeader() {
               Search
             </Button>
           </form>
+        </div>
+      )}
+
+      {/* Floating shop dropdown — lives outside the collapsing nav, measured
+          from the Shop trigger so it never clips */}
+      {shopOpen && anchor && (
+        <div
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+          className="fixed z-[70] w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-white p-8 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{
+            left: anchor.x,
+            top: anchor.y,
+            opacity: shopEntered ? 1 : 0,
+            transform: `translateX(-50%) translateY(${shopEntered ? 0 : 14}px) scale(${shopEntered ? 1 : 0.97})`,
+          }}
+        >
+          <div className="grid grid-cols-3 gap-8">
+            {shop.map((col, ci) => (
+              <div
+                key={col.heading}
+                className="transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{
+                  opacity: shopEntered ? 1 : 0,
+                  transform: `translateY(${shopEntered ? 0 : 10}px)`,
+                  transitionDelay: shopEntered ? `${80 + ci * 70}ms` : "0ms",
+                }}
+              >
+                <Link
+                  href={col.href}
+                  onClick={() => setShopOpen(false)}
+                  className="font-display text-lg italic text-ink transition hover:text-gold"
+                >
+                  {col.heading}
+                </Link>
+                <span className="mt-2.5 block h-px w-9 bg-gold-soft" />
+                <ul className="mt-3.5 space-y-2.5">
+                  {col.links.map((l) =>
+                    l.external ? (
+                      <li key={l.href}>
+                        <a
+                          href={l.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[13px] text-espresso transition hover:text-gold"
+                        >
+                          {l.label}
+                          <ArrowUpRight className="size-3.5" />
+                        </a>
+                      </li>
+                    ) : (
+                      <li key={l.href}>
+                        <Link
+                          href={l.href}
+                          onClick={() => setShopOpen(false)}
+                          className="text-[13px] text-espresso transition hover:text-gold"
+                        >
+                          {l.label}
+                        </Link>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
