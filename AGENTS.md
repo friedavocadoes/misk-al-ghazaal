@@ -49,5 +49,5 @@ CartItem { productSlug, variantId?, qty }
 Mock: ~12 Gazaal-realistic products (Misk Al Ghazaal, Noorjes Imagine, Big Boss/Dhukhoon, Jawahara Bakhoor tablets, Holy Oudh), 5 categories (arabic-fragrance, fresh-fragrance, dukhoon/bakhoor, mubakhar, best-sellers/new-arrivals), collections mapping above.
 
 ## 6. Phase Plan
-- Phase 1 (now, needs user confirm): install shadcn deps (class-variance-authority, clsx, tailwind-merge, lucide-react, radix primitives), scaffold `(storefront)` routes above as thin server components fed by mock-data, build `ui/` + `blocks/` per inventory, `lib/types.ts` + `lib/mock-data.ts`.
+- Phase 1 (DONE 2026-10-05, `next build` green, 47 pages): installed shadcn deps (class-variance-authority, clsx, tailwind-merge, lucide-react, radix slot/dialog/accordion/tabs), scaffolded `(storefront)` routes above as thin server components fed by mock-data, built `ui/` + `blocks/` per inventory, `lib/types.ts` + `lib/mock-data.ts`. NOTE: `PageProps<'/route'>` must OMIT the `(storefront)` group prefix; `params`/`searchParams` are Promises (await them). Old `src/app/page.tsx` removed (group page owns `/`).
 - Phase 2 (later, DO NOT start): Supabase schema mirroring types, admin panel `app/(admin)/*`, checkout/orders + notifications (email/WhatsApp), auth, Judge.me replacement, RTL.
