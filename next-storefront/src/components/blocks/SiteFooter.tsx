@@ -16,28 +16,28 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold text-stone-900">Shop</p>
           <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/collections/best-sellers" className="hover:text-emerald-900">Best Sellers</Link></li>
-            <li><Link href="/collections/new-arrivals" className="hover:text-emerald-900">New Arrivals</Link></li>
-            <li><Link href="/collections/dukhoon" className="hover:text-emerald-900">Dukhoon / Bakhoor</Link></li>
-            <li><Link href="/collections/holy-oudh" className="hover:text-emerald-900">Holy Oudh</Link></li>
+            <li><Link href="/collection/best-sellers" className="hover:text-emerald-900">Best Sellers</Link></li>
+            <li><Link href="/collection/new-arrivals" className="hover:text-emerald-900">New Arrivals</Link></li>
+            <li><Link href="/collection/dukhoon" className="hover:text-emerald-900">Dukhoon / Bakhoor</Link></li>
+            <li><Link href="/collection/holy-oudh" className="hover:text-emerald-900">Holy Oudh</Link></li>
           </ul>
         </div>
         <div>
           <p className="text-sm font-semibold text-stone-900">Support</p>
           <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/contact" className="hover:text-emerald-900">Contact</Link></li>
-            <li><Link href="/faq" className="hover:text-emerald-900">FAQ & Shipping</Link></li>
-            <li><Link href="/terms" className="hover:text-emerald-900">Returns & Terms</Link></li>
-            <li><Link href="/wishlist" className="hover:text-emerald-900">Wishlist</Link></li>
+            <li><Link href="/pages/contact" className="hover:text-emerald-900">Contact</Link></li>
+            <li><Link href="/pages/faq" className="hover:text-emerald-900">FAQ & Shipping</Link></li>
+            <li><Link href="/pages/terms" className="hover:text-emerald-900">Returns & Terms</Link></li>
+            <li><Link href="/pages/wishlist" className="hover:text-emerald-900">Wishlist</Link></li>
           </ul>
         </div>
         <div>
           <p className="text-sm font-semibold text-stone-900">Company</p>
           <ul className="mt-3 space-y-2 text-sm text-stone-600">
-            <li><Link href="/about" className="hover:text-emerald-900">About Us</Link></li>
+            <li><Link href="/pages/about" className="hover:text-emerald-900">About Us</Link></li>
             <li><Link href="/blog" className="hover:text-emerald-900">Journal</Link></li>
-            <li><Link href="/wholesale" className="hover:text-emerald-900">Wholesale</Link></li>
-            <li><Link href="/sitemap" className="hover:text-emerald-900">Sitemap</Link></li>
+            <li><Link href="/pages/wholesale" className="hover:text-emerald-900">Wholesale</Link></li>
+            <li><Link href="/pages/sitemap" className="hover:text-emerald-900">Sitemap</Link></li>
           </ul>
         </div>
       </div>

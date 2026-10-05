@@ -5,16 +5,8 @@ import Link from "next/link";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MegaMenu } from "@/components/layout/MegaMenu";
 import { CartDrawer } from "./CartDrawer";
-
-const NAV = [
-  { label: "Shop", href: "/collections" },
-  { label: "Misk Al Ghazaal", href: "/collections/misk-al-ghazaal" },
-  { label: "Dukhoon", href: "/collections/dukhoon" },
-  { label: "Holy Oudh", href: "/holy-oudh" },
-  { label: "New Arrivals", href: "/collections/new-arrivals" },
-  { label: "Blog", href: "/blog" },
-];
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,17 +30,9 @@ export function SiteHeader() {
         <Link href="/" className="text-xl font-bold tracking-tight text-emerald-950">
           GAZAAL<span className="text-amber-600">.</span>
         </Link>
-        <nav className="ml-6 hidden items-center gap-5 lg:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm font-medium text-stone-700 hover:text-emerald-900"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="ml-6 hidden lg:block">
+          <MegaMenu />
+        </div>
         <div className="ml-auto flex items-center gap-1">
           <button
             className="rounded-full p-2 hover:bg-stone-100"
@@ -89,17 +73,8 @@ export function SiteHeader() {
         </div>
       )}
       {menuOpen && (
-        <nav className="border-t border-stone-100 px-4 py-3 lg:hidden">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="block rounded-lg px-2 py-2.5 text-sm font-medium text-stone-800 hover:bg-stone-100"
-              onClick={() => setMenuOpen(false)}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <nav className="max-h-[60vh] overflow-y-auto border-t border-stone-100 px-4 py-3 lg:hidden">
+          <MegaMenu />
         </nav>
       )}
       <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />

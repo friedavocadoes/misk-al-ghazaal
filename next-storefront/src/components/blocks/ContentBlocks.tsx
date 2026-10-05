@@ -122,15 +122,23 @@ export function Testimonials() {
 }
 
 export function InstagramFeed() {
+  const shots = [
+    "/products/noorjes-imagine-1.jpg",
+    "/products/dukhoonak-big-boss-1.jpg",
+    "/products/misk-al-ghazaal-abukhalid-50ml-1.jpg",
+    "/products/jawhara-from-misk-al-ghazal-bakhoor-tablets-arabic-insence-1.jpg",
+    "/products/gazaal-my-wish-edp-100ml-1.jpg",
+    "/products/classic-oud-1.jpg",
+  ];
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
       <SectionHeading eyebrow="@gazaal.perfumes" title="Follow the Ritual" />
       <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {shots.map((src) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={i}
-            src={`https://picsum.photos/seed/gazaal-insta${i}/400/400`}
+            key={src}
+            src={src}
             alt="Instagram post"
             className="aspect-square w-full rounded-xl object-cover"
             loading="lazy"
@@ -157,7 +165,7 @@ export function ParallaxCTA() {
       <div className="relative overflow-hidden rounded-3xl bg-stone-900 px-6 py-14 text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://picsum.photos/seed/gazaal-oud-cta/1600/600"
+          src="/products/dukhoonak-big-boss-1.jpg"
           alt=""
           className="absolute inset-0 size-full object-cover opacity-40"
           loading="lazy"
@@ -170,7 +178,7 @@ export function ParallaxCTA() {
             Best-selling perfumes & bakhoors from Misk Al Ghazaal
           </h2>
           <Button asChild variant="gold" className="mt-6">
-            <Link href="/collections/best-sellers">Shop Best Sellers</Link>
+            <Link href="/collection/best-sellers">Shop Best Sellers</Link>
           </Button>
         </div>
       </div>

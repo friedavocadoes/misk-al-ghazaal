@@ -10,7 +10,7 @@ export function CategoryTiles({ categories }: { categories: Category[] }) {
         {categories.slice(0, 4).map((c) => (
           <Link
             key={c.slug}
-            href={`/collections/${c.slug}`}
+            href={`/collection/${c.slug}`}
             className="group overflow-hidden rounded-2xl border border-stone-100 bg-white"
           >
             <span className="block aspect-[4/3] overflow-hidden bg-stone-100">
@@ -38,7 +38,7 @@ export function CollectionGrid({ categories }: { categories: Category[] }) {
       {categories.map((c) => (
         <Link
           key={c.slug}
-          href={`/collections/${c.slug}`}
+          href={`/collection/${c.slug}`}
           className="group overflow-hidden rounded-2xl border border-stone-100 bg-white"
         >
           <span className="block aspect-square overflow-hidden bg-stone-100">
@@ -73,7 +73,7 @@ export function ShopByBrands({ categories }: { categories: Category[] }) {
           {categories.slice(0, 3).map((c) => (
             <Link
               key={c.slug}
-              href={`/collections/${c.slug}`}
+              href={`/collection/${c.slug}`}
               className="overflow-hidden rounded-2xl bg-white shadow-sm"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
+import { ProductGallery } from "@/components/product/ProductGallery";
 import {
-  ProductGallery,
   ProductInfo,
   ProductTabsAccordion,
 } from "@/components/blocks/ProductDetails";
@@ -25,8 +25,11 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <div className="grid gap-10 lg:grid-cols-2">
-        <ProductGallery product={product} />
-        <ProductInfo product={product} />
+        <ProductGallery images={product.images} title={product.title} />
+        <ProductInfo
+          product={product}
+          layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
+        />
       </div>
       <ProductTabsAccordion product={product} />
       <ProductCarousel title="Related Products" products={related} />

@@ -8,41 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { PriceDisplay } from "./PriceDisplay";
 import { TrustBadges } from "./TrustBadges";
 
-export function ProductGallery({ product }: { product: Product }) {
-  const [active, setActive] = useState(0);
-  return (
-    <div>
-      <div className="overflow-hidden rounded-3xl border border-stone-100 bg-stone-100">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={product.images[active] ?? product.images[0]}
-          alt={product.title}
-          className="aspect-square w-full object-cover"
-        />
-      </div>
-      {product.images.length > 1 && (
-        <div className="mt-3 flex gap-3">
-          {product.images.map((src, i) => (
-            <button
-              key={src + i}
-              onClick={() => setActive(i)}
-              className={`overflow-hidden rounded-xl border-2 ${i === active ? "border-emerald-900" : "border-transparent"}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="size-16 object-cover" />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { ProductGallery } from "@/components/product/ProductGallery";
 
-export function ProductInfo({ product }: { product: Product }) {
+export function ProductInfo({
+  product,
+  layout = "standard",
+}: {
+  product: Product;
+  layout?: "standard" | "miskalgazaal";
+}) {
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [qty, setQty] = useState(1);
+  const [wished, setWished] = useState(false);
   const variant =
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
+  const stock = variant?.stock ?? 0;
 
   return (
     <div>
@@ -107,9 +87,42 @@ export function ProductInfo({ product }: { product: Product }) {
       <Button variant="outline" size="lg" className="mt-2 w-full">
         Buy It Now
       </Button>
-      <div className="mt-6">
-        <TrustBadges />
-      </div>
+      {layout === "miskalgazaal" ? (
+        <div className="mt-6 space-y-4">
+          <p className="text-xs text-stone-500">
+            Vendor: Gazaal · Type: {product.categorySlugs[0]} · SKU:{" "}
+            {variant?.sku ?? product.slug}
+          </p>
+          <div>
+            <div className="flex justify-between text-xs font-medium text-stone-600">
+              <span>Hurry — selling fast</span>
+              <span>{stock} left</span>
+            </div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-100">
+              <div
+                className="h-full rounded-full bg-amber-500"
+                style={{ width: `${Math.min(100, stock * 4)}%` }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={wished ? "default" : "outline"}
+              className="flex-1"
+              onClick={() => setWished((w) => !w)}
+            >
+              {wished ? "♥ Wishlisted" : "♡ Add to Wishlist"}
+            </Button>
+            <Button variant="ghost" className="flex-1" asChild>
+              <span>Share</span>
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <TrustBadges />
+        </div>
+      )}
     </div>
   );
 }

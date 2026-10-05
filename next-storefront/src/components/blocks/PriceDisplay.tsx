@@ -1,5 +1,6 @@
-import { cn, formatAED } from "@/lib/utils";
+import { PriceTag } from "@/components/product/PriceTag";
 
+/** @deprecated Use `PriceTag` from `@/components/product/PriceTag`. Kept for older imports. */
 export function PriceDisplay({
   price,
   compareAtPrice,
@@ -12,19 +13,12 @@ export function PriceDisplay({
   size?: "sm" | "md" | "lg";
 }) {
   return (
-    <p
-      className={cn(
-        "flex items-baseline gap-2",
-        size === "sm" && "text-sm",
-        size === "md" && "text-base",
-        size === "lg" && "text-2xl",
-        className
-      )}
-    >
-      <span className="font-bold text-emerald-950">{formatAED(price)}</span>
-      {compareAtPrice && compareAtPrice > price && (
-        <s className="text-stone-400">{formatAED(compareAtPrice)}</s>
-      )}
-    </p>
+    <PriceTag
+      price={price}
+      compareAtPrice={compareAtPrice}
+      size={size}
+      showBadges={false}
+      className={className}
+    />
   );
 }

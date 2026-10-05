@@ -8,8 +8,8 @@ import { formatAED } from "@/lib/utils";
 import { products } from "@/lib/mock-data";
 
 const DEMO_ITEMS = [
-  { productSlug: "misk-al-ghazaal", qty: 1 },
-  { productSlug: "jawahara-bakhoor-tablets", qty: 2 },
+  { productSlug: "misk-al-ghazaal-abukhalid-50ml", qty: 1 },
+  { productSlug: "jawahara-from-misk-al-ghazal-bakhoor-tablets-arabic-insence", qty: 2 },
 ];
 
 export function CartDrawer({

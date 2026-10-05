@@ -26,6 +26,22 @@ export interface Product {
   featured?: boolean;
   isNew?: boolean;
   isBestSeller?: boolean;
+  /** Shopify template variant: standard (product.json) vs miskalgazaal (product.miskalgazaal.json single-product layout). */
+  template?: "standard" | "miskalgazaal";
+}
+
+/** Homepage / collection hero banner.
+ *  `src` is the EXACT original Shopify file expected in `public/banners/`;
+ *  `fallback` is a guaranteed-local image shown until you drop the file in. */
+export interface Banner {
+  src: string;
+  fallback: string;
+  alt: string;
+  eyebrow?: string;
+  title?: string;
+  desc?: string;
+  cta?: string;
+  href?: string;
 }
 
 export interface Category {
