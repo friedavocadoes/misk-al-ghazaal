@@ -17,8 +17,9 @@ gsap.registerPlugin(ScrollToPlugin);
 // Ken Burns drift on the active image, parallax captions, autoplay
 // progress rail. Boxed with margins at the top; melts to full-bleed
 // on scroll via direct-DOM margin writes (no re-render, no jank).
-const MELT_RANGE = 200;
 const BOX_MARGIN = 20;
+// Scroll distance past the lock over which the hero re-frames.
+const EXIT = 340;
 // Fullscreen lock point: compact navbar + full-bleed hero.
 // MUST equal the compact header height: at scrollY === LOCK the sticky
 // navbar occupies visual [0, LOCK] and the hero (top glued at document
@@ -36,31 +37,37 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   const progressRef = useRef<HTMLSpanElement>(null);
   const raf = useRef(0);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastY = useRef(0);
+  // Journey phase: top → locked → free. A natural first scroll lands
+  // ~300px; phases make every stop decisive instead of re-trapping.
+  const phase = useRef<"top" | "locked" | "free">("top");
 
   useEffect(() => {
     const sync = () => {
-      // Side gutters melt 20px → 0, completing exactly at the lock point.
-      // Hero height = scrollY + viewport − live header height, so its top
-      // stays glued under the navbar while its bottom pins to the viewport
-      // bottom — at LOCK the hero is exactly one fullscreen.
+      // Three-act journey, all continuous (no scroll-linked image zoom):
+      //  ACT 1 (0 → LOCK): gutters melt 20px → 0, hero grows to exactly
+      //          one fullscreen glued under the compact navbar.
+      //  ACT 2 (LOCK → LOCK+EXIT): gutters return 0 → 20px, hero height
+      //          freezes at its fullscreen value and re-frames while the
+      //          page scrolls on — gradual, elegant, no yanking.
+      //  ACT 3 (past EXIT): framed hero scrolls away like any section.
+      //  The journey reverses symmetrically scrolling back up.
+      //  Subpixel values (no rounding): whole-pixel steps read as stutter.
       const header = document.querySelector("header");
       const lock = lockFor();
-      const p = Math.min(window.scrollY / lock, 1);
-      const m = Math.round(BOX_MARGIN * (1 - p));
+      const y = window.scrollY;
+      const p = y <= lock ? y / lock : y <= lock + EXIT ? 1 - (y - lock) / EXIT : 0;
+      const m = BOX_MARGIN * (1 - p);
       if (boxRef.current) boxRef.current.style.margin = `0px ${m}px ${m}px`;
       if (sectionRef.current && header) {
-        const h = Math.max(
-          480,
-          window.scrollY + window.innerHeight - header.offsetHeight
-        );
-        sectionRef.current.style.setProperty("--hero-h", `${Math.round(h)}px`);
+        const grown = y + window.innerHeight - header.offsetHeight;
+        const h = Math.max(480, Math.min(grown, window.innerHeight));
+        sectionRef.current.style.setProperty("--hero-h", `${h}px`);
       }
     };
     const snapTo = (y: number) => {
       gsap.to(window, {
         scrollTo: y,
-        duration: 0.7,
+        duration: 0.55,
         ease: "expo.out",
         overwrite: "auto",
       });
@@ -68,29 +75,45 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     const onScroll = () => {
       cancelAnimationFrame(raf.current);
       raf.current = requestAnimationFrame(sync);
-      const y = window.scrollY;
-      const dir = y > lastY.current ? "down" : "up";
-      lastY.current = y;
-      // Strict snap (home only): a stopped scroll always lands locked.
-      // Any downward pause past a nudge completes the fullscreen takeover
-      // at LOCK (== compact header height, so the hero lands pixel-glued
-      // under the navbar in exact full view). Pausing below the lock while
-      // moving up settles back to the top. Pushing through with continuous
-      // motion passes freely — the timer only fires after the LAST event.
+      // Journey-aware snap (gsap ScrollTo does the motion): any stop
+      // before RELEASE completes into the fullscreen lock; past RELEASE
+      // the journey is free until you return up into the hero. The timer
+      // fires only after the LAST event, so flowing motion is untouched.
       if (settle.current) clearTimeout(settle.current);
       settle.current = setTimeout(() => {
         const lock = lockFor();
+        const release = lock + EXIT;
         const yy = window.scrollY;
-        if (yy <= 24 && yy > 0) snapTo(0);
-        else if (yy > 24 && yy < lock) snapTo(dir === "up" ? 0 : lock);
-        else if (dir === "down" && yy >= lock && yy <= lock + 140)
+        if (yy < 0) return;
+        if (phase.current !== "free") {
+          if (yy <= 24) {
+            phase.current = "top";
+            snapTo(0);
+          } else if (yy < release) {
+            phase.current = "locked";
+            snapTo(lock);
+          } else {
+            phase.current = "free";
+          }
+        } else if (yy <= 24) {
+          phase.current = "top";
+          snapTo(0);
+        } else if (yy < lock) {
+          phase.current = "locked";
           snapTo(lock);
+        }
       }, 160);
     };
     // Grabbing the page mid-snap hands control straight back to the user.
     const cancelSnap = () => gsap.killTweensOf(window);
     sync();
-    lastY.current = window.scrollY;
+    // Track the chrome continuously: the navbar morphs on 0.5s CSS
+    // transitions AFTER scroll settles, so scroll/resize events alone
+    // leave a stale hero height (the old fullscreen whitespace gap).
+    // The header never depends on the hero, so this cannot feed back.
+    const header = document.querySelector("header");
+    const ro = header ? new ResizeObserver(() => sync()) : null;
+    ro?.observe(header as Element);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     window.addEventListener("wheel", cancelSnap, { passive: true });
@@ -100,6 +123,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       window.removeEventListener("resize", onScroll);
       window.removeEventListener("wheel", cancelSnap);
       window.removeEventListener("touchmove", cancelSnap);
+      ro?.disconnect();
       if (settle.current) clearTimeout(settle.current);
       cancelAnimationFrame(raf.current);
     };

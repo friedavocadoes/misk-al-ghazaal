@@ -25,7 +25,9 @@ const EASE = "expo.out";
 const FLIGHT = 0.6;
 
 export function SiteHeader() {
-  // Compact flips once past 70px, releases below 40px — no half-states.
+  // Compact flips once past 36px, releases below 18px — early
+  // engagement so chrome and hero morph as one; hysteresis + cooldown
+  // below mean no half-states and no oscillation.
   const [compact, setCompact] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -67,12 +69,12 @@ export function SiteHeader() {
       const y = window.scrollY;
       let flipped = false;
       setCompact((prev) => {
-        if (!prev && y > 70) {
+        if (!prev && y > 36) {
           toggleLock.current = Date.now() + 650;
           flipped = true;
           return true;
         }
-        if (prev && y < 40) {
+        if (prev && y < 18) {
           toggleLock.current = Date.now() + 650;
           flipped = true;
           return false;
