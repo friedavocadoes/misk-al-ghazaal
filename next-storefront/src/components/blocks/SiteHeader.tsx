@@ -112,12 +112,16 @@ export function SiteHeader() {
         if (compact) {
           const s = stacked.getBoundingClientRect();
           const t = inline.getBoundingClientRect();
+          // Rounded to whole pixels — fractional transforms rasterize
+          // text on subpixels and read as blurry/fuzzy.
+          const dx = Math.round(s.left + s.width / 2 - (t.left + t.width / 2));
+          const dy = Math.round(s.top + s.height / 2 - (t.top + t.height / 2));
           gsap.to(stacked, { opacity: 0, duration: 0.22, ease: "power2.out" });
           gsap.fromTo(
             inline,
             {
-              x: s.left + s.width / 2 - (t.left + t.width / 2),
-              y: s.top + s.height / 2 - (t.top + t.height / 2),
+              x: dx,
+              y: dy,
               opacity: 0,
               fontSize: "15px",
               letterSpacing: "0.24em",
@@ -130,17 +134,20 @@ export function SiteHeader() {
               letterSpacing: "0.14em",
               duration: FLIGHT,
               ease: EASE,
+              clearProps: "transform",
             }
           );
         } else {
           const s = inline.getBoundingClientRect();
           const t = stacked.getBoundingClientRect();
+          const dx = Math.round(s.left + s.width / 2 - (t.left + t.width / 2));
+          const dy = Math.round(s.top + s.height / 2 - (t.top + t.height / 2));
           gsap.to(inline, { opacity: 0, duration: 0.22, ease: "power2.out" });
           gsap.fromTo(
             stacked,
             {
-              x: s.left + s.width / 2 - (t.left + t.width / 2),
-              y: s.top + s.height / 2 - (t.top + t.height / 2),
+              x: dx,
+              y: dy,
               opacity: 0,
               fontSize: "12px",
               letterSpacing: "0.14em",
@@ -153,6 +160,7 @@ export function SiteHeader() {
               letterSpacing: "0.24em",
               duration: FLIGHT,
               ease: EASE,
+              clearProps: "transform",
             }
           );
         }
@@ -238,7 +246,7 @@ export function SiteHeader() {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
-      className="inline-flex items-center gap-1.5 text-[15px] font-bold tracking-[0.24em] text-ink transition-colors hover:text-gold"
+      className="inline-flex items-center gap-1.5 text-[15px] font-bold tracking-[0.24em] text-ink antialiased transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
@@ -255,7 +263,7 @@ export function SiteHeader() {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
-      className="whitespace-nowrap text-[12px] font-bold tracking-[0.14em] text-ink opacity-0 transition-colors hover:text-gold"
+      className="whitespace-nowrap text-[12px] font-bold tracking-[0.14em] text-ink antialiased opacity-0 transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
     </Link>
@@ -289,7 +297,7 @@ export function SiteHeader() {
         {/* Main crest row */}
         <div
           className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
-          style={{ height: compact ? 72 : 120 }}
+          style={{ height: compact ? 72 : 140 }}
         >
           <div className="flex items-center gap-1">
             <span className="relative">
@@ -330,7 +338,7 @@ export function SiteHeader() {
                 className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
               />
             </button>
-            <span className="flex items-center gap-5 pl-4">
+            <span className="flex items-center gap-6 pl-7">
               {inlineLink("about")}
               {inlineLink("shop")}
             </span>
@@ -339,7 +347,7 @@ export function SiteHeader() {
           <Link
             href="/"
             aria-label="Misk Al Ghazaal home"
-            className="justify-self-center py-1"
+            className="flex flex-col items-center justify-self-center py-1"
           >
             <Image
               src="/logo.webp"
@@ -351,10 +359,22 @@ export function SiteHeader() {
                 compact ? "size-14" : "size-[88px]"
               }`}
             />
+            <span
+              className="overflow-hidden text-[10px] font-semibold text-ink/70 transition-all duration-500"
+              style={{
+                maxHeight: compact ? 0 : 24,
+                opacity: compact ? 0 : 1,
+                letterSpacing: "0.42em",
+                marginTop: compact ? 0 : 8,
+                marginRight: "-0.42em",
+              }}
+            >
+              MISK AL GHAZAAL
+            </span>
           </Link>
 
           <div className="flex items-center justify-end gap-1">
-            <span className="flex items-center justify-end gap-5 pr-4">
+            <span className="flex items-center justify-end gap-6 pr-7">
               {inlineLink("manufacture")}
               {inlineLink("contact")}
             </span>
@@ -385,10 +405,10 @@ export function SiteHeader() {
         {/* Stacked nav — grid halves keep the divider exactly under the crest */}
         <nav
           aria-label="Primary"
-          className="hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+          className="hidden overflow-hidden border-t border-ink/10 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center pb-5">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-5">
             <span className="flex items-center justify-end gap-10 pr-8">
               {stackedLink("about")}
               {stackedLink("shop")}
@@ -464,7 +484,7 @@ export function SiteHeader() {
           <div
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
-            className="fixed z-[70] w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-white p-8 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="fixed z-[70] w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-[linear-gradient(180deg,rgba(255,253,249,0.94)_0%,rgba(250,247,241,0.92)_60%,rgba(242,236,221,0.9)_100%)] p-8 pt-7 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               left: anchor.x,
               top: anchor.y,
@@ -472,6 +492,8 @@ export function SiteHeader() {
               transform: `translateX(-50%) translateY(${shopEntered ? 0 : 14}px) scale(${shopEntered ? 1 : 0.97})`,
             }}
           >
+            <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold-soft to-transparent" />
+            <p className="eyebrow mb-6 text-center text-gold">Shop the Maison</p>
             <div className="grid grid-cols-3 gap-8">
               {shop.map((col, ci) => (
                 <div
