@@ -34,6 +34,7 @@ export function SiteHeader() {
   const [shopOpen, setShopOpen] = useState(false);
   const [shopEntered, setShopEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuEntered, setMenuEntered] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [locale, setLocale] = useState<"en" | "ar">("en");
@@ -184,6 +185,26 @@ export function SiteHeader() {
     }
     setShopEntered(false);
   }, [shopOpen]);
+
+  // Mobile menu choreography: staged enter, graceful exit with
+  // delayed unmount so closing animates instead of vanishing.
+  useLayoutEffect(() => {
+    if (menuOpen) {
+      const id = requestAnimationFrame(() =>
+        requestAnimationFrame(() => setMenuEntered(true))
+      );
+      return () => {
+        cancelAnimationFrame(id);
+        setMenuEntered(false);
+      };
+    }
+    setMenuEntered(false);
+  }, [menuOpen]);
+
+  const closeMenu = () => {
+    setMenuEntered(false);
+    setTimeout(() => setMenuOpen(false), 380);
+  };
 
   const scheduleClose = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -540,31 +561,72 @@ export function SiteHeader() {
           </div>
         )}
 
-        {/* Mobile menu overlay */}
+        {/* Mobile menu overlay — staged enter/exit, staggered rows */}
         {menuOpen && (
-          <div className="fixed inset-0 z-[60] flex flex-col bg-cream lg:hidden" role="dialog" aria-modal="true">
-            <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
-              <Image src="/logo.webp" alt="Misk Al Ghazaal" width={44} height={44} className="rounded-full object-cover" />
-              <button onClick={() => setMenuOpen(false)} aria-label="Close menu" className="p-2 text-ink">
+          <div
+            className="fixed inset-0 z-[60] flex flex-col bg-cream transition-opacity duration-300 lg:hidden"
+            style={{ opacity: menuEntered ? 1 : 0 }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="flex items-center justify-between border-b border-ink/10 px-4 py-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{
+                opacity: menuEntered ? 1 : 0,
+                transform: `translateY(${menuEntered ? 0 : -12}px)`,
+              }}
+            >
+              <Image
+                src="/logo.webp"
+                alt="Misk Al Ghazaal"
+                width={44}
+                height={44}
+                className="rounded-full object-cover transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{
+                  opacity: menuEntered ? 1 : 0,
+                  transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
+                }}
+              />
+              <button onClick={closeMenu} aria-label="Close menu" className="p-2 text-ink">
                 <X className="size-5" />
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto px-6 py-6" aria-label="Mobile">
-              <Link href={left[0].href} onClick={() => setMenuOpen(false)} className="block py-3 font-display text-2xl text-ink">
-                {left[0].label}
-              </Link>
-              <button
-                onClick={() => setMobileShopOpen((v) => !v)}
-                className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
-              >
-                Shop
-                <ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} />
-              </button>
+              {[
+                <Link key="about" href={left[0].href} onClick={closeMenu} className="block py-3 font-display text-2xl text-ink">
+                  {left[0].label}
+                </Link>,
+                <button
+                  key="shop"
+                  onClick={() => setMobileShopOpen((v) => !v)}
+                  className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
+                >
+                  Shop
+                  <ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} />
+                </button>,
+                ...right.map((l) => (
+                  <Link key={l.href} href={l.href} onClick={closeMenu} className="block py-3 font-display text-2xl text-ink">
+                    {l.label}
+                  </Link>
+                )),
+              ].map((row, i) => (
+                <span
+                  key={i}
+                  className="block transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    opacity: menuEntered ? 1 : 0,
+                    transform: `translateY(${menuEntered ? 0 : 16}px)`,
+                    transitionDelay: menuEntered ? `${120 + i * 60}ms` : "0ms",
+                  }}
+                >
+                  {row}
+                </span>
+              ))}
               {mobileShopOpen && (
                 <span className="block pb-2">
                   {shop.map((col) => (
                     <span key={col.heading} className="block py-2">
-                      <Link href={col.href} onClick={() => setMenuOpen(false)} className="font-display text-lg italic text-gold">
+                      <Link href={col.href} onClick={closeMenu} className="font-display text-lg italic text-gold">
                         {col.heading}
                       </Link>
                       {col.links.map((l) =>
@@ -573,7 +635,7 @@ export function SiteHeader() {
                             {l.label} ↗
                           </a>
                         ) : (
-                          <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} className="block py-1.5 pl-3 text-sm text-espresso">
+                          <Link key={l.href} href={l.href} onClick={closeMenu} className="block py-1.5 pl-3 text-sm text-espresso">
                             {l.label}
                           </Link>
                         )
@@ -582,12 +644,14 @@ export function SiteHeader() {
                   ))}
                 </span>
               )}
-              {right.map((l) => (
-                <Link key={l.href} href={l.href} onClick={() => setMenuOpen(false)} className="block py-3 font-display text-2xl text-ink">
-                  {l.label}
-                </Link>
-              ))}
-              <span className="mt-6 flex gap-2 border-t border-ink/10 pt-6">
+              <span
+                className="mt-6 flex gap-2 border-t border-ink/10 pt-6 transition-all duration-500"
+                style={{
+                  opacity: menuEntered ? 1 : 0,
+                  transform: `translateY(${menuEntered ? 0 : 16}px)`,
+                  transitionDelay: menuEntered ? "380ms" : "0ms",
+                }}
+              >
                 {(["en", "ar"] as const).map((l) => (
                   <button
                     key={l}
@@ -600,7 +664,7 @@ export function SiteHeader() {
                   </button>
                 ))}
               </span>
-              <Link href="/account" onClick={() => setMenuOpen(false)} className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+              <Link href="/account" onClick={closeMenu} className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
                 Login / Account
               </Link>
             </nav>

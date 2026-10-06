@@ -256,6 +256,8 @@ export const heroSlides: Banner[] = [
     desc: "Experience the luxurious fragrances of Noorjes.",
     cta: "Buy Now",
     href: "/product/noorjes-imagine",
+    fit: "contain",
+    focal: "center",
   },
   {
     src: "/banners/Frame_19.jpg",

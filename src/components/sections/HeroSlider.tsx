@@ -43,24 +43,30 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
 
   useEffect(() => {
     const sync = () => {
-      // Three-act journey, all continuous (no scroll-linked image zoom):
-      //  ACT 1 (0 → LOCK): gutters melt 20px → 0, hero grows to exactly
-      //          one fullscreen glued under the compact navbar.
-      //  ACT 2 (LOCK → LOCK+EXIT): gutters return 0 → 20px, hero height
-      //          freezes at its fullscreen value and re-frames while the
-      //          page scrolls on — gradual, elegant, no yanking.
-      //  ACT 3 (past EXIT): framed hero scrolls away like any section.
-      //  The journey reverses symmetrically scrolling back up.
+      // Framing progress p (0 = boxed gutters, 1 = full-bleed):
+      //  DESKTOP: 0 → LOCK melts gutters out, LOCK → LOCK+EXIT returns
+      //          them as the hero re-frames and exits.
+      //  MOBILE: starts at 1 (fullscreen from load — no navbar morph
+      //          there), returns gutters past 8px of scroll, same exit.
+      //  Hero height = scrollY + viewport − live header, capped at one
+      //  viewport: never scroll-zooms, always exactly fills its frame.
       //  Subpixel values (no rounding): whole-pixel steps read as stutter.
       const header = document.querySelector("header");
       const lock = lockFor();
       const y = window.scrollY;
-      const p = y <= lock ? y / lock : y <= lock + EXIT ? 1 - (y - lock) / EXIT : 0;
+      const mobile = window.innerWidth < 1024;
+      let p: number;
+      if (mobile) {
+        const span = lock + EXIT - 8;
+        p = y <= 8 ? 1 : y <= lock + EXIT ? Math.max(0, 1 - (y - 8) / span) : 0;
+      } else {
+        p = y <= lock ? y / lock : y <= lock + EXIT ? 1 - (y - lock) / EXIT : 0;
+      }
       const m = BOX_MARGIN * (1 - p);
       if (boxRef.current) boxRef.current.style.margin = `0px ${m}px ${m}px`;
       if (sectionRef.current && header) {
         const grown = y + window.innerHeight - header.offsetHeight;
-        const h = Math.max(480, Math.min(grown, window.innerHeight));
+        const h = Math.max(440, Math.min(grown, window.innerHeight));
         sectionRef.current.style.setProperty("--hero-h", `${h}px`);
       }
     };
@@ -180,7 +186,10 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                       width={2000}
                       height={1100}
                       priority={i === 0}
-                      className="h-[var(--hero-h,86svh)] min-h-[480px] w-full object-cover opacity-90"
+                      style={s.focal ? { objectPosition: s.focal } : undefined}
+                      className={`h-[var(--hero-h,86svh)] min-h-[440px] w-full opacity-90 ${
+                        s.fit === "contain" ? "object-contain" : "object-cover"
+                      }`}
                     />
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
@@ -231,40 +240,43 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
             ))}
           </Swiper>
 
-          {/* Counter + autoplay progress + arrows */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto w-full max-w-7xl px-5 pb-8 md:px-10">
-            <div className="flex items-end justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <span className="font-display text-lg italic">
-                  {String(active + 1).padStart(2, "0")}
-                </span>
-                <span className="relative block h-px w-28 overflow-hidden bg-white/25 md:w-44">
-                  <span
-                    ref={progressRef}
-                    className="absolute inset-0 origin-left bg-gold-soft"
-                    style={{ transform: "scaleX(0)" }}
-                  />
-                </span>
-                <span className="text-xs tracking-[0.2em] text-white/60">
+          {/* Controls: glass pill — prev, live counter/total, autoplay
+              progress, next. All values derive from `slides`, nothing
+              hardcoded (a future admin panel edits slides in one place). */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-5 md:justify-end md:px-10 md:pb-7">
+            <div className="pointer-events-auto flex items-center gap-3 border border-white/25 bg-black/35 px-3 py-2 text-white backdrop-blur-md">
+              <button
+                onClick={() => swiper?.slidePrev()}
+                aria-label="Previous slide"
+                className="p-1.5 transition hover:text-gold-soft"
+              >
+                <ArrowLeft className="size-4" />
+              </button>
+              <span className="font-display text-sm italic tracking-wider" aria-live="polite">
+                {String(active + 1).padStart(2, "0")}
+                <span className="mx-1.5 text-white/50">/</span>
+                <span className="text-white/70">
                   {String(slides.length).padStart(2, "0")}
                 </span>
-              </div>
-              <div className="pointer-events-auto flex gap-2">
-                <button
-                  onClick={() => swiper?.slidePrev()}
-                  aria-label="Previous slide"
-                  className="border border-white/40 p-2.5 text-white transition hover:border-white hover:bg-white hover:text-ink"
-                >
-                  <ArrowLeft className="size-4" />
-                </button>
-                <button
-                  onClick={() => swiper?.slideNext()}
-                  aria-label="Next slide"
-                  className="border border-white/40 p-2.5 text-white transition hover:border-white hover:bg-white hover:text-ink"
-                >
-                  <ArrowRight className="size-4" />
-                </button>
-              </div>
+              </span>
+              <span
+                className="relative block h-[2px] w-16 overflow-hidden bg-white/25 md:w-24"
+                role="progressbar"
+                aria-label="Time until next slide"
+              >
+                <span
+                  ref={progressRef}
+                  className="absolute inset-0 origin-left bg-gold-soft"
+                  style={{ transform: "scaleX(0)" }}
+                />
+              </span>
+              <button
+                onClick={() => swiper?.slideNext()}
+                aria-label="Next slide"
+                className="p-1.5 transition hover:text-gold-soft"
+              >
+                <ArrowRight className="size-4" />
+              </button>
             </div>
           </div>
         </div>

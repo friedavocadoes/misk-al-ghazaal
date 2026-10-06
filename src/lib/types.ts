@@ -32,7 +32,9 @@ export interface Product {
 
 /** Homepage / collection hero banner.
  *  `src` is the EXACT original Shopify file expected in `public/banners/`;
- *  `fallback` is a guaranteed-local image shown until you drop the file in. */
+ *  `fallback` is a guaranteed-local image shown until you drop the file in.
+ *  `fit`/`focal` are per-banner art direction (a future admin panel will
+ *  edit these per slide — never hardcode presentation in components). */
 export interface Banner {
   src: string;
   fallback: string;
@@ -42,6 +44,8 @@ export interface Banner {
   desc?: string;
   cta?: string;
   href?: string;
+  fit?: "cover" | "contain";
+  focal?: string;
 }
 
 export interface Category {
