@@ -24,8 +24,8 @@ const TOPICS: {
 }[] = [
   {
     id: "meeting",
-    title: "Manufacturing Meeting",
-    text: "Private label, bulk orders and partnerships.",
+    title: "Private Label Meeting",
+    text: "Manufacturing, bulk orders and partnerships.",
     icon: CalendarClock,
   },
   {

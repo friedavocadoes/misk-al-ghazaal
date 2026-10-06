@@ -38,6 +38,7 @@ export const MISSING_BANNERS: string[] = [
   "111.png", // wholesale page slideshow
   "file.jpg", // parallax block image
   "three-piece-suit.jpg", // 404 parallax image
+  "private-label.jpg", // hero: private-label manufacturing slide
 ];
 
 type Raw = [
@@ -288,6 +289,16 @@ export const heroSlides: Banner[] = [
     desc: "Spicy agarwood revealing deep balsamic scent and sweet amber.",
     cta: "Buy Now",
     href: "/product/dukhoonak-big-boss",
+  },
+  {
+    src: "/banners/private-label.jpg",
+    fallback: px("classic-oud", 1),
+    alt: "Private label manufacturing",
+    eyebrow: "For Partners",
+    title: "We Bottle For You",
+    desc: "Private-label attars, bakhoor and eau de parfum — crafted in our own manufactory.",
+    cta: "Start Manufacturing",
+    href: "/private-label",
   },
 ];
 

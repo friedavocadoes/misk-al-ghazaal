@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CartDrawer } from "./CartDrawer";
-import { SITE, getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
+import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 
 type LinkKey = "about" | "shop" | "manufacture" | "contact";
 
@@ -271,10 +271,12 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
-      {/* Background layers: soft gradient at top → light blur when compact */}
+      {/* Background layers: soft gradient at top → light blur when compact.
+          The gradient is viewport-anchored (.ivory-flow) so it continues
+          seamlessly into the hero gutters below. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#FFFDF9_0%,#FAF7F1_58%,#F2ECDD_100%)] transition-opacity duration-500"
+        className="ivory-flow pointer-events-none absolute inset-0 transition-opacity duration-500"
         style={{ opacity: compact ? 0 : 1 }}
       />
       <span
@@ -284,16 +286,6 @@ export function SiteHeader() {
       />
 
       <div className="relative">
-        {/* Announcement — collapses on scroll */}
-        <div
-          className="overflow-hidden bg-ink transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-          style={{ maxHeight: compact ? 0 : 40, opacity: compact ? 0 : 1 }}
-        >
-          <p className="whitespace-nowrap px-4 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85">
-            {SITE.announcement}
-          </p>
-        </div>
-
         {/* Main crest row */}
         <div
           className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"

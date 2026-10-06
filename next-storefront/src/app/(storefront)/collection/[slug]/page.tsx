@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
+import { PromoStrip } from "@/components/blocks/PromoStrip";
 import { Pagination } from "@/components/ui/pagination";
 import { getCollectionBySlug, getCollections, getProductsByCollection } from "@/lib/store";
 
@@ -49,7 +50,9 @@ export default async function CollectionPage(
   const filterQuery = filterParams.toString();
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
+    <>
+      <PromoStrip />
+      <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
       <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.18em] text-fog">
         <Link href="/" className="hover:text-gold">Home</Link>
         <span className="mx-2">/</span>
@@ -102,5 +105,6 @@ export default async function CollectionPage(
         </div>
       </div>
     </div>
+    </>
   );
 }

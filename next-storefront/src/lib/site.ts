@@ -59,7 +59,7 @@ export function getNavLeft(): NavLink[] {
 
 export function getNavRight(): NavLink[] {
   return [
-    { label: "Manufacture", href: "/manufacture" },
+    { label: "Private Label", href: "/private-label" },
     { label: "Contact", href: "/pages/contact" },
   ];
 }
@@ -144,7 +144,7 @@ export function getFooterColumns(): FooterColumn[] {
       heading: "Maison",
       links: [
         { label: "About Us", href: "/pages/about" },
-        { label: "Manufacture", href: "/manufacture" },
+        { label: "Private Label", href: "/private-label" },
         { label: "Journal", href: "/blog" },
         { label: "Wholesale", href: "/pages/wholesale" },
       ],

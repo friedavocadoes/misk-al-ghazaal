@@ -40,7 +40,7 @@ const GALLERY = [
   "/products/misk-al-ghazaal-abukhalid-50ml-1.jpg",
 ];
 
-export default function ManufacturePage() {
+export default function PrivateLabelPage() {
   return (
     <div>
       {/* Hero */}

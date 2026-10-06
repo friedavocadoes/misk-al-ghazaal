@@ -50,6 +50,21 @@ body {
   text-transform: uppercase;
 }
 
+/* One continuous ivory surface: sized to the viewport (not the element),
+   so the sticky header and the hero gutters paint the exact same gradient
+   with no visible seam. */
+.ivory-flow {
+  background-image: linear-gradient(
+    180deg,
+    #fffdf9 0%,
+    #faf7f1 58%,
+    #f1ead9 100%
+  );
+  background-size: 100% 100vh;
+  background-position: top center;
+  background-repeat: no-repeat;
+}
+
 /* Thin elegant underline link (premium CTA style) */
 .link-underline {
   text-decoration: underline;
@@ -72,4 +87,22 @@ body {
 .embla__slide {
   flex: 0 0 100%;
   min-width: 0;
+}
+
+/* Cinematic hero: slow Ken Burns drift on the active slide */
+@keyframes kenburns {
+  from {
+    transform: scale(1.14) translateX(1.5%);
+  }
+  to {
+    transform: scale(1.02) translateX(0);
+  }
+}
+.kenburns {
+  animation: kenburns 7.5s ease-out forwards;
+}
+
+/* Swiper hero tuning */
+.hero-swiper .swiper-slide {
+  overflow: hidden;
 }

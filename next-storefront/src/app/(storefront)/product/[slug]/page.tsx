@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { PromoStrip } from "@/components/blocks/PromoStrip";
 import {
   ProductInfo,
   ProductTabsAccordion,
@@ -25,7 +26,9 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
   const related = await getRelatedProducts(slug, 4);
 
   return (
-    <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+    <>
+      <PromoStrip />
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
       <nav aria-label="Breadcrumb" className="mb-8 text-[11px] uppercase tracking-[0.18em] text-fog">
         <Link href="/" className="hover:text-gold">Home</Link>
         <span className="mx-2">/</span>
@@ -47,6 +50,7 @@ export default async function ProductPage(props: PageProps<"/product/[slug]">) {
       </div>
       <ProductTabsAccordion product={product} />
       <ProductCarousel title="You May Also Adore" products={related} />
-    </div>
+      </div>
+    </>
   );
 }

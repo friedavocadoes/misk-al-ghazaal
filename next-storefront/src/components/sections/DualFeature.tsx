@@ -27,7 +27,7 @@ export function DualFeature() {
             </span>
           </span>
         </Link>
-        <Link href="/manufacture" className="group relative block overflow-hidden">
+        <Link href="/private-label" className="group relative block overflow-hidden">
           <span className="relative block aspect-[16/11]">
             <Image
               src="/products/classic-oud-1.jpg"
