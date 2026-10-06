@@ -32,6 +32,11 @@ body {
   color: var(--foreground);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  /* The morphing sticky header changes document height; without this the
+     browser rewrites scrollY to compensate and re-trips the navbar
+     threshold in an endless loop. All media uses fixed aspect boxes, so
+     disabling anchoring page-wide is safe. */
+  overflow-anchor: none;
 }
 
 .font-display {
