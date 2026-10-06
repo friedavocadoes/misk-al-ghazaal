@@ -45,7 +45,7 @@ export function ProductInfo({
             />
           ))}
         </span>
-        {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString()} reviews
+        {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} reviews
       </p>
       <PriceTag
         price={variant?.price ?? product.price}

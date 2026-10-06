@@ -176,7 +176,7 @@ export function ProductCard({
         </Link>
         <span className="mt-1 flex items-center justify-center gap-1 text-[11px] text-fog">
           <Star className="size-3 fill-gold text-gold" />
-          {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString()} reviews
+          {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} reviews
         </span>
         <PriceTag
           price={product.price}

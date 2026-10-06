@@ -478,7 +478,7 @@ export function SiteHeader() {
           <div
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
-            className="fixed z-[70] w-[640px] max-w-[92vw] -translate-x-1/2 border border-ink/10 bg-[linear-gradient(180deg,rgba(255,253,249,0.94)_0%,rgba(250,247,241,0.92)_60%,rgba(242,236,221,0.9)_100%)] p-8 pt-7 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="fixed z-[70] max-h-[calc(100svh-120px)] w-[640px] max-w-[92vw] overflow-y-auto border border-ink/10 bg-[linear-gradient(180deg,rgba(255,253,249,0.94)_0%,rgba(250,247,241,0.92)_60%,rgba(242,236,221,0.9)_100%)] p-8 pt-7 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               left: anchor.x,
               top: anchor.y,

@@ -248,7 +248,7 @@ export const heroSlides: Banner[] = [
     href: "/collection/misk-al-ghazaal",
   },
   {
-    src: "/banners/sdfghjuk_1702536360608.jpg",
+    src: "/banners/noorjes.webp",
     fallback: px("noorjes-imagine", 1),
     alt: "Noorjes Perfumes",
     eyebrow: "Timeless elegance",
