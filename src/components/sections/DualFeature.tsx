@@ -1,8 +1,10 @@
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 
 // Dual editorial panels: the maison's own line vs. manufacturing for others.
-export function DualFeature() {
+export async function DualFeature() {
+  const t = await getTranslations("Sections");
   return (
     <section className="mx-auto max-w-7xl px-5 pb-4 md:px-8">
       <div className="grid gap-1 md:grid-cols-2">
@@ -18,12 +20,12 @@ export function DualFeature() {
           </span>
           <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
           <span className="absolute inset-x-0 bottom-0 p-7">
-            <span className="eyebrow text-gold-soft">Our Lineup</span>
+            <span className="eyebrow text-gold-soft">{t("lineEyebrow")}</span>
             <span className="mt-2 block font-display text-3xl text-white">
-              The Maison Collection
+              {t("lineTitle")}
             </span>
             <span className="link-underline mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
-              Shop the Line
+              {t("lineCta")}
             </span>
           </span>
         </Link>
@@ -39,12 +41,12 @@ export function DualFeature() {
           </span>
           <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
           <span className="absolute inset-x-0 bottom-0 p-7">
-            <span className="eyebrow text-gold-soft">For Partners</span>
+            <span className="eyebrow text-gold-soft">{t("partnerEyebrow")}</span>
             <span className="mt-2 block font-display text-3xl text-white">
-              We Manufacture For You
+              {t("partnerTitle")}
             </span>
             <span className="link-underline mt-3 inline-block text-[11px] font-semibold uppercase tracking-[0.22em] text-white/85">
-              Start Manufacturing
+              {t("partnerCta")}
             </span>
           </span>
         </Link>

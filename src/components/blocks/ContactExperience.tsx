@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SITE } from "@/lib/site";
-import { pick } from "@/lib/i18n";
+import { pick, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
@@ -76,7 +76,7 @@ export function ContactExperience({
   products,
   initialTopic = null,
 }: {
-  products: { slug: string; title: string }[];
+  products: { slug: string; title: string; titleAr?: string }[];
   initialTopic?: ContactTopic | null;
 }) {
   const t = useTranslations("Contact");
@@ -288,7 +288,7 @@ export function ContactExperience({
                       <select value={form.product} onChange={(e) => set("product", e.target.value)} className={inputCls}>
                         <option value="">{t("productPick")}</option>
                         {products.map((p) => (
-                          <option key={p.slug} value={p.slug}>{p.title}</option>
+                          <option key={p.slug} value={p.slug}>{tx(p.title, p.titleAr, locale)}</option>
                         ))}
                       </select>
                     </Field>

@@ -19,6 +19,13 @@ export function pick<T>(entry: Localizable<T>, locale: Locale): T {
   return locale === "ar" && entry.ar !== undefined ? entry.ar : entry.en;
 }
 
+/** Shorthand for name/title pairs: Arabic when present, else English.
+ *  Product/collection names are transliterations (same name, Arabic
+ *  script) — never meaning-translations. */
+export function tx(en: string, ar: string | undefined, locale: Locale): string {
+  return locale === "ar" && ar ? ar : en;
+}
+
 export function isLocale(value: unknown): value is Locale {
   return value === "en" || value === "ar";
 }

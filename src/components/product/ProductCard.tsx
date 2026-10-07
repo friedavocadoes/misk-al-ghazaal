@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Heart, Star } from "lucide-react";
 import type { Product } from "@/lib/types";
+import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { PriceTag } from "./PriceTag";
 
@@ -21,6 +24,8 @@ export function ProductCard({
   className?: string;
 }) {
   const [wished, setWished] = useState(false);
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
+  const title = tx(product.title, product.titleAr, locale);
   const [primary, secondary] = product.images;
   const onSale =
     product.compareAtPrice !== undefined &&
@@ -40,7 +45,7 @@ export function ProductCard({
         >
           <Image
             src={primary}
-            alt={product.title}
+            alt={title}
             fill
             sizes="96px"
             className="object-cover"
@@ -51,7 +56,7 @@ export function ProductCard({
             href={`/product/${product.slug}`}
             className="truncate text-sm font-medium text-ink hover:text-gold"
           >
-            {product.title}
+            {title}
           </Link>
           <span className="mt-1 flex items-center gap-1 text-xs text-fog">
             <Star className="size-3 fill-gold text-gold" />
@@ -66,7 +71,7 @@ export function ProductCard({
             />
             <button
               className="border border-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink transition hover:bg-ink hover:text-white"
-              aria-label={`Add ${product.title} to cart`}
+              aria-label={title}
             >
               Add
             </button>
@@ -85,7 +90,7 @@ export function ProductCard({
         <span className="block aspect-[3/4]">
           <Image
             src={primary}
-            alt={product.title}
+            alt={title}
             fill
             sizes="(min-width:1024px) 25vw, 50vw"
             className="object-cover transition duration-500 group-hover:scale-[1.04]"
@@ -98,7 +103,7 @@ export function ProductCard({
             </span>
           )}
           <span className="block truncate text-sm font-medium text-white">
-            {product.title}
+            {title}
           </span>
           <span className="mt-0.5 block">
             <PriceTag
@@ -118,10 +123,10 @@ export function ProductCard({
   return (
     <div className={cn("group bg-transparent", className)}>
       <div className="relative aspect-[3/4] overflow-hidden bg-sand">
-        <Link href={`/product/${product.slug}`} aria-label={product.title}>
+        <Link href={`/product/${product.slug}`} aria-label={title}>
           <Image
             src={primary}
-            alt={product.title}
+            alt={title}
             fill
             sizes="(min-width:1024px) 25vw, 50vw"
             className={cn(
@@ -162,7 +167,7 @@ export function ProductCard({
         </button>
         <button
           className="absolute inset-x-0 bottom-0 translate-y-full bg-ink/95 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition-transform duration-300 group-hover:translate-y-0"
-          aria-label={`Add ${product.title} to cart`}
+          aria-label={title}
         >
           Add to Cart
         </button>
@@ -172,7 +177,7 @@ export function ProductCard({
           href={`/product/${product.slug}`}
           className="line-clamp-1 text-[13px] font-medium uppercase tracking-[0.08em] text-ink hover:text-gold"
         >
-          {product.title}
+          {title}
         </Link>
         <span className="mt-1 flex items-center justify-center gap-1 text-[11px] text-fog">
           <Star className="size-3 fill-gold text-gold" />

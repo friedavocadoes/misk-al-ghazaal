@@ -1,3 +1,5 @@
+import { setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { HeroSlider } from "@/components/sections/HeroSlider";
 import { BannerSplit } from "@/components/sections/BannerSplit";
 import { StoryBlock } from "@/components/sections/StoryBlock";
@@ -21,8 +23,6 @@ import {
   getHeroSlides,
   getProductsByCollection,
 } from "@/lib/store";
-import { setRequestLocale } from "next-intl/server";
-
 import { getTestimonials } from "@/lib/site";
 import { toLocale } from "@/lib/i18n";
 
@@ -30,6 +30,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
   const { locale: raw } = await props.params;
   const locale = toLocale(raw);
   setRequestLocale(locale);
+  const t = await getTranslations({ locale, namespace: "Sections" });
   const [slides, brands, collections, bestSellers, newArrivals, featured, articles] =
     await Promise.all([
       getHeroSlides(),
@@ -47,41 +48,49 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
       <HeroSlider slides={slides} />
 
       <ProductCarousel
-        eyebrow="The Icons"
-        title="Best Sellers"
+        eyebrow={t("bestEyebrow")}
+        title={t("bestTitle")}
         products={bestSellers}
         viewAllHref="/collection/best-sellers"
       />
       <BannerSplit banners={brands} />
       <ProductCarousel
-        eyebrow="Just Landed"
-        title="New Arrivals"
+        eyebrow={t("newEyebrow")}
+        title={t("newTitle")}
         products={newArrivals}
         viewAllHref="/collection/new-arrivals"
       />
-      <ParallaxCTA />
+      <ParallaxCTA
+        eyebrow={t("bandEyebrow")}
+        title={t("bandTitle")}
+        cta={t("bandCta")}
+      />
 
       <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-        <SectionHeading eyebrow="The Library" title="Shop by Ritual" />
-        <CollectionGrid categories={collections.slice(0, 6)} />
+        <SectionHeading eyebrow={t("libraryEyebrow")} title={t("libraryTitle")} />
+        <CollectionGrid categories={collections.slice(0, 6)} locale={locale} />
       </section>
 
       <ProductTabs
-        title="Trending Now"
+        title={t("trending")}
         tabs={[
-          { label: "Best Sellers", value: "best", products: bestSellers },
-          { label: "New Arrivals", value: "new", products: newArrivals },
-          { label: "Featured", value: "featured", products: trending },
+          { label: t("tabBest"), value: "best", products: bestSellers },
+          { label: t("tabNew"), value: "new", products: newArrivals },
+          { label: t("tabFeatured"), value: "featured", products: trending },
         ]}
       />
       <StoryBlock />
       <DualFeature />
-      <Testimonials items={getTestimonials(locale)} />
+      <Testimonials
+        items={getTestimonials(locale)}
+        eyebrow={t("testiEyebrow")}
+        title={t("testiTitle")}
+      />
       <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-        <SectionHeading eyebrow="Journal" title="Notes on Scent" />
+        <SectionHeading eyebrow={t("journalEyebrow")} title={t("journalTitle")} />
         <BlogCardGrid articles={articles} />
       </section>
-      <InstagramFeed />
+      <InstagramFeed eyebrow={t("instaEyebrow")} title={t("instaTitle")} />
     </>
   );
 }

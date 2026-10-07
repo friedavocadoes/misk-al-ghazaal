@@ -1,12 +1,16 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { Banner } from "@/lib/types";
+import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import { SafeImage } from "@/components/ui/safe-image";
 
 // Split promo banners — converted from Ishi_galleryblock.liquid
 // (gallery_image blocks) + Ishi_manufactureblock.liquid (logo_image row).
 export function BannerSplit({ banners }: { banners: Banner[] }) {
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   return (
     <section aria-label="Shop by brand" className="mx-auto max-w-7xl px-5 py-6 md:px-8">
       <div className="grid gap-1 md:grid-cols-3">
@@ -28,7 +32,7 @@ export function BannerSplit({ banners }: { banners: Banner[] }) {
             {b.title && (
               <span className="absolute inset-x-0 bottom-0 p-5">
                 <span className="block font-display text-xl italic text-white">
-                  {b.title}
+                  {tx(b.title, b.titleAr, locale)}
                 </span>
                 <span className="link-underline mt-1 inline-block text-[10px] font-semibold uppercase tracking-[0.22em] text-white/85">
                   Discover

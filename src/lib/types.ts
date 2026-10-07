@@ -14,7 +14,12 @@ export interface Product {
   id: string;
   slug: string;
   title: string;
+  /** Arabic display name — transliteration of the same name, never a
+   *  meaning-translation (admin panel writes this; falls back to title). */
+  titleAr?: string;
   descriptionHtml: string;
+  /** Short Arabic description (admin panel writes; falls back to English). */
+  descriptionAr?: string;
   price: number; // base AED price (first variant price)
   compareAtPrice?: number;
   images: string[];
@@ -46,25 +51,34 @@ export interface Banner {
   href?: string;
   fit?: "cover" | "contain";
   focal?: string;
+  eyebrowAr?: string;
+  titleAr?: string;
+  descAr?: string;
+  ctaAr?: string;
 }
 
 export interface Category {
   id: string;
   slug: string;
   title: string;
+  titleAr?: string;
   image: string;
   description?: string;
+  descriptionAr?: string;
   productCount?: number;
 }
 
 export interface Article {
   slug: string;
   title: string;
+  titleAr?: string;
   excerpt: string;
+  excerptAr?: string;
   image: string;
   date: string;
   author?: string;
   contentHtml: string;
+  contentAr?: string;
 }
 
 export interface CartItem {

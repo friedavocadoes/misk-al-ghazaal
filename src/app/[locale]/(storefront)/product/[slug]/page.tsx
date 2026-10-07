@@ -10,11 +10,13 @@ import {
 } from "@/components/blocks/ProductDetails";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import {
+  getCollectionBySlug,
   getProductBySlug,
   getProducts,
   getRelatedProducts,
 } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
 
 export async function generateStaticParams() {
   const all = await getProducts();
@@ -26,10 +28,15 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   const locale = toLocale(rawLocale);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Collection" });
+  const ts = await getTranslations({ locale, namespace: "Sections" });
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   const related = await getRelatedProducts(slug, 4);
+  const collection = await getCollectionBySlug(product.categorySlugs[0]);
+  const catTitle = collection
+    ? tx(collection.title, collection.titleAr, locale)
+    : product.categorySlugs[0]?.replace(/-/g, " ");
 
   return (
     <>
@@ -42,7 +49,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
           href={`/collection/${product.categorySlugs[0]}`}
           className="hover:text-gold"
         >
-          {product.categorySlugs[0]?.replace(/-/g, " ")}
+          {catTitle}
         </Link>
         <span className="mx-2">/</span>
         <span className="text-ink">{product.title}</span>
@@ -55,8 +62,8 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
           locale={locale}
         />
       </div>
-      <ProductTabsAccordion product={product} />
-      <ProductCarousel title="You May Also Adore" products={related} />
+      <ProductTabsAccordion product={product} locale={locale} />
+      <ProductCarousel title={ts("alsoAdore")} products={related} />
       </div>
     </>
   );

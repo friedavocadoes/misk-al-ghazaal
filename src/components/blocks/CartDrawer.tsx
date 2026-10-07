@@ -3,7 +3,9 @@
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { formatAED } from "@/lib/utils";
@@ -25,6 +27,7 @@ export function CartDrawer({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("Cart");
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   const lines = DEMO_ITEMS.map((item) => ({
     ...item,
     product: getProduct(item.productSlug)!,
@@ -59,7 +62,7 @@ export function CartDrawer({
                   </span>
                   <div className="flex-1">
                     <p className="text-[13px] font-medium text-ink">
-                      {product.title}
+                      {tx(product.title, product.titleAr, locale)}
                     </p>
                     <p className="mt-0.5 text-[13px] text-espresso">
                       {formatAED(product.price)}

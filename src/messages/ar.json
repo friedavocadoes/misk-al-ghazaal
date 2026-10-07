@@ -175,5 +175,38 @@
   },
   "Common": {
     "viewAll": "عرض الكل"
+  },
+  "Sections": {
+    "bestEyebrow": "الأيقونات",
+    "bestTitle": "الأكثر مبيعاً",
+    "newEyebrow": "وصل حديثاً",
+    "newTitle": "إصدارات جديدة",
+    "trending": "الرائج الآن",
+    "tabBest": "الأكثر مبيعاً",
+    "tabNew": "وصل حديثاً",
+    "tabFeatured": "مميز",
+    "libraryEyebrow": "المكتبة",
+    "libraryTitle": "تسوّق حسب الطقوس",
+    "journalEyebrow": "المدونة",
+    "journalTitle": "خواطر عن العطر",
+    "instaEyebrow": "@misk.al.ghazaal",
+    "instaTitle": "تابع الطقوس",
+    "storyEyebrow": "قصتنا",
+    "storyTitle": "من المصنع إلى مجلسك",
+    "storyText": "تصنع مسك الغزال خط عطور خاص بها وتصنّع لشركاء مختارين — بلا وسطاء ولا مساومة. كل دفعة تُختم في المصدر وتُسلَّم في الإمارات مع عينات مجانية في كل طلب.",
+    "storyCta": "اقرأ قصتنا",
+    "lineEyebrow": "تشكيلتنا",
+    "lineTitle": "مجموعة الدار",
+    "lineCta": "تسوّق التشكيلة",
+    "partnerEyebrow": "للشركاء",
+    "partnerTitle": "نصنّع لك",
+    "partnerCta": "ابدأ التصنيع",
+    "bandEyebrow": "الأيقونات",
+    "bandTitle": "العطور والبخور الأكثر مبيعاً",
+    "bandCta": "تسوّق الأكثر مبيعاً",
+    "testiEyebrow": "كلام العملاء",
+    "testiTitle": "يُلبَس في كل الإمارات",
+    "completeRitual": "أكمل الطقوس",
+    "alsoAdore": "قد يعجبك أيضاً"
   }
 }

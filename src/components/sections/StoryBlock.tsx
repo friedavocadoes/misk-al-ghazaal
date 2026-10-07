@@ -1,8 +1,10 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 // Converted from sections/Ishi_storyblock.liquid — brand story + CTA.
-export function StoryBlock() {
+export async function StoryBlock() {
+  const t = await getTranslations("Sections");
   return (
     <section className="border-y border-ink/10 bg-sand/50">
       <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 md:grid-cols-2 md:px-8 md:py-20">
@@ -16,22 +18,19 @@ export function StoryBlock() {
           />
         </div>
         <div>
-          <p className="eyebrow text-gold">Our Story</p>
+          <p className="eyebrow text-gold">{t("storyEyebrow")}</p>
           <h2 className="mt-3 font-display text-3xl leading-tight text-ink md:text-[2.75rem]">
-            From manufacturer to your majlis
+            {t("storyTitle")}
           </h2>
           <span className="mt-4 block h-px w-12 bg-gold-soft" />
           <p className="mt-4 max-w-md text-sm leading-relaxed text-espresso">
-            Misk Al Ghazaal crafts its own perfume maison line and manufactures
-            for select partners — no middlemen, no compromises. Every batch
-            is sealed at origin and delivered across the UAE with complimentary
-            samples in every order.
+            {t("storyText")}
           </p>
           <Link
             href="/pages/about"
             className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
           >
-            Read Our Story
+            {t("storyCta")}
           </Link>
         </div>
       </div>

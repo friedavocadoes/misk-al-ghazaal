@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import type { Product } from "@/lib/types";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,7 +41,7 @@ export function SectionHeading({
   );
 }
 
-export function ProductCarousel({
+export async function ProductCarousel({
   eyebrow,
   title,
   products,
@@ -51,12 +52,13 @@ export function ProductCarousel({
   products: Product[];
   viewAllHref?: string;
 }) {
+  const t = await getTranslations("Common");
   return (
     <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
       <SectionHeading
         eyebrow={eyebrow}
         title={title}
-        link={viewAllHref ? { label: "View all", href: viewAllHref } : undefined}
+        link={viewAllHref ? { label: t("viewAll"), href: viewAllHref } : undefined}
       />
       <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 lg:grid-cols-4">
         {products.slice(0, 4).map((p) => (

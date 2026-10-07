@@ -1,11 +1,13 @@
 import { setRequestLocale } from "next-intl/server";
 import { CollectionGrid } from "@/components/blocks/CollectionBlocks";
 import { getCollections } from "@/lib/store";
+import { toLocale } from "@/lib/i18n";
 
 export default async function CollectionsPage(
   props: PageProps<"/[locale]/collections">
 ) {
-  const { locale } = await props.params;
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
   setRequestLocale(locale);
   const collections = await getCollections();
   return (
@@ -18,7 +20,7 @@ export default async function CollectionsPage(
         Shop by fragrance family, ritual or edit.
       </p>
       <div className="mt-10">
-        <CollectionGrid categories={collections} />
+        <CollectionGrid categories={collections} locale={locale} />
       </div>
     </div>
   );

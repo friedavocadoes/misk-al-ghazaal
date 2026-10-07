@@ -7,7 +7,9 @@ import { Autoplay, EffectCreative, Parallax } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Banner } from "@/lib/types";
 import { SafeImage } from "@/components/ui/safe-image";
@@ -32,6 +34,7 @@ const lockFor = () =>
 
 export function HeroSlider({ slides }: { slides: Banner[] }) {
   const t = useTranslations("Hero");
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -202,14 +205,14 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                       className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-gold-soft"
                     >
                       <span className="inline-block h-px w-10 bg-gold-soft" />
-                      {s.eyebrow}
+                      {tx(s.eyebrow ?? s.alt, s.eyebrowAr, locale)}
                     </p>
                     {s.title && (
                       <h2
                         data-swiper-parallax="-250"
                         className="mt-4 max-w-2xl font-display text-5xl leading-[1.02] md:text-7xl"
                       >
-                        {s.title}
+                        {tx(s.title, s.titleAr, locale)}
                       </h2>
                     )}
                     {s.desc && (
@@ -217,7 +220,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                         data-swiper-parallax="-150"
                         className="mt-4 max-w-md text-sm leading-relaxed text-white/80 md:text-base"
                       >
-                        {s.desc}
+                        {tx(s.desc, s.descAr, locale)}
                       </p>
                     )}
                     {s.cta && s.href && (
@@ -226,7 +229,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                           href={s.href}
                           className="bg-white px-8 py-3.5 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold-wash"
                         >
-                          {s.cta}
+                          {tx(s.cta, s.ctaAr, locale)}
                         </Link>
                         <Link
                           href="/collections"

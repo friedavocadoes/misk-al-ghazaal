@@ -349,7 +349,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
               />
             </button>
-            <span className="flex items-center gap-6 pl-7">
+            <span className={`flex items-center ${locale === "ar" ? "gap-7 pl-9" : "gap-6 pl-7"}`}>
               {inlineLink("about")}
               {inlineLink("shop")}
             </span>
@@ -385,7 +385,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
 
           <div className="flex items-center justify-end gap-1">
-            <span className="flex items-center justify-end gap-6 pr-7">
+            <span className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pr-9" : "gap-6 pr-7"}`}>
               {inlineLink("manufacture")}
               {inlineLink("contact")}
             </span>
@@ -420,12 +420,12 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
           <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-5">
-            <span className="flex items-center justify-end gap-10 pr-8">
+            <span className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pr-12" : "gap-10 pr-8"}`}>
               {stackedLink("about")}
               {stackedLink("shop")}
             </span>
             <span aria-hidden className="h-[26px] w-px justify-self-center bg-gold-soft/90" />
-            <span className="flex items-center justify-start gap-10 pl-8">
+            <span className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}>
               {stackedLink("manufacture")}
               {stackedLink("contact")}
             </span>

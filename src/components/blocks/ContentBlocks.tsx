@@ -1,10 +1,13 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Star } from "lucide-react";
 import type { Article, Product } from "@/lib/types";
 import type { Testimonial } from "@/lib/site";
+import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import {
   Accordion,
   AccordionContent,
@@ -32,6 +35,7 @@ export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
 }
 
 export function BlogCardGrid({ articles }: { articles: Article[] }) {
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   return (
     <div className="grid gap-6 md:grid-cols-3">
       {articles.map((a) => (
@@ -39,7 +43,7 @@ export function BlogCardGrid({ articles }: { articles: Article[] }) {
           <span className="relative block aspect-[16/10] overflow-hidden bg-sand">
             <Image
               src={a.image}
-              alt={a.title}
+              alt={tx(a.title, a.titleAr, locale)}
               fill
               sizes="(min-width:768px) 33vw, 100vw"
               className="object-cover transition duration-500 group-hover:scale-[1.04]"
@@ -50,9 +54,9 @@ export function BlogCardGrid({ articles }: { articles: Article[] }) {
               {a.date}
             </span>
             <span className="mt-1.5 block font-display text-xl leading-snug text-ink group-hover:text-gold">
-              {a.title}
+              {tx(a.title, a.titleAr, locale)}
             </span>
-            <span className="mt-1.5 block text-[13px] text-espresso">{a.excerpt}</span>
+            <span className="mt-1.5 block text-[13px] text-espresso">{tx(a.excerpt, a.excerptAr, locale)}</span>
           </span>
         </Link>
       ))}
@@ -60,13 +64,21 @@ export function BlogCardGrid({ articles }: { articles: Article[] }) {
   );
 }
 
-export function Testimonials({ items }: { items: Testimonial[] }) {
+export function Testimonials({
+  items,
+  eyebrow,
+  title,
+}: {
+  items: Testimonial[];
+  eyebrow: string;
+  title: string;
+}) {
   return (
     <section className="border-y border-ink/10 bg-sand/50 py-16 md:py-20">
       <div className="mx-auto max-w-7xl px-5 md:px-8">
-        <p className="eyebrow text-gold">Client Words</p>
+        <p className="eyebrow text-gold">{eyebrow}</p>
         <h2 className="mt-3 font-display text-3xl text-ink md:text-4xl">
-          Worn Across the Emirates
+          {title}
         </h2>
         <div className="mt-10 grid gap-px border border-ink/10 bg-ink/10 md:grid-cols-3">
           {items.map((t) => (
@@ -90,7 +102,13 @@ export function Testimonials({ items }: { items: Testimonial[] }) {
   );
 }
 
-export function InstagramFeed() {
+export function InstagramFeed({
+  eyebrow,
+  title,
+}: {
+  eyebrow: string;
+  title: string;
+}) {
   const shots = [
     "/products/noorjes-imagine-1.jpg",
     "/products/dukhoonak-big-boss-1.jpg",
@@ -101,7 +119,7 @@ export function InstagramFeed() {
   ];
   return (
     <section className="mx-auto max-w-7xl px-5 py-14 md:px-8">
-      <SectionHeading eyebrow="@misk.al.ghazaal" title="Follow the Ritual" />
+      <SectionHeading eyebrow={eyebrow} title={title} />
       <div className="grid grid-cols-3 gap-1 md:grid-cols-6">
         {shots.map((src) => (
           <span key={src} className="relative block aspect-square overflow-hidden bg-sand">
@@ -129,7 +147,15 @@ export function WishlistGrid({ products }: { products: Product[] }) {
   );
 }
 
-export function ParallaxCTA() {
+export function ParallaxCTA({
+  eyebrow,
+  title,
+  cta,
+}: {
+  eyebrow: string;
+  title: string;
+  cta: string;
+}) {
   return (
     <section className="relative overflow-hidden bg-ink">
       <span className="relative block h-[320px] md:h-[380px]">
@@ -142,15 +168,15 @@ export function ParallaxCTA() {
         />
       </span>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
-        <p className="eyebrow text-gold-soft">The Icons</p>
+        <p className="eyebrow text-gold-soft">{eyebrow}</p>
         <h2 className="mt-3 max-w-xl font-display text-3xl text-white md:text-5xl">
-          Best-selling perfumes & bakhoors
+          {title}
         </h2>
         <Link
           href="/collection/best-sellers"
           className="link-underline mt-6 text-[12px] font-semibold uppercase tracking-[0.22em] text-white"
         >
-          Shop Best Sellers
+          {cta}
         </Link>
       </div>
     </section>

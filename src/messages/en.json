@@ -175,5 +175,38 @@
   },
   "Common": {
     "viewAll": "View all"
+  },
+  "Sections": {
+    "bestEyebrow": "The Icons",
+    "bestTitle": "Best Sellers",
+    "newEyebrow": "Just Landed",
+    "newTitle": "New Arrivals",
+    "trending": "Trending Now",
+    "tabBest": "Best Sellers",
+    "tabNew": "New Arrivals",
+    "tabFeatured": "Featured",
+    "libraryEyebrow": "The Library",
+    "libraryTitle": "Shop by Ritual",
+    "journalEyebrow": "Journal",
+    "journalTitle": "Notes on Scent",
+    "instaEyebrow": "@misk.al.ghazaal",
+    "instaTitle": "Follow the Ritual",
+    "storyEyebrow": "Our Story",
+    "storyTitle": "From manufacturer to your majlis",
+    "storyText": "Misk Al Ghazaal crafts its own perfume maison line and manufactures for select partners — no middlemen, no compromises. Every batch is sealed at origin and delivered across the UAE with complimentary samples in every order.",
+    "storyCta": "Read Our Story",
+    "lineEyebrow": "Our Lineup",
+    "lineTitle": "The Maison Collection",
+    "lineCta": "Shop the Line",
+    "partnerEyebrow": "For Partners",
+    "partnerTitle": "We Manufacture For You",
+    "partnerCta": "Start Manufacturing",
+    "bandEyebrow": "The Icons",
+    "bandTitle": "Best-selling perfumes & bakhoors",
+    "bandCta": "Shop Best Sellers",
+    "testiEyebrow": "Client Words",
+    "testiTitle": "Worn Across the Emirates",
+    "completeRitual": "Complete the Ritual",
+    "alsoAdore": "You May Also Adore"
   }
 }

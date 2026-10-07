@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
 import { formatAED } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -52,7 +53,7 @@ export async function CartLineItems({
               href={`/product/${product.slug}`}
               className="text-sm font-medium text-ink hover:text-gold"
             >
-              {product.title}
+              {tx(product.title, product.titleAr, locale)}
             </Link>
             <p className="mt-1 text-[13px] text-fog">{t("qty")} {qty}</p>
             <p className="mt-auto flex items-center justify-between">

@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { BlogCardGrid } from "@/components/blocks/ContentBlocks";
 import { getArticleBySlug, getArticles } from "@/lib/store";
+import { toLocale } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
 
 export async function generateStaticParams() {
   const all = await getArticles();
@@ -14,7 +16,8 @@ export async function generateStaticParams() {
 export default async function ArticlePage(
   props: PageProps<"/[locale]/blog/[slug]">
 ) {
-  const { slug, locale } = await props.params;
+  const { slug, locale: rawLocale } = await props.params;
+  const locale = toLocale(rawLocale);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Blog" });
   const article = await getArticleBySlug(slug);
@@ -33,12 +36,12 @@ export default async function ArticlePage(
         {article.date} · {article.author}
       </p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
-        {article.title}
+        {tx(article.title, article.titleAr, locale)}
       </h1>
       <span className="relative mt-6 block aspect-[16/9] overflow-hidden bg-sand">
         <Image
           src={article.image}
-          alt={article.title}
+          alt={tx(article.title, article.titleAr, locale)}
           fill
           sizes="(min-width:768px) 768px, 100vw"
           className="object-cover"
@@ -46,7 +49,9 @@ export default async function ArticlePage(
       </span>
       <div
         className="prose mt-8 max-w-none text-espresso"
-        dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+        dangerouslySetInnerHTML={{
+          __html: tx(article.contentHtml, article.contentAr, locale),
+        }}
       />
       <h2 className="mb-6 mt-16 font-display text-2xl text-ink">{t("keepReading")}</h2>
       <BlogCardGrid articles={rest} />

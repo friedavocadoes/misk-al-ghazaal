@@ -8,6 +8,7 @@ import { PromoStrip } from "@/components/blocks/PromoStrip";
 import { Pagination } from "@/components/ui/pagination";
 import { getCollectionBySlug, getCollections, getProductsByCollection } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
 
 // Canonical collection route (singular /collection — mirrors Shopify /collections
 // handles: collection.json, collection.holy-odh.json,
@@ -70,11 +71,11 @@ export default async function CollectionPage(
       <div className="border-b border-ink/10 pb-8 pt-6 text-center">
         <p className="eyebrow text-gold">{t("eyebrow")}</p>
         <h1 className="mt-3 font-display text-4xl text-ink md:text-5xl">
-          {category.title}
+          {tx(category.title, category.titleAr, locale)}
         </h1>
-        {category.description && (
+        {(category.descriptionAr || category.description) && (
           <p className="mx-auto mt-3 max-w-xl text-sm text-espresso">
-            {category.description}
+            {tx(category.description ?? "", category.descriptionAr, locale)}
           </p>
         )}
         <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-fog">

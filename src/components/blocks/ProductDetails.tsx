@@ -6,6 +6,8 @@ import { Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
+import { tx } from "@/lib/i18n";
+import { collections } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
@@ -29,12 +31,15 @@ export function ProductInfo({
   const variant =
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const stock = variant?.stock ?? 0;
+  const title = tx(product.title, product.titleAr, locale);
+  const cat = collections.find((c) => c.slug === product.categorySlugs[0]);
+  const catName = cat ? tx(cat.title, cat.titleAr, locale) : product.categorySlugs[0]?.replace(/-/g, " ");
 
   return (
     <div>
-      <p className="eyebrow text-gold">{product.categorySlugs[0]?.replace(/-/g, " ")}</p>
+      <p className="eyebrow text-gold">{catName}</p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-[2.75rem]">
-        {product.title}
+        {title}
       </h1>
       <p className="mt-3 flex items-center gap-2 text-[13px] text-fog">
         <span className="flex gap-0.5" aria-hidden>
@@ -151,7 +156,13 @@ export function ProductInfo({
   );
 }
 
-export function ProductTabsAccordion({ product }: { product: Product }) {
+export function ProductTabsAccordion({
+  product,
+  locale,
+}: {
+  product: Product;
+  locale: Locale;
+}) {
   const t = useTranslations("Product");
   return (
     <div className="mt-12 border-t border-ink/10 pt-10">
@@ -159,7 +170,9 @@ export function ProductTabsAccordion({ product }: { product: Product }) {
       <h2 className="mt-2.5 font-display text-3xl text-ink">{t("detailsTitle")}</h2>
       <div
         className="mt-4 max-w-3xl text-[15px] leading-relaxed text-espresso"
-        dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+        dangerouslySetInnerHTML={{
+          __html: tx(product.descriptionHtml, product.descriptionAr, locale),
+        }}
       />
       <div className="mt-8 grid gap-px border border-ink/10 bg-ink/10 text-sm md:grid-cols-2">
         <div className="bg-cream p-6">
