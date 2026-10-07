@@ -4,6 +4,8 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import "swiper/css";
+import "swiper/css/effect-creative";
 import "../globals.css";
 
 const body = Inter({
