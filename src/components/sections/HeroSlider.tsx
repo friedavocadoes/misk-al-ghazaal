@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectCreative, Parallax } from "swiper/modules";
@@ -35,8 +35,55 @@ const lockFor = () =>
 export function HeroSlider({ slides }: { slides: Banner[] }) {
   const t = useTranslations("Hero");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
-  const [swiper, setSwiper] = useState<SwiperType | null>(null);
+  // Instance in a ref (never state): re-renders must never hand the
+  // buttons a stale/destroyed Swiper (dev StrictMode double-mounts).
+  const swiperRef = useRef<SwiperType | null>(null);
   const [active, setActive] = useState(0);
+  // Memoized: fresh object identities every render make Swiper React
+  // tear down + rebuild autoplay/creative each slide change — the
+  // slideshow advances once, then stalls with a frozen progress rail.
+  const modules = useMemo(() => [Autoplay, EffectCreative, Parallax], []);
+  const autoplay = useMemo(
+    () => ({
+      delay: 6500,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+    }),
+    []
+  );
+  const creativeEffect = useMemo(
+    () => ({
+      prev: {
+        shadow: true,
+        translate: ["-18%", 0, -350] as [string, number, number],
+        rotate: [0, 0, -2] as [number, number, number],
+        opacity: 0.4,
+      },
+      next: {
+        translate: ["18%", 0, -350] as [string, number, number],
+        rotate: [0, 0, 2] as [number, number, number],
+        opacity: 0,
+      },
+    }),
+    []
+  );
+  // Navigation self-heals: prefer the live ref, but fall back to the
+  // instance on the DOM node (and never call into a destroyed one).
+  const go = (dir: 1 | -1) => {
+    const el = document.querySelector(".hero-swiper") as unknown as {
+      swiper?: SwiperType;
+    } | null;
+    const live =
+      swiperRef.current && !swiperRef.current.destroyed
+        ? swiperRef.current
+        : el?.swiper && !el.swiper.destroyed
+          ? el.swiper
+          : null;
+    if (!live) return;
+    swiperRef.current = live;
+    if (dir === 1) live.slideNext();
+    else live.slidePrev();
+  };
   const boxRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
@@ -149,26 +196,18 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       <div ref={boxRef} style={{ margin: `0px ${BOX_MARGIN}px ${BOX_MARGIN}px` }}>
         <div className="relative bg-ink text-white">
           <Swiper
-            modules={[Autoplay, EffectCreative, Parallax]}
+            modules={modules}
             effect="creative"
             speed={1300}
             loop
             parallax
-            autoplay={{ delay: 6500, disableOnInteraction: false, pauseOnMouseEnter: true }}
-            creativeEffect={{
-              prev: {
-                shadow: true,
-                translate: ["-18%", 0, -350],
-                rotate: [0, 0, -2],
-                opacity: 0.4,
-              },
-              next: {
-                translate: ["18%", 0, -350],
-                rotate: [0, 0, 2],
-                opacity: 0,
-              },
+            observer
+            observeParents
+            autoplay={autoplay}
+            creativeEffect={creativeEffect}
+            onSwiper={(s) => {
+              swiperRef.current = s;
             }}
-            onSwiper={setSwiper}
             onSlideChange={(s) => setActive(s.realIndex)}
             onAutoplayTimeLeft={(_, __, p) => {
               if (progressRef.current) {
@@ -248,11 +287,13 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
 
           {/* Controls: glass pill — prev, live counter/total, autoplay
               progress, next. All values derive from `slides`, nothing
-              hardcoded (a future admin panel edits slides in one place). */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-5 md:justify-end md:px-10 md:pb-7">
+              hardcoded (a future admin panel edits slides in one place).
+              z-10 pins hit-testing above the 3D-transformed slides. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-5 md:justify-end md:px-10 md:pb-7">
             <div className="pointer-events-auto flex items-center gap-3 border border-white/25 bg-black/35 px-3 py-2 text-white backdrop-blur-md">
               <button
-                onClick={() => swiper?.slidePrev()}
+                type="button"
+                onClick={() => go(-1)}
                 aria-label={t("prev")}
                 className="p-1.5 transition hover:text-gold-soft"
               >
@@ -277,7 +318,8 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                 />
               </span>
               <button
-                onClick={() => swiper?.slideNext()}
+                type="button"
+                onClick={() => go(1)}
                 aria-label={t("next")}
                 className="p-1.5 transition hover:text-gold-soft"
               >
