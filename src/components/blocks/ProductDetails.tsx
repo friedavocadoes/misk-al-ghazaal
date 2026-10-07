@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
+import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
@@ -14,10 +16,13 @@ export { ProductGallery };
 export function ProductInfo({
   product,
   layout = "standard",
+  locale,
 }: {
   product: Product;
   layout?: "standard" | "miskalgazaal";
+  locale: Locale;
 }) {
+  const t = useTranslations("Product");
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
@@ -45,7 +50,7 @@ export function ProductInfo({
             />
           ))}
         </span>
-        {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} reviews
+        {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} {t("reviews")}
       </p>
       <PriceTag
         price={variant?.price ?? product.price}
@@ -57,7 +62,7 @@ export function ProductInfo({
       {product.variants.length > 1 && (
         <div className="mt-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
-            Size — <span className="text-ink">{variant?.title}</span>
+            {t("size")} — <span className="text-ink">{variant?.title}</span>
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {product.variants.map((v) => (
@@ -84,7 +89,7 @@ export function ProductInfo({
           <button
             className="px-3 py-2 text-espresso transition hover:text-ink"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
-            aria-label="Decrease quantity"
+            aria-label={t("decrease")}
           >
             <Minus className="size-4" />
           </button>
@@ -92,17 +97,17 @@ export function ProductInfo({
           <button
             className="px-3 py-2 text-espresso transition hover:text-ink"
             onClick={() => setQty((q) => q + 1)}
-            aria-label="Increase quantity"
+            aria-label={t("increase")}
           >
             <Plus className="size-4" />
           </button>
         </span>
         <Button className="h-[52px] flex-1" size="lg">
-          <ShoppingBag className="size-4" /> Add to Bag
+          <ShoppingBag className="size-4" /> {t("addToBag")}
         </Button>
         <button
           onClick={() => setWished((w) => !w)}
-          aria-label="Add to wishlist"
+          aria-label={t("wishlist")}
           aria-pressed={wished}
           className={cn(
             "border px-4 transition",
@@ -115,7 +120,7 @@ export function ProductInfo({
         </button>
       </div>
       <Button variant="outline" size="lg" className="mt-2 w-full">
-        Buy It Now
+        {t("buyNow")}
       </Button>
 
       {layout === "miskalgazaal" ? (
@@ -126,8 +131,8 @@ export function ProductInfo({
           </p>
           <div className="mt-4">
             <div className="flex justify-between text-[11px] font-semibold uppercase tracking-[0.16em]">
-              <span className="text-[#9c2b2e]">Selling fast</span>
-              <span className="text-fog">{stock} pieces left</span>
+              <span className="text-[#9c2b2e]">{t("sellingFast")}</span>
+              <span className="text-fog">{stock} {t("left")}</span>
             </div>
             <div className="mt-2 h-[3px] overflow-hidden bg-ink/10">
               <div
@@ -139,7 +144,7 @@ export function ProductInfo({
         </div>
       ) : (
         <div className="mt-8">
-          <TrustBadges />
+          <TrustBadges locale={locale} />
         </div>
       )}
     </div>
@@ -147,10 +152,11 @@ export function ProductInfo({
 }
 
 export function ProductTabsAccordion({ product }: { product: Product }) {
+  const t = useTranslations("Product");
   return (
     <div className="mt-12 border-t border-ink/10 pt-10">
-      <p className="eyebrow text-gold">Details</p>
-      <h2 className="mt-2.5 font-display text-3xl text-ink">The Creation</h2>
+      <p className="eyebrow text-gold">{t("detailsEyebrow")}</p>
+      <h2 className="mt-2.5 font-display text-3xl text-ink">{t("detailsTitle")}</h2>
       <div
         className="mt-4 max-w-3xl text-[15px] leading-relaxed text-espresso"
         dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
@@ -158,20 +164,18 @@ export function ProductTabsAccordion({ product }: { product: Product }) {
       <div className="mt-8 grid gap-px border border-ink/10 bg-ink/10 text-sm md:grid-cols-2">
         <div className="bg-cream p-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink">
-            Shipping
+            {t("shippingTitle")}
           </p>
           <p className="mt-2 leading-relaxed text-espresso">
-            Complimentary above AED 400 (1–3 working days). Flat AED 26 below
-            AED 400. Remote areas up to 5 days.
+            {t("shippingBody")}
           </p>
         </div>
         <div className="bg-cream p-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink">
-            Assurance
+            {t("assuranceTitle")}
           </p>
           <p className="mt-2 leading-relaxed text-espresso">
-            100% authentic, 7-day returns on unopened pieces, cash on delivery
-            within the UAE.
+            {t("assuranceBody")}
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 
 // Dual editorial panels: the maison's own line vs. manufacturing for others.

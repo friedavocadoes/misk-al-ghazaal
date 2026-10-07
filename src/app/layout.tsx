@@ -1,33 +1,7 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import "swiper/css";
-import "swiper/css/effect-creative";
-import "./globals.css";
+import type { ReactNode } from "react";
 
-const body = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const display = Playfair_Display({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-export const metadata: Metadata = {
-  title: "Misk Al Ghazaal — Perfumes, Dukhoon, Bakhoor & Holy Oudh",
-  description:
-    "Authentic Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — direct from manufacturer, delivered across the UAE.",
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html lang="en" className={`${body.variable} ${display.variable} h-full`}>
-      <body className="flex min-h-full flex-col bg-cream font-[family-name:var(--font-body)] text-ink">
-        {children}
-      </body>
-    </html>
-  );
+// Root layout stays minimal: <html>/<body> live in app/[locale]/layout.tsx
+// so lang + dir follow the active locale.
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return children;
 }

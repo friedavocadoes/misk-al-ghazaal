@@ -1,7 +1,10 @@
-import { getPerks } from "@/lib/site";
+"use client";
 
-export function TrustBadges() {
-  const perks = getPerks();
+import { getPerks } from "@/lib/site";
+import type { Locale } from "@/i18n/routing";
+
+export function TrustBadges({ locale }: { locale: Locale }) {
+  const perks = getPerks(locale);
   return (
     <div className="grid grid-cols-2 gap-px border border-ink/10 bg-ink/10 lg:grid-cols-4">
       {perks.map((item) => (

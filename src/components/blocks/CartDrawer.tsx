@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { formatAED } from "@/lib/utils";
@@ -23,6 +24,7 @@ export function CartDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations("Cart");
   const lines = DEMO_ITEMS.map((item) => ({
     ...item,
     product: getProduct(item.productSlug)!,
@@ -34,13 +36,13 @@ export function CartDrawer({
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            Your Bag ({lines.reduce((s, l) => s + l.qty, 0)})
+            {t("bagCount")} ({lines.reduce((s, l) => s + l.qty, 0)})
           </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {lines.length === 0 ? (
             <p className="py-10 text-center text-sm text-fog">
-              Your bag is empty.
+              {t("empty")}
             </p>
           ) : (
             <ul className="divide-y divide-ink/10">
@@ -64,17 +66,17 @@ export function CartDrawer({
                     </p>
                     <div className="mt-2 flex items-center gap-3">
                       <span className="flex items-center border border-ink/15">
-                        <button className="p-1.5 text-espresso hover:text-ink" aria-label="Decrease">
+                        <button className="p-1.5 text-espresso hover:text-ink" aria-label={t("decrease")}>
                           <Minus className="size-3" />
                         </button>
                         <span className="w-6 text-center text-xs font-semibold">{qty}</span>
-                        <button className="p-1.5 text-espresso hover:text-ink" aria-label="Increase">
+                        <button className="p-1.5 text-espresso hover:text-ink" aria-label={t("increase")}>
                           <Plus className="size-3" />
                         </button>
                       </span>
                       <button
                         className="p-1 text-fog transition hover:text-[#9c2b2e]"
-                        aria-label="Remove"
+                        aria-label={t("remove")}
                       >
                         <Trash2 className="size-4" />
                       </button>
@@ -87,19 +89,19 @@ export function CartDrawer({
         </div>
         <div className="border-t border-ink/10 px-6 py-5">
           <div className="mb-4 flex items-center justify-between text-sm">
-            <span className="uppercase tracking-[0.16em] text-fog">Subtotal</span>
+            <span className="uppercase tracking-[0.16em] text-fog">{t("subtotal")}</span>
             <span className="font-display text-lg text-ink">{formatAED(subtotal)}</span>
           </div>
           <div className="grid gap-2">
             <Button asChild onClick={() => onOpenChange(false)}>
-              <Link href="/cart">View Bag</Link>
+              <Link href="/cart">{t("title")}</Link>
             </Button>
             <Button
               variant="outline"
               asChild
               onClick={() => onOpenChange(false)}
             >
-              <Link href="/cart">Checkout</Link>
+              <Link href="/cart">{t("checkout")}</Link>
             </Button>
           </div>
         </div>

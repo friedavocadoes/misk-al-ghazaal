@@ -1,6 +1,8 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 // React port of assets/collection-filters-form.js facets:
 // availability, price range, sorting. Writes GET params
@@ -14,6 +16,7 @@ export function CollectionFilters({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  const t = useTranslations("Filters");
   const avail = params.get("avail") === "in";
   const max = params.get("max") ?? "";
   const sort = params.get("sort") ?? "featured";
@@ -33,21 +36,21 @@ export function CollectionFilters({
     <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-32">
       <div className="flex items-center justify-between">
         <h2 className="text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
-          Refine {activeCount > 0 && `(${activeCount})`}
+          {t("refine")} {activeCount > 0 && `(${activeCount})`}
         </h2>
         {activeCount > 0 && (
           <button
             onClick={() => router.push(basePath)}
             className="link-underline text-[11px] font-semibold uppercase tracking-[0.16em] text-gold"
           >
-            Clear
+            {t("clear")}
           </button>
         )}
       </div>
 
       <div className="mt-5 border-t border-ink/10 pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
-          Availability
+          {t("availability")}
         </p>
         <label className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-espresso">
           <input
@@ -56,13 +59,13 @@ export function CollectionFilters({
             onChange={(e) => set("avail", e.target.checked ? "in" : null)}
             className="size-4 accent-[#8a6d2f]"
           />
-          In stock only
+          {t("inStock")}
         </label>
       </div>
 
       <div className="mt-5 border-t border-ink/10 pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
-          Max price · AED {max || maxPrice}
+          {t("maxPrice")} · AED {max || maxPrice}
         </p>
         <input
           type="range"
@@ -78,7 +81,7 @@ export function CollectionFilters({
 
       <div className="mt-5 border-t border-ink/10 pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
-          Sort by
+          {t("sort")}
         </p>
         <select
           value={sort}
@@ -86,10 +89,10 @@ export function CollectionFilters({
           className="mt-3 w-full rounded-[2px] border border-ink/20 bg-white px-3 py-2.5 text-sm text-ink"
           aria-label="Sort products"
         >
-          <option value="featured">Featured</option>
-          <option value="price-asc">Price: low to high</option>
-          <option value="price-desc">Price: high to low</option>
-          <option value="rating">Top rated</option>
+          <option value="featured">{t("featured")}</option>
+          <option value="price-asc">{t("priceAsc")}</option>
+          <option value="price-desc">{t("priceDesc")}</option>
+          <option value="rating">{t("rating")}</option>
         </select>
       </div>
     </aside>

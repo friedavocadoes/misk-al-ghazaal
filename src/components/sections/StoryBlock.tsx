@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 // Converted from sections/Ishi_storyblock.liquid — brand story + CTA.
 export function StoryBlock() {

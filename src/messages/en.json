@@ -1,0 +1,179 @@
+{
+  "Nav": {
+    "about": "About",
+    "shop": "Shop",
+    "privateLabel": "Private Label",
+    "contact": "Contact",
+    "journal": "Journal"
+  },
+  "Header": {
+    "home": "Misk Al Ghazaal home",
+    "searchPlaceholder": "Search perfumes, bakhoor, oudh…",
+    "search": "Search",
+    "account": "Account",
+    "bag": "Open bag",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language",
+    "english": "English",
+    "arabic": "العربية",
+    "loginAccount": "Login / Account"
+  },
+  "ShopMenu": {
+    "title": "Shop the Maison"
+  },
+  "Hero": {
+    "exploreAll": "Explore All",
+    "prev": "Previous slide",
+    "next": "Next slide",
+    "timeLeft": "Time until next slide"
+  },
+  "Cart": {
+    "eyebrow": "Your Selection",
+    "title": "Shopping Bag",
+    "empty": "Your bag is empty",
+    "continue": "Continue shopping",
+    "summary": "Order Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "free": "Complimentary",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "checkoutNote": "Secure checkout arrives with Phase 2.",
+    "qty": "Qty",
+    "remove": "Remove",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "bagCount": "Your Bag"
+  },
+  "Filters": {
+    "refine": "Refine",
+    "clear": "Clear",
+    "availability": "Availability",
+    "inStock": "In stock only",
+    "maxPrice": "Max price",
+    "sort": "Sort by",
+    "featured": "Featured",
+    "priceAsc": "Price: low to high",
+    "priceDesc": "Price: high to low",
+    "rating": "Top rated"
+  },
+  "Collection": {
+    "eyebrow": "The Collection",
+    "pieces": "pieces",
+    "home": "Home",
+    "collections": "Collections",
+    "noMatchTitle": "No pieces match",
+    "noMatchHint": "Try widening the price range."
+  },
+  "Product": {
+    "reviews": "reviews",
+    "size": "Size",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "addToBag": "Add to Bag",
+    "buyNow": "Buy It Now",
+    "wishlist": "Add to wishlist",
+    "wishlisted": "Wishlisted",
+    "sellingFast": "Selling fast",
+    "left": "pieces left",
+    "detailsEyebrow": "Details",
+    "detailsTitle": "The Creation",
+    "shippingTitle": "Shipping",
+    "shippingBody": "Complimentary above AED 400 (1–3 working days). Flat AED 26 below AED 400. Remote areas up to 5 days.",
+    "assuranceTitle": "Assurance",
+    "assuranceBody": "100% authentic, 7-day returns on unopened pieces, cash on delivery within the UAE."
+  },
+  "Search": {
+    "eyebrow": "Search",
+    "title": "Search the Maison",
+    "found": "pieces found",
+    "foundOne": "piece found",
+    "hint": "Try “misk”, “oudh”, “bakhoor”…"
+  },
+  "Blog": {
+    "eyebrow": "Journal",
+    "title": "Notes on Scent",
+    "keepReading": "Keep Reading",
+    "back": "Journal"
+  },
+  "Contact": {
+    "eyebrow": "Correspondence",
+    "title": "Write to the Maison",
+    "serve": "How may we serve you?",
+    "stepTopic": "Topic",
+    "stepDetails": "Details",
+    "stepConfirm": "Confirm",
+    "topicMeeting": "Private Label Meeting",
+    "topicMeetingText": "Manufacturing, bulk orders and partnerships.",
+    "topicReview": "Leave a Review",
+    "topicReviewText": "Tell the maison what you loved.",
+    "topicComplaint": "Raise a Complaint",
+    "topicComplaintText": "Something wrong? We make it right.",
+    "meetingTitle": "Tell us about your project",
+    "reviewTitle": "Share your experience",
+    "complaintTitle": "Describe the issue",
+    "confirmTitle": "Confirm & send",
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone",
+    "company": "Company / Brand",
+    "category": "Product category",
+    "select": "Select…",
+    "quantity": "Estimated Quantity",
+    "date": "Preferred Meeting Date",
+    "projectDetails": "Project details",
+    "product": "Product",
+    "productPick": "Select the piece…",
+    "rating": "Rating",
+    "reviewTitleLabel": "Review Title",
+    "reviewBody": "Your Review",
+    "orderNo": "Order Number",
+    "issueType": "Issue Type",
+    "issueBody": "What Happened?",
+    "requiredNote": "Please complete the required fields to continue.",
+    "back": "Back",
+    "continue": "Continue",
+    "send": "Send Message",
+    "successTitle": "Received with thanks.",
+    "reference": "Reference",
+    "successMeeting": "Our partnerships desk will write within two working days to arrange your visit.",
+    "successReview": "Your words join the maison journal after a brief moderation.",
+    "successComplaint": "A client-care specialist is on your case and will reply within 24 hours."
+  },
+  "Newsletter": {
+    "eyebrow": "Correspondence",
+    "title": "Letters from the Maison",
+    "text": "Private offers, new arrivals and rituals — once a month, never more.",
+    "placeholder": "Email address",
+    "join": "Join"
+  },
+  "Footer": {
+    "taglineSuffix": "Crafted for the Emirates.",
+    "rights": "Prices in AED · Cash on Delivery within UAE"
+  },
+  "Account": {
+    "eyebrow": "Maison",
+    "title": "My Account",
+    "text": "Client accounts arrive with Phase 2 and Supabase Auth.",
+    "login": "Login",
+    "register": "Register",
+    "loginText": "Stub only — Supabase Auth in Phase 2.",
+    "registerText": "Stub only — Supabase Auth in Phase 2.",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "signIn": "Sign in",
+    "create": "Create account"
+  },
+  "NotFound": {
+    "eyebrow": "Lost",
+    "title": "This page has evaporated.",
+    "text": "The page you seek does not exist — but our icons endure.",
+    "home": "Back Home",
+    "best": "Best Sellers"
+  },
+  "Common": {
+    "viewAll": "View all"
+  }
+}

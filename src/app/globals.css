@@ -43,6 +43,22 @@ body {
   font-family: var(--font-display);
 }
 
+/* Arabic script: Playfair/Inter have no Arabic glyphs, so the whole
+   type system swaps to Noto Sans Arabic under [lang="ar"]. Tracking is
+   neutralized with it — letter-spacing breaks Arabic letter joining. */
+html[lang="ar"] body {
+  font-family: var(--font-arabic), var(--font-body);
+}
+html[lang="ar"] body * {
+  letter-spacing: normal;
+}
+html[lang="ar"] .font-display {
+  font-family: var(--font-arabic);
+}
+html[lang="ar"] .eyebrow {
+  letter-spacing: 0.08em;
+}
+
 .eyebrow {
   font-size: 0.6875rem;
   font-weight: 600;

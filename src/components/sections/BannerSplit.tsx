@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { Banner } from "@/lib/types";
 import { SafeImage } from "@/components/ui/safe-image";
 

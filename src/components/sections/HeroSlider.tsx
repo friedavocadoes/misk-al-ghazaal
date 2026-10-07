@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectCreative, Parallax } from "swiper/modules";
 import type { Swiper as SwiperType } from "swiper";
 import gsap from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Banner } from "@/lib/types";
 import { SafeImage } from "@/components/ui/safe-image";
@@ -30,6 +31,7 @@ const lockFor = () =>
   typeof window !== "undefined" && window.innerWidth >= 1024 ? 72 : 68;
 
 export function HeroSlider({ slides }: { slides: Banner[] }) {
+  const t = useTranslations("Hero");
   const [swiper, setSwiper] = useState<SwiperType | null>(null);
   const [active, setActive] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -230,7 +232,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                           href="/collections"
                           className="link-underline hidden text-[12px] font-semibold uppercase tracking-[0.2em] text-white/85 sm:inline"
                         >
-                          Explore All
+                          {t("exploreAll")}
                         </Link>
                       </div>
                     )}
@@ -247,7 +249,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
             <div className="pointer-events-auto flex items-center gap-3 border border-white/25 bg-black/35 px-3 py-2 text-white backdrop-blur-md">
               <button
                 onClick={() => swiper?.slidePrev()}
-                aria-label="Previous slide"
+                aria-label={t("prev")}
                 className="p-1.5 transition hover:text-gold-soft"
               >
                 <ArrowLeft className="size-4" />
@@ -262,7 +264,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
               <span
                 className="relative block h-[2px] w-16 overflow-hidden bg-white/25 md:w-24"
                 role="progressbar"
-                aria-label="Time until next slide"
+                aria-label={t("timeLeft")}
               >
                 <span
                   ref={progressRef}
@@ -272,7 +274,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
               </span>
               <button
                 onClick={() => swiper?.slideNext()}
-                aria-label="Next slide"
+                aria-label={t("next")}
                 className="p-1.5 transition hover:text-gold-soft"
               >
                 <ArrowRight className="size-4" />

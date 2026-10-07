@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import gsap from "gsap";
 import {
@@ -17,6 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CartDrawer } from "./CartDrawer";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 
 type LinkKey = "about" | "shop" | "manufacture" | "contact";
@@ -24,10 +27,14 @@ type LinkKey = "about" | "shop" | "manufacture" | "contact";
 const EASE = "expo.out";
 const FLIGHT = 0.6;
 
-export function SiteHeader() {
+export function SiteHeader({ locale }: { locale: Locale }) {
   // Compact flips once past 36px, releases below 18px — early
   // engagement so chrome and hero morph as one; hysteresis + cooldown
   // below mean no half-states and no oscillation.
+  const t = useTranslations("Header");
+  const tShop = useTranslations("ShopMenu");
+  const router = useRouter();
+  const pathname = usePathname();
   const [compact, setCompact] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -37,7 +44,6 @@ export function SiteHeader() {
   const [menuEntered, setMenuEntered] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [locale, setLocale] = useState<"en" | "ar">("en");
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,14 +63,6 @@ export function SiteHeader() {
   });
 
   useLayoutEffect(() => {
-    const saved =
-      typeof window !== "undefined"
-        ? window.localStorage.getItem("locale")
-        : null;
-    if (saved === "ar" || saved === "en") {
-      setLocale(saved);
-      document.documentElement.lang = saved === "ar" ? "ar" : "en";
-    }
     const applyThresholds = (bypassLock: boolean) => {
       if (!bypassLock && Date.now() < toggleLock.current) return false;
       const y = window.scrollY;
@@ -231,16 +229,14 @@ export function SiteHeader() {
     setShopOpen(true);
   };
 
-  const pickLocale = (next: "en" | "ar") => {
-    setLocale(next);
-    window.localStorage.setItem("locale", next);
-    document.documentElement.lang = next === "ar" ? "ar" : "en";
+  const pickLocale = (next: Locale) => {
     setLangOpen(false);
+    if (next !== locale) router.replace(pathname, { locale: next });
   };
 
-  const left = getNavLeft();
-  const right = getNavRight();
-  const shop = getShopMenu();
+  const left = getNavLeft(locale);
+  const right = getNavRight(locale);
+  const shop = getShopMenu(locale);
 
   const linkFor = (key: LinkKey): string =>
     key === "about"
@@ -318,7 +314,7 @@ export function SiteHeader() {
             <span className="relative">
               <button
                 onClick={() => setLangOpen((v) => !v)}
-                aria-label="Language"
+                aria-label={t("language")}
                 className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
               >
                 <Globe
@@ -338,7 +334,7 @@ export function SiteHeader() {
                         locale === l ? "text-gold" : "text-espresso"
                       }`}
                     >
-                      {l === "en" ? "English" : "العربية"}
+                      {l === "en" ? t("english") : t("arabic")}
                     </button>
                   ))}
                 </span>
@@ -346,7 +342,7 @@ export function SiteHeader() {
             </span>
             <button
               onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search"
+              aria-label={t("search")}
               className="p-2 text-espresso transition hover:text-gold"
             >
               <Search
@@ -361,7 +357,7 @@ export function SiteHeader() {
 
           <Link
             href="/"
-            aria-label="Misk Al Ghazaal home"
+            aria-label={t("home")}
             className="flex flex-col items-center justify-self-center py-1"
           >
             <Image
@@ -395,7 +391,7 @@ export function SiteHeader() {
             </span>
             <Link
               href="/account"
-              aria-label="Account"
+              aria-label={t("account")}
               className="p-2 text-espresso transition hover:text-gold"
             >
               <User
@@ -404,7 +400,7 @@ export function SiteHeader() {
             </Link>
             <button
               onClick={() => setCartOpen(true)}
-              aria-label="Open bag"
+              aria-label={t("bag")}
               className="relative p-2 text-espresso transition hover:text-gold"
             >
               <ShoppingBag
@@ -440,12 +436,12 @@ export function SiteHeader() {
         <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 lg:hidden">
           <button
             onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("openMenu")}
             className="justify-self-start p-2 text-ink"
           >
             <Menu className="size-5" />
           </button>
-          <Link href="/" aria-label="Misk Al Ghazaal home" className="justify-self-center">
+          <Link href="/" aria-label={t("home")} className="justify-self-center">
             <Image
               src="/logo.webp"
               alt="Misk Al Ghazaal"
@@ -459,14 +455,14 @@ export function SiteHeader() {
           <span className="flex items-center justify-end">
             <button
               onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search"
+              aria-label={t("search")}
               className="p-2 text-espresso"
             >
               <Search className="size-5" />
             </button>
             <button
               onClick={() => setCartOpen(true)}
-              aria-label="Open bag"
+              aria-label={t("bag")}
               className="relative p-2 text-espresso"
             >
               <ShoppingBag className="size-5" />
@@ -483,12 +479,12 @@ export function SiteHeader() {
             <form action="/search" method="get" className="mx-auto flex max-w-2xl gap-2">
               <Input
                 name="q"
-                placeholder="Search perfumes, bakhoor, oudh…"
+                placeholder={t("searchPlaceholder")}
                 autoFocus
                 className="h-12 bg-white"
               />
               <Button type="submit" className="h-12">
-                Search
+                {t("search")}
               </Button>
             </form>
           </div>
@@ -508,7 +504,7 @@ export function SiteHeader() {
             }}
           >
             <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold-soft to-transparent" />
-            <p className="eyebrow mb-6 text-center text-gold">Shop the Maison</p>
+            <p className="eyebrow mb-6 text-center text-gold">{tShop("title")}</p>
             <div className="grid grid-cols-3 gap-8">
               {shop.map((col, ci) => (
                 <div
@@ -587,7 +583,7 @@ export function SiteHeader() {
                   transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
                 }}
               />
-              <button onClick={closeMenu} aria-label="Close menu" className="p-2 text-ink">
+              <button onClick={closeMenu} aria-label={t("closeMenu")} className="p-2 text-ink">
                 <X className="size-5" />
               </button>
             </div>
@@ -601,7 +597,7 @@ export function SiteHeader() {
                   onClick={() => setMobileShopOpen((v) => !v)}
                   className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
                 >
-                  Shop
+                  {left[1].label}
                   <ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} />
                 </button>,
                 ...right.map((l) => (
@@ -660,12 +656,12 @@ export function SiteHeader() {
                       locale === l ? "border-ink bg-ink text-white" : "border-ink/20 text-espresso"
                     }`}
                   >
-                    {l === "en" ? "English" : "العربية"}
+                    {l === "en" ? t("english") : t("arabic")}
                   </button>
                 ))}
               </span>
               <Link href="/account" onClick={closeMenu} className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
-                Login / Account
+                {t("loginAccount")}
               </Link>
             </nav>
           </div>

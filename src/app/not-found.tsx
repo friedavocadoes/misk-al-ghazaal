@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// Root fallback (no locale context) — points at the default locale.
 export default function NotFound() {
   return (
     <div className="mx-auto max-w-xl px-5 py-24 text-center">
@@ -14,10 +15,10 @@ export default function NotFound() {
       </p>
       <div className="mt-8 flex justify-center gap-2">
         <Button asChild>
-          <Link href="/">Back Home</Link>
+          <Link href="/en">Back Home</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/collection/best-sellers">Best Sellers</Link>
+          <Link href="/en/collection/best-sellers">Best Sellers</Link>
         </Button>
       </div>
     </div>
