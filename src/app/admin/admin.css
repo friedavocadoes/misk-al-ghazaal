@@ -1,0 +1,39 @@
+/* Admin-only affordances. Scoped under .admin (see app/admin/layout.tsx)
+   so the storefront is untouched. */
+
+/* Every clickable thing shows the hand. */
+.admin a,
+.admin button,
+.admin select,
+.admin summary,
+.admin label:has(input[type="file"]),
+.admin input[type="checkbox"] {
+  cursor: pointer;
+}
+.admin button:disabled,
+.admin select:disabled,
+.admin input:disabled {
+  cursor: not-allowed;
+}
+
+/* Row + card hover feedback. */
+.admin .admin-row {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.admin .admin-row:hover {
+  background-color: var(--color-cream);
+}
+.admin .admin-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.admin .admin-card:hover {
+  border-color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+}
+
+/* Nav link affordance. */
+.admin .admin-navlink {
+  transition: color 0.15s ease;
+}
+.admin .admin-navlink:hover {
+  color: var(--color-ink);
+}

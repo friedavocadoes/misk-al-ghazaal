@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/admin/sign-out-button";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { PrintButton } from "@/components/admin/print-button";
 
 const NEXT_STATUSES = [
@@ -46,6 +46,27 @@ async function updateOrder(formData: FormData) {
   revalidatePath("/admin/orders");
 }
 
+async function moveToBin(formData: FormData) {
+  "use server";
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const id = String(formData.get("id") ?? "");
+  const supabase = await createClient();
+  await supabase
+    .from("orders")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  await supabase.from("order_status_history").insert({
+    order_id: id,
+    from_status: null,
+    to_status: "binned",
+    changed_by: session.userId,
+    note: "Moved to recycle bin",
+  });
+  revalidatePath("/admin/orders");
+  redirect("/admin/orders");
+}
+
 export default async function OrderDetail(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -76,23 +97,33 @@ export default async function OrderDetail(props: {
   const waHref = `https://wa.me/${String(order.phone).replace(/\D/g, "")}?text=${waText}`;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <header className="flex items-center justify-between border-b border-ink/10 pb-6">
-        <div>
-          <p className="eyebrow">
-            <Link href="/admin" className="link-underline">Admin</Link> /{" "}
-            <Link href="/admin/orders" className="link-underline">Orders</Link> /{" "}
-            {order.order_no}
-          </p>
-          <h1 className="font-display text-3xl">
-            {order.order_no} · {order.customer_name}
-          </h1>
+    <>
+      <AdminNav email={session.email} role={session.role} />
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="flex items-center justify-between gap-4 border-b border-ink/10 pb-6">
+          <div>
+            <p className="eyebrow">
+              <Link href="/admin/orders" className="link-underline">Orders</Link> /{" "}
+              {order.order_no}
+            </p>
+            <h1 className="font-display text-3xl">
+              {order.order_no} · {order.customer_name}
+            </h1>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <PrintButton />
+            <form action={moveToBin}>
+              <input type="hidden" name="id" value={order.id} />
+              <button
+                type="submit"
+                title="Move order to recycle bin (recoverable for 20 days)"
+                className="border border-[#9c2b2e]/40 px-4 py-2 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
+              >
+                Delete
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <PrintButton />
-          <SignOutButton />
-        </div>
-      </header>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <section className="border border-ink/10 bg-white p-6">
@@ -109,7 +140,7 @@ export default async function OrderDetail(props: {
             href={waHref}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-block bg-ink px-4 py-2 text-sm text-white"
+            className="mt-4 inline-block bg-ink px-4 py-2 text-sm text-white transition hover:bg-ink/85"
           >
             WhatsApp customer (no API cost)
           </a>
@@ -144,7 +175,7 @@ export default async function OrderDetail(props: {
               Internal note (staff only)
               <input name="internal_note" defaultValue={order.internal_note ?? ""} placeholder="Called twice, deliver after 6pm" className="mt-1 w-full border border-ink/20 px-3 py-2" />
             </label>
-            <button type="submit" className="w-full bg-ink px-4 py-2.5 text-sm text-white">
+            <button type="submit" className="w-full bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">
               Save — current: {String(order.status).replaceAll("_", " ")}
             </button>
           </form>
@@ -162,6 +193,7 @@ export default async function OrderDetail(props: {
           {(!history || history.length === 0) && <li className="text-ink/60">No updates yet.</li>}
         </ul>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

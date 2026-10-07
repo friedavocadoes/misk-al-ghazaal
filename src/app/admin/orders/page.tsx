@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/keys";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/admin/sign-out-button";
+import { AdminNav } from "@/components/admin/admin-nav";
 
 const STATUSES = [
   "all",
@@ -41,6 +41,7 @@ export default async function OrdersPage(props: {
     let q = supabase
       .from("orders")
       .select("id,order_no,customer_name,phone,total,status,created_at")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(100);
     if (active !== "all") q = q.eq("status", active);
@@ -49,29 +50,31 @@ export default async function OrdersPage(props: {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <header className="flex items-center justify-between border-b border-ink/10 pb-6">
-        <div>
-          <p className="eyebrow">
-            <Link href="/admin" className="link-underline">
-              Admin
-            </Link>{" "}
-            / Orders
-          </p>
-          <h1 className="font-display text-3xl">Orders</h1>
+    <>
+      <AdminNav email={session.email} role={session.role} />
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="flex items-center justify-between border-b border-ink/10 pb-6">
+          <div>
+            <p className="eyebrow">Orders</p>
+            <h1 className="font-display text-3xl">Monitor + dispatch</h1>
+          </div>
+          <Link
+            href="/admin/bin?tab=orders"
+            className="border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50"
+          >
+            Recycle bin
+          </Link>
         </div>
-        <SignOutButton />
-      </header>
 
       <div className="mt-6 flex flex-wrap gap-2">
         {STATUSES.map((s) => (
           <Link
             key={s}
             href={s === "all" ? "/admin/orders" : `/admin/orders?status=${s}`}
-            className={`border px-3 py-1.5 text-sm ${
+            className={`border px-3 py-1.5 text-sm transition ${
               active === s
                 ? "border-ink bg-ink text-white"
-                : "border-ink/20 bg-white"
+                : "border-ink/20 bg-white hover:border-ink/50"
             }`}
           >
             {s.replaceAll("_", " ")}
@@ -97,7 +100,7 @@ export default async function OrdersPage(props: {
           <Link
             key={o.id}
             href={`/admin/orders/${o.id}`}
-            className="flex items-center justify-between gap-4 p-4 transition hover:bg-cream"
+            className="admin-row flex items-center justify-between gap-4 p-4"
           >
             <div>
               <p className="font-medium">
@@ -113,7 +116,8 @@ export default async function OrdersPage(props: {
             </div>
           </Link>
         ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -32,7 +32,7 @@ export function ProductImagesEditor({
             <img src={src} alt="" className="aspect-square w-full object-cover" />
             <button
               type="button"
-              className="absolute right-1 top-1 bg-ink px-2 py-0.5 text-xs text-white"
+              className="absolute right-1 top-1 bg-ink px-2 py-0.5 text-xs text-white transition hover:bg-[#9c2b2e]"
               onClick={() => void persist(images.filter((i) => i !== src))}
             >
               Remove

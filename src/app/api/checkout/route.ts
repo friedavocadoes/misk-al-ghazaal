@@ -44,6 +44,7 @@ export async function POST(req: Request) {
     const { data: products, error: pErr } = await admin
       .from("products")
       .select("id,slug,title,price")
+      .is("deleted_at", null) // binned products can't be ordered (service_role bypasses RLS)
       .in("slug", slugs);
     if (pErr || !products) throw pErr ?? new Error("catalog lookup failed");
     const bySlug = new Map(products.map((p) => [p.slug, p]));

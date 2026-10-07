@@ -89,7 +89,8 @@ async function fetchProductsWithRelations(filter?: {
 }): Promise<Product[]> {
   requireConfigured();
   const supabase = await createClient();
-  let pq = supabase.from("products").select("*");
+  // Bin is invisible to shoppers: soft-deleted rows never leave the DB layer.
+  let pq = supabase.from("products").select("*").is("deleted_at", null);
   if (filter?.slugs?.length) pq = pq.in("slug", filter.slugs);
   const { data: prods, error } = await pq;
   if (error || !prods) throw error ?? new Error("products query failed");
@@ -173,6 +174,7 @@ export async function getProductsByCollection(
       .from("collections")
       .select("id")
       .eq("slug", slug)
+      .is("deleted_at", null)
       .single();
     if (!coll) return [];
     items = await fetchProductsWithRelations({
@@ -215,9 +217,10 @@ export async function getCollections(): Promise<Category[]> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("collections")
-    .select("*")
-    .order("sort");
+      .from("collections")
+      .select("*")
+      .is("deleted_at", null)
+      .order("sort");
   if (error || !data) throw error ?? new Error("collections failed");
   return data.map(toCategory);
 }
@@ -225,11 +228,12 @@ export async function getCollections(): Promise<Category[]> {
 export async function getCollectionBySlug(slug: string): Promise<Category | null> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("collections")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+    const { data, error } = await supabase
+      .from("collections")
+      .select("*")
+      .eq("slug", slug)
+      .is("deleted_at", null)
+      .single();
   if (error || !data) return null;
   return toCategory(data as Parameters<typeof toCategory>[0]);
 }
@@ -275,6 +279,7 @@ async function getBannersBySlot(slot: "hero" | "brand"): Promise<Banner[]> {
     .from("banners")
     .select("*")
     .eq("slot", slot)
+    .is("deleted_at", null)
     .order("sort");
   if (error || !data) throw error ?? new Error("banners failed");
   return (data as Parameters<typeof toBanner>[0][]).map(toBanner);
@@ -317,10 +322,11 @@ function toArticle(a: {
 export async function getArticles(): Promise<Article[]> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("articles")
-    .select("*")
-    .order("date", { ascending: false });
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .is("deleted_at", null)
+      .order("date", { ascending: false });
   if (error || !data) throw error ?? new Error("articles failed");
   return (data as Parameters<typeof toArticle>[0][]).map(toArticle);
 }
@@ -328,11 +334,12 @@ export async function getArticles(): Promise<Article[]> {
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("articles")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+    const { data, error } = await supabase
+      .from("articles")
+      .select("*")
+      .eq("slug", slug)
+      .is("deleted_at", null)
+      .single();
   if (error || !data) return null;
   return toArticle(data as Parameters<typeof toArticle>[0]);
 }
@@ -344,6 +351,7 @@ export async function searchCatalog(query: string): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select("*")
+    .is("deleted_at", null)
     .ilike("title", `%${query.trim()}%`)
     .limit(20);
   if (error || !data) throw error ?? new Error("search failed");

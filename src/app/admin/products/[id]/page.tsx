@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
-import { SignOutButton } from "@/components/admin/sign-out-button";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
 
 async function saveProduct(formData: FormData) {
@@ -46,6 +46,20 @@ async function saveVariant(formData: FormData) {
   revalidatePath(`/admin/products/${productId}`);
 }
 
+async function moveToBin(formData: FormData) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const id = String(formData.get("id"));
+  const supabase = await createClient();
+  await supabase
+    .from("products")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", id);
+  revalidatePath("/admin/products");
+  redirect("/admin/products");
+}
+
 export default async function ProductDetail(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -63,17 +77,27 @@ export default async function ProductDetail(props: {
     .order("title");
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      <header className="flex items-center justify-between border-b border-ink/10 pb-6">
-        <div>
-          <p className="eyebrow">
-            <Link href="/admin" className="link-underline">Admin</Link> /{" "}
-            <Link href="/admin/products" className="link-underline">Products</Link> / {p.slug}
-          </p>
-          <h1 className="font-display text-3xl">{p.title}</h1>
+    <>
+      <AdminNav email={session.email} role={session.role} />
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="flex items-center justify-between gap-4 border-b border-ink/10 pb-6">
+          <div>
+            <p className="eyebrow">
+              <Link href="/admin/products" className="link-underline">Products</Link> / {p.slug}
+            </p>
+            <h1 className="font-display text-3xl">{p.title}</h1>
+          </div>
+          <form action={moveToBin}>
+            <input type="hidden" name="id" value={p.id} />
+            <button
+              type="submit"
+              title="Move product to recycle bin (recoverable for 20 days)"
+              className="border border-[#9c2b2e]/40 px-4 py-2 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
+            >
+              Delete
+            </button>
+          </form>
         </div>
-        <SignOutButton />
-      </header>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <form action={saveProduct} className="space-y-3 border border-ink/10 bg-white p-6">
@@ -90,7 +114,7 @@ export default async function ProductDetail(props: {
             <label><input type="checkbox" name="is_new" defaultChecked={p.is_new} /> New</label>
             <label><input type="checkbox" name="is_best_seller" defaultChecked={p.is_best_seller} /> Best seller</label>
           </div>
-          <button className="w-full bg-ink px-4 py-2.5 text-sm text-white">Save details</button>
+          <button className="w-full bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">Save details</button>
         </form>
 
         <section className="border border-ink/10 bg-white p-6">
@@ -112,11 +136,12 @@ export default async function ProductDetail(props: {
               <input name="v_price" type="number" step="0.01" defaultValue={v.price} className="border border-ink/20 px-2 py-1.5" />
               <input name="v_stock" type="number" defaultValue={v.stock} className="border border-ink/20 px-2 py-1.5" />
               <input name="v_sku" defaultValue={v.sku ?? ""} placeholder="SKU" className="border border-ink/20 px-2 py-1.5" />
-              <button className="bg-ink px-3 py-1.5 text-white sm:col-span-5">Save variant</button>
+              <button className="bg-ink px-3 py-1.5 text-white transition hover:bg-ink/85 sm:col-span-5">Save variant</button>
             </form>
           ))}
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }
