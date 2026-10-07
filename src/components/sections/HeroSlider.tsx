@@ -179,24 +179,25 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
           >
             {slides.map((s, i) => (
               <SwiperSlide key={s.src}>
-                <div className="relative">
-                  <span
-                    key={i === active ? "on" : "off"}
-                    className={`block overflow-hidden ${i === active ? "kenburns" : ""}`}
-                  >
-                    <SafeImage
-                      src={s.src}
-                      fallback={s.fallback}
-                      alt={s.alt}
-                      width={2000}
-                      height={1100}
-                      priority={i === 0}
-                      style={s.focal ? { objectPosition: s.focal } : undefined}
-                      className={`h-[var(--hero-h,86svh)] min-h-[440px] w-full opacity-90 ${
-                        s.fit === "contain" ? "object-contain" : "object-cover"
-                      }`}
-                    />
-                  </span>
+                {/* The frame animates (var(--hero-h)); the image inside stays
+                    a stable 100svh and is only clipped — it never re-crops
+                    or re-rasterizes per scroll frame, so no flicker. */}
+                <div
+                  className="relative overflow-hidden"
+                  style={{ height: "var(--hero-h,86svh)", minHeight: 440 }}
+                >
+                  <SafeImage
+                    src={s.src}
+                    fallback={s.fallback}
+                    alt={s.alt}
+                    width={2000}
+                    height={1100}
+                    priority={i === 0}
+                    style={s.focal ? { objectPosition: s.focal } : undefined}
+                    className={`absolute inset-0 h-[100svh] w-full opacity-90 ${
+                      s.fit === "contain" ? "object-contain" : "object-cover"
+                    } ${i === active ? "kenburns" : ""}`}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-7xl px-5 pb-24 md:px-10 md:pb-28">
