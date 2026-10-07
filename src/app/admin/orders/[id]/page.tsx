@@ -1,0 +1,167 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { getAdminSession } from "@/lib/admin-auth";
+import { createClient } from "@/lib/supabase/server";
+import { SignOutButton } from "@/components/admin/sign-out-button";
+import { PrintButton } from "@/components/admin/print-button";
+
+const NEXT_STATUSES = [
+  "new",
+  "confirmed",
+  "packed",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+  "returned",
+] as const;
+
+async function updateOrder(formData: FormData) {
+  "use server";
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const id = String(formData.get("id") ?? "");
+  const toStatus = String(formData.get("status") ?? "");
+  const trackingNo = String(formData.get("tracking_no") ?? "").trim() || null;
+  const internalNote = String(formData.get("internal_note") ?? "").trim() || null;
+  if (!NEXT_STATUSES.includes(toStatus as (typeof NEXT_STATUSES)[number])) return;
+
+  const supabase = await createClient();
+  const { data: current } = await supabase
+    .from("orders")
+    .select("status")
+    .eq("id", id)
+    .single();
+  await supabase
+    .from("orders")
+    .update({ status: toStatus, tracking_no: trackingNo, internal_note: internalNote })
+    .eq("id", id);
+  await supabase.from("order_status_history").insert({
+    order_id: id,
+    from_status: current?.status ?? null,
+    to_status: toStatus,
+    changed_by: session.userId,
+  });
+  revalidatePath(`/admin/orders/${id}`);
+  revalidatePath("/admin/orders");
+}
+
+export default async function OrderDetail(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const { id } = await props.params;
+
+  const supabase = await createClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (!order) redirect("/admin/orders");
+  const { data: items } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", id);
+  const { data: history } = await supabase
+    .from("order_status_history")
+    .select("*")
+    .eq("order_id", id)
+    .order("created_at", { ascending: false });
+
+  const waText = encodeURIComponent(
+    `Hello ${order.customer_name}, this is Misk Al Ghazaal about order ${order.order_no} (AED ${Number(order.total).toFixed(2)}).`,
+  );
+  const waHref = `https://wa.me/${String(order.phone).replace(/\D/g, "")}?text=${waText}`;
+
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-10">
+      <header className="flex items-center justify-between border-b border-ink/10 pb-6">
+        <div>
+          <p className="eyebrow">
+            <Link href="/admin" className="link-underline">Admin</Link> /{" "}
+            <Link href="/admin/orders" className="link-underline">Orders</Link> /{" "}
+            {order.order_no}
+          </p>
+          <h1 className="font-display text-3xl">
+            {order.order_no} · {order.customer_name}
+          </h1>
+        </div>
+        <div className="flex gap-2">
+          <PrintButton />
+          <SignOutButton />
+        </div>
+      </header>
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <section className="border border-ink/10 bg-white p-6">
+          <h2 className="font-display text-xl">Customer + delivery</h2>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div><dt className="text-ink/60">Phone</dt><dd>{order.phone}</dd></div>
+            <div><dt className="text-ink/60">Address</dt><dd>{order.address}, {order.city}, {order.emirate}</dd></div>
+            {order.email && <div><dt className="text-ink/60">Email</dt><dd>{order.email}</dd></div>}
+            {order.notes && <div><dt className="text-ink/60">Customer note</dt><dd>{order.notes}</dd></div>}
+            <div><dt className="text-ink/60">Payment</dt><dd>{order.payment_method === "cod" ? "Cash on delivery" : "Card"}</dd></div>
+            <div><dt className="text-ink/60">Total (COD to collect)</dt><dd className="font-medium">AED {Number(order.total).toFixed(2)}</dd></div>
+          </dl>
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-block bg-ink px-4 py-2 text-sm text-white"
+          >
+            WhatsApp customer (no API cost)
+          </a>
+        </section>
+
+        <section className="border border-ink/10 bg-white p-6">
+          <h2 className="font-display text-xl">Items</h2>
+          <ul className="mt-4 divide-y divide-ink/10 text-sm">
+            {(items ?? []).map((it: { id: string; title: string; qty: number; unit_price: number }) => (
+              <li key={it.id} className="flex justify-between py-2">
+                <span>{it.title} × {it.qty}</span>
+                <span>AED {(Number(it.unit_price) * it.qty).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+          <h2 className="mt-6 font-display text-xl">Update status</h2>
+          <form action={updateOrder} className="mt-4 space-y-3">
+            <input type="hidden" name="id" value={order.id} />
+            <label className="block text-sm">
+              Status
+              <select name="status" defaultValue={order.status} className="mt-1 w-full border border-ink/20 bg-white px-3 py-2">
+                {NEXT_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s.replaceAll("_", " ")}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              Tracking no / courier (optional)
+              <input name="tracking_no" defaultValue={order.tracking_no ?? ""} placeholder="e.g. Aramex 123456" className="mt-1 w-full border border-ink/20 px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              Internal note (staff only)
+              <input name="internal_note" defaultValue={order.internal_note ?? ""} placeholder="Called twice, deliver after 6pm" className="mt-1 w-full border border-ink/20 px-3 py-2" />
+            </label>
+            <button type="submit" className="w-full bg-ink px-4 py-2.5 text-sm text-white">
+              Save — current: {String(order.status).replaceAll("_", " ")}
+            </button>
+          </form>
+        </section>
+      </div>
+
+      <section className="mt-6 border border-ink/10 bg-white p-6">
+        <h2 className="font-display text-xl">Timeline</h2>
+        <ul className="mt-4 space-y-2 text-sm">
+          {(history ?? []).map((h: { id: string; from_status: string | null; to_status: string; created_at: string }) => (
+            <li key={h.id} className="text-ink/70">
+              {h.from_status ? `${h.from_status} → ` : ""}{h.to_status} · {new Date(h.created_at).toLocaleString("en-AE")}
+            </li>
+          ))}
+          {(!history || history.length === 0) && <li className="text-ink/60">No updates yet.</li>}
+        </ul>
+      </section>
+    </div>
+  );
+}

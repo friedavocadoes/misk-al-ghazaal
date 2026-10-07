@@ -2,13 +2,14 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { NewsletterSection } from "./NewsletterSection";
-import { SITE, getFooterColumns } from "@/lib/site";
+import { SITE } from "@/lib/site";
+import { getFooterColumns } from "@/lib/footer";
 import { pick } from "@/lib/i18n";
 
 export async function SiteFooter({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "Footer" });
   const tn = await getTranslations({ locale, namespace: "Newsletter" });
-  const columns = getFooterColumns(locale);
+  const columns = await getFooterColumns(locale);
   return (
     <footer className="mt-20 border-t border-ink/10 bg-sand/60">
       <NewsletterSection

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -9,7 +10,6 @@ import { tx } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { formatAED } from "@/lib/utils";
-import { getProduct } from "@/lib/mock-data";
 
 const DEMO_ITEMS = [
   { productSlug: "misk-al-ghazaal-abukhalid-50ml", qty: 1 },
@@ -18,6 +18,14 @@ const DEMO_ITEMS = [
     qty: 2,
   },
 ];
+
+interface DrawerProduct {
+  slug: string;
+  title: string;
+  title_ar: string | null;
+  price: number;
+  images: string[];
+}
 
 export function CartDrawer({
   open,
@@ -28,10 +36,25 @@ export function CartDrawer({
 }) {
   const t = useTranslations("Cart");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
+  const [catalog, setCatalog] = useState<Record<string, DrawerProduct>>({});
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetch(`/api/products?slugs=${DEMO_ITEMS.map((i) => i.productSlug).join(",")}`)
+      .then((r) => (r.ok ? r.json() : { products: [] }))
+      .then((j: { products: DrawerProduct[] }) => {
+        if (cancelled) return;
+        setCatalog(Object.fromEntries((j.products ?? []).map((p) => [p.slug, p])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open ]);
   const lines = DEMO_ITEMS.map((item) => ({
     ...item,
-    product: getProduct(item.productSlug)!,
-  })).filter((l) => l.product);
+    product: catalog[item.productSlug],
+  })).filter((l): l is typeof l & { product: DrawerProduct } => Boolean(l.product));
   const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
 
   return (
@@ -52,17 +75,19 @@ export function CartDrawer({
               {lines.map(({ product, qty }) => (
                 <li key={product.slug} className="flex gap-4 py-4">
                   <span className="relative block size-16 shrink-0 overflow-hidden bg-sand">
-                    <Image
-                      src={product.images[0]}
-                      alt={product.title}
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
+                    {product.images[0] && (
+                      <Image
+                        src={product.images[0]}
+                        alt={product.title}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    )}
                   </span>
                   <div className="flex-1">
                     <p className="text-[13px] font-medium text-ink">
-                      {tx(product.title, product.titleAr, locale)}
+                      {tx(product.title, product.title_ar ?? undefined, locale)}
                     </p>
                     <p className="mt-0.5 text-[13px] text-espresso">
                       {formatAED(product.price)}

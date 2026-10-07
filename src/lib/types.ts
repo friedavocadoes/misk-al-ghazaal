@@ -1,6 +1,6 @@
-// Supabase-ready e-commerce domain model.
-// Mirrors future Supabase tables; no Shopify concepts (no Liquid, no handles-as-ids).
-// Phase 1: fed by lib/mock-data.ts. Phase 2: replace mock imports with Supabase queries.
+// Supabase-backed e-commerce domain model.
+// Mirrors the Supabase tables 1:1 (see supabase/schema.sql); no Shopify
+// concepts (no Liquid, no handles-as-ids). Seeded from supabase/seed.sql.
 
 export interface Variant {
   id: string;

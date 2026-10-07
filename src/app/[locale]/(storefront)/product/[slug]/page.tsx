@@ -60,6 +60,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
           product={product}
           layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
           locale={locale}
+          categoryName={catTitle}
         />
       </div>
       <ProductTabsAccordion product={product} locale={locale} />

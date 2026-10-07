@@ -1,6 +1,5 @@
 import type { Locale } from "@/i18n/routing";
-import { pick, tx, type Localizable } from "./i18n";
-import { collections } from "./mock-data";
+import { pick, type Localizable } from "./i18n";
 
 // ---------------------------------------------------------------------------
 // Site content layer. Everything rendered as chrome/content (nav, footer,
@@ -36,7 +35,7 @@ export interface Perk {
   desc: string;
 }
 
-const L = <T>(en: T, ar?: T): Localizable<T> => ({ en, ar });
+export const L = <T>(en: T, ar?: T): Localizable<T> => ({ en, ar });
 
 export const SITE = {
   name: "Misk Al Ghazaal",
@@ -142,54 +141,8 @@ export function getShopMenu(locale: Locale): ShopMenuColumn[] {
   ];
 }
 
-export function getFooterColumns(locale: Locale): FooterColumn[] {
-  const shopLinks = [
-    "best-sellers",
-    "new-arrivals",
-    "dukhoon",
-    "holy-oudh",
-    "misk-al-ghazaal",
-  ].flatMap((s) => {
-    const c = collections.find((x) => x.slug === s);
-    return c ? [{ label: tx(c.title, c.titleAr, locale), href: `/collection/${c.slug}` }] : [];
-  });
-  return [
-    { heading: pick(L("Shop", "تسوّق"), locale), links: shopLinks.slice(0, 5) },
-    {
-      heading: pick(L("Client Care", "خدمة العملاء"), locale),
-      links: [
-        { label: pick(L("Contact", "تواصل"), locale), href: "/pages/contact" },
-        {
-          label: pick(L("FAQ & Shipping", "الأسئلة الشائعة والشحن"), locale),
-          href: "/pages/faq",
-        },
-        {
-          label: pick(L("Returns & Terms", "الإرجاع والشروط"), locale),
-          href: "/pages/terms",
-        },
-        {
-          label: pick(L("Wishlist", "المفضلة"), locale),
-          href: "/pages/wishlist",
-        },
-      ],
-    },
-    {
-      heading: pick(L("Maison", "الدار"), locale),
-      links: [
-        { label: pick(L("About Us", "من نحن"), locale), href: "/pages/about" },
-        {
-          label: pick(L("Private Label", "العلامة الخاصة"), locale),
-          href: "/private-label",
-        },
-        { label: pick(L("Journal", "المدونة"), locale), href: "/blog" },
-        {
-          label: pick(L("Wholesale", "الجملة"), locale),
-          href: "/pages/wholesale",
-        },
-      ],
-    },
-  ];
-}
+// NOTE: footer columns moved to lib/footer.ts (server-only: needs store.ts,
+// which pulls in next/headers; site.ts must stay client-importable).
 
 // Testimonials / FAQs / perks: English today (fallback path). The admin
 // panel adds `ar` per entry later — pick() resolves automatically.

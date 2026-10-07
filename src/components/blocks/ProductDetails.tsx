@@ -7,7 +7,6 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
-import { collections } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
@@ -19,10 +18,12 @@ export function ProductInfo({
   product,
   layout = "standard",
   locale,
+  categoryName,
 }: {
   product: Product;
   layout?: "standard" | "miskalgazaal";
   locale: Locale;
+  categoryName?: string;
 }) {
   const t = useTranslations("Product");
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
@@ -32,8 +33,8 @@ export function ProductInfo({
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const stock = variant?.stock ?? 0;
   const title = tx(product.title, product.titleAr, locale);
-  const cat = collections.find((c) => c.slug === product.categorySlugs[0]);
-  const catName = cat ? tx(cat.title, cat.titleAr, locale) : product.categorySlugs[0]?.replace(/-/g, " ");
+  const catName =
+    categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
 
   return (
     <div>
