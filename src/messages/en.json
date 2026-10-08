@@ -8,7 +8,10 @@
   },
   "Header": {
     "home": "Misk Al Ghazaal home",
-    "searchPlaceholder": "Search perfumes, bakhoor, oudh…",
+    "searchPlaceholder": "Search perfumes",
+    "searchTitle": "Search the Maison",
+    "searchHint": "Notes, oils, dukhoon, oudh — start typing.",
+    "closeSearch": "Close search",
     "search": "Search",
     "account": "Account",
     "bag": "Open bag",
@@ -141,7 +144,17 @@
     "reference": "Reference",
     "successMeeting": "Our partnerships desk will write within two working days to arrange your visit.",
     "successReview": "Your words join the maison journal after a brief moderation.",
-    "successComplaint": "A client-care specialist is on your case and will reply within 24 hours."
+    "successComplaint": "A client-care specialist is on your case and will reply within 24 hours.",
+    "channelsTitle": "Prefer a direct line?",
+    "channelsText": "Chat, call or follow — a human replies, usually within hours.",
+    "channelChat": "WhatsApp",
+    "channelCall": "Call",
+    "channelLandline": "Landline",
+    "channelVisit": "Visit",
+    "copyNumber": "Copy number",
+    "visitTitle": "Or come smell it first",
+    "visitText": "Boutique & factory locations, hours and directions.",
+    "visitCta": "Find the Maison"
   },
   "Newsletter": {
     "eyebrow": "Correspondence",

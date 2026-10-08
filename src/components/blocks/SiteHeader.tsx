@@ -1,10 +1,11 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import gsap from "gsap";
 import {
+  ArrowRight,
   ArrowUpRight,
   ChevronDown,
   Crown,
@@ -21,8 +22,6 @@ import {
   Venus,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CartDrawer } from "./CartDrawer";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -188,6 +187,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     return () => ctx.revert();
   }, [compact]);
 
+  // Search panel niceties: Escape closes it.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
+
   // Dropdown enter animation
   useLayoutEffect(() => {
     if (shopOpen) {
@@ -256,6 +265,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const right = getNavRight(locale);
   const shop = getShopMenu(locale);
 
+  // Icon glyphs scale on the GPU (transform) inside fixed-size hit areas,
+  // so shrinking the chrome never reflows the flex rows mid-flight — the
+  // GSAP FLIP targets stay exactly where they were measured.
+  const glyph = `size-5 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+    compact ? "scale-[0.75]" : "scale-100"
+  }`;
+
   const linkFor = (key: LinkKey): string =>
     key === "about"
       ? left[0].href
@@ -283,6 +299,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
+      tabIndex={compact ? -1 : 0}
+      aria-hidden={compact}
       className="inline-flex items-center gap-1.5 font-display text-[15px] font-semibold tracking-[0.24em] text-ink antialiased transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
@@ -300,6 +318,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
+      tabIndex={compact ? 0 : -1}
+      aria-hidden={!compact}
       className="whitespace-nowrap font-display text-[12px] font-semibold tracking-[0.14em] text-ink antialiased opacity-0 transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
@@ -325,19 +345,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       <div className="relative">
         {/* Main crest row — slimmer now that the wordmark sits in the page, not the bar */}
         <div
-          className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
+          className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
           style={{ height: compact ? 72 : 108 }}
         >
-          <div className="flex items-center gap-1">
-            <span className="relative">
+          <div className="flex items-center">
+            <span className="relative flex h-9 items-center">
               <button
                 onClick={() => setLangOpen((v) => !v)}
                 aria-label={t("language")}
-                className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
+                className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
               >
-                <Globe
-                  className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
-                />
+                <Globe className={glyph} />
                 <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
                   {locale}
                 </span>
@@ -361,25 +379,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t("search")}
-              className="shrink-0 p-2 text-espresso transition hover:text-gold"
+              aria-expanded={searchOpen}
+              className="flex size-9 shrink-0 items-center justify-center text-espresso transition hover:text-gold"
             >
-              <Search
-                className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
-              />
+              <Search className={glyph} />
             </button>
-            {/* Inline search bar — melts away in the compact state */}
-            <form
-              action="/search"
-              method="get"
-              className="hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
-              style={{ maxWidth: compact ? 0 : 176, opacity: compact ? 0 : 1 }}
-            >
-              <input
-                name="q"
-                placeholder={t("searchPlaceholder")}
-                className="h-9 w-[176px] border border-ink/15 bg-white/80 px-3 text-[13px] text-ink placeholder:text-fog focus:border-gold focus:outline-none"
-              />
-            </form>
             <span
               className={`flex items-center ${locale === "ar" ? "gap-7 pl-9" : "gap-6 pl-7"}`}
             >
@@ -391,21 +395,30 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             href="/"
             aria-label={t("home")}
-            className="group flex flex-col items-center justify-self-center py-1"
+            className="group flex items-center justify-center justify-self-center py-1"
           >
-            <Image
-              src="/logo.webp"
-              alt="Misk Al Ghazaal"
-              width={176}
-              height={176}
-              priority
-              className={`object-contain transition-all duration-500 ease-out group-hover:scale-[1.02] group-hover:-translate-y-[1px] group-hover:drop-shadow-[0_12px_16px_rgba(0,0,0,0.06)] ${
-                compact ? "size-14" : "size-[88px]"
+            {/* Fixed-size artwork, GPU-scaled to fit the shrinking frame:
+                the pixels interpolate smoothly instead of reflowing, so the
+                crest glides 88 → 64 with no shrink-then-grow hitch. */}
+            <span
+              className={`flex items-center justify-center transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[1px] ${
+                compact ? "size-16" : "size-[88px]"
               }`}
-            />
+            >
+              <Image
+                src="/logo.webp"
+                alt="Misk Al Ghazaal"
+                width={176}
+                height={176}
+                priority
+                className={`h-[88px] w-[88px] object-contain transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:drop-shadow-[0_12px_16px_rgba(0,0,0,0.06)] ${
+                  compact ? "scale-[0.727]" : "scale-100"
+                }`}
+              />
+            </span>
           </Link>
 
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex items-center justify-end">
             <span
               className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pr-9" : "gap-6 pr-7"}`}
             >
@@ -415,47 +428,33 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <Link
               href="/locate-us"
               aria-label={t("locateUs")}
-              className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
+              className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
             >
-              <MapPin
-                className={`shrink-0 transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
-              />
-              <span
-                className="overflow-hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-all duration-500"
-                style={{
-                  maxWidth: compact ? 0 : 120,
-                  opacity: compact ? 0 : 1,
-                }}
-              >
-                {t("locateUs")}
-              </span>
+              <MapPin className={`${glyph} shrink-0`} />
+              {!compact && (
+                <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  {t("locateUs")}
+                </span>
+              )}
             </Link>
             <Link
               href="/account"
               aria-label={t("account")}
-              className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
+              className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
             >
-              <User
-                className={`shrink-0 transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
-              />
-              <span
-                className="overflow-hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-all duration-500"
-                style={{
-                  maxWidth: compact ? 0 : 200,
-                  opacity: compact ? 0 : 1,
-                }}
-              >
-                {t("loginSignup")}
-              </span>
+              <User className={`${glyph} shrink-0`} />
+              {!compact && (
+                <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  {t("loginSignup")}
+                </span>
+              )}
             </Link>
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
-              className="relative p-2 text-espresso transition hover:text-gold"
+              className="relative flex size-9 items-center justify-center text-espresso transition hover:text-gold"
             >
-              <ShoppingBag
-                className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
-              />
+              <ShoppingBag className={glyph} />
               <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
                 2
               </span>
@@ -466,7 +465,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         {/* Stacked nav — grid halves keep the divider exactly under the crest */}
         <nav
           aria-label="Primary"
-          className="hidden overflow-hidden border-t border-ink/10 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+          className="hidden overflow-hidden border-t border-ink/10 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
           <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-5">
@@ -530,24 +529,58 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </span>
         </div>
 
-        {/* Search drawer row */}
+        {/* Search panel — a single underline, no boxes. The gold rule draws
+            itself on focus; the serif italic field keeps it maison. */}
         {searchOpen && (
-          <div className="border-t border-ink/10 bg-cream px-5 py-4">
-            <form
-              action="/search"
-              method="get"
-              className="mx-auto flex max-w-2xl gap-2"
+          <div className="relative border-t border-ink/10 bg-cream/95 backdrop-blur-md">
+            <button
+              onClick={() => setSearchOpen(false)}
+              aria-label={t("closeSearch")}
+              className="absolute end-4 top-4 flex size-9 items-center justify-center text-fog transition hover:text-ink"
             >
-              <Input
-                name="q"
-                placeholder={t("searchPlaceholder")}
-                autoFocus
-                className="h-12 bg-white"
-              />
-              <Button type="submit" className="h-12">
-                {t("search")}
-              </Button>
-            </form>
+              <X className="size-4" />
+            </button>
+            <div className="mx-auto max-w-2xl px-5 pb-9 pt-8 text-center md:pb-11">
+              <p className="eyebrow flex items-center justify-center gap-3 text-gold">
+                <span className="h-px w-8 bg-gold/50" />
+                {t("searchTitle")}
+                <span className="h-px w-8 bg-gold/50" />
+              </p>
+              <form
+                action={`/${locale}/search`}
+                method="get"
+                onSubmit={() => setSearchOpen(false)}
+              >
+                <div className="group relative mt-6">
+                  <div className="flex items-end gap-3 border-b border-ink/20 pb-3 transition-colors focus-within:border-transparent">
+                    <Search className="mb-1.5 size-5 shrink-0 text-gold" />
+                    <input
+                      name="q"
+                      autoFocus
+                      autoComplete="off"
+                      placeholder={t("searchPlaceholder")}
+                      aria-label={t("search")}
+                      className="w-full bg-transparent font-display text-2xl italic text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
+                    />
+                    <button
+                      type="submit"
+                      aria-label={t("search")}
+                      className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-all hover:bg-gold hover:text-ink"
+                    >
+                      <ArrowRight className="size-4" />
+                    </button>
+                  </div>
+                  {/* The gold draw-line: sweeps in from the centre on focus */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 bg-gold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:scale-x-100"
+                  />
+                </div>
+              </form>
+              <p className="mt-4 text-[12px] tracking-wide text-fog">
+                {t("searchHint")}
+              </p>
+            </div>
           </div>
         )}
 

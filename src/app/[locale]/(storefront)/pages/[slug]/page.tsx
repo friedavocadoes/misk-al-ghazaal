@@ -8,6 +8,7 @@ import {
   WishlistGrid,
 } from "@/components/blocks/ContentBlocks";
 import { ContactExperience, type ContactTopic } from "@/components/blocks/ContactExperience";
+import { ContactChannels } from "@/components/blocks/ContactChannels";
 import { getProducts } from "@/lib/store";
 import { getFaqs } from "@/lib/site";
 import { toLocale } from "@/lib/i18n";
@@ -130,7 +131,10 @@ export default async function StaticInfoPage(
       <span className="mx-auto mt-5 block h-px w-12 bg-gold-soft" />
       <div className="mt-10">
         {slug === "contact" && (
-          <ContactExperience products={productList} initialTopic={initialTopic} />
+          <>
+            <ContactChannels locale={locale} />
+            <ContactExperience products={productList} initialTopic={initialTopic} />
+          </>
         )}
         {slug === "faq" && <FaqAccordion items={getFaqs(locale)} />}
         {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}

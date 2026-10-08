@@ -2,16 +2,22 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   CalendarClock,
   Check,
+  Mail,
+  MapPin,
   MessageCircleWarning,
+  Phone,
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SITE } from "@/lib/site";
+import { InstagramIcon, WhatsAppIcon } from "@/components/ui/brand-icons";
+import { CopyButton } from "@/components/ui/copy-button";
+import { INSTAGRAM_URL, SITE, STORE_CONTACT, waLink } from "@/lib/site";
 import { pick, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -172,11 +178,63 @@ export function ContactExperience({
             </li>
           ))}
         </ol>
-        <div className="mt-4 border-t border-white/15 pt-6 text-sm text-white/75">
-          <p>{pick(SITE.address, locale)}</p>
-          <p className="mt-1">{SITE.phone}</p>
-          <p className="mt-1">{SITE.email}</p>
-          <p className="mt-1 text-white/55">{pick(SITE.hours, locale)}</p>
+        <div className="mt-4 space-y-2.5 border-t border-white/15 pt-6 text-sm">
+          <p className="text-white/75">{pick(SITE.address, locale)}</p>
+          <div className="flex items-center gap-2.5">
+            <a
+              href={waLink(STORE_CONTACT.shopMobile)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-white/80 transition hover:text-white"
+            >
+              <WhatsAppIcon className="size-[18px] shrink-0 text-gold-soft" />
+              <span dir="ltr">{STORE_CONTACT.shopMobile}</span>
+              <span className="text-white/50">· {t("channelChat")}</span>
+            </a>
+            <CopyButton
+              value={STORE_CONTACT.shopMobile}
+              label={t("copyNumber")}
+              className="!size-8 border-white/25 text-white/70 hover:border-white/60 hover:text-white"
+            />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <a
+              href={`tel:${STORE_CONTACT.landline.replace(/\s/g, "")}`}
+              className="flex min-w-0 flex-1 items-center gap-2.5 text-white/80 transition hover:text-white"
+            >
+              <Phone className="size-4 shrink-0 text-gold-soft" />
+              <span dir="ltr">{STORE_CONTACT.landline}</span>
+              <span className="text-white/50">· {t("channelLandline")}</span>
+            </a>
+            <CopyButton
+              value={STORE_CONTACT.landline}
+              label={t("copyNumber")}
+              className="!size-8 border-white/25 text-white/70 hover:border-white/60 hover:text-white"
+            />
+          </div>
+          <a
+            href={`mailto:${SITE.email}`}
+            className="flex items-center gap-2.5 text-white/80 transition hover:text-white"
+          >
+            <Mail className="size-4 shrink-0 text-gold-soft" />
+            <span className="break-all">{SITE.email}</span>
+          </a>
+          <a
+            href={INSTAGRAM_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2.5 text-white/80 transition hover:text-white"
+          >
+            <InstagramIcon className="size-4 shrink-0 text-gold-soft" />
+            <span dir="ltr">@misk.al.ghazaal</span>
+          </a>
+          <Link
+            href="/locate-us"
+            className="inline-flex items-center gap-2 pt-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-gold-soft transition hover:text-white"
+          >
+            <MapPin className="size-4" />
+            {t("visitCta")}
+          </Link>
         </div>
       </div>
 

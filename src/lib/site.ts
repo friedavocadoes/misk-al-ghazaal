@@ -49,8 +49,75 @@ export const SITE = {
   ),
   email: "info@miskalghazaalperfumes.com",
   phone: "+971 4 000 0000",
-  address: L("Mamzar Centre, Dubai, UAE", "ممرز سنتر، دبي، الإمارات"),
+  address: L("Mamzar Center, Shop No. 08, Dubai", "ممرز سنتر، دبي، الإمارات"),
   hours: L("Open Mon–Sat, 10AM–5PM", "مفتوح من الاثنين للسبت، 10ص–5م"),
+};
+
+// ---------------------------------------------------------------------------
+// Locations & direct channels (Locate Us + Contact pages).
+//
+// OWNER TODOs: replace the placeholder digits below with the real numbers.
+// Store hours are edited in SITE above (single source).
+// ---------------------------------------------------------------------------
+
+export const INSTAGRAM_URL = "https://www.instagram.com/misk.al.ghazaal";
+
+export const STORE_CONTACT = {
+  /** Boutique mobile — doubles as the shop WhatsApp line. */
+  shopMobile: "+971 52 742 7627",
+  /** Boutique landline (voice calls only). */
+  landline: "+971 4 370 0532",
+  /** Factory / private-label desk — voice + WhatsApp. */
+  factoryPhone: "+971 52 661 0236",
+};
+
+/** Click-to-chat link for any display number (digits are extracted). */
+export function waLink(display: string): string {
+  return `https://wa.me/${display.replace(/\D/g, "")}`;
+}
+
+export interface StoreLocation {
+  id: "store" | "factory";
+  /** Eyebrow, e.g. "The Boutique" / "The Factory". */
+  kind: Localizable<string>;
+  name: Localizable<string>;
+  lines: Localizable<string>[];
+  /** Empty when no hours are published (factory). */
+  hours: Localizable<string>[];
+  /** Directions URL — empty string renders no button (factory for now). */
+  mapsHref: string;
+  /** Maps embed src — empty string renders the "coming soon" frame. */
+  embedSrc: string;
+}
+
+const STORE_MAPS_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+  "Misk Al Ghazaal Perfumes Mamzar Centre Dubai UAE",
+)}`;
+
+export const LOCATIONS: { store: StoreLocation; factory: StoreLocation } = {
+  store: {
+    id: "store",
+    kind: L("The Boutique", "البوتيك"),
+    name: L("Misk Al Ghazaal Boutique", "بوتيك مسك الغزال"),
+    lines: [
+      SITE.address,
+      L("Mamzar Centre, Ground Floor", "ممرز سنتر، الطابق الأرضي"),
+    ],
+    hours: [SITE.hours, L("Friday: 2PM–5PM", "الجمعة: 2–5 مساءً")],
+    mapsHref: STORE_MAPS_HREF,
+    embedSrc:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3297.6741687331523!2d55.35122417498967!3d25.280274877657593!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f5dcff4856503%3A0xcdb6ec6f63a1c3d!2sMisk%20Al%20Gazaal%20Perfumes!5e1!3m2!1sen!2sae!4v1791444224138!5m2!1sen!2sae",
+  },
+  factory: {
+    id: "factory",
+    kind: L("The Factory", "المصنع"),
+    name: L("Misk Al Ghazaal Factory", "مصنع مسك الغزال"),
+    lines: [L("Misk Al Ghazaal, Al Jerf Industrial 1, Ajman", "دبي، الإمارات العربية المتحدة")],
+    hours: [],
+    mapsHref: "",
+    embedSrc:
+      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3293.606389229002!2d55.530496374995!3d25.42951317756213!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5f7f68e682149%3A0xec7a4174ad013365!2sMisk%20Al%20Ghazaal!5e1!3m2!1sen!2sae!4v1791447388789!5m2!1sen!2sae",
+  },
 };
 
 export function getTagline(locale: Locale): string {
