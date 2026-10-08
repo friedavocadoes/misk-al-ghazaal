@@ -41,13 +41,13 @@ export const SITE = {
   name: "Misk Al Ghazaal",
   tagline: L(
     "Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — crafted in the UAE.",
-    "عطور مِسك الغزال والدخون والبخور والعود المقدس — صُنعت في الإمارات."
+    "عطور مِسك الغزال والدخون والبخور والعود المقدس — صُنعت في الإمارات.",
   ),
   announcement: L(
     "Complimentary delivery across the UAE on orders above AED 200 · Cash on Delivery",
-    "توصيل مجاني في الإمارات للطلبات فوق 200 درهم · الدفع عند الاستلام"
+    "توصيل مجاني في الإمارات للطلبات فوق 200 درهم · الدفع عند الاستلام",
   ),
-  email: "gazaalperfumes@gmail.com",
+  email: "info@miskalghazaalperfumes.com",
   phone: "+971 4 000 0000",
   address: L("Mamzar Centre, Dubai, UAE", "ممرز سنتر، دبي، الإمارات"),
   hours: L("Open Mon–Sat, 10AM–5PM", "مفتوح من الاثنين للسبت، 10ص–5م"),
@@ -67,16 +67,33 @@ export interface NavLink {
   href: string;
 }
 
+export type ShopMenuIcon =
+  | "mars"
+  | "venus"
+  | "flame"
+  | "sparkles"
+  | "star"
+  | "crown"
+  | "arrow";
+
 export interface ShopMenuColumn {
   heading: string;
   href: string;
-  links: { label: string; href: string; external?: boolean }[];
+  links: {
+    label: string;
+    href: string;
+    external?: boolean;
+    icon?: ShopMenuIcon;
+  }[];
 }
 
 export function getNavLeft(locale: Locale): NavLink[] {
   return [
-    { label: pick(L("About", "من نحن"), locale), href: "/pages/about" },
-    { label: pick(L("Shop", "تسوّق"), locale), href: "/collections" },
+    { label: pick(L("About Us", "من نحن"), locale), href: "/pages/about" },
+    {
+      label: pick(L("Shop With Us", "تسوّق معنا"), locale),
+      href: "/collections",
+    },
   ];
 }
 
@@ -86,7 +103,10 @@ export function getNavRight(locale: Locale): NavLink[] {
       label: pick(L("Private Label", "العلامة الخاصة"), locale),
       href: "/private-label",
     },
-    { label: pick(L("Contact", "تواصل"), locale), href: "/pages/contact" },
+    {
+      label: pick(L("Get In Touch", "تواصل معنا"), locale),
+      href: "/pages/contact",
+    },
   ];
 }
 
@@ -97,15 +117,15 @@ export function getShopMenu(locale: Locale): ShopMenuColumn[] {
       heading: pick(L("Fragrances", "العطور"), locale),
       href: "/collection/arabic-fragrance",
       links: [
-        { label: pick(L("For Him", "له"), locale), href: "/collection/for-him" },
-        { label: pick(L("For Her", "لها"), locale), href: "/collection/for-her" },
         {
-          label: pick(L("Arabic", "عربية"), locale),
-          href: "/collection/arabic-fragrance",
+          label: pick(L("Men", "للرجال"), locale),
+          href: "/collection/for-him",
+          icon: "mars",
         },
         {
-          label: pick(L("Fresh", "منعشة"), locale),
-          href: "/collection/fresh-fragrance",
+          label: pick(L("Women", "للنساء"), locale),
+          href: "/collection/for-her",
+          icon: "venus",
         },
       ],
     },
@@ -116,10 +136,12 @@ export function getShopMenu(locale: Locale): ShopMenuColumn[] {
         {
           label: pick(L("Dukhoon / Bakhoor", "دخون / بخور"), locale),
           href: "/collection/dukhoon",
+          icon: "flame",
         },
         {
           label: pick(L("Mubakhar", "مبخر"), locale),
           href: "/collection/mubakhar",
+          icon: "sparkles",
         },
       ],
     },
@@ -130,12 +152,19 @@ export function getShopMenu(locale: Locale): ShopMenuColumn[] {
         {
           label: pick(L("New Arrivals", "وصل حديثاً"), locale),
           href: "/collection/new-arrivals",
+          icon: "star",
         },
         {
           label: pick(L("Best Sellers", "الأكثر مبيعاً"), locale),
           href: "/collection/best-sellers",
+          icon: "crown",
         },
-        { label: "Gazaal", href: "https://gazaal.com", external: true },
+        {
+          label: "Gazaal",
+          href: "https://gazaal.com",
+          external: true,
+          icon: "arrow",
+        },
       ],
     },
   ];

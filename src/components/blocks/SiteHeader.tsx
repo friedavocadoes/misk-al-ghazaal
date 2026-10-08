@@ -7,11 +7,18 @@ import gsap from "gsap";
 import {
   ArrowUpRight,
   ChevronDown,
+  Crown,
+  Flame,
   Globe,
+  MapPin,
+  Mars,
   Menu,
   Search,
   ShoppingBag,
+  Sparkles,
+  Star,
   User,
+  Venus,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +28,17 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
+import type { ShopMenuIcon } from "@/lib/site";
+
+const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
+  mars: Mars,
+  venus: Venus,
+  flame: Flame,
+  sparkles: Sparkles,
+  star: Star,
+  crown: Crown,
+  arrow: ArrowUpRight,
+};
 
 type LinkKey = "about" | "shop" | "manufacture" | "contact";
 
@@ -136,7 +154,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               duration: FLIGHT,
               ease: EASE,
               clearProps: "transform",
-            }
+            },
           );
         } else {
           const s = inline.getBoundingClientRect();
@@ -162,7 +180,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               duration: FLIGHT,
               ease: EASE,
               clearProps: "transform",
-            }
+            },
           );
         }
       }
@@ -174,7 +192,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   useLayoutEffect(() => {
     if (shopOpen) {
       const id = requestAnimationFrame(() =>
-        requestAnimationFrame(() => setShopEntered(true))
+        requestAnimationFrame(() => setShopEntered(true)),
       );
       return () => {
         cancelAnimationFrame(id);
@@ -189,7 +207,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   useLayoutEffect(() => {
     if (menuOpen) {
       const id = requestAnimationFrame(() =>
-        requestAnimationFrame(() => setMenuEntered(true))
+        requestAnimationFrame(() => setMenuEntered(true)),
       );
       return () => {
         cancelAnimationFrame(id);
@@ -222,7 +240,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       const r = el.getBoundingClientRect();
       const cx = Math.min(
         Math.max(r.left + r.width / 2, 340),
-        window.innerWidth - 340
+        window.innerWidth - 340,
       );
       setAnchor({ x: cx, y: r.bottom + 10 });
     }
@@ -265,7 +283,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
-      className="inline-flex items-center gap-1.5 text-[15px] font-bold tracking-[0.24em] text-ink antialiased transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
+      className="inline-flex items-center gap-1.5 font-display text-[15px] font-semibold tracking-[0.24em] text-ink antialiased transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
@@ -282,7 +300,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
-      className="whitespace-nowrap text-[12px] font-bold tracking-[0.14em] text-ink antialiased opacity-0 transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
+      className="whitespace-nowrap font-display text-[12px] font-semibold tracking-[0.14em] text-ink antialiased opacity-0 transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
     </Link>
@@ -305,10 +323,10 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       />
 
       <div className="relative">
-        {/* Main crest row */}
+        {/* Main crest row — slimmer now that the wordmark sits in the page, not the bar */}
         <div
           className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
-          style={{ height: compact ? 72 : 140 }}
+          style={{ height: compact ? 72 : 108 }}
         >
           <div className="flex items-center gap-1">
             <span className="relative">
@@ -343,13 +361,28 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t("search")}
-              className="p-2 text-espresso transition hover:text-gold"
+              className="shrink-0 p-2 text-espresso transition hover:text-gold"
             >
               <Search
                 className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
               />
             </button>
-            <span className={`flex items-center ${locale === "ar" ? "gap-7 pl-9" : "gap-6 pl-7"}`}>
+            {/* Inline search bar — melts away in the compact state */}
+            <form
+              action="/search"
+              method="get"
+              className="hidden overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+              style={{ maxWidth: compact ? 0 : 176, opacity: compact ? 0 : 1 }}
+            >
+              <input
+                name="q"
+                placeholder={t("searchPlaceholder")}
+                className="h-9 w-[176px] border border-ink/15 bg-white/80 px-3 text-[13px] text-ink placeholder:text-fog focus:border-gold focus:outline-none"
+              />
+            </form>
+            <span
+              className={`flex items-center ${locale === "ar" ? "gap-7 pl-9" : "gap-6 pl-7"}`}
+            >
               {inlineLink("about")}
               {inlineLink("shop")}
             </span>
@@ -358,7 +391,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             href="/"
             aria-label={t("home")}
-            className="flex flex-col items-center justify-self-center py-1"
+            className="group flex flex-col items-center justify-self-center py-1"
           >
             <Image
               src="/logo.webp"
@@ -366,37 +399,54 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               width={176}
               height={176}
               priority
-              className={`rounded-full object-cover transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`object-contain transition-all duration-500 ease-out group-hover:scale-[1.02] group-hover:-translate-y-[1px] group-hover:drop-shadow-[0_12px_16px_rgba(0,0,0,0.06)] ${
                 compact ? "size-14" : "size-[88px]"
               }`}
             />
-            <span
-              className="overflow-hidden text-[10px] font-semibold text-ink/70 transition-all duration-500"
-              style={{
-                maxHeight: compact ? 0 : 24,
-                opacity: compact ? 0 : 1,
-                letterSpacing: "0.42em",
-                marginTop: compact ? 0 : 8,
-                marginRight: "-0.42em",
-              }}
-            >
-              MISK AL GHAZAAL
-            </span>
           </Link>
 
           <div className="flex items-center justify-end gap-1">
-            <span className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pr-9" : "gap-6 pr-7"}`}>
+            <span
+              className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pr-9" : "gap-6 pr-7"}`}
+            >
               {inlineLink("manufacture")}
               {inlineLink("contact")}
             </span>
             <Link
+              href="/locate-us"
+              aria-label={t("locateUs")}
+              className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
+            >
+              <MapPin
+                className={`shrink-0 transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
+              />
+              <span
+                className="overflow-hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-all duration-500"
+                style={{
+                  maxWidth: compact ? 0 : 120,
+                  opacity: compact ? 0 : 1,
+                }}
+              >
+                {t("locateUs")}
+              </span>
+            </Link>
+            <Link
               href="/account"
               aria-label={t("account")}
-              className="p-2 text-espresso transition hover:text-gold"
+              className="flex items-center gap-1.5 p-2 text-espresso transition hover:text-gold"
             >
               <User
-                className={`transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
+                className={`shrink-0 transition-all duration-500 ${compact ? "size-[15px]" : "size-5"}`}
               />
+              <span
+                className="overflow-hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] transition-all duration-500"
+                style={{
+                  maxWidth: compact ? 0 : 200,
+                  opacity: compact ? 0 : 1,
+                }}
+              >
+                {t("loginSignup")}
+              </span>
             </Link>
             <button
               onClick={() => setCartOpen(true)}
@@ -420,12 +470,19 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
           <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-5">
-            <span className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pr-12" : "gap-10 pr-8"}`}>
+            <span
+              className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pr-12" : "gap-10 pr-8"}`}
+            >
               {stackedLink("about")}
               {stackedLink("shop")}
             </span>
-            <span aria-hidden className="h-[26px] w-px justify-self-center bg-gold-soft/90" />
-            <span className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}>
+            <span
+              aria-hidden
+              className="h-[26px] w-px justify-self-center bg-gold-soft/90"
+            />
+            <span
+              className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}
+            >
               {stackedLink("manufacture")}
               {stackedLink("contact")}
             </span>
@@ -476,7 +533,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         {/* Search drawer row */}
         {searchOpen && (
           <div className="border-t border-ink/10 bg-cream px-5 py-4">
-            <form action="/search" method="get" className="mx-auto flex max-w-2xl gap-2">
+            <form
+              action="/search"
+              method="get"
+              className="mx-auto flex max-w-2xl gap-2"
+            >
               <Input
                 name="q"
                 placeholder={t("searchPlaceholder")}
@@ -503,8 +564,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               transform: `translateX(-50%) translateY(${shopEntered ? 0 : 14}px) scale(${shopEntered ? 1 : 0.97})`,
             }}
           >
-            <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold-soft to-transparent" />
-            <p className="eyebrow mb-6 text-center text-gold">{tShop("title")}</p>
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold-soft to-transparent"
+            />
+            <p className="eyebrow mb-6 text-center text-gold">
+              {tShop("title")}
+            </p>
             <div className="grid grid-cols-3 gap-8">
               {shop.map((col, ci) => (
                 <div
@@ -519,23 +585,32 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   <Link
                     href={col.href}
                     onClick={() => setShopOpen(false)}
-                    className="font-display text-lg italic text-ink transition hover:text-gold"
+                    className="font-display text-lg  text-ink transition hover:text-gold"
                   >
                     {col.heading}
                   </Link>
                   <span className="mt-2.5 block h-px w-9 bg-gold-soft" />
                   <ul className="mt-3.5 space-y-2.5">
-                    {col.links.map((l) =>
-                      l.external ? (
+                    {col.links.map((l) => {
+                      const Icon = l.icon ? MENU_ICONS[l.icon] : null;
+                      const inner = (
+                        <>
+                          {Icon && (
+                            <Icon className="size-3.5 shrink-0 text-gold/80 transition group-hover:text-gold" />
+                          )}
+                          {l.label}
+                          {l.external && <ArrowUpRight className="size-3.5" />}
+                        </>
+                      );
+                      return l.external ? (
                         <li key={l.href}>
                           <a
                             href={l.href}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[13px] text-espresso transition hover:text-gold"
+                            className="group inline-flex items-center gap-2 text-[13px] text-espresso transition hover:text-gold"
                           >
-                            {l.label}
-                            <ArrowUpRight className="size-3.5" />
+                            {inner}
                           </a>
                         </li>
                       ) : (
@@ -543,13 +618,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                           <Link
                             href={l.href}
                             onClick={() => setShopOpen(false)}
-                            className="text-[13px] text-espresso transition hover:text-gold"
+                            className="group inline-flex items-center gap-2 text-[13px] text-espresso transition hover:text-gold"
                           >
-                            {l.label}
+                            {inner}
                           </Link>
                         </li>
-                      )
-                    )}
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -583,13 +658,25 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
                 }}
               />
-              <button onClick={closeMenu} aria-label={t("closeMenu")} className="p-2 text-ink">
+              <button
+                onClick={closeMenu}
+                aria-label={t("closeMenu")}
+                className="p-2 text-ink"
+              >
                 <X className="size-5" />
               </button>
             </div>
-            <nav className="flex-1 overflow-y-auto px-6 py-6" aria-label="Mobile">
+            <nav
+              className="flex-1 overflow-y-auto px-6 py-6"
+              aria-label="Mobile"
+            >
               {[
-                <Link key="about" href={left[0].href} onClick={closeMenu} className="block py-3 font-display text-2xl text-ink">
+                <Link
+                  key="about"
+                  href={left[0].href}
+                  onClick={closeMenu}
+                  className="block py-3 font-display text-2xl text-ink"
+                >
                   {left[0].label}
                 </Link>,
                 <button
@@ -598,10 +685,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
                 >
                   {left[1].label}
-                  <ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`}
+                  />
                 </button>,
                 ...right.map((l) => (
-                  <Link key={l.href} href={l.href} onClick={closeMenu} className="block py-3 font-display text-2xl text-ink">
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={closeMenu}
+                    className="block py-3 font-display text-2xl text-ink"
+                  >
                     {l.label}
                   </Link>
                 )),
@@ -622,20 +716,40 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 <span className="block pb-2">
                   {shop.map((col) => (
                     <span key={col.heading} className="block py-2">
-                      <Link href={col.href} onClick={closeMenu} className="font-display text-lg italic text-gold">
+                      <Link
+                        href={col.href}
+                        onClick={closeMenu}
+                        className="font-display text-lg italic text-gold"
+                      >
                         {col.heading}
                       </Link>
-                      {col.links.map((l) =>
-                        l.external ? (
-                          <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="block py-1.5 pl-3 text-sm text-espresso">
+                      {col.links.map((l) => {
+                        const Icon = l.icon ? MENU_ICONS[l.icon] : null;
+                        const cls =
+                          "flex items-center gap-2.5 py-1.5 pl-3 text-sm text-espresso";
+                        return l.external ? (
+                          <a
+                            key={l.href}
+                            href={l.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={cls}
+                          >
+                            {Icon && <Icon className="size-4 text-gold/80" />}
                             {l.label} ↗
                           </a>
                         ) : (
-                          <Link key={l.href} href={l.href} onClick={closeMenu} className="block py-1.5 pl-3 text-sm text-espresso">
+                          <Link
+                            key={l.href}
+                            href={l.href}
+                            onClick={closeMenu}
+                            className={cls}
+                          >
+                            {Icon && <Icon className="size-4 text-gold/80" />}
                             {l.label}
                           </Link>
-                        )
-                      )}
+                        );
+                      })}
                     </span>
                   ))}
                 </span>
@@ -653,15 +767,29 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     key={l}
                     onClick={() => pickLocale(l)}
                     className={`border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
-                      locale === l ? "border-ink bg-ink text-white" : "border-ink/20 text-espresso"
+                      locale === l
+                        ? "border-ink bg-ink text-white"
+                        : "border-ink/20 text-espresso"
                     }`}
                   >
                     {l === "en" ? t("english") : t("arabic")}
                   </button>
                 ))}
               </span>
-              <Link href="/account" onClick={closeMenu} className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
-                {t("loginAccount")}
+              <Link
+                href="/locate-us"
+                onClick={closeMenu}
+                className="link-underline mt-6 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+              >
+                <MapPin className="size-4 text-gold" />
+                {t("locateUs")}
+              </Link>
+              <Link
+                href="/account"
+                onClick={closeMenu}
+                className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+              >
+                {t("loginSignup")}
               </Link>
             </nav>
           </div>

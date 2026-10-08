@@ -17,7 +17,9 @@
     "language": "Language",
     "english": "English",
     "arabic": "العربية",
-    "loginAccount": "Login / Account"
+    "loginAccount": "Login / Account",
+    "loginSignup": "Login / Signup",
+    "locateUs": "Locate Us"
   },
   "ShopMenu": {
     "title": "Shop the Maison"
