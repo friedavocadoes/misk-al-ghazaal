@@ -17,6 +17,7 @@ export function ReviewForm({ productId }: { productId: string; productSlug: stri
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -51,12 +52,15 @@ export function ReviewForm({ productId }: { productId: string; productSlug: stri
   }
 
   const submit = async () => {
+    if (busy) return;
+    setBusy(true);
     setError("");
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ productId, rating, title, body }),
     });
+    setBusy(false);
     if (res.ok) setSent(true);
     else setError(t("reviewError"));
   };
@@ -89,8 +93,8 @@ export function ReviewForm({ productId }: { productId: string; productSlug: stri
         />
       </div>
       {error && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
-      <Button onClick={submit} className="mt-5">
-        {t("reviewSubmit")}
+      <Button onClick={submit} disabled={busy} className="mt-5">
+        {busy ? t("reviewSending") : t("reviewSubmit")}
       </Button>
     </div>
   );

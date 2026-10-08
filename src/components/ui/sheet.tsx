@@ -17,10 +17,10 @@ function SheetContent({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-[overlay-in_0.35s_ease-out] data-[state=closed]:animate-[overlay-out_0.25s_ease-in]" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-xl data-[state=open]:animate-in data-[state=open]:slide-in-from-right",
+          "fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-md flex-col bg-white shadow-xl data-[state=open]:animate-[sheet-in-right_0.45s_cubic-bezier(0.22,1,0.36,1)] data-[state=closed]:animate-[sheet-out-right_0.3s_ease-in]",
           className
         )}
         {...props}

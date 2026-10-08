@@ -454,7 +454,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
-              className="relative flex size-9 items-center justify-center text-espresso transition hover:text-gold"
+              className="relative flex size-9 cursor-pointer items-center justify-center text-espresso transition hover:text-gold"
             >
               <ShoppingBag className={glyph} />
               {bagCount > 0 && (
@@ -523,7 +523,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
-              className="relative p-2 text-espresso"
+              className="relative cursor-pointer p-2 text-espresso"
             >
               <ShoppingBag className="size-5" />
               {bagCount > 0 && (

@@ -127,3 +127,52 @@ html[lang="ar"] .eyebrow {
 .hero-swiper .swiper-slide {
   overflow: hidden;
 }
+
+/* Drawer motion (Radix Sheet states drive these; the tailwindcss-animate
+   plugin was never installed, so the old animate-in classes did nothing). */
+@keyframes sheet-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes sheet-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Global route-change bar: indeterminate gold sweep while the next page
+   streams in, so taps always get an instant reaction. */
+@keyframes route-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+.route-progress-bar {
+  animation: route-sweep 1.1s ease-in-out infinite;
+}

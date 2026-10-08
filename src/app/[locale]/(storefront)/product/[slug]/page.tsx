@@ -21,6 +21,7 @@ import { ShareButtons } from "@/components/blocks/ShareButtons";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import {
   getCollectionBySlug,
+  getApprovedReviews,
   getProductBySlug,
   getProducts,
   getRelatedProducts,
@@ -45,6 +46,12 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
 
   const related = await getRelatedProducts(slug, 4);
   const collection = await getCollectionBySlug(product.categorySlugs[0]);
+  // Real review aggregates (approved only) — fetched once, shared by the
+  // buy-box line and the reviews section. Never seeded numbers.
+  const approvedReviews = await getApprovedReviews(product.id, 500);
+  const liveRating = approvedReviews.length
+    ? approvedReviews.reduce((s, r) => s + r.rating, 0) / approvedReviews.length
+    : 0;
   const catTitle = collection
     ? tx(collection.title, collection.titleAr, locale)
     : product.categorySlugs[0]?.replace(/-/g, " ");
@@ -78,6 +85,8 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
             layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
             locale={locale}
             categoryName={catTitle}
+            rating={liveRating}
+            reviewCount={approvedReviews.length}
           />
         </div>
       </div>
@@ -88,7 +97,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
       <CouponStrip locale={locale} />
       <ProductTabsAccordion product={product} locale={locale} />
       <LineupRow product={product} locale={locale} />
-      <ReviewsSection product={product} locale={locale} />
+      <ReviewsSection product={product} locale={locale} reviews={approvedReviews} />
       <ProductCarousel title={ts("alsoAdore")} products={related} />
       </div>
     </>

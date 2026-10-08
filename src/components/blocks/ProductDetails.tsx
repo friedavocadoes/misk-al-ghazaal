@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Check, Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
-import { WheelPicker, WheelPickerWrapper } from "@ncdai/react-wheel-picker";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
@@ -94,48 +93,21 @@ export function NotesStrip({ product, locale }: { product: Product; locale: Loca
   );
 }
 
-/** Compact iOS-timer quantity drum */
-function QtyWheel({ value, max, onChange }: { value: number; max: number; onChange: (n: number) => void }) {
-  const values = useMemo(
-    () => Array.from({ length: Math.max(1, max) }, (_, i) => i + 1),
-    [max],
-  );
-  const options = useMemo(
-    () => values.map((v) => ({ value: v, label: <span className="font-display">{v}</span> })),
-    [values],
-  );
-  const current = Math.min(Math.max(value, 1), values.length);
-  return (
-    <WheelPickerWrapper className="w-14">
-      <WheelPicker
-        value={current}
-        onValueChange={(v) => {
-          if (v !== current) onChange(Math.min(Math.max(1, v), values.length));
-        }}
-        options={options}
-        infinite={values.length >= 8}
-        visibleCount={12}
-        optionItemHeight={28}
-        classNames={{
-          optionItem: "text-[15px] text-ink/35",
-          highlightWrapper: "border-y border-gold/60",
-          highlightItem: "text-xl text-ink",
-        }}
-      />
-    </WheelPickerWrapper>
-  );
-}
-
 export function ProductInfo({
   product,
   layout = "standard",
   locale,
   categoryName,
+  rating,
+  reviewCount,
 }: {
   product: Product;
   layout?: "standard" | "miskalgazaal";
   locale: Locale;
   categoryName?: string;
+  /** Real aggregates (approved reviews only) — fall back to catalog values. */
+  rating?: number;
+  reviewCount?: number;
 }) {
   const t = useTranslations("Product");
   const router = useRouter();
@@ -150,6 +122,9 @@ export function ProductInfo({
   const maxQty = Math.max(1, Math.min(stock > 0 ? stock : 10, 20));
   // Always clamped at the point of use — no settle effects needed.
   const safeQty = Math.min(Math.max(1, qty), maxQty);
+  // Real aggregates only: seeded catalog numbers never stand in.
+  const liveRating = rating ?? product.rating;
+  const liveCount = reviewCount ?? product.reviewCount;
   const title = tx(product.title, product.titleAr, locale);
   const catName =
     categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
@@ -177,14 +152,20 @@ export function ProductInfo({
               key={i}
               className={cn(
                 "size-3.5",
-                i < Math.round(product.rating)
+                i < Math.round(liveRating)
                   ? "fill-gold text-gold"
                   : "text-ink/20"
               )}
             />
           ))}
         </span>
-        {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} {t("reviews")}
+        {liveCount > 0 ? (
+          <>{liveRating.toFixed(1)} · {liveCount.toLocaleString("en-US")} {t("reviews")}</>
+        ) : (
+          <Link href="#reviews" className="link-underline text-gold">
+            {t("reviewCta")}
+          </Link>
+        )}
       </p>
       <PriceTag
         price={variant?.price ?? product.price}
@@ -223,16 +204,18 @@ export function ProductInfo({
       <div className="mt-7 flex items-stretch gap-2">
         <span className="flex items-center border border-ink/20 bg-white">
           <button
-            className="self-stretch px-3 text-espresso transition hover:text-ink disabled:opacity-30"
+            className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             disabled={safeQty <= 1}
             aria-label={t("decrease")}
           >
             <Minus className="size-4" />
           </button>
-          <QtyWheel value={safeQty} max={maxQty} onChange={(n) => setQty(Math.min(Math.max(1, n), maxQty))} />
+          <span className="w-10 text-center font-display text-lg text-ink" aria-live="polite">
+            {safeQty}
+          </span>
           <button
-            className="self-stretch px-3 text-espresso transition hover:text-ink disabled:opacity-30"
+            className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             disabled={safeQty >= maxQty}
             aria-label={t("increase")}

@@ -243,6 +243,10 @@ begin
   update public.coupons set used_count = used_count + 1 where id = p_coupon_id;
 end $$;
 
+-- Starter aggregates are honest zeros: real rating/count are maintained
+-- by the review-approval action, never seeded.
+update public.products set rating = 0, review_count = 0;
+
 -- ============================================================================
 -- Seed: starter notes library (admin can extend; colors are the PDP dots).
 -- ============================================================================
