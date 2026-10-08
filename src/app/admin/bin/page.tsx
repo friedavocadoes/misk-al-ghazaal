@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { ActionButton } from "@/components/admin/admin-form";
 import { autoDeleteAt, purgeExpiredBin, type BinTable } from "@/lib/trash";
 
 const TABS: { key: BinTable; label: string; superOnly?: boolean }[] = [
@@ -44,24 +45,12 @@ function BinButtons({ table, id }: { table: BinTable; id: string }) {
       <form action={restoreItem}>
         <input type="hidden" name="table" value={table} />
         <input type="hidden" name="id" value={id} />
-        <button
-          type="submit"
-          title="Restore from recycle bin"
-          className="border border-ink/20 bg-white px-3 py-1.5 text-sm transition hover:border-ink/50"
-        >
-          Restore
-        </button>
+        <ActionButton>Restore</ActionButton>
       </form>
       <form action={destroyItem}>
         <input type="hidden" name="table" value={table} />
         <input type="hidden" name="id" value={id} />
-        <button
-          type="submit"
-          title="Delete forever (cannot be undone)"
-          className="border border-[#9c2b2e]/40 px-3 py-1.5 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
-        >
-          Delete forever
-        </button>
+        <ActionButton danger>Delete forever</ActionButton>
       </form>
     </div>
   );

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
 
 const NEXT_STATUSES = [
@@ -114,13 +115,7 @@ export default async function OrderDetail(props: {
             <PrintButton />
             <form action={moveToBin}>
               <input type="hidden" name="id" value={order.id} />
-              <button
-                type="submit"
-                title="Move order to recycle bin (recoverable for 20 days)"
-                className="border border-[#9c2b2e]/40 px-4 py-2 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
-              >
-                Delete
-              </button>
+              <ActionButton danger>Delete</ActionButton>
             </form>
           </div>
         </div>
@@ -157,7 +152,7 @@ export default async function OrderDetail(props: {
             ))}
           </ul>
           <h2 className="mt-6 font-display text-xl">Update status</h2>
-          <form action={updateOrder} className="mt-4 space-y-3">
+          <AdminForm action={updateOrder} success="Order updated" className="mt-4 space-y-3">
             <input type="hidden" name="id" value={order.id} />
             <label className="block text-sm">
               Status
@@ -175,10 +170,10 @@ export default async function OrderDetail(props: {
               Internal note (staff only)
               <input name="internal_note" defaultValue={order.internal_note ?? ""} placeholder="Called twice, deliver after 6pm" className="mt-1 w-full border border-ink/20 px-3 py-2" />
             </label>
-            <button type="submit" className="w-full bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">
+            <SaveButton className="w-full">
               Save — current: {String(order.status).replaceAll("_", " ")}
-            </button>
-          </form>
+            </SaveButton>
+          </AdminForm>
         </section>
       </div>
 

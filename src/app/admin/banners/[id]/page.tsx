@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { BannerImageField } from "@/components/admin/banner-image-field";
 
 async function saveBanner(formData: FormData) {
@@ -107,13 +108,7 @@ export default async function BannerDetail(props: {
           </div>
           <form action={moveToBin}>
             <input type="hidden" name="id" value={b.id} />
-            <button
-              type="submit"
-              title="Move banner to recycle bin (recoverable for 20 days)"
-              className="border border-[#9c2b2e]/40 px-4 py-2 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
-            >
-              Delete
-            </button>
+            <ActionButton danger>Delete</ActionButton>
           </form>
         </div>
 
@@ -134,8 +129,9 @@ export default async function BannerDetail(props: {
             />
           </section>
 
-          <form
+          <AdminForm
             action={saveBanner}
+            success="Banner saved"
             className="space-y-3 border border-ink/10 bg-white p-6"
           >
             <input type="hidden" name="id" value={b.id} />
@@ -187,10 +183,8 @@ export default async function BannerDetail(props: {
               <Field name="cta" label="Button (EN)" defaultValue={b.cta} />
               <Field name="cta_ar" label="Button (AR)" defaultValue={b.cta_ar} />
             </div>
-            <button className="w-full bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">
-              Save banner
-            </button>
-          </form>
+            <SaveButton className="w-full">Save banner</SaveButton>
+          </AdminForm>
         </div>
       </div>
     </>

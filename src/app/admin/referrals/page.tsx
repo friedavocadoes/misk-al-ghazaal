@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 
 async function saveSettings(formData: FormData) {
   "use server";
@@ -38,11 +39,11 @@ export default async function ReferralsPage() {
           The newcomer saves on their first order; the referrer is minted a personal single-use coupon automatically.
         </p>
 
-        <form action={saveSettings} className="mt-8 flex flex-wrap items-end gap-4 border border-ink/10 bg-white p-6 text-sm">
+        <AdminForm action={saveSettings} success="Referral settings saved" className="mt-8 flex flex-wrap items-end gap-4 border border-ink/10 bg-white p-6 text-sm">
           <label className="block">Reward % (both sides)<input name="percent" type="number" step="0.5" min={0} max={90} defaultValue={settings?.percent ?? 25} className="mt-1 w-32 border border-ink/20 px-3 py-2" /></label>
           <label className="pb-2.5"><input type="checkbox" name="active" defaultChecked={settings?.active ?? true} /> Program active</label>
-          <button className="bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85">Save</button>
-        </form>
+          <SaveButton>Save</SaveButton>
+        </AdminForm>
 
         <h2 className="mt-10 font-display text-xl">Introductions</h2>
         <ul className="mt-4 divide-y divide-ink/10 border border-ink/10 bg-white text-sm">

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Check, Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { WheelPicker, WheelPickerWrapper } from "@ncdai/react-wheel-picker";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
@@ -15,6 +16,115 @@ import { TrustBadges } from "./TrustBadges";
 import { useCart } from "@/lib/cart";
 
 export { ProductGallery };
+
+/** A brief of the notes, in plain customer words: an interactive
+    composition bar (hover a segment or a name — the pair lights up) over
+    tiered dot-lists. Compact enough for the buy box. */
+export function NotesStrip({ product, locale }: { product: Product; locale: Locale }) {
+  const t = useTranslations("Product");
+  const [lit, setLit] = useState<string | null>(null);
+  if (!product.notes.length) return null;
+  const order = ["top", "heart", "base"] as const;
+  const groups = order
+    .map((k) => ({ kind: k, items: product.notes.filter((n) => n.kind === k) }))
+    .filter((g) => g.items.length);
+  const kindLabel = (k: string) =>
+    k === "top" ? t("noteTop") : k === "heart" ? t("noteHeart") : t("noteBase");
+  const nameOf = (n: { name: string; nameAr?: string }) => tx(n.name, n.nameAr, locale);
+  return (
+    <div className="mt-6 border-y border-ink/10 py-4">
+      <p className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
+          {t("notesGlance")}
+        </span>
+        {(product.notesImageDesktop || product.notesImageMobile) && (
+          <Link href="#detailed-notes" className="link-underline shrink-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-gold">
+            {t("notesExplore")}
+          </Link>
+        )}
+      </p>
+      {/* Composition bar: every note owns a segment in pyramid order. */}
+      <div
+        className="mt-3 flex h-2 w-full gap-px overflow-hidden rounded-full bg-ink/10"
+        onMouseLeave={() => setLit(null)}
+      >
+        {product.notes.map((n) => (
+          <span
+            key={n.id}
+            title={nameOf(n)}
+            onMouseEnter={() => setLit(n.id)}
+            className="h-full cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{
+              backgroundColor: n.color,
+              flexGrow: lit === n.id ? 4 : 1,
+              flexBasis: 0,
+              opacity: lit && lit !== n.id ? 0.35 : 1,
+            }}
+          />
+        ))}
+      </div>
+      <div className="mt-3 space-y-2" onMouseLeave={() => setLit(null)}>
+        {groups.map((g) => (
+          <p key={g.kind} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+            <span className="w-10 shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-fog">
+              {kindLabel(g.kind)}
+            </span>
+            {g.items.map((n) => (
+              <span
+                key={n.id}
+                onMouseEnter={() => setLit(n.id)}
+                className="inline-flex cursor-default items-center gap-1.5 text-ink transition-opacity"
+                style={{ opacity: lit && lit !== n.id ? 0.35 : 1 }}
+              >
+                <span
+                  aria-hidden
+                  className="size-2.5 shrink-0 rounded-full ring-1 ring-ink/20 transition-transform"
+                  style={{
+                    backgroundColor: n.color,
+                    transform: lit === n.id ? "scale(1.5)" : undefined,
+                  }}
+                />
+                {nameOf(n)}
+              </span>
+            ))}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Compact iOS-timer quantity drum */
+function QtyWheel({ value, max, onChange }: { value: number; max: number; onChange: (n: number) => void }) {
+  const values = useMemo(
+    () => Array.from({ length: Math.max(1, max) }, (_, i) => i + 1),
+    [max],
+  );
+  const options = useMemo(
+    () => values.map((v) => ({ value: v, label: <span className="font-display">{v}</span> })),
+    [values],
+  );
+  const current = Math.min(Math.max(value, 1), values.length);
+  return (
+    <WheelPickerWrapper className="w-14">
+      <WheelPicker
+        value={current}
+        onValueChange={(v) => {
+          if (v !== current) onChange(Math.min(Math.max(1, v), values.length));
+        }}
+        options={options}
+        infinite={values.length >= 8}
+        visibleCount={12}
+        optionItemHeight={28}
+        classNames={{
+          optionItem: "text-[15px] text-ink/35",
+          highlightWrapper: "border-y border-gold/60",
+          highlightItem: "text-xl text-ink",
+        }}
+      />
+    </WheelPickerWrapper>
+  );
+}
 
 export function ProductInfo({
   product,
@@ -37,17 +147,20 @@ export function ProductInfo({
   const variant =
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const stock = variant?.stock ?? 0;
+  const maxQty = Math.max(1, Math.min(stock > 0 ? stock : 10, 20));
+  // Always clamped at the point of use — no settle effects needed.
+  const safeQty = Math.min(Math.max(1, qty), maxQty);
   const title = tx(product.title, product.titleAr, locale);
   const catName =
     categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
 
   const addToBag = () => {
-    add({ productSlug: product.slug, variantId: variant?.id, qty });
+    add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
   const buyNow = () => {
-    add({ productSlug: product.slug, variantId: variant?.id, qty });
+    add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
     router.push("/checkout");
   };
 
@@ -80,6 +193,8 @@ export function ProductInfo({
         className="mt-5"
       />
 
+      <NotesStrip product={product} locale={locale} />
+
       {product.variants.length > 1 && (
         <div className="mt-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
@@ -106,18 +221,20 @@ export function ProductInfo({
       )}
 
       <div className="mt-7 flex items-stretch gap-2">
-        <span className="flex items-center border border-ink/20">
+        <span className="flex items-center border border-ink/20 bg-white">
           <button
-            className="px-3 py-2 text-espresso transition hover:text-ink"
+            className="self-stretch px-3 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
+            disabled={safeQty <= 1}
             aria-label={t("decrease")}
           >
             <Minus className="size-4" />
           </button>
-          <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+          <QtyWheel value={safeQty} max={maxQty} onChange={(n) => setQty(Math.min(Math.max(1, n), maxQty))} />
           <button
-            className="px-3 py-2 text-espresso transition hover:text-ink"
-            onClick={() => setQty((q) => Math.min(Math.max(stock, 1), q + 1))}
+            className="self-stretch px-3 text-espresso transition hover:text-ink disabled:opacity-30"
+            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+            disabled={safeQty >= maxQty}
             aria-label={t("increase")}
           >
             <Plus className="size-4" />

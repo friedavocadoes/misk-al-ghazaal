@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { CouponIcon, COUPON_ICONS } from "@/components/ui/coupon-icons";
 
 async function createCoupon(formData: FormData) {
@@ -52,7 +53,7 @@ export default async function CouponsPage() {
           percent · fixed AED · free shipping · gift. Personal referral rewards are minted automatically (hidden here).
         </p>
 
-        <form action={createCoupon} className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-3">
+        <AdminForm action={createCoupon} success="Coupon created" className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-3">
           <h2 className="font-display text-xl md:col-span-3">New coupon</h2>
           <label className="block">Code*<input name="code" required placeholder="WELCOME20" className="mt-1 w-full border border-ink/20 px-3 py-2 font-mono uppercase" /></label>
           <label className="block">Kind*
@@ -83,8 +84,8 @@ export default async function CouponsPage() {
             <label><input type="checkbox" name="is_public" defaultChecked /> Show on product pages</label>
           </div>
           <p className="text-xs text-ink/50 md:col-span-3">{Object.entries(KIND_HINT).map(([k, v]) => `${k}: ${v}`).join(" · ")}</p>
-          <button className="bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85 md:col-span-3">Create coupon</button>
-        </form>
+          <SaveButton className="md:col-span-3">Create coupon</SaveButton>
+        </AdminForm>
 
         <ul className="mt-8 divide-y divide-ink/10 border border-ink/10 bg-white">
           {((coupons as { id: string; code: string; kind: string; amount: number; active: boolean; used_count: number; icon: string }[] | null) ?? []).map((c) => (

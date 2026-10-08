@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 
 async function createBanner(formData: FormData) {
   "use server";
@@ -35,8 +36,9 @@ async function moveToBin(formData: FormData) {
 
 function CreateBanner() {
   return (
-    <form
+    <AdminForm
       action={createBanner}
+      success="Banner added"
       className="mt-8 border border-ink/10 bg-white p-6"
     >
       <h2 className="font-display text-xl">Add banner</h2>
@@ -65,10 +67,8 @@ function CreateBanner() {
           <input name="src" required placeholder="https://…supabase.co/… or /banners/….jpg" className="mt-1 w-full border border-ink/20 px-3 py-2" />
         </label>
       </div>
-      <button className="mt-4 bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">
-        Add banner
-      </button>
-    </form>
+      <SaveButton className="mt-4">Add banner</SaveButton>
+    </AdminForm>
   );
 }
 
@@ -144,13 +144,7 @@ export default async function BannersPage() {
                     </Link>
                     <form action={moveToBin}>
                       <input type="hidden" name="id" value={b.id} />
-                      <button
-                        type="submit"
-                        title="Move banner to recycle bin (recoverable for 20 days)"
-                        className="border border-[#9c2b2e]/40 px-3 py-1.5 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
-                      >
-                        Delete
-                      </button>
+                      <ActionButton danger>Delete</ActionButton>
                     </form>
                   </div>
                 </div>

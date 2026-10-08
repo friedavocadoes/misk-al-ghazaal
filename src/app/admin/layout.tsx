@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import "../globals.css";
 import "./admin.css";
+import { Toaster } from "@/components/admin/admin-form";
 
 // Locale-free admin shell (EN only). Storefront html/body lives in
 // app/[locale]/layout.tsx — /admin needs its own because it sits outside
@@ -19,6 +20,7 @@ export default function AdminRootLayout({
     <html lang="en">
       <body className="min-h-screen bg-cream font-[family-name:var(--font-sans)] text-ink antialiased">
         <div className="admin">{children}</div>
+        <Toaster />
       </body>
     </html>
   );

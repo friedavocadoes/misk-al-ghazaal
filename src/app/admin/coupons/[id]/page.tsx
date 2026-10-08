@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { COUPON_ICONS } from "@/components/ui/coupon-icons";
 
 async function saveCoupon(formData: FormData) {
@@ -56,7 +57,7 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
           <Link href="/admin/coupons" className="link-underline">Coupons</Link> / <span className="font-mono">{c.code}</span>
         </p>
         <h1 className="font-display text-3xl">Edit coupon</h1>
-        <form action={saveCoupon} className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-2">
+        <AdminForm action={saveCoupon} success="Coupon saved" className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-2">
           <input type="hidden" name="id" value={c.id} />
           <label className="block">Kind
             <select name="kind" defaultValue={c.kind} className="mt-1 w-full border border-ink/20 px-3 py-2">
@@ -86,8 +87,8 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
             <label><input type="checkbox" name="active" defaultChecked={c.active} /> Active</label>
             <label><input type="checkbox" name="is_public" defaultChecked={c.is_public} /> Show on product pages</label>
           </div>
-          <button className="bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85 md:col-span-2">Save coupon</button>
-        </form>
+          <SaveButton className="md:col-span-2">Save coupon</SaveButton>
+        </AdminForm>
       </div>
     </>
   );

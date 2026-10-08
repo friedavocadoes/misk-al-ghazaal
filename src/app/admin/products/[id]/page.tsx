@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
+import { NotesArtworkField } from "@/components/admin/notes-artwork-field";
 
 async function saveProduct(formData: FormData) {
   "use server";
@@ -23,8 +25,6 @@ async function saveProduct(formData: FormData) {
       short_desc_ar: String(formData.get("short_desc_ar") || "") || null,
       lineup_id: String(formData.get("lineup_id") || "") || null,
       ritual_id: String(formData.get("ritual_id") || "") || null,
-      notes_image_desktop: String(formData.get("notes_image_desktop") || "") || "",
-      notes_image_mobile: String(formData.get("notes_image_mobile") || "") || "",
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
       is_best_seller: formData.get("is_best_seller") === "on",
@@ -58,7 +58,8 @@ async function saveProductNotes(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const productId = String(formData.get("product_id"));
   const supabase = await createClient();
-  // Rebuilt wholesale: every note row carries kind (none/top/heart/base).
+  // Idempotent wholesale rebuild: upsert every row (double-clicks and
+  // re-saves converge instead of racing a delete + insert).
   const ids = String(formData.get("note_ids") || "").split(",").filter(Boolean);
   const rows = ids
     .map((noteId) => ({
@@ -68,8 +69,27 @@ async function saveProductNotes(formData: FormData) {
       position: Number(formData.get(`pos_${noteId}`) || 0),
     }))
     .filter((r) => r.kind === "top" || r.kind === "heart" || r.kind === "base");
-  await supabase.from("product_notes").delete().eq("product_id", productId);
-  if (rows.length) await supabase.from("product_notes").insert(rows);
+  const keep = new Set(rows.map((r) => r.note_id));
+  // Remove anything switched back to "—" first…
+  const { data: current } = await supabase.from("product_notes").select("note_id").eq("product_id", productId);
+  const stale = (((current as { note_id: string }[] | null) ?? []).map((r) => r.note_id)).filter((id) => !keep.has(id));
+  if (stale.length) await supabase.from("product_notes").delete().eq("product_id", productId).in("note_id", stale);
+  // …then upsert the rest (insert-or-update atomically per row).
+  if (rows.length) {
+    const { error } = await supabase.from("product_notes").upsert(rows, { onConflict: "product_id,note_id" });
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath(`/admin/products/${productId}`);
+}
+
+async function saveNotesArtwork(productId: string, field: string, url: string) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  if (field !== "notes_image_desktop" && field !== "notes_image_mobile") throw new Error("Bad field");
+  const supabase = await createClient();
+  const { error } = await supabase.from("products").update({ [field]: url }).eq("id", productId);
+  if (error) throw new Error(error.message);
   revalidatePath(`/admin/products/${productId}`);
 }
 
@@ -125,18 +145,12 @@ export default async function ProductDetail(props: {
           </div>
           <form action={moveToBin}>
             <input type="hidden" name="id" value={p.id} />
-            <button
-              type="submit"
-              title="Move product to recycle bin (recoverable for 20 days)"
-              className="border border-[#9c2b2e]/40 px-4 py-2 text-sm text-[#9c2b2e] transition hover:bg-[#9c2b2e] hover:text-white"
-            >
-              Delete
-            </button>
+            <ActionButton danger>Delete</ActionButton>
           </form>
         </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <form action={saveProduct} className="space-y-3 border border-ink/10 bg-white p-6">
+        <AdminForm action={saveProduct} success="Details saved" className="space-y-3 border border-ink/10 bg-white p-6">
           <input type="hidden" name="id" value={p.id} />
           <h2 className="font-display text-xl">Details</h2>
           <label className="block text-sm">Title (EN)<input name="title" defaultValue={p.title} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
@@ -165,15 +179,32 @@ export default async function ProductDetail(props: {
               </select>
             </label>
           </div>
-          <label className="block text-sm">Detailed notes image — desktop<input name="notes_image_desktop" defaultValue={p.notes_image_desktop ?? ""} dir="ltr" placeholder="/theme-assets/notes-….jpg" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <label className="block text-sm">Detailed notes image — mobile<input name="notes_image_mobile" defaultValue={p.notes_image_mobile ?? ""} dir="ltr" placeholder="/theme-assets/notes-…-mobile.jpg" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <div className="flex gap-4 text-sm">
             <label><input type="checkbox" name="featured" defaultChecked={p.featured} /> Featured</label>
             <label><input type="checkbox" name="is_new" defaultChecked={p.is_new} /> New</label>
             <label><input type="checkbox" name="is_best_seller" defaultChecked={p.is_best_seller} /> Best seller</label>
           </div>
-          <button className="w-full bg-ink px-4 py-2.5 text-sm text-white transition hover:bg-ink/85">Save details</button>
-        </form>
+          <SaveButton className="w-full">Save details</SaveButton>
+        </AdminForm>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <NotesArtworkField
+            productId={p.id}
+            slug={p.slug}
+            field="notes_image_desktop"
+            label="Detailed notes artwork — desktop"
+            initial={p.notes_image_desktop ?? ""}
+            save={saveNotesArtwork}
+          />
+          <NotesArtworkField
+            productId={p.id}
+            slug={p.slug}
+            field="notes_image_mobile"
+            label="Detailed notes artwork — mobile"
+            initial={p.notes_image_mobile ?? ""}
+            save={saveNotesArtwork}
+          />
+        </div>
 
         <section className="border border-ink/10 bg-white p-6">
           <h2 className="font-display text-xl">Images (Supabase Storage)</h2>
@@ -186,7 +217,7 @@ export default async function ProductDetail(props: {
       <section className="mt-6 border border-ink/10 bg-white p-6">
         <h2 className="font-display text-xl">Fragrance notes (PDP dots)</h2>
         <p className="mt-1 text-xs text-ink/60">Pick the pyramid per note — position orders dots inside each tier.</p>
-        <form action={saveProductNotes} className="mt-4 space-y-2 text-sm">
+        <AdminForm action={saveProductNotes} success="Notes saved" className="mt-4 space-y-2 text-sm">
           <input type="hidden" name="product_id" value={p.id} />
           <input
             type="hidden"
@@ -209,23 +240,23 @@ export default async function ProductDetail(props: {
               </div>
             );
           })}
-          <button className="w-full bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85">Save notes</button>
-        </form>
+          <SaveButton className="w-full">Save notes</SaveButton>
+        </AdminForm>
       </section>
 
       <section className="mt-6 border border-ink/10 bg-white p-6">
         <h2 className="font-display text-xl">Variants + stock</h2>
         <div className="mt-4 space-y-4">
           {(variants ?? []).map((v: { id: string; title: string; price: number; stock: number; sku: string | null }) => (
-            <form key={v.id} action={saveVariant} className="grid gap-2 border-t border-ink/10 pt-4 text-sm sm:grid-cols-5">
+            <AdminForm key={v.id} action={saveVariant} success="Variant saved" className="grid gap-2 border-t border-ink/10 pt-4 text-sm sm:grid-cols-5">
               <input type="hidden" name="variant_id" value={v.id} />
               <input type="hidden" name="product_id" value={p.id} />
               <input name="v_title" defaultValue={v.title} className="border border-ink/20 px-2 py-1.5" />
               <input name="v_price" type="number" step="0.01" defaultValue={v.price} className="border border-ink/20 px-2 py-1.5" />
               <input name="v_stock" type="number" defaultValue={v.stock} className="border border-ink/20 px-2 py-1.5" />
               <input name="v_sku" defaultValue={v.sku ?? ""} placeholder="SKU" className="border border-ink/20 px-2 py-1.5" />
-              <button className="bg-ink px-3 py-1.5 text-white transition hover:bg-ink/85 sm:col-span-5">Save variant</button>
-            </form>
+              <SaveButton className="sm:col-span-5">Save variant</SaveButton>
+            </AdminForm>
           ))}
         </div>
       </section>

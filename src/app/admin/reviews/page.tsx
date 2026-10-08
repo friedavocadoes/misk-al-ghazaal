@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { ActionButton } from "@/components/admin/admin-form";
 
 async function approveReview(formData: FormData) {
   "use server";
@@ -54,8 +56,8 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
       <div className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="font-display text-3xl">Reviews</h1>
         <div className="mt-4 flex gap-2 text-sm">
-          <a href="/admin/reviews" className={pendingOnly ? "bg-ink px-4 py-1.5 text-white" : "border border-ink/20 px-4 py-1.5"}>Pending</a>
-          <a href="/admin/reviews?tab=all" className={!pendingOnly ? "bg-ink px-4 py-1.5 text-white" : "border border-ink/20 px-4 py-1.5"}>All</a>
+          <Link href="/admin/reviews" className={pendingOnly ? "bg-ink px-4 py-1.5 text-white" : "border border-ink/20 px-4 py-1.5"}>Pending</Link>
+          <Link href="/admin/reviews?tab=all" className={!pendingOnly ? "bg-ink px-4 py-1.5 text-white" : "border border-ink/20 px-4 py-1.5"}>All</Link>
         </div>
         <ul className="mt-6 space-y-4">
           {((reviews as {
@@ -81,12 +83,12 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
                   {!r.approved && (
                     <form action={approveReview}>
                       <input type="hidden" name="id" value={r.id} />
-                      <button className="bg-ink px-4 py-1.5 text-white">Approve</button>
+                      <ActionButton className="border-ink bg-ink !px-4 !py-1.5 text-white hover:bg-ink/85">Approve</ActionButton>
                     </form>
                   )}
                   <form action={deleteReview}>
                     <input type="hidden" name="id" value={r.id} />
-                    <button className="border border-[#9c2b2e]/40 px-4 py-1.5 text-[#9c2b2e]">Delete</button>
+                    <ActionButton danger className="!px-4 !py-1.5">Delete</ActionButton>
                   </form>
                 </div>
               </li>

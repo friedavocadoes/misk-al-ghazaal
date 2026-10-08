@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 
 async function saveRitual(formData: FormData) {
   "use server";
@@ -41,7 +42,7 @@ export default async function RitualDetail(props: { params: Promise<{ id: string
           <Link href="/admin/rituals" className="link-underline">Guides</Link> / {r.slug}
         </p>
         <h1 className="font-display text-3xl">{r.title}</h1>
-        <form action={saveRitual} className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm">
+        <AdminForm action={saveRitual} success="Guide saved" className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm">
           <input type="hidden" name="id" value={r.id} />
           <div className="grid gap-3 md:grid-cols-2">
             <label className="block">Title EN<input name="title" defaultValue={r.title} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
@@ -51,8 +52,8 @@ export default async function RitualDetail(props: { params: Promise<{ id: string
           <label className="block">Steps / body HTML (AR)<textarea name="body_ar" rows={4} defaultValue={r.body_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2 font-mono text-[13px]" /></label>
           <label className="block">Photo URL (Storage or /theme-assets/…)<input name="image" defaultValue={r.image ?? ""} placeholder="/theme-assets/ritual-perfume.jpg" dir="ltr" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <label className="block">Video URL — mp4 file or YouTube/Vimeo embed URL (video wins when both set)<input name="video_url" defaultValue={r.video_url ?? ""} placeholder="https://www.youtube.com/embed/…" dir="ltr" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <button className="bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85">Save guide</button>
-        </form>
+          <SaveButton>Save guide</SaveButton>
+        </AdminForm>
       </div>
     </>
   );
