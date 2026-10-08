@@ -353,7 +353,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <button
                 onClick={() => setLangOpen((v) => !v)}
                 aria-label={t("language")}
-                className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
+                className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold cursor-pointer"
               >
                 <Globe className={glyph} />
                 <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
@@ -380,7 +380,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t("search")}
               aria-expanded={searchOpen}
-              className="flex size-9 shrink-0 items-center justify-center text-espresso transition hover:text-gold"
+              className="flex size-9 shrink-0 items-center justify-center text-espresso transition hover:text-gold cursor-pointer"
             >
               <Search className={glyph} />
             </button>

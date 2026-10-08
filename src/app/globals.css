@@ -105,20 +105,25 @@ html[lang="ar"] .eyebrow {
   min-width: 0;
 }
 
-/* Cinematic hero: slow Ken Burns drift on the active slide */
+/* Cinematic hero: slow settle on the active image (the slide container
+   carries the push-pull crossfade; the image only breathes). Rides
+   `transform` so it composes with the centering `translate` property. */
 @keyframes kenburns {
   from {
-    transform: scale(1.14) translateX(1.5%);
+    transform: scale(1.06);
   }
   to {
-    transform: scale(1.02) translateX(0);
+    transform: scale(1);
   }
 }
 .kenburns {
-  animation: kenburns 7.5s ease-out forwards;
+  animation: kenburns 8s ease-out forwards;
 }
 
 /* Swiper hero tuning */
+.hero-swiper {
+  --swiper-wrapper-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
 .hero-swiper .swiper-slide {
   overflow: hidden;
 }

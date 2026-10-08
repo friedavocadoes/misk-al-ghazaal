@@ -51,17 +51,20 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     }),
     []
   );
+  // Push-pull crossfade: the outgoing settles back and dissolves while the
+  // incoming arrives slightly close and eases into place — depth instead
+  // of the old lateral shove. No shadow scrims (they muddied the whites).
   const creativeEffect = useMemo(
     () => ({
       prev: {
-        shadow: true,
-        translate: ["-18%", 0, -350] as [string, number, number],
-        rotate: [0, 0, -2] as [number, number, number],
-        opacity: 0.4,
+        shadow: false,
+        scale: 0.965,
+        opacity: 0,
       },
       next: {
-        translate: ["18%", 0, -350] as [string, number, number],
-        rotate: [0, 0, 2] as [number, number, number],
+        shadow: false,
+        translate: [0, 0, 0] as [number, number, number],
+        scale: 1.07,
         opacity: 0,
       },
     }),
@@ -69,26 +72,42 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   );
   // Navigation self-heals: prefer the live ref, but fall back to the
   // instance on the DOM node (and never call into a destroyed one).
-  const go = (dir: 1 | -1) => {
+  const live = () => {
     const el = document.querySelector(".hero-swiper") as unknown as {
       swiper?: SwiperType;
     } | null;
-    const live =
+    const inst =
       swiperRef.current && !swiperRef.current.destroyed
         ? swiperRef.current
         : el?.swiper && !el.swiper.destroyed
           ? el.swiper
           : null;
-    if (!live) return;
-    swiperRef.current = live;
-    if (dir === 1) live.slideNext();
-    else live.slidePrev();
+    if (inst) swiperRef.current = inst;
+    return inst;
+  };
+  const go = (dir: 1 | -1) => {
+    const inst = live();
+    if (!inst) return;
+    if (dir === 1) inst.slideNext();
+    else inst.slidePrev();
+  };
+  const goTo = (i: number) => {
+    const inst = live();
+    if (!inst) return;
+    inst.slideToLoop(i);
   };
   const boxRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
   const raf = useRef(0);
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cached chrome height (ResizeObserver-kept): the scroll path must never
+  // read offsetHeight — read-then-write per frame is forced reflow, which
+  // is what made the image visibly stutter mid-journey.
+  const headerH = useRef(108);
+  // Write guards: touching margin/--hero-h invalidates layout, so frames
+  // that changed nothing (rounded snaps, RO echoes) write nothing.
+  const last = useRef({ m: -1, h: -1 });
   // Journey phase: top → locked → free. A natural first scroll lands
   // ~300px; phases make every stop decisive instead of re-trapping.
   const phase = useRef<"top" | "locked" | "free">("top");
@@ -103,7 +122,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       //  Hero height = scrollY + viewport − live header, capped at one
       //  viewport: never scroll-zooms, always exactly fills its frame.
       //  Subpixel values (no rounding): whole-pixel steps read as stutter.
-      const header = document.querySelector("header");
+      //  The header height comes from the cache — zero layout reads here.
       const lock = lockFor();
       const y = window.scrollY;
       const mobile = window.innerWidth < 1024;
@@ -115,11 +134,17 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
         p = y <= lock ? y / lock : y <= lock + EXIT ? 1 - (y - lock) / EXIT : 0;
       }
       const m = BOX_MARGIN * (1 - p);
-      if (boxRef.current) boxRef.current.style.margin = `0px ${m}px ${m}px`;
-      if (sectionRef.current && header) {
-        const grown = y + window.innerHeight - header.offsetHeight;
+      if (Math.abs(m - last.current.m) > 0.05) {
+        last.current.m = m;
+        if (boxRef.current) boxRef.current.style.margin = `0px ${m}px ${m}px`;
+      }
+      if (sectionRef.current) {
+        const grown = y + window.innerHeight - headerH.current;
         const h = Math.max(440, Math.min(grown, window.innerHeight));
-        sectionRef.current.style.setProperty("--hero-h", `${h}px`);
+        if (Math.abs(h - last.current.h) > 0.05) {
+          last.current.h = h;
+          sectionRef.current.style.setProperty("--hero-h", `${h}px`);
+        }
       }
     };
     const snapTo = (y: number) => {
@@ -165,12 +190,18 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     // Grabbing the page mid-snap hands control straight back to the user.
     const cancelSnap = () => gsap.killTweensOf(window);
     sync();
-    // Track the chrome continuously: the navbar morphs on 0.5s CSS
-    // transitions AFTER scroll settles, so scroll/resize events alone
-    // leave a stale hero height (the old fullscreen whitespace gap).
-    // The header never depends on the hero, so this cannot feed back.
+    // Track the chrome continuously: the navbar morphs on CSS transitions
+    // AFTER scroll settles, so scroll/resize events alone leave a stale
+    // hero height (the old fullscreen whitespace gap). The observer writes
+    // the cache (never the hero directly), so this cannot feed back.
     const header = document.querySelector("header");
-    const ro = header ? new ResizeObserver(() => sync()) : null;
+    if (header) headerH.current = header.offsetHeight;
+    const ro = header
+      ? new ResizeObserver(() => {
+          headerH.current = (header as HTMLElement).offsetHeight;
+          sync();
+        })
+      : null;
     ro?.observe(header as Element);
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -198,11 +229,9 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
           <Swiper
             modules={modules}
             effect="creative"
-            speed={1300}
+            speed={1500}
             loop
             parallax
-            observer
-            observeParents
             autoplay={autoplay}
             creativeEffect={creativeEffect}
             onSwiper={(s) => {
@@ -218,9 +247,15 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
           >
             {slides.map((s, i) => (
               <SwiperSlide key={s.src}>
-                {/* The frame animates (var(--hero-h)); the image inside stays
-                    a stable 100svh and is only clipped — it never re-crops
-                    or re-rasterizes per scroll frame, so no flicker. */}
+                {/* The frame animates (var(--hero-h)); the image is a fixed
+                    viewport-sized plate (100vw × 100svh) centered on the
+                    frame, so gutters melting only re-clip it — the raster
+                    never re-crops or re-rasterizes per scroll frame, which
+                    is what read as stutter. max-w-none defeats the global
+                    img cap; the slide's overflow:hidden does the clipping.
+                    Centering rides the `translate` property while Ken Burns
+                    rides `transform`, so the two compose instead of
+                    fighting. */}
                 <div
                   className="relative overflow-hidden"
                   style={{ height: "var(--hero-h,86svh)", minHeight: 440 }}
@@ -233,7 +268,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                     height={1100}
                     priority={i === 0}
                     style={s.focal ? { objectPosition: s.focal } : undefined}
-                    className={`absolute inset-0 h-[100svh] w-full opacity-90 ${
+                    className={`absolute top-0 left-1/2 h-[100svh] w-[100vw] max-w-none -translate-x-1/2 opacity-90 ${
                       s.fit === "contain" ? "object-contain" : "object-cover"
                     } ${i === active ? "kenburns" : ""}`}
                   />
@@ -285,46 +320,56 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
             ))}
           </Swiper>
 
-          {/* Controls: glass pill — prev, live counter/total, autoplay
-              progress, next. All values derive from `slides`, nothing
-              hardcoded (a future admin panel edits slides in one place).
-              z-10 pins hit-testing above the 3D-transformed slides. */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-5 md:justify-end md:px-10 md:pb-7">
-            <div className="pointer-events-auto flex items-center gap-3 border border-white/25 bg-black/35 px-3 py-2 text-white backdrop-blur-md">
+          {/* Controls: whisper-quiet — slim prev/next chevrons around dot
+              dashes. The active dash stretches and fills gold with the live
+              autoplay progress; every dot jumps straight to its slide.
+              Nothing hardcoded: count derives from `slides`. z-10 pins
+              hit-testing above the 3D-transformed slides. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-6">
+            <div className="pointer-events-auto flex items-center gap-5">
               <button
                 type="button"
                 onClick={() => go(-1)}
                 aria-label={t("prev")}
-                className="p-1.5 transition hover:text-gold-soft"
+                className="p-1 text-white/55 transition hover:text-white"
               >
-                <ArrowLeft className="size-4" />
+                <ArrowLeft className="size-4 rtl:rotate-180" />
               </button>
-              <span className="font-display text-sm italic tracking-wider" aria-live="polite">
-                {String(active + 1).padStart(2, "0")}
-                <span className="mx-1.5 text-white/50">/</span>
-                <span className="text-white/70">
-                  {String(slides.length).padStart(2, "0")}
-                </span>
-              </span>
-              <span
-                className="relative block h-[2px] w-16 overflow-hidden bg-white/25 md:w-24"
-                role="progressbar"
-                aria-label={t("timeLeft")}
-              >
-                <span
-                  ref={progressRef}
-                  className="absolute inset-0 origin-left bg-gold-soft"
-                  style={{ transform: "scaleX(0)" }}
-                />
-              </span>
+              <div className="flex items-center gap-2">
+                {slides.map((s, i) => (
+                  <button
+                    key={s.src}
+                    type="button"
+                    onClick={() => goTo(i)}
+                    aria-label={`${t("next")} ${i + 1} / ${slides.length}`}
+                    aria-current={i === active}
+                    className={`relative h-[3px] overflow-hidden rounded-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      i === active
+                        ? "w-12 bg-white/30"
+                        : "w-5 bg-white/30 hover:bg-white/70"
+                    }`}
+                  >
+                    {i === active && (
+                      <span
+                        ref={progressRef}
+                        className="absolute inset-0 origin-left bg-gold-soft rtl:origin-right"
+                        style={{ transform: "scaleX(0)" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => go(1)}
                 aria-label={t("next")}
-                className="p-1.5 transition hover:text-gold-soft"
+                className="p-1 text-white/55 transition hover:text-white"
               >
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 rtl:rotate-180" />
               </button>
+              <span className="sr-only" aria-live="polite">
+                {active + 1} / {slides.length}
+              </span>
             </div>
           </div>
         </div>
