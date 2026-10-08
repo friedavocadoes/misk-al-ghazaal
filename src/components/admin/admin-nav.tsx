@@ -9,6 +9,12 @@ import { SignOutButton } from "./sign-out-button";
 const LINKS: { href: string; label: string; superOnly?: boolean }[] = [
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products", superOnly: true },
+  { href: "/admin/coupons", label: "Coupons", superOnly: true },
+  { href: "/admin/lineups", label: "Lineups", superOnly: true },
+  { href: "/admin/notes", label: "Notes", superOnly: true },
+  { href: "/admin/rituals", label: "Rituals", superOnly: true },
+  { href: "/admin/reviews", label: "Reviews", superOnly: true },
+  { href: "/admin/referrals", label: "Referrals", superOnly: true },
   { href: "/admin/banners", label: "Banners", superOnly: true },
   { href: "/admin/bin", label: "Recycle bin" },
 ];

@@ -299,11 +299,11 @@ const FAQS: Localizable<Faq>[] = [
   {
     en: {
       q: "What are the shipping charges?",
-      a: "Delivery is complimentary above AED 400; a flat AED 26 applies below that.",
+      a: "Delivery is complimentary above AED 200; a flat AED 26 applies below that.",
     },
     ar: {
       q: "ما هي رسوم الشحن؟",
-      a: "التوصيل مجاني فوق 400 درهم؛ و26 درهماً رسم ثابت لما دون ذلك.",
+      a: "التوصيل مجاني فوق 200 درهم؛ و26 درهماً رسم ثابت لما دون ذلك.",
     },
   },
   {

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { useRouter } from "@/i18n/navigation";
+import { Check, Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
 import { TrustBadges } from "./TrustBadges";
+import { useCart } from "@/lib/cart";
 
 export { ProductGallery };
 
@@ -26,15 +28,28 @@ export function ProductInfo({
   categoryName?: string;
 }) {
   const t = useTranslations("Product");
+  const router = useRouter();
+  const { add } = useCart();
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [qty, setQty] = useState(1);
   const [wished, setWished] = useState(false);
+  const [added, setAdded] = useState(false);
   const variant =
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const stock = variant?.stock ?? 0;
   const title = tx(product.title, product.titleAr, locale);
   const catName =
     categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
+
+  const addToBag = () => {
+    add({ productSlug: product.slug, variantId: variant?.id, qty });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  };
+  const buyNow = () => {
+    add({ productSlug: product.slug, variantId: variant?.id, qty });
+    router.push("/checkout");
+  };
 
   return (
     <div>
@@ -102,14 +117,15 @@ export function ProductInfo({
           <span className="w-8 text-center text-sm font-semibold">{qty}</span>
           <button
             className="px-3 py-2 text-espresso transition hover:text-ink"
-            onClick={() => setQty((q) => q + 1)}
+            onClick={() => setQty((q) => Math.min(Math.max(stock, 1), q + 1))}
             aria-label={t("increase")}
           >
             <Plus className="size-4" />
           </button>
         </span>
-        <Button className="h-[52px] flex-1" size="lg">
-          <ShoppingBag className="size-4" /> {t("addToBag")}
+        <Button className="h-[52px] flex-1" size="lg" onClick={addToBag}>
+          {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}{" "}
+          {added ? t("added") : t("addToBag")}
         </Button>
         <button
           onClick={() => setWished((w) => !w)}
@@ -125,7 +141,7 @@ export function ProductInfo({
           <Heart className={cn("size-4", wished && "fill-[#9c2b2e]")} />
         </button>
       </div>
-      <Button variant="outline" size="lg" className="mt-2 w-full">
+      <Button variant="outline" size="lg" className="mt-2 w-full" onClick={buyNow}>
         {t("buyNow")}
       </Button>
 

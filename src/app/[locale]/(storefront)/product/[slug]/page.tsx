@@ -8,6 +8,16 @@ import {
   ProductInfo,
   ProductTabsAccordion,
 } from "@/components/blocks/ProductDetails";
+import {
+  AboutShort,
+  CouponStrip,
+  DetailedNotes,
+  LineupRow,
+  NotesBrief,
+  ReviewsSection,
+  RitualSection,
+} from "@/components/blocks/ProductSections";
+import { ShareButtons } from "@/components/blocks/ShareButtons";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import {
   getCollectionBySlug,
@@ -29,6 +39,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Collection" });
   const ts = await getTranslations({ locale, namespace: "Sections" });
+  const tp = await getTranslations({ locale, namespace: "Product" });
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
@@ -55,15 +66,29 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
         <span className="text-ink">{product.title}</span>
       </nav>
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-        <ProductGallery images={product.images} title={product.title} />
-        <ProductInfo
-          product={product}
-          layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
-          locale={locale}
-          categoryName={catTitle}
-        />
+        {/* min-w-0 on both tracks: Embla's flex row must never force the
+            grid wider than the viewport (the mobile right-bleed bug). */}
+        <div className="relative min-w-0">
+          <ProductGallery images={product.images} title={product.title} />
+          <ShareButtons title={product.title} label={tp("share")} copiedLabel={tp("shareCopied")} />
+        </div>
+        <div className="min-w-0">
+          <ProductInfo
+            product={product}
+            layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
+            locale={locale}
+            categoryName={catTitle}
+          />
+        </div>
       </div>
+      <AboutShort product={product} locale={locale} />
+      <NotesBrief product={product} locale={locale} />
+      <RitualSection product={product} locale={locale} />
+      <DetailedNotes product={product} locale={locale} />
+      <CouponStrip locale={locale} />
       <ProductTabsAccordion product={product} locale={locale} />
+      <LineupRow product={product} locale={locale} />
+      <ReviewsSection product={product} locale={locale} />
       <ProductCarousel title={ts("alsoAdore")} products={related} />
       </div>
     </>

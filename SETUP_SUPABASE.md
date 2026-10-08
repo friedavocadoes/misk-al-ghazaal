@@ -13,6 +13,10 @@ getters throw without env; `/admin/*` shows a setup hint.
 Dashboard → SQL Editor → New query, paste in order:
 
 1. `supabase/schema.sql` (tables + RLS + storage buckets + policies)
+2. `supabase/migration_soft_delete.sql` (recycle bin)
+3. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
+   coupons, referrals, reviews, PDP copy, order links — includes
+   `increment_coupon_use()` + a starter notes library)
 2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
    106 collection links incl. for-him/for-her/ramadan, 9 banners, 3 articles.
    Safe to re-run — upserts on slug, wipes + re-inserts variants/links/banners.)
@@ -74,6 +78,23 @@ read, super_admin write via RLS).
   tracking no + internal note. Every change is logged to `order_status_history`.
 - Realtime: add a `supabase.channel('orders').on('postgres_changes', …)` listener
   on the orders page later for a new-order toast — no extra service needed.
+
+## 6b. Shopper auth (email + Google) + referrals
+
+1. Dashboard → Authentication → Providers → enable **Email** (confirm email ON
+   for production) and **Google**: create the OAuth client (Google Cloud
+   Console → Credentials), paste Client ID + Secret, and add the redirect URL
+   `https://<project>.supabase.co/auth/v1/callback` exactly as shown.
+2. Authentication → URL Configuration → Site URL = your storefront origin;
+   add `http://localhost:3000` to Redirect URLs for local dev. The app's
+   `/auth/callback` finishes the flow and bootstraps `profiles` (unique
+   referral code + `?ref=` attribution).
+3. Referral reward % and on/off live at `/admin/referrals` (default 25% both
+   sides, first orders only). Reward coupons for referrers are minted with
+   `owner_id` — visible only to that account.
+4. Reviews: shoppers file from the PDP (login required); nothing is public
+   until approved at `/admin/reviews` (approval recomputes the product
+   rating/count shown on cards and the PDP).
 
 ## 7. Analytics (super_admin)
 

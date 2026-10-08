@@ -19,6 +19,12 @@ async function saveProduct(formData: FormData) {
       title_ar: String(formData.get("title_ar") || "") || null,
       price: Number(formData.get("price")),
       compare_at: formData.get("compare_at") ? Number(formData.get("compare_at")) : null,
+      short_desc: String(formData.get("short_desc") || "") || "",
+      short_desc_ar: String(formData.get("short_desc_ar") || "") || null,
+      lineup_id: String(formData.get("lineup_id") || "") || null,
+      ritual_id: String(formData.get("ritual_id") || "") || null,
+      notes_image_desktop: String(formData.get("notes_image_desktop") || "") || "",
+      notes_image_mobile: String(formData.get("notes_image_mobile") || "") || "",
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
       is_best_seller: formData.get("is_best_seller") === "on",
@@ -43,6 +49,27 @@ async function saveVariant(formData: FormData) {
       sku: String(formData.get("v_sku") || "") || null,
     })
     .eq("id", id);
+  revalidatePath(`/admin/products/${productId}`);
+}
+
+async function saveProductNotes(formData: FormData) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const productId = String(formData.get("product_id"));
+  const supabase = await createClient();
+  // Rebuilt wholesale: every note row carries kind (none/top/heart/base).
+  const ids = String(formData.get("note_ids") || "").split(",").filter(Boolean);
+  const rows = ids
+    .map((noteId) => ({
+      product_id: productId,
+      note_id: noteId,
+      kind: String(formData.get(`kind_${noteId}`) || "none"),
+      position: Number(formData.get(`pos_${noteId}`) || 0),
+    }))
+    .filter((r) => r.kind === "top" || r.kind === "heart" || r.kind === "base");
+  await supabase.from("product_notes").delete().eq("product_id", productId);
+  if (rows.length) await supabase.from("product_notes").insert(rows);
   revalidatePath(`/admin/products/${productId}`);
 }
 
@@ -75,6 +102,15 @@ export default async function ProductDetail(props: {
     .select("*")
     .eq("product_id", id)
     .order("title");
+  const [{ data: lineups }, { data: rituals }, { data: allNotes }, { data: assigned }] = await Promise.all([
+    supabase.from("lineups").select("id, title").order("sort"),
+    supabase.from("rituals").select("id, title").order("title"),
+    supabase.from("notes").select("id, name, color").order("name"),
+    supabase.from("product_notes").select("note_id, kind, position").eq("product_id", id),
+  ]);
+  const assignedMap = new Map(
+    (((assigned as { note_id: string; kind: string; position: number }[] | null) ?? [])).map((a) => [a.note_id, a]),
+  );
 
   return (
     <>
@@ -109,6 +145,28 @@ export default async function ProductDetail(props: {
             <label className="block text-sm">Price AED<input name="price" type="number" step="0.01" defaultValue={p.price} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
             <label className="block text-sm">Compare-at<input name="compare_at" type="number" step="0.01" defaultValue={p.compare_at ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           </div>
+          <label className="block text-sm">Short about (PDP About block)<textarea name="short_desc" rows={2} defaultValue={p.short_desc ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+          <label className="block text-sm">Short about AR<textarea name="short_desc_ar" rows={2} defaultValue={p.short_desc_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm">Lineup
+              <select name="lineup_id" defaultValue={p.lineup_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
+                <option value="">— none —</option>
+                {((lineups as { id: string; title: string }[] | null) ?? []).map((l) => (
+                  <option key={l.id} value={l.id}>{l.title}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">How-to-use guide
+              <select name="ritual_id" defaultValue={p.ritual_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
+                <option value="">— none —</option>
+                {((rituals as { id: string; title: string }[] | null) ?? []).map((r) => (
+                  <option key={r.id} value={r.id}>{r.title}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="block text-sm">Detailed notes image — desktop<input name="notes_image_desktop" defaultValue={p.notes_image_desktop ?? ""} dir="ltr" placeholder="/theme-assets/notes-….jpg" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+          <label className="block text-sm">Detailed notes image — mobile<input name="notes_image_mobile" defaultValue={p.notes_image_mobile ?? ""} dir="ltr" placeholder="/theme-assets/notes-…-mobile.jpg" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <div className="flex gap-4 text-sm">
             <label><input type="checkbox" name="featured" defaultChecked={p.featured} /> Featured</label>
             <label><input type="checkbox" name="is_new" defaultChecked={p.is_new} /> New</label>
@@ -124,6 +182,36 @@ export default async function ProductDetail(props: {
           </div>
         </section>
       </div>
+
+      <section className="mt-6 border border-ink/10 bg-white p-6">
+        <h2 className="font-display text-xl">Fragrance notes (PDP dots)</h2>
+        <p className="mt-1 text-xs text-ink/60">Pick the pyramid per note — position orders dots inside each tier.</p>
+        <form action={saveProductNotes} className="mt-4 space-y-2 text-sm">
+          <input type="hidden" name="product_id" value={p.id} />
+          <input
+            type="hidden"
+            name="note_ids"
+            value={((allNotes as { id: string }[] | null) ?? []).map((n) => n.id).join(",")}
+          />
+          {((allNotes as { id: string; name: string; color: string }[] | null) ?? []).map((n) => {
+            const a = assignedMap.get(n.id);
+            return (
+              <div key={n.id} className="flex items-center gap-3 border-t border-ink/10 pt-2">
+                <span className="size-5 shrink-0 rounded-full ring-1 ring-ink/15" style={{ backgroundColor: n.color }} />
+                <span className="w-40 truncate">{n.name}</span>
+                <select name={`kind_${n.id}`} defaultValue={a?.kind ?? "none"} className="border border-ink/20 px-2 py-1.5">
+                  <option value="none">—</option>
+                  <option value="top">Top</option>
+                  <option value="heart">Heart</option>
+                  <option value="base">Base</option>
+                </select>
+                <input name={`pos_${n.id}`} type="number" defaultValue={a?.position ?? 0} className="w-20 border border-ink/20 px-2 py-1.5" />
+              </div>
+            );
+          })}
+          <button className="w-full bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85">Save notes</button>
+        </form>
+      </section>
 
       <section className="mt-6 border border-ink/10 bg-white p-6">
         <h2 className="font-display text-xl">Variants + stock</h2>

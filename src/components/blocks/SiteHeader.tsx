@@ -28,6 +28,7 @@ import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 import type { ShopMenuIcon } from "@/lib/site";
+import { useCart } from "@/lib/cart";
 
 const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
   mars: Mars,
@@ -264,6 +265,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const left = getNavLeft(locale);
   const right = getNavRight(locale);
   const shop = getShopMenu(locale);
+  const { count: bagCount } = useCart();
 
   // Icon glyphs scale on the GPU (transform) inside fixed-size hit areas,
   // so shrinking the chrome never reflows the flex rows mid-flight — the
@@ -455,9 +457,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               className="relative flex size-9 items-center justify-center text-espresso transition hover:text-gold"
             >
               <ShoppingBag className={glyph} />
-              <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
-                2
-              </span>
+              {bagCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
+                  {bagCount > 99 ? "99" : bagCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -522,9 +526,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               className="relative p-2 text-espresso"
             >
               <ShoppingBag className="size-5" />
-              <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
-                2
-              </span>
+              {bagCount > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
+                  {bagCount > 99 ? "99" : bagCount}
+                </span>
+              )}
             </button>
           </span>
         </div>

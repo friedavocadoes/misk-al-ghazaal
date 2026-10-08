@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -10,22 +9,8 @@ import { tx } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { formatAED } from "@/lib/utils";
-
-const DEMO_ITEMS = [
-  { productSlug: "misk-al-ghazaal-abukhalid-50ml", qty: 1 },
-  {
-    productSlug: "jawahara-from-misk-al-ghazal-bakhoor-tablets-arabic-insence",
-    qty: 2,
-  },
-];
-
-interface DrawerProduct {
-  slug: string;
-  title: string;
-  title_ar: string | null;
-  price: number;
-  images: string[];
-}
+import { useCart } from "@/lib/cart";
+import { useCartMeta } from "@/lib/cart-meta";
 
 export function CartDrawer({
   open,
@@ -36,75 +21,82 @@ export function CartDrawer({
 }) {
   const t = useTranslations("Cart");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
-  const [catalog, setCatalog] = useState<Record<string, DrawerProduct>>({});
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    fetch(`/api/products?slugs=${DEMO_ITEMS.map((i) => i.productSlug).join(",")}`)
-      .then((r) => (r.ok ? r.json() : { products: [] }))
-      .then((j: { products: DrawerProduct[] }) => {
-        if (cancelled) return;
-        setCatalog(Object.fromEntries((j.products ?? []).map((p) => [p.slug, p])));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [open ]);
-  const lines = DEMO_ITEMS.map((item) => ({
-    ...item,
-    product: catalog[item.productSlug],
-  })).filter((l): l is typeof l & { product: DrawerProduct } => Boolean(l.product));
-  const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
+  const { lines, count, setQty, remove } = useCart();
+  const { meta } = useCartMeta(lines.map((l) => l.productSlug));
+
+  const rows = lines
+    .map((l) => ({ ...l, product: meta[l.productSlug] }))
+    .filter((l) => l.product);
+  const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
-            {t("bagCount")} ({lines.reduce((s, l) => s + l.qty, 0)})
+            {t("bagCount")} ({count})
           </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {lines.length === 0 ? (
-            <p className="py-10 text-center text-sm text-fog">
-              {t("empty")}
-            </p>
+          {rows.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-sm text-fog">{t("empty")}</p>
+              <Button asChild variant="outline" className="mt-5" onClick={() => onOpenChange(false)}>
+                <Link href="/collection/best-sellers">{t("continue")}</Link>
+              </Button>
+            </div>
           ) : (
             <ul className="divide-y divide-ink/10">
-              {lines.map(({ product, qty }) => (
-                <li key={product.slug} className="flex gap-4 py-4">
-                  <span className="relative block size-16 shrink-0 overflow-hidden bg-sand">
-                    {product.images[0] && (
+              {rows.map((l) => (
+                <li key={`${l.productSlug}-${l.variantId ?? ""}`} className="flex gap-4 py-4">
+                  <Link
+                    href={`/product/${l.productSlug}`}
+                    onClick={() => onOpenChange(false)}
+                    className="relative block size-16 shrink-0 overflow-hidden bg-sand"
+                  >
+                    {l.product?.image && (
                       <Image
-                        src={product.images[0]}
-                        alt={product.title}
+                        src={l.product.image}
+                        alt={l.product.title}
                         fill
                         sizes="64px"
                         className="object-cover"
                       />
                     )}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-[13px] font-medium text-ink">
-                      {tx(product.title, product.title_ar ?? undefined, locale)}
-                    </p>
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/product/${l.productSlug}`}
+                      onClick={() => onOpenChange(false)}
+                      className="block truncate text-[13px] font-medium text-ink hover:text-gold"
+                    >
+                      {tx(l.product?.title ?? "", l.product?.titleAr, locale)}
+                    </Link>
                     <p className="mt-0.5 text-[13px] text-espresso">
-                      {formatAED(product.price)}
+                      {formatAED((l.product?.price ?? 0) * l.qty)}
                     </p>
                     <div className="mt-2 flex items-center gap-3">
                       <span className="flex items-center border border-ink/15">
-                        <button className="p-1.5 text-espresso hover:text-ink" aria-label={t("decrease")}>
+                        <button
+                          className="p-1.5 text-espresso hover:text-ink"
+                          aria-label={t("decrease")}
+                          onClick={() => setQty(l.productSlug, l.variantId, l.qty - 1)}
+                        >
                           <Minus className="size-3" />
                         </button>
-                        <span className="w-6 text-center text-xs font-semibold">{qty}</span>
-                        <button className="p-1.5 text-espresso hover:text-ink" aria-label={t("increase")}>
+                        <span className="w-6 text-center text-xs font-semibold">{l.qty}</span>
+                        <button
+                          className="p-1.5 text-espresso hover:text-ink"
+                          aria-label={t("increase")}
+                          onClick={() => setQty(l.productSlug, l.variantId, l.qty + 1)}
+                        >
                           <Plus className="size-3" />
                         </button>
                       </span>
                       <button
                         className="p-1 text-fog transition hover:text-[#9c2b2e]"
                         aria-label={t("remove")}
+                        onClick={() => remove(l.productSlug, l.variantId)}
                       >
                         <Trash2 className="size-4" />
                       </button>
@@ -115,24 +107,22 @@ export function CartDrawer({
             </ul>
           )}
         </div>
-        <div className="border-t border-ink/10 px-6 py-5">
-          <div className="mb-4 flex items-center justify-between text-sm">
-            <span className="uppercase tracking-[0.16em] text-fog">{t("subtotal")}</span>
-            <span className="font-display text-lg text-ink">{formatAED(subtotal)}</span>
+        {rows.length > 0 && (
+          <div className="border-t border-ink/10 px-6 py-5">
+            <div className="mb-4 flex items-center justify-between text-sm">
+              <span className="uppercase tracking-[0.16em] text-fog">{t("subtotal")}</span>
+              <span className="font-display text-lg text-ink">{formatAED(subtotal)}</span>
+            </div>
+            <div className="grid gap-2">
+              <Button asChild onClick={() => onOpenChange(false)}>
+                <Link href="/cart">{t("viewBag")}</Link>
+              </Button>
+              <Button variant="outline" asChild onClick={() => onOpenChange(false)}>
+                <Link href="/checkout">{t("toCheckout")}</Link>
+              </Button>
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Button asChild onClick={() => onOpenChange(false)}>
-              <Link href="/cart">{t("title")}</Link>
-            </Button>
-            <Button
-              variant="outline"
-              asChild
-              onClick={() => onOpenChange(false)}
-            >
-              <Link href="/cart">{t("checkout")}</Link>
-            </Button>
-          </div>
-        </div>
+        )}
       </SheetContent>
     </Sheet>
   );

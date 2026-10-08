@@ -1,28 +1,32 @@
-import { getTranslations } from "next-intl/server";
+"use client";
+
 import { Link } from "@/i18n/navigation";
-import { Trash2 } from "lucide-react";
 import Image from "next/image";
-import type { Product } from "@/lib/types";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
 import { formatAED } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
+import type { Product } from "@/lib/types";
+import { useCart } from "@/lib/cart";
+import { useCartMeta } from "@/lib/cart-meta";
+import { FLAT_SHIPPING, FREE_SHIP_THRESHOLD } from "@/lib/pricing-client";
 
-export interface CartLine {
-  product: Product;
-  qty: number;
-}
+export function BagView() {
+  const t = useTranslations("Cart");
+  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
+  const { lines, setQty, remove } = useCart();
+  const { meta } = useCartMeta(lines.map((l) => l.productSlug));
 
-export async function CartLineItems({
-  lines,
-  locale,
-}: {
-  lines: CartLine[];
-  locale: Locale;
-}) {
-  const t = await getTranslations({ locale, namespace: "Cart" });
-  if (lines.length === 0) {
+  const rows = lines
+    .map((l) => ({ ...l, product: meta[l.productSlug] }))
+    .filter((l) => l.product);
+  const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
+  const shipping = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : FLAT_SHIPPING;
+
+  if (rows.length === 0) {
     return (
       <div className="border border-dashed border-ink/25 py-16 text-center">
         <p className="font-display text-xl text-ink">{t("empty")}</p>
@@ -32,87 +36,89 @@ export async function CartLineItems({
       </div>
     );
   }
-  return (
-    <ul className="divide-y divide-ink/10 border border-ink/10 bg-white">
-      {lines.map(({ product, qty }) => (
-        <li key={product.slug} className="flex gap-5 p-5">
-          <Link
-            href={`/product/${product.slug}`}
-            className="relative block h-28 w-24 shrink-0 overflow-hidden bg-sand"
-          >
-            <Image
-              src={product.images[0]}
-              alt={product.title}
-              fill
-              sizes="96px"
-              className="object-cover"
-            />
-          </Link>
-          <div className="flex flex-1 flex-col">
-            <Link
-              href={`/product/${product.slug}`}
-              className="text-sm font-medium text-ink hover:text-gold"
-            >
-              {tx(product.title, product.titleAr, locale)}
-            </Link>
-            <p className="mt-1 text-[13px] text-fog">{t("qty")} {qty}</p>
-            <p className="mt-auto flex items-center justify-between">
-              <span className="font-display text-lg text-ink">
-                {formatAED(product.price * qty)}
-              </span>
-              <button
-                className="p-1 text-fog transition hover:text-[#9c2b2e]"
-                aria-label={`${t("remove")} ${product.title}`}
-              >
-                <Trash2 className="size-4" />
-              </button>
-            </p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
-export async function CartSummary({
-  subtotal,
-  locale,
-}: {
-  subtotal: number;
-  locale: Locale;
-}) {
-  const t = await getTranslations({ locale, namespace: "Cart" });
-  const shipping = subtotal >= 400 ? 0 : 26;
   return (
-    <aside className="h-fit border border-ink/10 bg-white p-6">
-      <h2 className="font-display text-xl text-ink">{t("summary")}</h2>
-      <dl className="mt-5 space-y-2.5 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-fog">{t("subtotal")}</dt>
-          <dd className="font-medium text-ink">{formatAED(subtotal)}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-fog">{t("shipping")}</dt>
-          <dd className="font-medium text-ink">
-            {shipping === 0 ? t("free") : formatAED(shipping)}
-          </dd>
-        </div>
-        <div className="flex justify-between border-t border-ink/10 pt-4">
-          <dt className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink">
-            {t("total")}
-          </dt>
-          <dd className="font-display text-xl text-ink">
-            {formatAED(subtotal + shipping)}
-          </dd>
-        </div>
-      </dl>
-      <Button className="mt-6 w-full" size="lg">
-        {t("checkout")}
-      </Button>
-      <p className="mt-3 text-center text-[11px] text-fog">
-        {t("checkoutNote")}
-      </p>
-    </aside>
+    <div className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
+      <ul className="divide-y divide-ink/10 border border-ink/10 bg-white">
+        {rows.map((l) => (
+          <li key={`${l.productSlug}-${l.variantId ?? ""}`} className="flex gap-5 p-5">
+            <Link
+              href={`/product/${l.productSlug}`}
+              className="relative block h-28 w-24 shrink-0 overflow-hidden bg-sand"
+            >
+              {l.product?.image && (
+                <Image src={l.product.image} alt={l.product.title} fill sizes="96px" className="object-cover" />
+              )}
+            </Link>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Link
+                href={`/product/${l.productSlug}`}
+                className="truncate text-sm font-medium text-ink hover:text-gold"
+              >
+                {tx(l.product?.title ?? "", l.product?.titleAr, locale)}
+              </Link>
+              <div className="mt-2 flex items-center gap-3">
+                <span className="flex items-center border border-ink/15">
+                  <button
+                    className="p-1.5 text-espresso hover:text-ink"
+                    aria-label={t("decrease")}
+                    onClick={() => setQty(l.productSlug, l.variantId, l.qty - 1)}
+                  >
+                    <Minus className="size-3" />
+                  </button>
+                  <span className="w-6 text-center text-xs font-semibold">{l.qty}</span>
+                  <button
+                    className="p-1.5 text-espresso hover:text-ink"
+                    aria-label={t("increase")}
+                    onClick={() => setQty(l.productSlug, l.variantId, l.qty + 1)}
+                  >
+                    <Plus className="size-3" />
+                  </button>
+                </span>
+                <button
+                  className="p-1 text-fog transition hover:text-[#9c2b2e]"
+                  aria-label={t("remove")}
+                  onClick={() => remove(l.productSlug, l.variantId)}
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
+              <p className="mt-auto pt-2 font-display text-lg text-ink">
+                {formatAED((l.product?.price ?? 0) * l.qty)}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24">
+        <h2 className="font-display text-xl text-ink">{t("summary")}</h2>
+        <dl className="mt-5 space-y-2.5 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-fog">{t("subtotal")}</dt>
+            <dd className="font-medium text-ink">{formatAED(subtotal)}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-fog">{t("shipping")}</dt>
+            <dd className="font-medium text-ink">
+              {shipping === 0 ? t("free") : formatAED(shipping)}
+            </dd>
+          </div>
+          <div className="flex justify-between border-t border-ink/10 pt-4">
+            <dt className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink">
+              {t("total")}
+            </dt>
+            <dd className="font-display text-xl text-ink">{formatAED(subtotal + shipping)}</dd>
+          </div>
+        </dl>
+        <Button asChild className="mt-6 w-full" size="lg">
+          <Link href="/checkout">{t("checkout")}</Link>
+        </Button>
+        <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">
+          {t("checkoutNote")}
+        </p>
+      </aside>
+    </div>
   );
 }
 

@@ -20,6 +20,9 @@ export interface Product {
   descriptionHtml: string;
   /** Short Arabic description (admin panel writes; falls back to English). */
   descriptionAr?: string;
+  /** Short "about this perfume" blurb for the PDP About block. */
+  shortDesc?: string;
+  shortDescAr?: string;
   price: number; // base AED price (first variant price)
   compareAtPrice?: number;
   images: string[];
@@ -33,6 +36,98 @@ export interface Product {
   isBestSeller?: boolean;
   /** Shopify template variant: standard (product.json) vs miskalgazaal (product.miskalgazaal.json single-product layout). */
   template?: "standard" | "miskalgazaal";
+  /** Lineup classification (PDP "More from the lineup"). */
+  lineupId?: string;
+  lineupSlug?: string;
+  lineupTitle?: string;
+  lineupTitleAr?: string;
+  /** Reusable how-to-use guide. */
+  ritualId?: string;
+  /** Full artwork for the detailed notes section (responsive pair). */
+  notesImageDesktop?: string;
+  notesImageMobile?: string;
+  /** Fragrance notes brief (color dots + names). */
+  notes: ProductNote[];
+}
+
+export interface Note {
+  id: string;
+  slug: string;
+  name: string;
+  nameAr?: string;
+  color: string;
+  description?: string;
+  descriptionAr?: string;
+}
+
+export interface ProductNote extends Note {
+  kind: "top" | "heart" | "base";
+}
+
+export interface Lineup {
+  id: string;
+  slug: string;
+  title: string;
+  titleAr?: string;
+  description?: string;
+}
+
+export interface Ritual {
+  id: string;
+  slug: string;
+  title: string;
+  titleAr?: string;
+  bodyHtml: string;
+  bodyAr?: string;
+  image?: string;
+  videoUrl?: string;
+}
+
+export type CouponKind = "percent" | "fixed" | "free_shipping" | "gift";
+
+export interface Coupon {
+  id: string;
+  code: string;
+  kind: CouponKind;
+  amount: number;
+  minSubtotal: number;
+  firstOrderOnly: boolean;
+  active: boolean;
+  icon: string;
+  giftTitle?: string;
+  giftTitleAr?: string;
+  isPublic: boolean;
+  ownerId?: string;
+  startsAt?: string;
+  endsAt?: string;
+  usageLimit?: number;
+  usedCount: number;
+}
+
+/** Server-computed price breakdown for a bag + code + referral. */
+export interface Quote {
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  couponCode: string;
+  couponKind?: CouponKind;
+  giftTitle?: string;
+  referralCode: string;
+  referralDiscount: number;
+  freeShipping: boolean;
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  title?: string;
+  body?: string;
+  approved: boolean;
+  createdAt: string;
+  authorName?: string;
 }
 
 /** Homepage / collection hero banner.
