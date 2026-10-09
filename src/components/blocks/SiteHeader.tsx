@@ -69,6 +69,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuEntered, setMenuEntered] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [shopper, setShopper] = useState<{
@@ -157,15 +158,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               x: dx,
               y: dy,
               opacity: 0,
-              fontSize: "15px",
-              letterSpacing: "0.24em",
+              fontSize: "13px",
+              letterSpacing: "0.22em",
             },
             {
               x: 0,
               y: 0,
               opacity: 1,
-              fontSize: "12px",
-              letterSpacing: "0.14em",
+              fontSize: "11px",
+              letterSpacing: "0.12em",
               duration: FLIGHT,
               ease: EASE,
               clearProps: "transform",
@@ -183,15 +184,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               x: dx,
               y: dy,
               opacity: 0,
-              fontSize: "12px",
-              letterSpacing: "0.14em",
+              fontSize: "11px",
+              letterSpacing: "0.12em",
             },
             {
               x: 0,
               y: 0,
               opacity: 1,
-              fontSize: "15px",
-              letterSpacing: "0.24em",
+              fontSize: "13px",
+              letterSpacing: "0.22em",
               duration: FLIGHT,
               ease: EASE,
               clearProps: "transform",
@@ -358,6 +359,9 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           ? right[0].label
           : right[1].label;
 
+  // Maison nav voice: quiet Inter small-caps (letterspaced, medium) —
+  // the serif belongs to headlines, not the chrome. Stacked and inline
+  // share the family; only size/weight/tracking morph in the flight.
   const stackedLink = (key: LinkKey) => (
     <Link
       key={key}
@@ -370,7 +374,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? -1 : 0}
       aria-hidden={compact}
-      className="inline-flex items-center gap-1.5 font-display text-[15px] font-semibold tracking-[0.24em] text-ink antialiased transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
+      className="inline-flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
@@ -389,7 +393,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? 0 : -1}
       aria-hidden={!compact}
-      className="whitespace-nowrap font-display text-[12px] font-semibold tracking-[0.14em] text-ink antialiased opacity-0 transition-colors [text-rendering:optimizeLegibility] hover:text-gold"
+      className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
     </Link>
@@ -972,51 +976,59 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 {t("locateUs")}
               </Link>
               {shopper ? (
-                <span className="mt-4 flex flex-col items-start gap-3">
-                  <span className="flex items-center gap-3">
+                <div className="mt-6 border-t border-ink/10 pt-2">
+                  <button
+                    onClick={() => setMobileAccountOpen((v) => !v)}
+                    aria-expanded={mobileAccountOpen}
+                    className="flex w-full cursor-pointer items-center gap-3 py-3"
+                  >
                     <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-10" />
-                    <span>
-                      <span className="block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+                    <span className="min-w-0 flex-1 text-left">
+                      <span className="block truncate text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
                         {shopper.name}
                       </span>
-                      <span className="block text-[11px] text-fog" dir="ltr">
+                      <span className="block truncate text-[11px] text-fog" dir="ltr">
                         {shopper.email}
                       </span>
-                      <span className="block text-[11px] text-fog/80">
-                        {tAcc("loggedInWith")}{" "}
-                        {shopper.provider === "google" ? (
-                          <GoogleGlyph className="inline size-3 align-[-1px]" />
-                        ) : (
-                          tAcc("providerEmail")
-                        )}
-                      </span>
                     </span>
-                  </span>
-                  {(
-                    [
-                      { href: "/account", label: t("myAccount"), Icon: User },
-                      { href: "/account/orders", label: t("myOrders"), Icon: Package },
-                      { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
-                    ] as const
-                  ).map((l) => (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      onClick={closeMenu}
-                      className="link-underline flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-                    >
-                      <l.Icon className="size-4 text-gold" />
-                      {l.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={signOut}
-                    className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e]"
-                  >
-                    <LogOut className="size-4" />
-                    {t("signOut")}
+                    <ChevronDown
+                      className={`size-4 shrink-0 text-gold transition-transform duration-300 ${mobileAccountOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
-                </span>
+                  <div
+                    className="grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    style={{ gridTemplateRows: mobileAccountOpen ? "1fr" : "0fr" }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="flex flex-col items-start gap-3 pb-2 ps-[52px]">
+                        {(
+                          [
+                            { href: "/account", label: t("myAccount"), Icon: User },
+                            { href: "/account/orders", label: t("myOrders"), Icon: Package },
+                            { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
+                          ] as const
+                        ).map((l) => (
+                          <Link
+                            key={l.href}
+                            href={l.href}
+                            onClick={closeMenu}
+                            className="link-underline flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                          >
+                            <l.Icon className="size-4 text-gold" />
+                            {l.label}
+                          </Link>
+                        ))}
+                        <button
+                          onClick={signOut}
+                          className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e]"
+                        >
+                          <LogOut className="size-4" />
+                          {t("signOut")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <Link
                   href="/account"
