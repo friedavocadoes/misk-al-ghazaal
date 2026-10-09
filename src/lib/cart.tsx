@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { CartItem } from "./types";
+import { createClient as createBrowserClient } from "./supabase/client";
 
 const KEY = "misk-cart-v1";
 
@@ -33,24 +34,103 @@ function load(): CartLine[] {
   }
 }
 
+function validLines(arr: unknown): CartLine[] {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter(
+      (l): l is CartLine =>
+        !!l && typeof (l as CartLine).productSlug === "string" && Number.isInteger((l as CartLine).qty),
+    )
+    .map((l) => ({
+      productSlug: l.productSlug,
+      ...(l.variantId ? { variantId: String(l.variantId) } : {}),
+      qty: Math.min(20, Math.max(1, l.qty)),
+    }))
+    .slice(0, 50);
+}
+
+/** Union merge (server ∪ local): quantities add, capped — both devices converge. */
+function mergeLines(a: CartLine[], b: CartLine[]): CartLine[] {
+  const out: CartLine[] = [...a];
+  for (const l of b) {
+    const i = out.findIndex((x) => same(x, l.productSlug, l.variantId));
+    if (i >= 0) out[i] = { ...out[i], qty: Math.min(20, out[i].qty + l.qty) };
+    else if (out.length < 50) out.push(l);
+  }
+  return out;
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  // [] on the very first render (matches SSR — no hydration mismatch);
+  // localStorage hydrates in a microtask below (setState in async
+  // callbacks is fine; only synchronous effect bodies are banned).
   const [lines, setLines] = useState<CartLine[]>([]);
-  const [ready, setReady] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const pulledFor = useRef<string | null>(null);
 
   useEffect(() => {
-    setLines(load());
-    setReady(true);
+    let live = true;
+    Promise.resolve().then(() => {
+      if (!live) return;
+      setLines(load());
+      setHydrated(true);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (ready) {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(lines));
-      } catch {
-        /* storage full/blocked — cart still works in memory */
-      }
+    try {
+      localStorage.setItem(KEY, JSON.stringify(lines));
+    } catch {
+      /* storage full/blocked — cart still works in memory */
     }
-  }, [lines, ready]);
+  }, [lines]);
+
+  // Session tracking (login/logout anywhere refreshes the sync target).
+  useEffect(() => {
+    const sb = createBrowserClient();
+    sb.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) =>
+      setUserId(session?.user?.id ?? null),
+    );
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Pull once per login: union server cart with this device, converge.
+  useEffect(() => {
+    if (!hydrated || !userId || pulledFor.current === userId) return;
+    pulledFor.current = userId;
+    (async () => {
+      try {
+        const sb = createBrowserClient();
+        const { data } = await sb.from("profiles").select("cart").eq("id", userId).single();
+        const server = validLines((data as { cart?: unknown } | null)?.cart);
+        if (server.length) setLines((prev) => mergeLines(prev, server));
+      } catch {
+        /* offline/RLS — local bag keeps working */
+      }
+    })();
+  }, [hydrated, userId]);
+
+  // Push (debounced): every settled change lands on the profile, so any
+  // device logged into the same account shows the same bag.
+  useEffect(() => {
+    if (!hydrated || !userId || pulledFor.current !== userId) return;
+    const id = setTimeout(() => {
+      createBrowserClient()
+        .from("profiles")
+        .update({ cart: lines })
+        .eq("id", userId)
+        .then(
+          () => {},
+          () => {},
+        );
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [lines, hydrated, userId]);
 
   const add = useCallback((line: CartLine) => {
     setLines((prev) => {

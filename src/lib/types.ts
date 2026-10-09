@@ -130,6 +130,31 @@ export interface Review {
   authorName?: string;
 }
 
+export interface CountryState {
+  en: string;
+  ar?: string;
+}
+
+export interface DeliveryCountry {
+  code: string;
+  name: string;
+  nameAr?: string;
+  states: CountryState[];
+}
+
+/** Structured delivery answer from the address picker. */
+export interface DeliveryAnswer {
+  label: "home" | "work";
+  line: string;
+  building: string;
+  countryCode: string;
+  state: string;
+  city: string;
+  postcode: string;
+  lat: number | null;
+  lng: number | null;
+}
+
 /** Homepage / collection hero banner.
  *  `src` is the EXACT original Shopify file expected in `public/banners/`;
  *  `fallback` is a guaranteed-local image shown until you drop the file in.

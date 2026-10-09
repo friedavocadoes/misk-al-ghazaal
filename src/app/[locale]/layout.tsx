@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import "swiper/css";
 import "swiper/css/effect-creative";
+import "leaflet/dist/leaflet.css";
 import "../globals.css";
 
 const body = Inter({

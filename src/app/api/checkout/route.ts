@@ -30,6 +30,12 @@ export async function POST(req: Request) {
       coupon_code?: string;
       referral_code?: string;
       user_id?: string;
+      country_code?: string;
+      state?: string;
+      postcode?: string;
+      address_label?: string;
+      lat?: number | null;
+      lng?: number | null;
     };
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -46,6 +52,18 @@ export async function POST(req: Request) {
     }
 
     const admin = createAdminClient();
+    // Delivery zone guard: the country must be active in the admin list
+    // (the map already enforces this; the server has the final word).
+    const countryCode = (body.country_code ?? "").trim().toUpperCase();
+    if (countryCode) {
+      const { data: zone } = await admin
+        .from("delivery_countries")
+        .select("id")
+        .eq("code", countryCode)
+        .eq("active", true)
+        .single();
+      if (!zone) throw new Error("delivery:unsupported");
+    }
     const { priced, quote } = await quoteBag({
       lines: items,
       email,
@@ -72,6 +90,12 @@ export async function POST(req: Request) {
         coupon_code: quote.couponCode || "",
         referral_code: quote.referralCode || "",
         user_id: body.user_id || null,
+        country_code: countryCode,
+        state_name: (body.state ?? "").trim(),
+        postcode: (body.postcode ?? "").trim(),
+        address_label: (body.address_label ?? "").trim(),
+        delivery_lat: typeof body.lat === "number" ? body.lat : null,
+        delivery_lng: typeof body.lng === "number" ? body.lng : null,
         payment_method: "cod",
         status: "new",
       })
@@ -182,7 +206,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";
-    const status = /stock|invalid|empty|required|unknown|coupon|referral|min/i.test(msg) ? 400 : 500;
+    const status = /stock|invalid|empty|required|unknown|coupon|referral|min|delivery/i.test(msg) ? 400 : 500;
     return NextResponse.json({ error: msg }, { status });
   }
 }

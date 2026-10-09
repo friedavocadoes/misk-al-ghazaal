@@ -11,6 +11,8 @@ import type {
   Banner,
   Category,
   Coupon,
+  CountryState,
+  DeliveryCountry,
   Lineup,
   Note,
   Product,
@@ -575,6 +577,24 @@ function maskEmail(email: string): string {
   const [local] = email.split("@");
   if (!local) return "Guest";
   return local.length <= 2 ? `${local}···` : `${local.slice(0, 2)}···`;
+}
+
+/** Active delivery countries (the map + checkout validate against these). */
+export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
+  requireConfigured();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("delivery_countries")
+    .select("code, name_en, name_ar, states")
+    .eq("active", true)
+    .order("sort");
+  if (error || !data) return [];
+  return (data as { code: string; name_en: string; name_ar: string | null; states: CountryState[] | null }[]).map((c) => ({
+    code: c.code,
+    name: c.name_en,
+    ...(c.name_ar ? { nameAr: c.name_ar } : {}),
+    states: Array.isArray(c.states) ? c.states : [],
+  }));
 }
 
 export async function getApprovedReviews(productId: string, limit = 20): Promise<Review[]> {

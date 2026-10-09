@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useCartMeta } from "@/lib/cart-meta";
+import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/routing";
-import type { Quote } from "@/lib/types";
+import type { DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -31,12 +32,15 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("Dubai");
   const [emirate, setEmirate] = useState("Dubai");
   const [notes, setNotes] = useState("");
+  const [countries, setCountries] = useState<DeliveryCountry[]>([]);
+  const [delivery, setDelivery] = useState<DeliveryAnswer | null>(null);
+  const [deliveryValid, setDeliveryValid] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState("");
-  const [couponState, setCouponState] = useState<"idle" | "ok" | "bad">("idle");
+  const [couponState, setCouponState] = useState<"idle" | "checking" | "ok" | "bad" | "min">("idle");
   const [referral, setReferral] = useState("");
   const [appliedReferral, setAppliedReferral] = useState("");
-  const [referralState, setReferralState] = useState<"idle" | "ok" | "bad">("idle");
+  const [referralState, setReferralState] = useState<"idle" | "checking" | "ok" | "bad">("idle");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -54,6 +58,12 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => setGuest(true));
+    fetch("/api/countries")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.countries)) setCountries(j.countries as DeliveryCountry[]);
+      })
+      .catch(() => {});
   }, []);
 
   const payload = useMemo(
@@ -68,46 +78,87 @@ export default function CheckoutPage() {
   );
 
   // Live re-price (debounced): the server always has the final word.
+  // Checking states ride the round-trip so every Apply gets feedback.
   useEffect(() => {
-    if (!lines.length) {
-      setQuote(null);
-      return;
-    }
     const id = setTimeout(() => {
       fetch("/api/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => {
-          if (j?.quote) {
-            setQuote(j.quote as Quote);
+        .then(async (r) => ({ ok: r.ok, j: await r.json().catch(() => null) as { quote?: Quote; error?: string } | null }))
+        .then(({ ok, j }) => {
+          if (ok && j?.quote) {
+            setQuote(j.quote);
             setCouponState(appliedCoupon ? "ok" : "idle");
             setReferralState(appliedReferral ? "ok" : "idle");
           } else {
-            // Quote rejected (e.g. min spend) — surface on the right field.
-            if (appliedCoupon) setCouponState("bad");
-            else if (appliedReferral) setReferralState("bad");
+            const err = typeof j?.error === "string" ? j.error : "";
+            if (appliedCoupon && (!err || err.startsWith("coupon"))) {
+              setCouponState(err === "coupon:min" ? "min" : "bad");
+            } else if (appliedReferral && (!err || err.startsWith("referral"))) {
+              setReferralState("bad");
+            }
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (appliedCoupon) setCouponState("idle");
+          if (appliedReferral) setReferralState("idle");
+        });
     }, 450);
     return () => clearTimeout(id);
   }, [payload, lines.length, appliedCoupon, appliedReferral]);
 
   const applyCoupon = () => {
-    setAppliedCoupon(coupon.trim().toUpperCase());
-    setCouponState("idle");
+    const clean = coupon.trim().toUpperCase();
+    // Empty apply = clear: a deleted code must never block checkout.
+    setAppliedCoupon(clean);
+    setCouponState(clean ? "checking" : "idle");
   };
   const applyReferral = () => {
-    setAppliedReferral(referral.trim().toUpperCase());
-    setReferralState("idle");
+    const clean = referral.trim().toUpperCase();
+    setAppliedReferral(clean);
+    setReferralState(clean ? "checking" : "idle");
+  };
+  // Clearing the field clears the code (applied codes never linger).
+  const onCouponInput = (v: string) => {
+    setCoupon(v.toUpperCase());
+    if (!v.trim() && appliedCoupon) {
+      setAppliedCoupon("");
+      setCouponState("idle");
+    }
+  };
+  const onReferralInput = (v: string) => {
+    setReferral(v.toUpperCase());
+    if (!v.trim() && appliedReferral) {
+      setAppliedReferral("");
+      setReferralState("idle");
+    }
+  };
+
+  const friendlyError = (raw: unknown): string => {
+    const msg = typeof raw === "string" ? raw : "";
+    if (msg.startsWith("coupon:")) return msg === "coupon:min" ? t("couponMin") : t("couponBad");
+    if (msg.startsWith("referral:")) return t("referralBad");
+    if (msg.startsWith("delivery:")) return t("deliveryNo");
+    // Backend/config failures (RLS, keys) read as gibberish — translate.
+    if (/row-level security|permission denied|secret|service_role|JWT|Failed fetch|fetch failed/i.test(msg)) {
+      return t("serverError");
+    }
+    return msg || t("orderError");
   };
 
   const placeOrder = async () => {
     setPlacing(true);
     setOrderError("");
+    // Structured delivery wins; legacy manual fields are the fallback
+    // when the countries service is unreachable.
+    const addr = delivery && deliveryValid ? delivery : null;
+    const finalAddress = addr
+      ? `${addr.line}${addr.building ? `, ${addr.building}` : ""}`
+      : address;
+    const finalCity = addr ? addr.city : city;
+    const finalState = addr ? addr.state : emirate;
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -115,14 +166,20 @@ export default function CheckoutPage() {
         customer_name: name,
         phone,
         email,
-        address,
-        city,
-        emirate,
+        address: finalAddress,
+        city: finalCity,
+        emirate: finalState,
         notes,
         items: payload.lines,
         coupon_code: appliedCoupon || undefined,
         referral_code: appliedReferral || undefined,
         user_id: userId ?? undefined,
+        country_code: addr ? addr.countryCode : undefined,
+        state: finalState,
+        postcode: addr ? addr.postcode : undefined,
+        address_label: addr ? addr.label : undefined,
+        lat: addr ? addr.lat : undefined,
+        lng: addr ? addr.lng : undefined,
       }),
     });
     const j = await res.json().catch(() => null);
@@ -131,7 +188,7 @@ export default function CheckoutPage() {
       setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0) });
       clear();
     } else {
-      setOrderError(typeof j?.error === "string" ? j.error : t("orderError"));
+      setOrderError(friendlyError(j?.error));
     }
   };
 
@@ -166,7 +223,8 @@ export default function CheckoutPage() {
     );
   }
 
-  const valid = name.trim() && phone.trim() && address.trim() && quote;
+  const hasMap = countries.length > 0;
+  const valid = name.trim() && phone.trim() && (hasMap ? deliveryValid : address.trim()) && quote;
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
@@ -194,11 +252,26 @@ export default function CheckoutPage() {
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${t("name")} *`} aria-label={t("name")} className={inputCls} />
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`${t("phone")} *`} aria-label={t("phone")} dir="ltr" className={inputCls} />
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} type="email" aria-label={t("email")} dir="ltr" className={`${inputCls} sm:col-span-2`} />
-              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={`${t("address")} *`} aria-label={t("address")} className={`${inputCls} sm:col-span-2`} />
-              <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("city")} aria-label={t("city")} className={inputCls} />
-              <input value={emirate} onChange={(e) => setEmirate(e.target.value)} placeholder={t("emirate")} aria-label={t("emirate")} className={inputCls} />
-              <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("notes")} aria-label={t("notes")} rows={2} className={`${inputCls} sm:col-span-2`} />
             </div>
+            <div className="mt-6">
+              {hasMap ? (
+                <DeliveryAddress
+                  locale={locale}
+                  countries={countries}
+                  onChange={(a, v) => {
+                    setDelivery(a);
+                    setDeliveryValid(v);
+                  }}
+                />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={`${t("address")} *`} aria-label={t("address")} className={`${inputCls} sm:col-span-2`} />
+                  <input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t("city")} aria-label={t("city")} className={inputCls} />
+                  <input value={emirate} onChange={(e) => setEmirate(e.target.value)} placeholder={t("emirate")} aria-label={t("emirate")} className={inputCls} />
+                </div>
+              )}
+            </div>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("notes")} aria-label={t("notes")} rows={2} className={`${inputCls} mt-4`} />
           </section>
 
           {/* Offers */}
@@ -209,21 +282,24 @@ export default function CheckoutPage() {
             <div className="mt-5 grid gap-4">
               <div>
                 <div className="flex gap-2">
-                  <Input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder={t("couponPh")} aria-label={t("couponPh")} className="font-mono uppercase" />
-                  <Button variant="outline" onClick={applyCoupon} disabled={!coupon.trim()}>
-                    {t("apply")}
+                  <Input value={coupon} onChange={(e) => onCouponInput(e.target.value)} placeholder={t("couponPh")} aria-label={t("couponPh")} className="font-mono uppercase" />
+                  <Button variant="outline" onClick={applyCoupon} disabled={couponState === "checking"}>
+                    {couponState === "checking" ? t("couponChecking") : t("apply")}
                   </Button>
                 </div>
+                {couponState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
                 {couponState === "ok" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">{t("couponOk")}</p>}
                 {couponState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("couponBad")}</p>}
+                {couponState === "min" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("couponMin")}</p>}
               </div>
               <div>
                 <div className="flex gap-2">
-                  <Input value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} placeholder={t("referralPh")} aria-label={t("referralPh")} className="font-mono uppercase" />
-                  <Button variant="outline" onClick={applyReferral} disabled={!referral.trim()}>
-                    {t("apply")}
+                  <Input value={referral} onChange={(e) => onReferralInput(e.target.value)} placeholder={t("referralPh")} aria-label={t("referralPh")} className="font-mono uppercase" />
+                  <Button variant="outline" onClick={applyReferral} disabled={referralState === "checking"}>
+                    {referralState === "checking" ? t("couponChecking") : t("apply")}
                   </Button>
                 </div>
+                {referralState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
                 {referralState === "ok" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">{t("referralOk")}</p>}
                 {referralState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("referralBad")}</p>}
               </div>

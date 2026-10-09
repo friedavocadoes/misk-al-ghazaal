@@ -126,6 +126,23 @@ export default async function OrderDetail(props: {
           <dl className="mt-4 space-y-2 text-sm">
             <div><dt className="text-ink/60">Phone</dt><dd>{order.phone}</dd></div>
             <div><dt className="text-ink/60">Address</dt><dd>{order.address}, {order.city}, {order.emirate}</dd></div>
+            {(order as { country_code?: string }).country_code && <div><dt className="text-ink/60">Country</dt><dd>{(order as { country_code?: string }).country_code}{" "}{(order as { state_name?: string }).state_name ? `· ${(order as { state_name?: string }).state_name}` : ""}{(order as { postcode?: string }).postcode ? ` · ${(order as { postcode?: string }).postcode}` : ""}{(order as { address_label?: string }).address_label ? ` · ${(order as { address_label?: string }).address_label}` : ""}</dd></div>}
+            {(order as { delivery_lat?: number }).delivery_lat != null && (order as { delivery_lng?: number }).delivery_lng != null && (
+              <div>
+                <dt className="text-ink/60">Courier pin</dt>
+                <dd>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${(order as { delivery_lat?: number }).delivery_lat},${(order as { delivery_lng?: number }).delivery_lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="link-underline"
+                    dir="ltr"
+                  >
+                    {(order as { delivery_lat?: number }).delivery_lat}, {(order as { delivery_lng?: number }).delivery_lng}
+                  </a>
+                </dd>
+              </div>
+            )}
             {order.email && <div><dt className="text-ink/60">Email</dt><dd>{order.email}</dd></div>}
             {order.notes && <div><dt className="text-ink/60">Customer note</dt><dd>{order.notes}</dd></div>}
             <div><dt className="text-ink/60">Payment</dt><dd>{order.payment_method === "cod" ? "Cash on delivery" : "Card"}</dd></div>

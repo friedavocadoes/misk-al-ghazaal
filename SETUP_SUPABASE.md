@@ -17,6 +17,8 @@ Dashboard → SQL Editor → New query, paste in order:
 3. `supabase/migration_shopper_reads.sql` (shoppers read own orders/items)
 4. `supabase/migration_avatars.sql` (`avatars` bucket + `profiles.avatar_url`;
    shoppers upload into their own `avatars/<user_id>/` folder)
+5. `supabase/migration_delivery_cart.sql` (`delivery_countries` + seed,
+   order delivery columns, `profiles.cart`)
 4. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
    coupons, referrals, reviews, PDP copy, order links — includes
    `increment_coupon_use()` + a starter notes library)
