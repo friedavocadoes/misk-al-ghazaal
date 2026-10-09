@@ -11,18 +11,25 @@ import {
   Crown,
   Flame,
   Globe,
+  LogOut,
   MapPin,
   Mars,
   Menu,
+  Package,
   Search,
   ShoppingBag,
   Sparkles,
   Star,
+  Ticket,
   User,
   Venus,
   X,
 } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { ShopperAvatar } from "@/components/ui/avatar";
+import { GoogleGlyph } from "@/components/ui/brand-icons";
+import { avatarOf, displayNameOf, providerOf } from "@/lib/shopper-identity";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
@@ -51,6 +58,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   // below mean no half-states and no oscillation.
   const t = useTranslations("Header");
   const tShop = useTranslations("ShopMenu");
+  const tAcc = useTranslations("Account");
   const router = useRouter();
   const pathname = usePathname();
   const [compact, setCompact] = useState(false);
@@ -62,6 +70,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const [menuEntered, setMenuEntered] = useState(false);
   const [mobileShopOpen, setMobileShopOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [shopper, setShopper] = useState<{
+    name: string;
+    email: string;
+    avatar: string | null;
+    provider: "google" | "email";
+  } | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -197,6 +212,58 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [searchOpen]);
+
+  // Shopper session: re-syncs on every navigation (login redirects land
+  // back here) plus live auth events. No setState-in-effect: subscription
+  // callbacks own all updates.
+  useEffect(() => {
+    const sb = createBrowserClient();
+    const apply = (u: { email?: string | null; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null) => {
+      if (!u?.email) {
+        setShopper(null);
+        return;
+      }
+      setShopper({
+        name: displayNameOf(u),
+        email: u.email,
+        avatar: avatarOf(u),
+        provider: providerOf(u),
+      });
+    };
+    let live = true;
+    sb.auth.getUser().then(({ data }) => {
+      if (live) apply(data.user);
+    });
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => apply(session?.user ?? null));
+    return () => {
+      live = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [pathname]);
+
+  const signOut = async () => {
+    setAccountOpen(false);
+    closeMenu();
+    await createBrowserClient().auth.signOut();
+    setShopper(null);
+    router.refresh();
+  };
+
+  // Account dropdown: hover-intent like the shop menu (touch keeps the
+  // click toggle). Enter choreography is a mount keyframe (no effects);
+  // the close delay lets the cursor travel into the panel.
+  const accountTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openAccount = () => {
+    if (accountTimer.current) {
+      clearTimeout(accountTimer.current);
+      accountTimer.current = null;
+    }
+    setAccountOpen(true);
+  };
+  const scheduleAccountClose = () => {
+    if (accountTimer.current) clearTimeout(accountTimer.current);
+    accountTimer.current = setTimeout(() => setAccountOpen(false), 140);
+  };
 
   // Dropdown enter animation
   useLayoutEffect(() => {
@@ -368,7 +435,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     <button
                       key={l}
                       onClick={() => pickLocale(l)}
-                      className={`block w-full px-5 py-2 text-left text-[12px] font-semibold uppercase tracking-[0.14em] transition hover:bg-sand ${
+                      className={`block w-full cursor-pointer px-5 py-2 text-left text-[12px] font-semibold uppercase tracking-[0.14em] transition hover:bg-sand ${
                         locale === l ? "text-gold" : "text-espresso"
                       }`}
                     >
@@ -439,18 +506,99 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 </span>
               )}
             </Link>
-            <Link
-              href="/account"
-              aria-label={t("account")}
-              className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
-            >
-              <User className={`${glyph} shrink-0`} />
-              {!compact && (
-                <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
-                  {t("loginSignup")}
-                </span>
-              )}
-            </Link>
+            {shopper ? (
+              <span
+                className="relative"
+                onMouseEnter={openAccount}
+                onMouseLeave={scheduleAccountClose}
+              >
+                <button
+                  onClick={() => setAccountOpen((v) => !v)}
+                  aria-expanded={accountOpen}
+                  aria-label={t("myAccount")}
+                  className="flex h-9 cursor-pointer items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
+                >
+                  {shopper.avatar ? (
+                    <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-6" />
+                  ) : (
+                    <User className={`${glyph} shrink-0`} />
+                  )}
+                  {!compact && (
+                    <span className="max-w-[120px] truncate whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                      {shopper.name}
+                    </span>
+                  )}
+                  <ChevronDown
+                    className={`size-3 shrink-0 text-gold transition-transform ${accountOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {accountOpen && (
+                  <span
+                    onMouseEnter={openAccount}
+                    onMouseLeave={scheduleAccountClose}
+                    className="absolute end-0 top-full z-50 w-64 origin-top border border-ink/10 bg-white py-2 shadow-[0_24px_48px_-20px_rgba(28,25,23,0.4)] animate-[account-in_0.32s_cubic-bezier(0.22,1,0.36,1)]"
+                  >
+                    {/* Identity header */}
+                    <span className="flex items-center gap-3 border-b border-ink/10 px-5 pb-3 pt-1">
+                      <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-10 shrink-0" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-ink">
+                          {shopper.name}
+                        </span>
+                        <span className="block truncate text-[12px] text-fog" dir="ltr">
+                          {shopper.email}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-fog/80">
+                          {tAcc("loggedInWith")}{" "}
+                          {shopper.provider === "google" ? (
+                            <GoogleGlyph className="inline size-3 align-[-1px]" />
+                          ) : (
+                            tAcc("providerEmail")
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                    {(
+                      [
+                        { href: "/account", label: t("myAccount"), Icon: User },
+                        { href: "/account/orders", label: t("myOrders"), Icon: Package },
+                        { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
+                      ] as const
+                    ).map((l) => (
+                      <Link
+                        key={l.href}
+                        href={l.href}
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-3 px-5 py-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:bg-sand hover:text-gold"
+                      >
+                        <l.Icon className="size-4 shrink-0 text-gold/80" />
+                        {l.label}
+                      </Link>
+                    ))}
+                    <button
+                      onClick={signOut}
+                      className="flex w-full cursor-pointer items-center gap-3 px-5 py-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:bg-[#9c2b2e] hover:text-white"
+                    >
+                      <LogOut className="size-4 shrink-0" />
+                      {t("signOut")}
+                    </button>
+                  </span>
+                )}
+              </span>
+            ) : (
+              <Link
+                href="/account"
+                aria-label={t("account")}
+                className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
+              >
+                <User className={`${glyph} shrink-0`} />
+                {!compact && (
+                  <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                    {t("loginSignup")}
+                  </span>
+                )}
+              </Link>
+            )}
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
@@ -497,7 +645,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <button
             onClick={() => setMenuOpen(true)}
             aria-label={t("openMenu")}
-            className="justify-self-start p-2 text-ink"
+            className="cursor-pointer justify-self-start p-2 text-ink"
           >
             <Menu className="size-5" />
           </button>
@@ -516,7 +664,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setSearchOpen((v) => !v)}
               aria-label={t("search")}
-              className="p-2 text-espresso"
+              className="cursor-pointer p-2 text-espresso"
             >
               <Search className="size-5" />
             </button>
@@ -542,7 +690,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setSearchOpen(false)}
               aria-label={t("closeSearch")}
-              className="absolute end-4 top-4 flex size-9 items-center justify-center text-fog transition hover:text-ink"
+              className="absolute end-4 top-4 flex size-9 cursor-pointer items-center justify-center text-fog transition hover:text-ink"
             >
               <X className="size-4" />
             </button>
@@ -553,7 +701,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 <span className="h-px w-8 bg-gold/50" />
               </p>
               <form
-                action={`/${locale}/search`}
+                action={locale === "ar" ? "/ar/search" : "/search"}
                 method="get"
                 onSubmit={() => setSearchOpen(false)}
               >
@@ -571,7 +719,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     <button
                       type="submit"
                       aria-label={t("search")}
-                      className="mb-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-all hover:bg-gold hover:text-ink"
+                      className="mb-0.5 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink text-white transition-all hover:bg-gold hover:text-ink"
                     >
                       <ArrowRight className="size-4" />
                     </button>
@@ -700,7 +848,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <button
                 onClick={closeMenu}
                 aria-label={t("closeMenu")}
-                className="p-2 text-ink"
+                className="cursor-pointer p-2 text-ink"
               >
                 <X className="size-5" />
               </button>
@@ -721,7 +869,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 <button
                   key="shop"
                   onClick={() => setMobileShopOpen((v) => !v)}
-                  className="flex w-full items-center justify-between py-3 font-display text-2xl text-ink"
+                  className="flex w-full cursor-pointer items-center justify-between py-3 font-display text-2xl text-ink"
                 >
                   {left[1].label}
                   <ChevronDown
@@ -805,7 +953,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   <button
                     key={l}
                     onClick={() => pickLocale(l)}
-                    className={`border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
+                    className={`cursor-pointer border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
                       locale === l
                         ? "border-ink bg-ink text-white"
                         : "border-ink/20 text-espresso"
@@ -823,13 +971,61 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 <MapPin className="size-4 text-gold" />
                 {t("locateUs")}
               </Link>
-              <Link
-                href="/account"
-                onClick={closeMenu}
-                className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-              >
-                {t("loginSignup")}
-              </Link>
+              {shopper ? (
+                <span className="mt-4 flex flex-col items-start gap-3">
+                  <span className="flex items-center gap-3">
+                    <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-10" />
+                    <span>
+                      <span className="block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+                        {shopper.name}
+                      </span>
+                      <span className="block text-[11px] text-fog" dir="ltr">
+                        {shopper.email}
+                      </span>
+                      <span className="block text-[11px] text-fog/80">
+                        {tAcc("loggedInWith")}{" "}
+                        {shopper.provider === "google" ? (
+                          <GoogleGlyph className="inline size-3 align-[-1px]" />
+                        ) : (
+                          tAcc("providerEmail")
+                        )}
+                      </span>
+                    </span>
+                  </span>
+                  {(
+                    [
+                      { href: "/account", label: t("myAccount"), Icon: User },
+                      { href: "/account/orders", label: t("myOrders"), Icon: Package },
+                      { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
+                    ] as const
+                  ).map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      onClick={closeMenu}
+                      className="link-underline flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                    >
+                      <l.Icon className="size-4 text-gold" />
+                      {l.label}
+                    </Link>
+                  ))}
+                  <button
+                    onClick={signOut}
+                    className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e]"
+                  >
+                    <LogOut className="size-4" />
+                    {t("signOut")}
+                  </button>
+                </span>
+              ) : (
+                <Link
+                  href="/account"
+                  onClick={closeMenu}
+                  className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                >
+                  {t("loginSignup")}
+                </Link>
+              )}
             </nav>
           </div>
         )}

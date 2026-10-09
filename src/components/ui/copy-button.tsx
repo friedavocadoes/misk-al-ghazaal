@@ -40,7 +40,7 @@ export function CopyButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex size-10 shrink-0 items-center justify-center rounded-full border transition-all",
+        "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-all",
         done
           ? "border-[#1e7a46]/50 bg-[#1e7a46]/10 text-[#1e7a46]"
           : "border-ink/15 text-fog hover:border-ink/40 hover:text-ink",

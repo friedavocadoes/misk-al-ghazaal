@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getCollections } from "@/lib/store";
 
@@ -13,5 +13,5 @@ export default async function LegacyCollectionPage(
 ) {
   const { slug, locale } = await props.params;
   setRequestLocale(locale);
-  redirect(`/${locale}/collection/${slug}`);
+  redirect({ href: `/collection/${slug}`, locale });
 }

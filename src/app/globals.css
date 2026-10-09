@@ -163,6 +163,18 @@ html[lang="ar"] .eyebrow {
   }
 }
 
+/* Account dropdown entrance: fade, rise, settle. */
+@keyframes account-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* Global route-change bar: indeterminate gold sweep while the next page
    streams in, so taps always get an instant reaction. */
 @keyframes route-sweep {

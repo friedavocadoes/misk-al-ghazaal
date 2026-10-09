@@ -19,6 +19,29 @@ export function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
+/** Official Google "G" (four-color mark) for sign-in buttons. */
+export function GoogleGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className}>
+      <path
+        fill="#4285F4"
+        d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.3h6.5c-.1 1.1-.8 2.7-2.4 3.8l3.6 2.8c2.2-2 3.8-5 3.8-8.7z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2.1-6.8-5l-3.3 2.6C3.9 21.3 7.7 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4L1.9 7C.7 9.3 0 10.6 0 12s.7 2.7 1.9 3.9l3.3-1.5z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.7 0 3.9 2.7 1.9 6.1l3.3 2.6C6.2 6.8 8.9 4.7 12 4.7z"
+      />
+    </svg>
+  );
+}
 /** WhatsApp glyph (svgrepo path) — fill inherits `currentColor`, sized by
     the caller via className like any lucide icon. */
 export function WhatsAppIcon({ className }: { className?: string }) {

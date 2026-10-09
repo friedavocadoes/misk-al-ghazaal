@@ -15,10 +15,10 @@ export default function NotFound() {
       </p>
       <div className="mt-8 flex justify-center gap-2">
         <Button asChild>
-          <Link href="/en">Back Home</Link>
+          <Link href="/">Back Home</Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/en/collection/best-sellers">Best Sellers</Link>
+          <Link href="/collection/best-sellers">Best Sellers</Link>
         </Button>
       </div>
     </div>

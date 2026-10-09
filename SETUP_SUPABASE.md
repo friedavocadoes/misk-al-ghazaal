@@ -14,7 +14,10 @@ Dashboard → SQL Editor → New query, paste in order:
 
 1. `supabase/schema.sql` (tables + RLS + storage buckets + policies)
 2. `supabase/migration_soft_delete.sql` (recycle bin)
-3. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
+3. `supabase/migration_shopper_reads.sql` (shoppers read own orders/items)
+4. `supabase/migration_avatars.sql` (`avatars` bucket + `profiles.avatar_url`;
+   shoppers upload into their own `avatars/<user_id>/` folder)
+4. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
    coupons, referrals, reviews, PDP copy, order links — includes
    `increment_coupon_use()` + a starter notes library)
 2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
@@ -89,6 +92,13 @@ read, super_admin write via RLS).
    add `http://localhost:3000` to Redirect URLs for local dev. The app's
    `/auth/callback` finishes the flow and bootstraps `profiles` (unique
    referral code + `?ref=` attribution).
+3. Email sending (reset links, confirmations): Supabase's built-in mailer
+   works out of the box for testing but is heavily rate-limited. For
+   production, set up custom SMTP — Dashboard → Authentication → Email →
+   Enable Custom SMTP (use Resend / Amazon SES / your host; needs host,
+   port, user, pass + sender address/name). No code changes needed; the
+   forgot-password flow (`/account/forgot` → email link → `/account/reset`)
+   picks it up automatically.
 3. Referral reward % and on/off live at `/admin/referrals` (default 25% both
    sides, first orders only). Reward coupons for referrers are minted with
    `owner_id` — visible only to that account.
