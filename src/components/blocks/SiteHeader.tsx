@@ -11,6 +11,7 @@ import {
   Crown,
   Flame,
   Globe,
+  Heart,
   LogOut,
   MapPin,
   Mars,
@@ -567,6 +568,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                         { href: "/account", label: t("myAccount"), Icon: User },
                         { href: "/account/orders", label: t("myOrders"), Icon: Package },
                         { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
+                        { href: "/account/wishlist", label: tAcc("wishlistTitle"), Icon: Heart },
                       ] as const
                     ).map((l) => (
                       <Link
@@ -1006,6 +1008,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                             { href: "/account", label: t("myAccount"), Icon: User },
                             { href: "/account/orders", label: t("myOrders"), Icon: Package },
                             { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
+                            { href: "/account/wishlist", label: tAcc("wishlistTitle"), Icon: Heart },
                           ] as const
                         ).map((l) => (
                           <Link

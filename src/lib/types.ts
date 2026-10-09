@@ -5,7 +5,7 @@
 export interface Variant {
   id: string;
   title: string; // e.g. "12ml", "50ml", "100g"
-  price: number; // AED
+  price: number; // Dhs
   stock: number;
   sku?: string;
 }
@@ -23,7 +23,7 @@ export interface Product {
   /** Short "about this perfume" blurb for the PDP About block. */
   shortDesc?: string;
   shortDescAr?: string;
-  price: number; // base AED price (first variant price)
+  price: number; // base Dhs price (first variant price)
   compareAtPrice?: number;
   images: string[];
   categorySlugs: string[];

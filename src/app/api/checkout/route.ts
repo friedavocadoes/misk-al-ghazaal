@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { quoteBag, type BagLine } from "@/lib/pricing";
+import { orderLinesHtml, sendMail } from "@/lib/mailer";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
 // (coupons + referral + shipping in one place), gift lines, coupon usage +
@@ -196,6 +197,23 @@ export async function POST(req: Request) {
           await admin.from("profiles").update({ referred_by: (referrer as { id: string }).id }).eq("id", body.user_id).is("referred_by", null);
         }
       }
+    }
+
+    // Order confirmation email (free SMTP; skipped when unconfigured).
+    if (email) {
+      await sendMail({
+        to: email,
+        subject: `Order ${(order as { order_no: string }).order_no} received — Misk Al Ghazaal`,
+        title: "Shukran — order received.",
+        preheader: `Order ${(order as { order_no: string }).order_no} · cash on delivery`,
+        bodyHtml: `<p>Dear ${name},</p><p>Your order is confirmed and being prepared. Our team will call to confirm before dispatch.</p>${orderLinesHtml(
+          priced.map((l) => ({ title: l.title, qty: l.qty, unit: l.unit })),
+          quote.subtotal,
+          quote.discount,
+          quote.shipping,
+          quote.total,
+        )}`,
+      });
     }
 
     return NextResponse.json({

@@ -58,7 +58,7 @@ export default async function AccountOrdersPage(props: {
       ) : (
         <ul className="mt-6 space-y-4">
           {rows.map((o) => (
-            <li key={o.id} className="border border-ink/10 bg-white p-5 md:p-6">
+            <li key={o.id} className="border border-ink/10 bg-white p-5 transition hover:border-gold/50 md:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="font-semibold text-ink">
                   {t("orderNo")} {o.order_no}
@@ -99,36 +99,18 @@ export default async function AccountOrdersPage(props: {
                   )}
                 </div>
               )}
-              <ul className="mt-3 divide-y divide-ink/10 border-y border-ink/10 text-sm">
-                {o.order_items.map((it, i) => (
-                  <li key={i} className="flex items-center justify-between gap-4 py-2">
-                    <span className="text-espresso">
-                      {it.title} <span className="text-fog">× {it.qty}</span>
-                    </span>
-                    <span className="text-ink">{formatAED(Number(it.unit_price) * it.qty)}</span>
-                  </li>
-                ))}
-              </ul>
-              <dl className="mt-3 space-y-1 text-sm">
-                <div className="flex justify-between text-fog">
-                  <dt>Subtotal</dt>
-                  <dd>{formatAED(Number(o.subtotal))}</dd>
-                </div>
-                {Number(o.discount) > 0 && (
-                  <div className="flex justify-between text-[#1e7a46]">
-                    <dt>Discount</dt>
-                    <dd>−{formatAED(Number(o.discount))}</dd>
-                  </div>
-                )}
-                <div className="flex justify-between text-fog">
-                  <dt>Shipping</dt>
-                  <dd>{Number(o.shipping) === 0 ? "Complimentary" : formatAED(Number(o.shipping))}</dd>
-                </div>
-                <div className="flex justify-between border-t border-ink/10 pt-2 font-display text-lg text-ink">
-                  <dt>Total</dt>
-                  <dd>{formatAED(Number(o.total))}</dd>
-                </div>
-              </dl>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-ink/10 pt-4">
+                <span className="font-display text-lg text-ink">{formatAED(Number(o.total))}</span>
+                <Link
+                  href={`/account/orders/${o.id}`}
+                  className="group inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink"
+                >
+                  <span className="border-b border-ink/30 pb-0.5 transition group-hover:border-gold group-hover:text-gold">
+                    {t("viewDetails")}
+                  </span>
+                  <span aria-hidden className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1">→</span>
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

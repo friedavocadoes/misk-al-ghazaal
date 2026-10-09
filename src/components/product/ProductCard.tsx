@@ -2,18 +2,16 @@
 
 import { useState } from "react";
 import { useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import Image from "next/image";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { PriceTag } from "./PriceTag";
+import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
-// Consolidates snippets/product-card-grid.liquid,
-// product-card-grid-style2.liquid and product-card-left.liquid.
-// Quiet-luxury styling: sharp edges, hairline borders, restrained badges.
 export function ProductCard({
   product,
   layoutVariant = "grid",
@@ -23,107 +21,166 @@ export function ProductCard({
   layoutVariant?: "grid" | "style2" | "left";
   className?: string;
 }) {
-  const [wished, setWished] = useState(false);
+  const router = useRouter();
+  const { add } = useCart();
+  const { has, toggle } = useWishlist();
+  const [added, setAdded] = useState(false);
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   const title = tx(product.title, product.titleAr, locale);
   const [primary, secondary] = product.images;
+  const wished = has(product.slug);
   const onSale =
     product.compareAtPrice !== undefined &&
     product.compareAtPrice > product.price;
 
+  const addToBag = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    add({ productSlug: product.slug, variantId: product.variants[0]?.id, qty: 1 });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1400);
+  };
+  
+  const buyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    add({ productSlug: product.slug, variantId: product.variants[0]?.id, qty: 1 });
+    router.push("/checkout");
+  };
+  
+  const onWish = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const r = await toggle(product.slug);
+    if (r === "login") router.push(`/account/login?next=/product/${product.slug}`);
+  };
+
+  const wishBtn = () => (
+    <button
+      onClick={onWish}
+      aria-label={title}
+      aria-pressed={wished}
+      className={cn(
+        "absolute right-4 top-4 z-20 flex size-8 items-center justify-center bg-transparent text-ink/30 transition-all duration-300 hover:scale-105 hover:text-[#9c2b2e]",
+        wished && "text-[#9c2b2e]"
+      )}
+    >
+      <Heart className={cn("size-4 transition-transform active:scale-90", wished && "fill-[#9c2b2e]")} />
+    </button>
+  );
+
+  const badges = (
+    <span className="absolute left-4 top-4 z-20 flex flex-col items-start gap-1.5">
+      {onSale && (
+        <span className="border border-ink/10 bg-white/70 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e] backdrop-blur-sm">
+          Sale
+        </span>
+      )}
+      {product.isNew && (
+        <span className="border border-ink/10 bg-white/70 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-ink backdrop-blur-sm">
+          New
+        </span>
+      )}
+    </span>
+  );
+
+  // DESKTOP HOVER ACTIONS: Positioned flush at the bottom, sliding up snappily in 300ms.
+  const desktopActionBar = (
+    <div className="absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-2 p-3 transition-transform duration-300 group-hover:translate-y-0 md:flex">
+      <button
+        onClick={addToBag}
+        className="flex-1 border border-ink bg-ink/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-ink"
+      >
+        {added ? "Added" : "Add to Bag"}
+      </button>
+      <button
+        onClick={buyNow}
+        className="flex-1 border border-ink bg-white/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-ink hover:text-white"
+      >
+        Buy Now
+      </button>
+    </div>
+  );
+
+  // MOBILE ACTIONS: Thumb-friendly, statically placed below the price block for touch devices.
+  const mobileActions = (
+    <div className="mt-4 flex w-full gap-2 md:hidden">
+      <button
+        onClick={addToBag}
+        className="flex-1 border border-ink py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink transition active:bg-ink active:text-white"
+      >
+        {added ? "Added" : "Add"}
+      </button>
+      <button
+        onClick={buyNow}
+        className="flex-1 bg-ink py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white transition active:bg-ink/80"
+      >
+        Buy
+      </button>
+    </div>
+  );
+
+  const priceDisplay = (
+    <div className="mt-1 flex items-center justify-center gap-2 text-[12px] font-medium tracking-widest text-ink/80">
+      <span>AED {product.price.toFixed(2)}</span>
+      {onSale && product.compareAtPrice && (
+        <s className="text-ink/30">AED {product.compareAtPrice.toFixed(2)}</s>
+      )}
+    </div>
+  );
+
   if (layoutVariant === "left") {
     return (
-      <div
-        className={cn(
-          "flex gap-4 border border-ink/10 bg-white p-3",
-          className
-        )}
-      >
+      <div className={cn("flex gap-5 bg-transparent", className)}>
         <Link
           href={`/product/${product.slug}`}
-          className="relative h-28 w-24 shrink-0 overflow-hidden bg-sand"
+          className="relative h-32 w-24 shrink-0 overflow-hidden bg-[#F6F5F3]"
         >
           <Image
             src={primary}
             alt={title}
             fill
             sizes="96px"
-            className="object-cover"
+            className="object-cover transition duration-500 hover:scale-[1.04]"
           />
         </Link>
-        <div className="flex min-w-0 flex-1 flex-col py-1">
+        <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
           <Link
             href={`/product/${product.slug}`}
-            className="truncate text-sm font-medium text-ink hover:text-gold"
+            className="truncate font-display text-[15px] uppercase tracking-wider text-ink transition-colors hover:text-gold-soft"
           >
             {title}
           </Link>
-          <span className="mt-1 flex items-center gap-1 text-xs text-fog">
-            <Star className="size-3 fill-gold text-gold" />
-            {product.rating.toFixed(1)} ({product.reviewCount})
-          </span>
-          <span className="mt-auto flex items-center justify-between">
-            <PriceTag
-              price={product.price}
-              compareAtPrice={product.compareAtPrice}
-              size="sm"
-              showBadges={false}
-            />
+          <div className="mt-1 text-[12px] tracking-wider text-ink/80">
+            <span className="font-medium">AED {product.price.toFixed(2)}</span>
+            {onSale && product.compareAtPrice && (
+              <s className="ml-2 text-ink/30">AED {product.compareAtPrice.toFixed(2)}</s>
+            )}
+          </div>
+          <div className="mt-4 flex gap-1.5">
             <button
-              className="border border-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink transition hover:bg-ink hover:text-white"
-              aria-label={title}
+              onClick={addToBag}
+              className="cursor-pointer border border-ink bg-transparent px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-ink hover:text-white"
             >
-              Add
+              {added ? "Added" : "Add"}
             </button>
-          </span>
+            <button
+              onClick={buyNow}
+              className="cursor-pointer bg-ink px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-ink/85"
+            >
+              Buy
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (layoutVariant === "style2") {
-    return (
-      <Link
-        href={`/product/${product.slug}`}
-        className={cn("group relative block overflow-hidden bg-sand", className)}
-      >
-        <span className="block aspect-[3/4]">
-          <Image
-            src={primary}
-            alt={title}
-            fill
-            sizes="(min-width:1024px) 25vw, 50vw"
-            className="object-cover transition duration-500 group-hover:scale-[1.04]"
-          />
-        </span>
-        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-4 pt-12">
-          {onSale && (
-            <span className="mb-1.5 inline-block bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink">
-              Sale
-            </span>
-          )}
-          <span className="block truncate text-sm font-medium text-white">
-            {title}
-          </span>
-          <span className="mt-0.5 block">
-            <PriceTag
-              price={product.price}
-              compareAtPrice={product.compareAtPrice}
-              size="sm"
-              showBadges={false}
-              className="[&_s]:text-white/60 [&_span]:!text-gold-wash"
-            />
-          </span>
-        </span>
-      </Link>
-    );
-  }
-
-  // grid (default) — mirrors product-card-grid.liquid structure
+  // default: grid with metadata positioned underneath the image card
   return (
-    <div className={cn("group bg-transparent", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden bg-sand">
-        <Link href={`/product/${product.slug}`} aria-label={title}>
+    <div className={cn("group relative flex flex-col bg-transparent", className)}>
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#F6F5F3]">
+        <Link href={`/product/${product.slug}`} aria-label={title} className="absolute inset-0">
           <Image
             src={primary}
             alt={title}
@@ -133,6 +190,7 @@ export function ProductCard({
               "object-cover transition duration-500 group-hover:scale-[1.04]",
               secondary && "group-hover:opacity-0"
             )}
+            priority
           />
           {secondary && (
             <Image
@@ -145,50 +203,25 @@ export function ProductCard({
             />
           )}
         </Link>
-        <span className="absolute left-0 top-3 flex flex-col gap-1">
-          {onSale && (
-            <span className="bg-[#9c2b2e] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
-              Sale
-            </span>
-          )}
-          {product.isNew && (
-            <span className="bg-ink px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
-              New
-            </span>
-          )}
-        </span>
-        <button
-          onClick={() => setWished((w) => !w)}
-          aria-label="Add to wishlist"
-          aria-pressed={wished}
-          className="absolute right-3 top-3 border border-ink/10 bg-white p-2 text-espresso shadow-sm transition hover:border-ink hover:text-ink"
-        >
-          <Heart className={cn("size-4", wished && "fill-[#9c2b2e] text-[#9c2b2e]")} />
-        </button>
-        <button
-          className="absolute inset-x-0 bottom-0 translate-y-full bg-ink/95 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition-transform duration-300 group-hover:translate-y-0"
-          aria-label={title}
-        >
-          Add to Cart
-        </button>
+        
+        {/* Subtle shadow ensuring text reads clearly if sliding over white backgrounds */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 hidden md:block" />
+
+        {badges}
+        {wishBtn()}
+        {desktopActionBar}
       </div>
-      <div className="pt-3 text-center">
+      
+      {/* Editorial Type Block Below the Frame */}
+      <div className="pt-4 text-center">
         <Link
           href={`/product/${product.slug}`}
-          className="line-clamp-1 text-[13px] font-medium uppercase tracking-[0.08em] text-ink hover:text-gold"
+          className="block font-display text-[15px] uppercase tracking-wider text-ink transition-colors duration-300 hover:text-gold-soft"
         >
-          {title}
+          <h3 className="line-clamp-1">{title}</h3>
         </Link>
-        <span className="mt-1 flex items-center justify-center gap-1 text-[11px] text-fog">
-          <Star className="size-3 fill-gold text-gold" />
-          {product.rating.toFixed(1)} · {product.reviewCount.toLocaleString("en-US")} reviews
-        </span>
-        <PriceTag
-          price={product.price}
-          compareAtPrice={product.compareAtPrice}
-          size="sm"
-          className="mt-1 justify-center"
-        />
+        {priceDisplay}
+        {mobileActions}
       </div>
     </div>
   );

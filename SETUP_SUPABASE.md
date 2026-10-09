@@ -88,7 +88,17 @@ read, super_admin write via RLS).
 - Realtime: add a `supabase.channel('orders').on('postgres_changes', …)` listener
   on the orders page later for a new-order toast — no extra service needed.
 
-## 6b. Shopper auth (email + Google) + referrals
+## 6b. Order emails (free, optional)
+
+- Confirmation + every status change email the shopper automatically —
+  through YOUR SMTP (`SMTP_HOST/PORT/USER/PASS/FROM` in `.env`), so there is
+  no per-email service cost. Unset = silently skipped (orders still work).
+- Easiest free setup: Gmail app password (Google Account → Security →
+  2-Step Verification → App passwords → Mail), `SMTP_HOST=smtp.gmail.com`,
+  `SMTP_PORT=587`. Alternatives: your domain/host mailbox, or Resend's
+  free SMTP tier. No code changes — `lib/mailer.ts` picks env up.
+
+## 6c. Shopper auth (email + Google) + referrals
 
 1. Dashboard → Authentication → Providers → enable **Email** (confirm email ON
    for production) and **Google**: create the OAuth client (Google Cloud
@@ -105,10 +115,10 @@ read, super_admin write via RLS).
    port, user, pass + sender address/name). No code changes needed; the
    forgot-password flow (`/account/forgot` → email link → `/account/reset`)
    picks it up automatically.
-3. Referral reward % and on/off live at `/admin/referrals` (default 25% both
+4. Referral reward % and on/off live at `/admin/referrals` (default 25% both
    sides, first orders only). Reward coupons for referrers are minted with
    `owner_id` — visible only to that account.
-4. Reviews: shoppers file from the PDP (login required); nothing is public
+5. Reviews: shoppers file from the PDP (login required); nothing is public
    until approved at `/admin/reviews` (approval recomputes the product
    rating/count shown on cards and the PDP).
 

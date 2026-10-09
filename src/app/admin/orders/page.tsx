@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/keys";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { OrderStatusChip } from "@/lib/order-status";
+import { OrderStatusChip, statusLabel } from "@/lib/order-status";
 
 const STATUSES = [
   "all",
@@ -78,7 +78,7 @@ export default async function OrdersPage(props: {
                 : "border-ink/20 bg-white hover:border-ink/50"
             }`}
           >
-            {s.replaceAll("_", " ")}
+            {s === "all" ? "all" : statusLabel(s)}
           </Link>
         ))}
       </div>

@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
-import { ORDER_STATUSES, OrderStatusChip } from "@/lib/order-status";
+import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
+import { sendMail } from "@/lib/mailer";
 
 const NEXT_STATUSES = ORDER_STATUSES;
 
@@ -24,7 +25,7 @@ async function updateOrder(formData: FormData) {
   const supabase = await createClient();
   const { data: current } = await supabase
     .from("orders")
-    .select("status")
+    .select("status, email, customer_name, order_no")
     .eq("id", id)
     .single();
   await supabase
@@ -37,6 +38,20 @@ async function updateOrder(formData: FormData) {
     to_status: toStatus,
     changed_by: session.userId,
   });
+  // Status email (free SMTP; skipped when unconfigured or on no-change).
+  const cur = current as { status?: string; email?: string | null; customer_name?: string; order_no?: string } | null;
+  if (cur?.email && cur.status !== toStatus) {
+    const trackLine = trackingNo
+      ? `<p>Tracking: <strong dir="ltr">${trackingNo}</strong>${trackingUrl ? ` — <a href="${trackingUrl}">track your parcel</a>` : ""}</p>`
+      : "";
+    await sendMail({
+      to: cur.email,
+      subject: `Order ${cur.order_no ?? ""} — ${statusLabel(toStatus)}`,
+      title: `Order ${statusLabel(toStatus).toLowerCase()}.`,
+      preheader: `${cur.order_no ?? ""} · Misk Al Ghazaal`,
+      bodyHtml: `<p>Dear ${cur.customer_name ?? "client"},</p><p>Your order <strong>${cur.order_no ?? ""}</strong> is now <strong>${statusLabel(toStatus)}</strong>.</p>${trackLine}`,
+    });
+  }
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");
 }

@@ -58,6 +58,9 @@ export function statusMeta(status: string): { chip: string; dot: string } {
 }
 
 export function statusLabel(status: string): string {
+  // The DB value stays `new` (constraints, filters, history all key on it);
+  // humans read what it means: placed and waiting for our confirmation.
+  if (status === "new") return "Waiting for confirmation";
   return status.replaceAll("_", " ");
 }
 
@@ -66,14 +69,14 @@ export function journeyIndex(status: string): number {
   return JOURNEY.findIndex((s) => s.id === status);
 }
 
-export function OrderStatusChip({ status, className = "" }: { status: string; className?: string }) {
+export function OrderStatusChip({ status, className = "", label }: { status: string; className?: string; label?: string }) {
   const meta = statusMeta(status);
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${meta.chip} ${className}`}
     >
       <span aria-hidden className={`size-1.5 rounded-full ${meta.dot}`} />
-      {statusLabel(status)}
+      {label ?? statusLabel(status)}
     </span>
   );
 }

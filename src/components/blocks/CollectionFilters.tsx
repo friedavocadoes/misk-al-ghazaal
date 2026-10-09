@@ -65,7 +65,7 @@ export function CollectionFilters({
 
       <div className="mt-5 border-t border-ink/10 pt-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
-          {t("maxPrice")} · AED {max || maxPrice}
+          {t("maxPrice")} · Dhs {max || maxPrice}
         </p>
         <input
           type="range"

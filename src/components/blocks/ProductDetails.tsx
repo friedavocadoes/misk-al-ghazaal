@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
 import { TrustBadges } from "./TrustBadges";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
 export { ProductGallery };
 
@@ -112,9 +113,14 @@ export function ProductInfo({
   const t = useTranslations("Product");
   const router = useRouter();
   const { add } = useCart();
+  const { has, toggle } = useWishlist();
+  const wished = has(product.slug);
+  const onWish = async () => {
+    const r = await toggle(product.slug);
+    if (r === "login") router.push(`/account/login?next=/product/${product.slug}`);
+  };
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [qty, setQty] = useState(1);
-  const [wished, setWished] = useState(false);
   const [added, setAdded] = useState(false);
   const variant =
     product.variants.find((v) => v.id === variantId) ?? product.variants[0];
@@ -228,7 +234,7 @@ export function ProductInfo({
           {added ? t("added") : t("addToBag")}
         </Button>
         <button
-          onClick={() => setWished((w) => !w)}
+          onClick={onWish}
           aria-label={t("wishlist")}
           aria-pressed={wished}
           className={cn(
