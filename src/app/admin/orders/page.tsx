@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { isSupabaseConfigured } from "@/lib/supabase/keys";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { OrderStatusChip } from "@/lib/order-status";
 
 const STATUSES = [
   "all",
@@ -110,9 +111,11 @@ export default async function OrdersPage(props: {
                 {o.phone} · {new Date(o.created_at).toLocaleString("en-AE")}
               </p>
             </div>
-            <div className="text-right">
+            <div className="shrink-0 text-right">
               <p className="font-medium">AED {Number(o.total).toFixed(2)}</p>
-              <p className="text-sm text-ink/60">{o.status.replaceAll("_", " ")}</p>
+              <p className="mt-1">
+                <OrderStatusChip status={o.status} />
+              </p>
             </div>
           </Link>
         ))}

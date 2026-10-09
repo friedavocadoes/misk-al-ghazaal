@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
+import NextLink from "next/link";
 import { Gift, KeyRound, Package, Ticket } from "lucide-react";
 import { AuthTabs } from "@/components/blocks/AuthTabs";
 import { CopyCode } from "@/components/ui/copy-code";
@@ -39,7 +40,7 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
   const { supabase, user } = session;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("referral_code, referral_uses, avatar_url")
+    .select("referral_code, referral_uses, avatar_url, role")
     .eq("id", user.id)
     .single();
 
@@ -48,6 +49,9 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
   const name = displayName(user);
   const avatar = avatarOf(user, profile as { avatar_url?: string | null } | null);
   const provider = providerOf(user);
+  const staff = ["super_admin", "orders"].includes(
+    (profile as { role?: string } | null)?.role ?? "",
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 md:px-8">
@@ -139,6 +143,19 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
           <span className="font-display text-xl text-ink transition group-hover:text-gold">{t("rewardsTitle")}</span>
         </Link>
       </div>
+      {staff && (
+        <NextLink
+          href="/admin"
+          className="group mt-3 flex items-center gap-4 border border-gold/50 bg-gold-wash/50 p-5 transition hover:-translate-y-0.5 hover:border-gold"
+        >
+          <span className="font-display text-xl text-ink transition group-hover:text-gold">
+            {locale === "ar" ? "لوحة الإدارة" : "Open admin panel"}
+          </span>
+          <span aria-hidden className="ms-auto text-gold opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100 rtl:rotate-180">
+            →
+          </span>
+        </NextLink>
+      )}
 
     </div>
   );

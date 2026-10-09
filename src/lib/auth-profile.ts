@@ -41,7 +41,7 @@ export async function ensureProfile(
       const { error } = await admin.from("profiles").insert({
         id: userId,
         email,
-        role: "orders",
+        role: "customer",
         referral_code: code,
         referred_by: referrerId,
       });

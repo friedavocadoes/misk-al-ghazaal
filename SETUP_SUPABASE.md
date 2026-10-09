@@ -52,16 +52,20 @@ Without these, storefront getters throw and `next build` fails — by design
 ## 4. Create users (no public signup)
 
 1. Authentication → Add user → Create new user (email + password, auto-confirm).
-2. SQL Editor:
+   Shopper signups always land on role `customer` (zero admin access).
+2. Promote staff explicitly (shoppers can never reach /admin):
    ```sql
    update public.profiles set role = 'super_admin' where email = 'you@company.com';
-   ```
-3. Repeat for staff, role stays `orders` (default from trigger):
-   ```sql
    update public.profiles set role = 'orders' where email = 'staff@company.com';
    ```
-4. Login at `/admin/login`. `orders` role is auto-redirected away from
-   `/admin/products` and `/admin/banners`.
+   After running `migration_roles_tracking.sql`, every pre-existing `orders`
+   row was reset to `customer` — re-run the promote SQL for real staff.
+3. Login at `/admin/login`. `orders` role is auto-redirected away from
+   catalog pages. Shoppers who open `/admin/login` are signed straight back
+   out with an explanation. One Supabase project = one browser session:
+   test admin + shopper side-by-side with a separate browser profile
+   (or incognito) — simultaneous separate logins in one profile are not
+   possible by design.
 
 ## 5. Images (products + banners)
 

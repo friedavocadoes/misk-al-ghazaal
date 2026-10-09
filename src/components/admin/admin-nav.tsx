@@ -120,6 +120,14 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           </Link>
         </nav>
         <span className="hidden shrink-0 text-xs text-ink/50 md:block">{email}</span>
+        <Link
+          href="/"
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 text-xs text-ink/50 underline-offset-4 transition hover:text-ink hover:underline"
+        >
+          View store
+        </Link>
         <span className="shrink-0">
           <SignOutButton />
         </span>

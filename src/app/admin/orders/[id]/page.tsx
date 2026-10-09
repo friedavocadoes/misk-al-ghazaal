@@ -6,16 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
+import { ORDER_STATUSES, OrderStatusChip } from "@/lib/order-status";
 
-const NEXT_STATUSES = [
-  "new",
-  "confirmed",
-  "packed",
-  "out_for_delivery",
-  "delivered",
-  "cancelled",
-  "returned",
-] as const;
+const NEXT_STATUSES = ORDER_STATUSES;
 
 async function updateOrder(formData: FormData) {
   "use server";
@@ -24,6 +17,7 @@ async function updateOrder(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const toStatus = String(formData.get("status") ?? "");
   const trackingNo = String(formData.get("tracking_no") ?? "").trim() || null;
+  const trackingUrl = String(formData.get("tracking_url") ?? "").trim() || null;
   const internalNote = String(formData.get("internal_note") ?? "").trim() || null;
   if (!NEXT_STATUSES.includes(toStatus as (typeof NEXT_STATUSES)[number])) return;
 
@@ -35,7 +29,7 @@ async function updateOrder(formData: FormData) {
     .single();
   await supabase
     .from("orders")
-    .update({ status: toStatus, tracking_no: trackingNo, internal_note: internalNote })
+    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote })
     .eq("id", id);
   await supabase.from("order_status_history").insert({
     order_id: id,
@@ -110,6 +104,9 @@ export default async function OrderDetail(props: {
             <h1 className="font-display text-3xl">
               {order.order_no} · {order.customer_name}
             </h1>
+            <div className="mt-2">
+              <OrderStatusChip status={order.status} />
+            </div>
           </div>
           <div className="flex shrink-0 gap-2">
             <PrintButton />
@@ -182,6 +179,10 @@ export default async function OrderDetail(props: {
             <label className="block text-sm">
               Tracking no / courier (optional)
               <input name="tracking_no" defaultValue={order.tracking_no ?? ""} placeholder="e.g. Aramex 123456" className="mt-1 w-full border border-ink/20 px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              Tracking link (courier URL — shopper gets a Track button)
+              <input name="tracking_url" defaultValue={(order as { tracking_url?: string }).tracking_url ?? ""} placeholder="https://…" dir="ltr" className="mt-1 w-full border border-ink/20 px-3 py-2" />
             </label>
             <label className="block text-sm">
               Internal note (staff only)

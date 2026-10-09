@@ -1,8 +1,11 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
+import { OrderStatusChip } from "@/lib/order-status";
+import { OrderTimeline } from "@/components/blocks/OrderTimeline";
+import { CopyCode } from "@/components/ui/copy-code";
 import { requireShopper } from "@/lib/shopper";
 import { toLocale } from "@/lib/i18n";
 
@@ -29,7 +32,7 @@ export default async function AccountOrdersPage(props: {
   const { supabase, user } = session;
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_no, total, subtotal, discount, shipping, status, created_at, order_items(title, qty, unit_price)")
+    .select("id, order_no, total, subtotal, discount, shipping, status, created_at, tracking_no, tracking_url, order_items(title, qty, unit_price)")
     .or(`user_id.eq.${user.id}${user.email ? `,email.ilike.${user.email}` : ""}`)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -37,6 +40,7 @@ export default async function AccountOrdersPage(props: {
   const rows = (orders as {
     id: string; order_no: string; total: number; subtotal: number; discount: number;
     shipping: number; status: string; created_at: string;
+    tracking_no: string | null; tracking_url: string | null;
     order_items: { title: string; qty: number; unit_price: number }[];
   }[] | null) ?? [];
 
@@ -59,13 +63,42 @@ export default async function AccountOrdersPage(props: {
                 <p className="font-semibold text-ink">
                   {t("orderNo")} {o.order_no}
                 </p>
-                <span className="border border-ink/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-espresso">
-                  {o.status.replaceAll("_", " ")}
-                </span>
+                <OrderStatusChip status={o.status} />
               </div>
               <p className="mt-1 text-[13px] text-fog">
                 {new Date(o.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
               </p>
+
+              <OrderTimeline status={o.status} locale={locale} />
+
+              {(o.tracking_no || o.tracking_url) && (
+                <div className="mt-1 flex flex-wrap items-center gap-3 border border-gold/40 bg-gold-wash/50 p-4">
+                  <span className="flex size-9 items-center justify-center rounded-full bg-ink text-gold-soft">
+                    <Truck className="size-4" strokeWidth={1.75} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
+                      {t("trackingTitle")}
+                    </span>
+                    {o.tracking_no && (
+                      <span className="mt-0.5 block font-mono text-[15px] font-bold tracking-[0.1em] text-ink" dir="ltr">
+                        {o.tracking_no}
+                      </span>
+                    )}
+                  </span>
+                  {o.tracking_no && <CopyCode code={o.tracking_no} label={t("copyCode")} copied={t("codeCopied")} />}
+                  {o.tracking_url && (
+                    <a
+                      href={o.tracking_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-ink px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-gold-soft hover:text-ink"
+                    >
+                      {t("trackParcel")} <ArrowUpRight className="size-3.5" />
+                    </a>
+                  )}
+                </div>
+              )}
               <ul className="mt-3 divide-y divide-ink/10 border-y border-ink/10 text-sm">
                 {o.order_items.map((it, i) => (
                   <li key={i} className="flex items-center justify-between gap-4 py-2">

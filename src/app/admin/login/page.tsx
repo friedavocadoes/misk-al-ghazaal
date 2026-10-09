@@ -25,6 +25,20 @@ export default function AdminLogin() {
         setError(signInError.message);
         return;
       }
+      // Staff-only door: shoppers who wander here are signed straight back
+      // out with an explanation (same browser = same session, by design).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data: profile } = user
+        ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+        : { data: null };
+      const role = (profile as { role?: string } | null)?.role;
+      if (role !== "super_admin" && role !== "orders") {
+        await supabase.auth.signOut();
+        setError("This door is for maison staff — your shopper account lives at /account.");
+        return;
+      }
       router.replace("/admin");
       router.refresh();
     } catch (err) {
