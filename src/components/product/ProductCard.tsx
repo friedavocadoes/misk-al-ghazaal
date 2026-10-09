@@ -61,7 +61,7 @@ export function ProductCard({
       aria-label={title}
       aria-pressed={wished}
       className={cn(
-        "absolute right-4 top-4 z-20 flex size-8 items-center justify-center bg-transparent text-ink/30 transition-all duration-300 hover:scale-105 hover:text-[#9c2b2e]",
+        "absolute right-4 top-4 z-20 flex size-8 items-center justify-center bg-transparent text-ink/30 transition-all duration-300 hover:scale-105 hover:text-[#9c2b2e] cursor-pointer",
         wished && "text-[#9c2b2e]"
       )}
     >
@@ -89,13 +89,13 @@ export function ProductCard({
     <div className="absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-2 p-3 transition-transform duration-300 group-hover:translate-y-0 md:flex">
       <button
         onClick={addToBag}
-        className="flex-1 border border-ink bg-ink/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-ink"
+        className="flex-1 border border-ink bg-ink/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-ink cursor-pointer"
       >
         {added ? "Added" : "Add to Bag"}
       </button>
       <button
         onClick={buyNow}
-        className="flex-1 border border-ink bg-white/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-ink hover:text-white"
+        className="flex-1 border border-ink bg-white/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-ink hover:text-white cursor-pointer"
       >
         Buy Now
       </button>
