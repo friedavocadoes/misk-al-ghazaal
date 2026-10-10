@@ -105,6 +105,27 @@ async function saveProductNotes(formData: FormData) {
   await touchStorefront(supabase, productId);
 }
 
+async function saveProductCollections(formData: FormData) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const productId = String(formData.get("product_id"));
+  const supabase = await createClient();
+  const keep = new Set(formData.getAll("collections").map(String).filter(Boolean));
+  const { data: current } = await supabase.from("product_collections").select("collection_id").eq("product_id", productId);
+  const have = new Set(((current as { collection_id: string }[] | null) ?? []).map((r) => r.collection_id));
+  const drop = [...have].filter((id) => !keep.has(id));
+  const add = [...keep].filter((id) => !have.has(id));
+  if (drop.length) await supabase.from("product_collections").delete().eq("product_id", productId).in("collection_id", drop);
+  if (add.length) {
+    await supabase
+      .from("product_collections")
+      .insert(add.map((collection_id) => ({ product_id: productId, collection_id })));
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  await touchStorefront(supabase, productId);
+}
+
 async function saveNotesArtwork(productId: string, field: string, url: string) {
   "use server";
   const s = await getAdminSession();
@@ -154,145 +175,231 @@ export default async function ProductDetail(props: {
     .select("*")
     .eq("product_id", id)
     .order("title");
-  const [{ data: lineups }, { data: rituals }, { data: allNotes }, { data: assigned }] = await Promise.all([
+  const [{ data: lineups }, { data: rituals }, { data: allNotes }, { data: assigned }, { data: collections }, { data: prodColls }] = await Promise.all([
     supabase.from("lineups").select("id, title").order("sort"),
     supabase.from("rituals").select("id, title").order("title"),
     supabase.from("notes").select("id, name, color").order("name"),
     supabase.from("product_notes").select("note_id, kind, position").eq("product_id", id),
+    supabase.from("collections").select("id, title").is("deleted_at", null).order("sort"),
+    supabase.from("product_collections").select("collection_id").eq("product_id", id),
   ]);
   const assignedMap = new Map(
     (((assigned as { note_id: string; kind: string; position: number }[] | null) ?? [])).map((a) => [a.note_id, a]),
+  );
+  const inCollections = new Set(
+    (((prodColls as { collection_id: string }[] | null) ?? [])).map((r) => r.collection_id),
+  );
+
+  const visible = p.is_active ?? true;
+  const sectionCls = "scroll-mt-24 border border-ink/10 bg-white p-6 md:p-8";
+  const sectionHead = (n: string, title: string, hint?: string) => (
+    <div className="mb-5 flex items-baseline gap-3">
+      <span className="font-display text-lg italic text-gold">{n}</span>
+      <h2 className="font-display text-2xl text-ink">{title}</h2>
+      {hint && <span className="ms-auto hidden text-xs text-ink/50 md:block">{hint}</span>}
+    </div>
   );
 
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="flex items-center justify-between gap-4 border-b border-ink/10 pb-6">
-          <div>
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        {/* Header: breadcrumb + title + live status + store link + delete */}
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/10 pb-6">
+          <div className="min-w-0">
             <p className="eyebrow">
               <Link href="/admin/products" className="link-underline">Products</Link> / {p.slug}
             </p>
-            <h1 className="font-display text-3xl">{p.title}</h1>
+            <h1 className="mt-1 truncate font-display text-3xl md:text-4xl">{p.title}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className={`border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${visible ? "border-[#1e7a46]/40 bg-[#1e7a46]/[0.07] text-[#1e7a46]" : "border-gold/50 bg-gold-wash/60 text-gold"}`}>
+                {visible ? "Live on store" : "Paused"}
+              </span>
+              {p.featured && <span className="border border-ink/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso">Featured</span>}
+              {p.is_new && <span className="border border-ink/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso">New</span>}
+              {p.is_best_seller && <span className="border border-ink/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso">Best seller</span>}
+              <span className="text-xs text-ink/50">{(p.images ?? []).length} images · {(variants ?? []).length} variants</span>
+            </div>
           </div>
-          <form action={moveToBin}>
-            <input type="hidden" name="id" value={p.id} />
-            <ActionButton danger>Delete</ActionButton>
-          </form>
+          <div className="flex shrink-0 gap-2">
+            <a
+              href={`/product/${p.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50"
+            >
+              View on store
+            </a>
+            <form action={moveToBin}>
+              <input type="hidden" name="id" value={p.id} />
+              <ActionButton danger>Delete</ActionButton>
+            </form>
+          </div>
         </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
-        <AdminForm action={saveProduct} success="Details saved" className="space-y-3 border border-ink/10 bg-white p-6">
-          <input type="hidden" name="id" value={p.id} />
-          <h2 className="font-display text-xl">Details</h2>
-          <label className="block text-sm">Title (EN)<input name="title" defaultValue={p.title} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <label className="block text-sm">Title (AR transliteration)<input name="title_ar" defaultValue={p.title_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm">Price AED<input name="price" type="number" step="0.01" defaultValue={p.price} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-            <label className="block text-sm">Compare-at<input name="compare_at" type="number" step="0.01" defaultValue={p.compare_at ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          </div>
-          <label className="block text-sm">Short about (PDP About block)<textarea name="short_desc" rows={2} defaultValue={p.short_desc ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <label className="block text-sm">Short about AR<textarea name="short_desc_ar" rows={2} defaultValue={p.short_desc_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm">Lineup
-              <select name="lineup_id" defaultValue={p.lineup_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
-                <option value="">— none —</option>
-                {((lineups as { id: string; title: string }[] | null) ?? []).map((l) => (
-                  <option key={l.id} value={l.id}>{l.title}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm">How-to-use guide
-              <select name="ritual_id" defaultValue={p.ritual_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
-                <option value="">— none —</option>
-                {((rituals as { id: string; title: string }[] | null) ?? []).map((r) => (
-                  <option key={r.id} value={r.id}>{r.title}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <label className="flex items-center gap-2 border border-gold/50 bg-gold-wash/60 px-3 py-1.5"><input type="checkbox" name="is_active" defaultChecked={p.is_active ?? true} /> Visible on store</label>
-            <label><input type="checkbox" name="featured" defaultChecked={p.featured} /> Featured</label>
-            <label><input type="checkbox" name="is_new" defaultChecked={p.is_new} /> New</label>
-            <label><input type="checkbox" name="is_best_seller" defaultChecked={p.is_best_seller} /> Best seller</label>
-          </div>
-          <SaveButton className="w-full">Save details</SaveButton>
-        </AdminForm>
+      <div className="mt-8 grid items-start gap-6 xl:grid-cols-[220px_1fr]">
+          {/* Sticky section nav */}
+          <nav aria-label="Sections" className="hidden xl:sticky xl:top-24 xl:block">
+            <ul className="space-y-1 border-s border-ink/10 ps-4 text-sm">
+              {[
+                ["details", "01 · Details"],
+                ["gallery", "02 · Gallery"],
+                ["notes-art", "03 · Notes artwork"],
+                ["fragrance", "04 · Fragrance notes"],
+                ["collections", "05 · Collections"],
+                ["variants", "06 · Variants + stock"],
+              ].map(([href, label]) => (
+                <li key={href}>
+                  <a href={`#${href}`} className="block py-1.5 text-espresso transition hover:text-gold">
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <NotesArtworkField
-            productId={p.id}
-            slug={p.slug}
-            field="notes_image_desktop"
-            label="Detailed notes artwork — desktop"
-            initial={p.notes_image_desktop ?? ""}
-            save={saveNotesArtwork}
-          />
-          <NotesArtworkField
-            productId={p.id}
-            slug={p.slug}
-            field="notes_image_mobile"
-            label="Detailed notes artwork — mobile"
-            initial={p.notes_image_mobile ?? ""}
-            save={saveNotesArtwork}
-          />
-        </div>
+          <div className="grid min-w-0 gap-6">
+            {/* 01 — Details */}
+            <section id="details" className={sectionCls}>
+              {sectionHead("01", "Details", "Title, pricing, copy, lineup, flags")}
+              <AdminForm action={saveProduct} success="Details saved" className="grid gap-4 text-sm md:grid-cols-2">
+                <input type="hidden" name="id" value={p.id} />
+                <label className="block">Title (EN)<input name="title" defaultValue={p.title} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block">Title (AR transliteration)<input name="title_ar" defaultValue={p.title_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block">Price Dhs<input name="price" type="number" step="0.01" defaultValue={p.price} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block">Compare-at<input name="compare_at" type="number" step="0.01" defaultValue={p.compare_at ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block md:col-span-2">Short about (PDP About block)<textarea name="short_desc" rows={2} defaultValue={p.short_desc ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block md:col-span-2">Short about AR<textarea name="short_desc_ar" rows={2} defaultValue={p.short_desc_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block">Lineup
+                  <select name="lineup_id" defaultValue={p.lineup_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
+                    <option value="">— none —</option>
+                    {((lineups as { id: string; title: string }[] | null) ?? []).map((l) => (
+                      <option key={l.id} value={l.id}>{l.title}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">How-to-use guide
+                  <select name="ritual_id" defaultValue={p.ritual_id ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2">
+                    <option value="">— none —</option>
+                    {((rituals as { id: string; title: string }[] | null) ?? []).map((r) => (
+                      <option key={r.id} value={r.id}>{r.title}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 md:col-span-2">
+                  <label className="flex cursor-pointer items-center gap-2 border border-gold/50 bg-gold-wash/60 px-3 py-1.5 font-medium"><input type="checkbox" name="is_active" defaultChecked={p.is_active ?? true} className="size-4 accent-[#1c1917]" /> Visible on store</label>
+                  <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" name="featured" defaultChecked={p.featured} className="size-4 accent-[#1c1917]" /> Featured</label>
+                  <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" name="is_new" defaultChecked={p.is_new} className="size-4 accent-[#1c1917]" /> New</label>
+                  <label className="flex cursor-pointer items-center gap-2"><input type="checkbox" name="is_best_seller" defaultChecked={p.is_best_seller} className="size-4 accent-[#1c1917]" /> Best seller</label>
+                </div>
+                <SaveButton className="md:col-span-2">Save details</SaveButton>
+              </AdminForm>
+            </section>
 
-        <section className="border border-ink/10 bg-white p-6">
-          <h2 className="font-display text-xl">Images (Supabase Storage)</h2>
-          <div className="mt-4">
-            <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} />
-          </div>
-        </section>
-      </div>
+            {/* 02 — Gallery */}
+            <section id="gallery" className={sectionCls}>
+              {sectionHead("02", "Gallery", "Drag-drop · arrows reorder · first is primary")}
+              <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} />
+            </section>
 
-      <section className="mt-6 border border-ink/10 bg-white p-6">
-        <h2 className="font-display text-xl">Fragrance notes (PDP dots)</h2>
-        <p className="mt-1 text-xs text-ink/60">Pick the pyramid per note — position orders dots inside each tier.</p>
-        <AdminForm action={saveProductNotes} success="Notes saved" className="mt-4 space-y-2 text-sm">
-          <input type="hidden" name="product_id" value={p.id} />
-          <input
-            type="hidden"
-            name="note_ids"
-            value={((allNotes as { id: string }[] | null) ?? []).map((n) => n.id).join(",")}
-          />
-          {((allNotes as { id: string; name: string; color: string }[] | null) ?? []).map((n) => {
-            const a = assignedMap.get(n.id);
-            return (
-              <div key={n.id} className="flex items-center gap-3 border-t border-ink/10 pt-2">
-                <span className="size-5 shrink-0 rounded-full ring-1 ring-ink/15" style={{ backgroundColor: n.color }} />
-                <span className="w-40 truncate">{n.name}</span>
-                <select name={`kind_${n.id}`} defaultValue={a?.kind ?? "none"} className="border border-ink/20 px-2 py-1.5">
-                  <option value="none">—</option>
-                  <option value="top">Top</option>
-                  <option value="heart">Heart</option>
-                  <option value="base">Base</option>
-                </select>
-                <input name={`pos_${n.id}`} type="number" defaultValue={a?.position ?? 0} className="w-20 border border-ink/20 px-2 py-1.5" />
+            {/* 03 — Notes artwork */}
+            <section id="notes-art" className={sectionCls}>
+              {sectionHead("03", "Detailed-notes artwork", "Desktop + mobile pair")}
+              <div className="grid gap-4 md:grid-cols-2">
+                <NotesArtworkField
+                  productId={p.id}
+                  slug={p.slug}
+                  field="notes_image_desktop"
+                  label="Desktop"
+                  initial={p.notes_image_desktop ?? ""}
+                  save={saveNotesArtwork}
+                />
+                <NotesArtworkField
+                  productId={p.id}
+                  slug={p.slug}
+                  field="notes_image_mobile"
+                  label="Mobile"
+                  initial={p.notes_image_mobile ?? ""}
+                  save={saveNotesArtwork}
+                />
               </div>
-            );
-          })}
-          <SaveButton className="w-full">Save notes</SaveButton>
-        </AdminForm>
-      </section>
+            </section>
 
-      <section className="mt-6 border border-ink/10 bg-white p-6">
-        <h2 className="font-display text-xl">Variants + stock</h2>
-        <div className="mt-4 space-y-4">
-          {(variants ?? []).map((v: { id: string; title: string; price: number; stock: number; sku: string | null }) => (
-            <AdminForm key={v.id} action={saveVariant} success="Variant saved" className="grid gap-2 border-t border-ink/10 pt-4 text-sm sm:grid-cols-5">
-              <input type="hidden" name="variant_id" value={v.id} />
-              <input type="hidden" name="product_id" value={p.id} />
-              <input name="v_title" defaultValue={v.title} className="border border-ink/20 px-2 py-1.5" />
-              <input name="v_price" type="number" step="0.01" defaultValue={v.price} className="border border-ink/20 px-2 py-1.5" />
-              <input name="v_stock" type="number" defaultValue={v.stock} className="border border-ink/20 px-2 py-1.5" />
-              <input name="v_sku" defaultValue={v.sku ?? ""} placeholder="SKU" className="border border-ink/20 px-2 py-1.5" />
-              <SaveButton className="sm:col-span-5">Save variant</SaveButton>
-            </AdminForm>
-          ))}
+            {/* 04 — Fragrance notes */}
+            <section id="fragrance" className={sectionCls}>
+              {sectionHead("04", "Fragrance notes", "Position orders dots inside each tier")}
+              <AdminForm action={saveProductNotes} success="Notes saved" className="text-sm">
+                <input type="hidden" name="product_id" value={p.id} />
+                <input
+                  type="hidden"
+                  name="note_ids"
+                  value={((allNotes as { id: string }[] | null) ?? []).map((n) => n.id).join(",")}
+                />
+                <div className="grid gap-x-6 md:grid-cols-2">
+                  {((allNotes as { id: string; name: string; color: string }[] | null) ?? []).map((n) => {
+                    const a = assignedMap.get(n.id);
+                    const active = (a?.kind ?? "none") !== "none";
+                    return (
+                      <div key={n.id} className={`flex items-center gap-3 border-t border-ink/10 py-2.5 ${active ? "" : "opacity-70"}`}>
+                        <span className="size-5 shrink-0 rounded-full ring-1 ring-ink/15" style={{ backgroundColor: n.color }} />
+                        <span className="w-36 shrink-0 truncate font-medium">{n.name}</span>
+                        <select name={`kind_${n.id}`} defaultValue={a?.kind ?? "none"} aria-label={`${n.name} tier`} className="border border-ink/20 bg-white px-2 py-1.5">
+                          <option value="none">—</option>
+                          <option value="top">Top</option>
+                          <option value="heart">Heart</option>
+                          <option value="base">Base</option>
+                        </select>
+                        <input name={`pos_${n.id}`} type="number" defaultValue={a?.position ?? 0} aria-label={`${n.name} position`} className="w-16 border border-ink/20 px-2 py-1.5" />
+                      </div>
+                    );
+                  })}
+                </div>
+                <SaveButton className="mt-4 w-full">Save notes</SaveButton>
+              </AdminForm>
+            </section>
+
+            {/* 05 — Collections */}
+            <section id="collections" className={sectionCls}>
+              {sectionHead("05", "Collections", "Where this product is listed")}
+              <AdminForm action={saveProductCollections} success="Collections saved" className="text-sm">
+                <input type="hidden" name="product_id" value={p.id} />
+                <div className="grid max-h-56 gap-1 overflow-y-auto border border-ink/10 p-3 sm:grid-cols-2">
+                  {((collections as { id: string; title: string }[] | null) ?? []).map((c) => (
+                    <label key={c.id} className="flex cursor-pointer items-center gap-2.5 px-2 py-1.5 transition hover:bg-sand/60">
+                      <input
+                        type="checkbox"
+                        name="collections"
+                        value={c.id}
+                        defaultChecked={inCollections.has(c.id)}
+                        className="size-4 accent-[#1c1917]"
+                      />
+                      {c.title}
+                    </label>
+                  ))}
+                </div>
+                <SaveButton className="mt-4 w-full">Save collections</SaveButton>
+              </AdminForm>
+            </section>
+
+            {/* 06 — Variants */}
+            <section id="variants" className={sectionCls}>
+              {sectionHead("06", "Variants + stock", "Size · price · stock · SKU")}
+              <div className="space-y-3">
+                {(variants ?? []).map((v: { id: string; title: string; price: number; stock: number; sku: string | null }) => (
+                  <AdminForm key={v.id} action={saveVariant} success="Variant saved" className="grid gap-2 border border-ink/10 bg-cream/40 p-3 text-sm sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-end">
+                    <input type="hidden" name="variant_id" value={v.id} />
+                    <input type="hidden" name="product_id" value={p.id} />
+                    <label className="block">Size<input name="v_title" defaultValue={v.title} className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5" /></label>
+                    <label className="block">Price<input name="v_price" type="number" step="0.01" defaultValue={v.price} className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5" /></label>
+                    <label className="block">Stock<input name="v_stock" type="number" defaultValue={v.stock} className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5" /></label>
+                    <label className="block">SKU<input name="v_sku" defaultValue={v.sku ?? ""} placeholder="—" className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5" /></label>
+                    <SaveButton>Save</SaveButton>
+                  </AdminForm>
+                ))}
+              </div>
+            </section>
+          </div>
         </div>
-      </section>
       </div>
     </>
   );
