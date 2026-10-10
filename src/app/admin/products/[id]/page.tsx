@@ -28,9 +28,20 @@ async function saveProduct(formData: FormData) {
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
       is_best_seller: formData.get("is_best_seller") === "on",
+      is_active: formData.get("is_active") === "on",
     })
     .eq("id", id);
+  const { data: prod } = await supabase.from("products").select("slug").eq("id", id).single();
   revalidatePath(`/admin/products/${id}`);
+  revalidatePath("/admin/products");
+  // PDP + listings now, no rebuild.
+  const slug = (prod as { slug?: string } | null)?.slug;
+  if (slug) {
+    revalidatePath(`/product/${slug}`, "page");
+    revalidatePath(`/ar/product/${slug}`, "page");
+  }
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
 }
 
 async function saveVariant(formData: FormData) {
@@ -50,6 +61,17 @@ async function saveVariant(formData: FormData) {
     })
     .eq("id", id);
   revalidatePath(`/admin/products/${productId}`);
+  await touchStorefront(supabase, productId);
+}
+
+async function touchStorefront(supabase: Awaited<ReturnType<typeof createClient>>, productId: string) {
+  const { data } = await supabase.from("products").select("slug").eq("id", productId).single();
+  const slug = (data as { slug?: string } | null)?.slug;
+  if (!slug) return;
+  revalidatePath(`/product/${slug}`, "page");
+  revalidatePath(`/ar/product/${slug}`, "page");
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
 }
 
 async function saveProductNotes(formData: FormData) {
@@ -80,6 +102,7 @@ async function saveProductNotes(formData: FormData) {
     if (error) throw new Error(error.message);
   }
   revalidatePath(`/admin/products/${productId}`);
+  await touchStorefront(supabase, productId);
 }
 
 async function saveNotesArtwork(productId: string, field: string, url: string) {
@@ -91,6 +114,7 @@ async function saveNotesArtwork(productId: string, field: string, url: string) {
   const { error } = await supabase.from("products").update({ [field]: url }).eq("id", productId);
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/products/${productId}`);
+  await touchStorefront(supabase, productId);
 }
 
 async function moveToBin(formData: FormData) {
@@ -99,11 +123,19 @@ async function moveToBin(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id"));
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("products").select("slug").eq("id", id).single();
   await supabase
     .from("products")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id);
   revalidatePath("/admin/products");
+  const dslug = (doomed as { slug?: string } | null)?.slug;
+  if (dslug) {
+    revalidatePath(`/product/${dslug}`, "page");
+    revalidatePath(`/ar/product/${dslug}`, "page");
+  }
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
   redirect("/admin/products");
 }
 
@@ -179,7 +211,8 @@ export default async function ProductDetail(props: {
               </select>
             </label>
           </div>
-          <div className="flex gap-4 text-sm">
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2 border border-gold/50 bg-gold-wash/60 px-3 py-1.5"><input type="checkbox" name="is_active" defaultChecked={p.is_active ?? true} /> Visible on store</label>
             <label><input type="checkbox" name="featured" defaultChecked={p.featured} /> Featured</label>
             <label><input type="checkbox" name="is_new" defaultChecked={p.is_new} /> New</label>
             <label><input type="checkbox" name="is_best_seller" defaultChecked={p.is_best_seller} /> Best seller</label>

@@ -36,6 +36,8 @@ export interface Product {
   isBestSeller?: boolean;
   /** Shopify template variant: standard (product.json) vs miskalgazaal (product.miskalgazaal.json single-product layout). */
   template?: "standard" | "miskalgazaal";
+  /** Storefront visibility (admin can pause without deleting). */
+  isActive?: boolean;
   /** Lineup classification (PDP "More from the lineup"). */
   lineupId?: string;
   lineupSlug?: string;

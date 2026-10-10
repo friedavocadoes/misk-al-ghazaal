@@ -7,7 +7,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
 import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
-import { sendMail } from "@/lib/mailer";
+import { sendMail, buildOrderEmail } from "@/lib/mailer";
 
 const NEXT_STATUSES = ORDER_STATUSES;
 
@@ -41,16 +41,41 @@ async function updateOrder(formData: FormData) {
   // Status email (free SMTP; skipped when unconfigured or on no-change).
   const cur = current as { status?: string; email?: string | null; customer_name?: string; order_no?: string } | null;
   if (cur?.email && cur.status !== toStatus) {
-    const trackLine = trackingNo
-      ? `<p>Tracking: <strong dir="ltr">${trackingNo}</strong>${trackingUrl ? ` — <a href="${trackingUrl}">track your parcel</a>` : ""}</p>`
-      : "";
-    await sendMail({
-      to: cur.email,
-      subject: `Order ${cur.order_no ?? ""} — ${statusLabel(toStatus)}`,
-      title: `Order ${statusLabel(toStatus).toLowerCase()}.`,
-      preheader: `${cur.order_no ?? ""} · Misk Al Ghazaal`,
-      bodyHtml: `<p>Dear ${cur.customer_name ?? "client"},</p><p>Your order <strong>${cur.order_no ?? ""}</strong> is now <strong>${statusLabel(toStatus)}</strong>.</p>${trackLine}`,
+    const { data: full } = await supabase
+      .from("orders")
+      .select("total, subtotal, discount, shipping, address, city, emirate, country_code, state_name, postcode, address_label, delivery_lat, delivery_lng, coupon_code, created_at")
+      .eq("id", id)
+      .single();
+    const { data: itemRows } = await supabase.from("order_items").select("title, qty, unit_price").eq("order_id", id);
+    const f = (full ?? {}) as {
+      total?: number; subtotal?: number; discount?: number; shipping?: number;
+      address?: string; city?: string; emirate?: string; country_code?: string;
+      state_name?: string; postcode?: string; address_label?: string;
+      delivery_lat?: number | null; delivery_lng?: number | null;
+      coupon_code?: string; created_at?: string;
+    };
+    const mail = buildOrderEmail({
+      orderNo: cur.order_no ?? "",
+      date: f.created_at ? new Date(f.created_at).toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }) : "",
+      statusLabel: statusLabel(toStatus),
+      customerName: cur.customer_name ?? "client",
+      lines: ((itemRows as { title: string; qty: number; unit_price: number }[] | null) ?? []).map((l) => ({
+        title: l.title,
+        qty: l.qty,
+        unit: Number(l.unit_price),
+      })),
+      origin: "",
+      subtotal: Number(f.subtotal ?? 0),
+      discount: Number(f.discount ?? 0),
+      shipping: Number(f.shipping ?? 0),
+      total: Number(f.total ?? 0),
+      addressHtml: `${f.address ?? ""}<br />${[f.city, f.state_name, f.postcode, f.country_code].filter(Boolean).join(" · ")}`,
+      pinUrl: f.delivery_lat != null && f.delivery_lng != null ? `https://www.google.com/maps/search/?api=1&query=${f.delivery_lat},${f.delivery_lng}` : undefined,
+      trackingNo: trackingNo ?? undefined,
+      trackingUrl: trackingUrl ?? undefined,
+      couponCode: f.coupon_code || undefined,
     });
+    await sendMail({ to: cur.email, ...mail });
   }
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");

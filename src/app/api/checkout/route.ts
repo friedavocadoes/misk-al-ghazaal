@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { quoteBag, type BagLine } from "@/lib/pricing";
-import { orderLinesHtml, sendMail } from "@/lib/mailer";
+import { buildOrderEmail, sendMail } from "@/lib/mailer";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
 // (coupons + referral + shipping in one place), gift lines, coupon usage +
@@ -201,19 +201,37 @@ export async function POST(req: Request) {
 
     // Order confirmation email (free SMTP; skipped when unconfigured).
     if (email) {
-      await sendMail({
-        to: email,
-        subject: `Order ${(order as { order_no: string }).order_no} received — Misk Al Ghazaal`,
-        title: "Shukran — order received.",
-        preheader: `Order ${(order as { order_no: string }).order_no} · cash on delivery`,
-        bodyHtml: `<p>Dear ${name},</p><p>Your order is confirmed and being prepared. Our team will call to confirm before dispatch.</p>${orderLinesHtml(
-          priced.map((l) => ({ title: l.title, qty: l.qty, unit: l.unit })),
-          quote.subtotal,
-          quote.discount,
-          quote.shipping,
-          quote.total,
-        )}`,
+      const origin = new URL(req.url).origin;
+      const { data: faces } = await admin
+        .from("products")
+        .select("slug, images")
+        .in("slug", priced.map((l) => l.slug));
+      const faceMap = new Map(
+        ((faces as { slug: string; images: string[] }[] | null) ?? []).map((f) => [f.slug, f.images?.[0] ?? ""]),
+      );
+      const cityName = ((body.city ?? "Dubai") as string).trim() || "Dubai";
+      const stateName = ((body.state ?? body.emirate ?? "Dubai") as string).trim() || "Dubai";
+      const addrHtml = `${address}<br />${[cityName, stateName, (body.postcode ?? "").trim(), countryCode].filter(Boolean).join(" · ")}`;
+      const mail = buildOrderEmail({
+        orderNo: (order as { order_no: string }).order_no,
+        date: new Date().toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }),
+        statusLabel: "received",
+        customerName: name,
+        lines: priced.map((l) => ({
+          title: l.title,
+          qty: l.qty,
+          unit: l.unit,
+          ...(faceMap.get(l.slug) ? { image: faceMap.get(l.slug) as string, href: `/product/${l.slug}` } : {}),
+        })),
+        origin,
+        subtotal: quote.subtotal,
+        discount: quote.discount,
+        shipping: quote.shipping,
+        total: quote.total,
+        addressHtml: addrHtml,
+        couponCode: quote.couponCode || undefined,
       });
+      await sendMail({ to: email, ...mail });
     }
 
     return NextResponse.json({

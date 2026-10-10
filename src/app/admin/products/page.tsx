@@ -1,95 +1,213 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { Search } from "lucide-react";
+import { ActionButton } from "@/components/admin/admin-form";
+import { Plus, Search } from "lucide-react";
+
+async function bulkProducts(formData: FormData) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const ids = formData.getAll("ids").map(String).filter(Boolean);
+  const op = String(formData.get("op"));
+  if (!ids.length) return;
+  if (op !== "activate" && op !== "deactivate" && op !== "delete") return;
+  const supabase = await createClient();
+  if (op === "delete") {
+    await supabase.from("products").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+  } else {
+    await supabase.from("products").update({ is_active: op === "activate" }).in("id", ids);
+  }
+  // Storefront now: every touched PDP + the pages that list them.
+  const { data } = await supabase.from("products").select("slug").in("id", ids);
+  for (const p of (data as { slug: string }[] | null) ?? []) {
+    revalidatePath(`/product/${p.slug}`, "page");
+    revalidatePath(`/ar/product/${p.slug}`, "page");
+  }
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
+  revalidatePath("/admin/products");
+}
 
 export default async function ProductsPage(props: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; collection?: string; lineup?: string; status?: string }>;
 }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   if (session.role !== "super_admin") redirect("/admin/orders");
 
-  const { q } = await props.searchParams;
-  const query = (q ?? "").trim();
+  const sp = await props.searchParams;
+  const query = (sp.q ?? "").trim();
+  const collectionFilter = sp.collection ?? "";
+  const lineupFilter = sp.lineup ?? "";
+  const statusFilter = sp.status ?? "all";
+
   const supabase = await createClient();
-  let req = supabase
-    .from("products")
-    .select("id,slug,title,price,images")
-    .is("deleted_at", null)
-    .order("title")
-    .limit(200);
-  if (query) req = req.ilike("title", `%${query}%`);
-  const { data } = await req;
-  const rows =
-    (data as { id: string; slug: string; title: string; price: number; images: string[] }[]) ?? [];
+  // select("*"): never breaks on pending migrations (missing columns read
+  // as undefined below instead of 500ing the whole console).
+  const [{ data: prods }, { data: collections }, { data: lineups }, { data: links }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*")
+      .is("deleted_at", null)
+      .order("title")
+      .limit(300),
+    supabase.from("collections").select("id,slug,title").is("deleted_at", null).order("sort"),
+    supabase.from("lineups").select("id,slug,title").order("sort"),
+    supabase.from("product_collections").select("product_id,collection_id"),
+  ]);
+
+  type Row = {
+    id: string; slug: string; title: string; price: number; images: string[];
+    is_active?: boolean | null; lineup_id?: string | null;
+  };
+  let rows = (((prods as Row[] | null) ?? []).map((p) => ({
+    ...p,
+    images: p.images ?? [],
+    is_active: p.is_active ?? true,
+  })));
+  if (query) rows = rows.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.slug.includes(query.toLowerCase()));
+  if (lineupFilter) rows = rows.filter((p) => p.lineup_id === lineupFilter);
+  if (statusFilter === "active") rows = rows.filter((p) => p.is_active);
+  if (statusFilter === "paused") rows = rows.filter((p) => !p.is_active);
+  if (collectionFilter) {
+    const inColl = new Set(
+      ((links as { product_id: string; collection_id: string }[] | null) ?? [])
+        .filter((l) => l.collection_id === collectionFilter)
+        .map((l) => l.product_id),
+    );
+    rows = rows.filter((p) => inColl.has(p.id));
+  }
+
+  const lineupName = new Map(((lineups as { id: string; title: string }[] | null) ?? []).map((l) => [l.id, l.title]));
+  const collCount = new Map<string, number>();
+  for (const l of ((links as { product_id: string; collection_id: string }[] | null) ?? [])) {
+    collCount.set(l.product_id, (collCount.get(l.product_id) ?? 0) + 1);
+  }
+
+  const selectCls = "border border-ink/20 bg-white px-3 py-2 text-sm";
 
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="flex items-center justify-between border-b border-ink/10 pb-6">
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-6">
           <div>
             <p className="eyebrow">Products</p>
-            <h1 className="font-display text-3xl">Catalog</h1>
+            <h1 className="font-display text-3xl">Catalog {rows.length > 0 && <span className="text-lg text-ink/50">({rows.length})</span>}</h1>
           </div>
-          <Link
-            href="/admin/bin?tab=products"
-            className="border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50"
-          >
-            Recycle bin
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/products/new"
+              className="flex items-center gap-2 bg-ink px-4 py-2 text-sm text-white transition hover:bg-ink/85"
+            >
+              <Plus className="size-4" /> New product
+            </Link>
+            <Link
+              href="/admin/bin?tab=products"
+              className="border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50"
+            >
+              Recycle bin
+            </Link>
+          </div>
         </div>
-        <form action="/admin/products" method="get" className="mt-6 flex items-center gap-2 border border-ink/10 bg-white px-4 py-1.5 focus-within:border-gold">
-          <Search className="size-4 shrink-0 text-fog" />
-          <input
-            name="q"
-            defaultValue={query}
-            placeholder="Search the catalog…"
-            aria-label="Search products"
-            className="w-full bg-transparent py-2 text-sm text-ink placeholder:text-fog focus:outline-none"
-          />
-          {query && (
-            <Link href="/admin/products" className="shrink-0 text-xs text-fog hover:text-ink" aria-label="Clear search">
-              ✕
+
+        {/* Filters: search + group by collection / lineup / status */}
+        <form action="/admin/products" method="get" className="mt-6 flex flex-wrap items-center gap-2">
+          <span className="flex min-w-52 flex-1 items-center gap-2 border border-ink/10 bg-white px-3 focus-within:border-gold">
+            <Search className="size-4 shrink-0 text-fog" />
+            <input
+              name="q"
+              defaultValue={query}
+              placeholder="Search title or slug…"
+              aria-label="Search products"
+              className="w-full bg-transparent py-2 text-sm focus:outline-none"
+            />
+          </span>
+          <select name="collection" defaultValue={collectionFilter} className={selectCls} aria-label="Collection">
+            <option value="">All collections</option>
+            {((collections as { id: string; slug: string; title: string }[] | null) ?? []).map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+          <select name="lineup" defaultValue={lineupFilter} className={selectCls} aria-label="Lineup">
+            <option value="">All lineups</option>
+            {((lineups as { id: string; title: string }[] | null) ?? []).map((l) => (
+              <option key={l.id} value={l.id}>{l.title}</option>
+            ))}
+          </select>
+          <select name="status" defaultValue={statusFilter} className={selectCls} aria-label="Status">
+            <option value="all">Active + paused</option>
+            <option value="active">Active only</option>
+            <option value="paused">Paused only</option>
+          </select>
+          <button className="cursor-pointer border border-ink bg-ink px-4 py-2 text-sm text-white transition hover:bg-ink/85">
+            Filter
+          </button>
+          {(query || collectionFilter || lineupFilter || statusFilter !== "all") && (
+            <Link href="/admin/products" className="px-2 text-xs text-fog hover:text-ink" aria-label="Clear filters">
+              ✕ Clear
             </Link>
           )}
         </form>
+
         {rows.length === 0 ? (
-          <p className="mt-6 border border-ink/10 bg-white p-4 text-sm">
-            No products — run <code>supabase/seed.sql</code> or add rows in
-            Dashboard → Table Editor.
+          <p className="mt-6 border border-ink/10 bg-white p-6 text-center text-sm text-ink/60">
+            No products match — <Link href="/admin/products/new" className="link-underline">create one</Link> or clear the filters.
           </p>
         ) : (
-          <div className="mt-6 divide-y divide-ink/10 border border-ink/10 bg-white">
-            {rows.map((p) => (
-              <Link
-                key={p.id}
-                href={`/admin/products/${p.id}`}
-                className="admin-row flex items-center gap-4 p-4"
-              >
-                <span className="block size-12 shrink-0 overflow-hidden border border-ink/10 bg-sand">
-                  {p.images?.[0] ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={p.images[0]} alt="" className="size-full object-cover" loading="lazy" />
-                  ) : (
-                    <span className="flex size-full items-center justify-center font-display text-lg italic text-fog">
-                      {p.title.charAt(0)}
-                    </span>
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{p.title}</p>
-                  <p className="truncate text-sm text-ink/60">
-                    /{p.slug} · {p.images?.length ?? 0} images
-                  </p>
+          <form action={bulkProducts} className="mt-6 border border-ink/10 bg-white">
+            <div className="flex flex-wrap items-center gap-2 border-b border-ink/10 bg-cream/60 px-4 py-3 text-sm">
+              <span className="me-1 text-ink/60">{rows.length} shown — tick to bulk-edit:</span>
+              <select name="op" defaultValue="deactivate" className={selectCls} aria-label="Bulk action">
+                <option value="deactivate">Pause (hide)</option>
+                <option value="activate">Activate (show)</option>
+                <option value="delete">Move to bin</option>
+              </select>
+              <ActionButton>Apply to selected</ActionButton>
+            </div>
+            <div className="divide-y divide-ink/10">
+              {rows.map((p) => (
+                <div key={p.id} className="admin-row flex items-center gap-4 p-4">
+                  <input
+                    type="checkbox"
+                    name="ids"
+                    value={p.id}
+                    aria-label={`Select ${p.title}`}
+                    className="size-4 shrink-0 cursor-pointer accent-[#1c1917]"
+                  />
+                  <Link href={`/admin/products/${p.id}`} className="block size-12 shrink-0 overflow-hidden border border-ink/10 bg-sand">
+                    {p.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.images[0]} alt="" className="size-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex size-full items-center justify-center font-display text-lg italic text-fog">
+                        {p.title.charAt(0)}
+                      </span>
+                    )}
+                  </Link>
+                  <Link href={`/admin/products/${p.id}`} className="min-w-0 flex-1">
+                    <p className="truncate font-medium">
+                      {p.title}
+                      {!p.is_active && (
+                        <span className="ms-2 border border-gold/50 bg-gold-wash/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-[0.14em] text-gold">
+                          Paused
+                        </span>
+                      )}
+                    </p>
+                    <p className="truncate text-sm text-ink/60">
+                      /{p.slug} · {p.images?.length ?? 0} images · {collCount.get(p.id) ?? 0} collections
+                      {p.lineup_id && lineupName.get(p.lineup_id) ? ` · ${lineupName.get(p.lineup_id)}` : ""}
+                    </p>
+                  </Link>
+                  <p className="shrink-0 font-medium">Dhs {Number(p.price).toFixed(2)}</p>
                 </div>
-                <p className="ms-auto shrink-0 font-medium">AED {Number(p.price).toFixed(2)}</p>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          </form>
         )}
       </div>
     </>

@@ -76,3 +76,72 @@ export function orderLinesHtml(
 <p>Subtotal Dhs ${subtotal.toFixed(2)}${discount > 0 ? ` · Discount −Dhs ${discount.toFixed(2)}` : ""} · Shipping ${shipping === 0 ? "complimentary" : `Dhs ${shipping.toFixed(2)}`}</p>
 <p style="font-size:20px">Total Dhs ${total.toFixed(2)} — cash on delivery.</p>`;
 }
+
+/** Full order-page email: header, items, totals, delivery + pin, tracking,
+    factory contact — mirrors what the shopper sees in /account/orders. */
+export function buildOrderEmail(opts: {
+  orderNo: string;
+  date: string;
+  statusLabel: string;
+  customerName: string;
+  lines: { title: string; qty: number; unit: number; image?: string; href?: string }[];
+  origin: string;
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  addressHtml: string;
+  pinUrl?: string;
+  trackingNo?: string;
+  trackingUrl?: string;
+  couponCode?: string;
+}): { subject: string; title: string; preheader: string; bodyHtml: string } {
+  const o = opts;
+  const itemRows = o.lines
+    .map((l) => {
+      const img = l.image
+        ? `<img src="${l.image.startsWith("http") ? l.image : `${o.origin}${l.image}`}" width="56" style="width:56px;height:70px;object-fit:cover;display:block" alt="" />`
+        : "";
+      const title = l.href ? `<a href="${o.origin}${l.href}" style="color:#1c1917">${l.title}</a>` : l.title;
+      return `<tr>
+<td style="padding:10px 0;border-bottom:1px solid #e9e1d2;vertical-align:top">${img}</td>
+<td style="padding:10px 0 10px 12px;border-bottom:1px solid #e9e1d2;vertical-align:top">${title}<br /><span style="color:#78716c">× ${l.qty}</span></td>
+<td align="right" style="padding:10px 0;border-bottom:1px solid #e9e1d2;vertical-align:top">Dhs ${(l.unit * l.qty).toFixed(2)}</td>
+</tr>`;
+    })
+    .join("");
+  const tracking = o.trackingNo
+    ? `<p>Tracking: <strong>${o.trackingNo}</strong>${o.trackingUrl ? ` — <a href="${o.trackingUrl}">track your parcel</a>` : ""}</p>`
+    : "";
+  return {
+    subject: `Order ${o.orderNo} — ${o.statusLabel} · Misk Al Ghazaal`,
+    title: o.statusLabel === "received" ? "Shukran — order received." : `Order ${o.statusLabel.toLowerCase()}.`,
+    preheader: `${o.orderNo} · ${o.date} · cash on delivery`,
+    bodyHtml: `<p>Dear ${o.customerName},</p>
+<p>Your order <strong>${o.orderNo}</strong> (${o.date}) is now <strong>${o.statusLabel}</strong>.</p>
+<table style="width:100%;border-collapse:collapse">${itemRows}</table>
+<p>Subtotal Dhs ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −Dhs ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `Dhs ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>
+<p style="font-size:20px">Total Dhs ${o.total.toFixed(2)} — cash on delivery.</p>
+<h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Delivery</h3>
+<p>${o.addressHtml}</p>
+${o.pinUrl ? `<p><a href="${o.pinUrl}">View delivery pin</a></p>` : ""}
+${tracking}
+<h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Need a hand?</h3>
+<p>Reply to this email or WhatsApp the factory — quote order ${o.orderNo}.</p>`,
+  };
+}
+
+export function buildWelcomeEmail(name: string): {
+  subject: string;
+  title: string;
+  preheader: string;
+  bodyHtml: string;
+} {
+  return {
+    subject: "Welcome to the Maison — Misk Al Ghazaal",
+    title: `Ahlan wa sahlan${name ? `, ${name}` : ""}.`,
+    preheader: "Your account is ready — invite friends, earn together.",
+    bodyHtml: `<p>Your maison account is ready. From here you can track every parcel, keep a wishlist, hold reward coupons — and invite friends: you both earn on their first order.</p>
+<p>Start with the icons: best sellers, new arrivals, holy oudh. Every order leaves with complimentary samples.</p>`,
+  };
+}

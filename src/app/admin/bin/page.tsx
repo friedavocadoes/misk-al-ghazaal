@@ -35,8 +35,26 @@ async function destroyItem(formData: FormData) {
     redirect("/admin/bin");
   }
   const supabase = await createClient();
+  // Hard-deleting a banner also removes its artwork from Storage so dead
+  // files never pile up (soft-deletes keep files for restores).
+  if (table === "banners") {
+    const { data: b } = await supabase
+      .from("banners")
+      .select("src, fallback")
+      .eq("id", String(formData.get("id")))
+      .single();
+    const paths = [b?.src, b?.fallback]
+      .filter((u): u is string => typeof u === "string")
+      .map((u) => u.match(/\/storage\/v1\/object\/public\/banners\/(.+)$/)?.[1])
+      .filter((p): p is string => !!p);
+    if (paths.length) await supabase.storage.from("banners").remove(paths);
+  }
   await supabase.from(table).delete().eq("id", String(formData.get("id")));
   revalidatePath("/admin/bin");
+  if (table === "banners") {
+    revalidatePath("/", "page");
+    revalidatePath("/ar", "page");
+  }
 }
 
 function BinButtons({ table, id }: { table: BinTable; id: string }) {

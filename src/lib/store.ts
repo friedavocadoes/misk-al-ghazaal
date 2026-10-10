@@ -58,6 +58,7 @@ interface DbProduct {
   is_best_seller: boolean;
   template: "standard" | "miskalgazaal";
   lineup_id: string | null;
+  is_active: boolean | null;
   ritual_id: string | null;
   notes_image_desktop: string | null;
   notes_image_mobile: string | null;
@@ -153,6 +154,7 @@ function toProduct(
     ...(p.is_new ? { isNew: true } : {}),
     ...(p.is_best_seller ? { isBestSeller: true } : {}),
     template: p.template ?? "standard",
+    isActive: p.is_active ?? true,
   };
 }
 
@@ -162,7 +164,11 @@ async function fetchProductsWithRelations(filter?: {
 }): Promise<Product[]> {
   requireConfigured();
   const supabase = await createClient();
-  // Bin is invisible to shoppers: soft-deleted rows never leave the DB layer.
+  // Bin AND inactive products are invisible to shoppers: hidden rows never
+  // leave the DB layer (admin toggles is_active for seasonal pauses).
+  // The is_active predicate is applied in JS (not SQL) so builds keep
+  // working against databases where migration_product_active.sql hasn't
+  // run yet — missing column reads as visible, never as broken.
   let pq = supabase.from("products").select("*").is("deleted_at", null);
   if (filter?.slugs?.length) pq = pq.in("slug", filter.slugs);
   const { data: prods, error } = await pq;
@@ -228,7 +234,7 @@ async function fetchProductsWithRelations(filter?: {
     }
   }
 
-  let list = (prods as DbProduct[]).map((p) =>
+  let list = (prods as (DbProduct & { is_active?: boolean | null })[]).map((p) =>
     toProduct(
       p,
       variantMap.get(p.id) ?? [],
@@ -237,6 +243,7 @@ async function fetchProductsWithRelations(filter?: {
       p.lineup_id ? lineupMap.get(p.lineup_id) : undefined,
     ),
   );
+  list = list.filter((p) => p.isActive !== false);
   if (filter?.collectionId) {
     const { data: scoped } = await supabase
       .from("product_collections")
@@ -469,7 +476,7 @@ export async function searchCatalog(query: string): Promise<Product[]> {
     arr.push(v);
     vmap.set(v.product_id, arr);
   }
-  return (data as DbProduct[]).map((p) => toProduct(p, vmap.get(p.id) ?? [], [], []));
+  return (data as DbProduct[]).map((p) => toProduct(p, vmap.get(p.id) ?? [], [], [])).filter((p) => p.isActive !== false);
 }
 
 export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {

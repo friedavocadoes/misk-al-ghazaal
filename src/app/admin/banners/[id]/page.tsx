@@ -37,6 +37,8 @@ async function saveBanner(formData: FormData) {
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/banners");
   revalidatePath(`/admin/banners/${String(formData.get("id"))}`);
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
 }
 
 async function moveToBin(formData: FormData) {

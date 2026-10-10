@@ -21,7 +21,7 @@ export async function ensureProfile(
   userId: string,
   email: string | null,
   referredByCode?: string,
-): Promise<void> {
+): Promise<{ created: boolean }> {
   const { data: existing } = await admin
     .from("profiles")
     .select("id, referral_code, referred_by")
@@ -45,7 +45,7 @@ export async function ensureProfile(
         referral_code: code,
         referred_by: referrerId,
       });
-      if (!error) return;
+      if (!error) return { created: true };
       // Collision on referral_code (or a racing insert) — retry, then
       // fall back to updating the row the trigger may have created.
       const { data: retry } = await admin.from("profiles").select("id").eq("id", userId).single();
@@ -71,4 +71,5 @@ export async function ensureProfile(
   if (Object.keys(patch).length) {
     await admin.from("profiles").update(patch).eq("id", userId);
   }
+  return { created: false };
 }
