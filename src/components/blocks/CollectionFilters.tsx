@@ -11,45 +11,12 @@ import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 export interface ShopOption {
   slug: string;
   title: string;
   titleAr?: string;
-}
-
-function FilterSwitch({ on, onFlip, label }: { on: boolean; onFlip: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      onClick={onFlip}
-      className="group flex w-full cursor-pointer items-center justify-between gap-3 py-1.5 text-start"
-    >
-      <span
-        className={cn(
-          "text-sm transition-all duration-300 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5",
-          on ? "font-medium text-ink" : "text-espresso",
-        )}
-      >
-        {label}
-      </span>
-      <span
-        className={cn(
-          "relative h-[22px] w-10 shrink-0 rounded-full transition-colors duration-300",
-          on ? "bg-gold" : "bg-ink/15 group-hover:bg-ink/25",
-        )}
-      >
-        <span
-          className={cn(
-            "absolute top-[3px] size-4 rounded-full bg-white shadow transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-            on ? "inset-inline-end-[3px]" : "inset-inline-start-[3px]",
-          )}
-        />
-      </span>
-    </button>
-  );
 }
 
 // Staged Apply model for avail/sale/price/sort: controls collect locally,
@@ -120,26 +87,54 @@ export function CollectionFilters({
     sort !== (params.get("sort") ?? "featured") ||
     lineup !== (activeLineup ?? "");
 
-  const pushParams = (lineupValue: string) => {
+  const pushParams = (o: {
+    lineupValue: string;
+    availValue: boolean;
+    saleValue: boolean;
+    maxValue: number;
+    sortValue: string;
+  }) => {
     const next = new URLSearchParams(params.toString());
     next.delete("page");
     next.delete("min");
-    if (avail) next.set("avail", "in");
+    if (o.availValue) next.set("avail", "in");
     else next.delete("avail");
-    if (sale) next.set("sale", "1");
+    if (o.saleValue) next.set("sale", "1");
     else next.delete("sale");
-    if (max < ceiling) next.set("max", String(max));
+    if (o.maxValue < ceiling) next.set("max", String(o.maxValue));
     else next.delete("max");
-    if (lineupValue) next.set("lineup", lineupValue);
+    if (o.lineupValue) next.set("lineup", o.lineupValue);
     else next.delete("lineup");
-    if (sort !== "featured") next.set("sort", sort);
+    if (o.sortValue !== "featured") next.set("sort", o.sortValue);
     else next.delete("sort");
     router.push(`${basePath}${next.toString() ? `?${next}` : ""}`);
   };
 
+  const staged = () => ({
+    lineupValue: lineup,
+    availValue: avail,
+    saleValue: sale,
+    maxValue: max,
+    sortValue: sort,
+  });
+
   const apply = () => {
     setShopOpen(false);
-    pushParams(lineup);
+    pushParams(staged());
+  };
+
+  // Availability toggles commit instantly — binary flips need no staging.
+  const flipAvail = () => {
+    const v = !avail;
+    setAvail(v);
+    setShopOpen(false);
+    pushParams({ ...staged(), availValue: v });
+  };
+  const flipSale = () => {
+    const v = !sale;
+    setSale(v);
+    setShopOpen(false);
+    pushParams({ ...staged(), saleValue: v });
   };
 
   // Shop-by lineup commits instantly (staged facets ride along), so the
@@ -147,7 +142,7 @@ export function CollectionFilters({
   const applyLineup = (slug: string) => {
     setLineup(slug);
     setShopOpen(false);
-    pushParams(slug);
+    pushParams({ ...staged(), lineupValue: slug });
   };
 
   const clearHref = (() => {
@@ -353,9 +348,19 @@ export function CollectionFilters({
         {sectionHead("avail", t("availability"), avail || sale ? String((avail ? 1 : 0) + (sale ? 1 : 0)) : undefined)}
         {sectionBody(
           "avail",
-          <div>
-            <FilterSwitch on={avail} onFlip={() => setAvail((v) => !v)} label={t("inStock")} />
-            <FilterSwitch on={sale} onFlip={() => setSale((v) => !v)} label={t("onSale")} />
+          <div className="space-y-1">
+            <label className="flex cursor-pointer items-center justify-between gap-3 py-1.5">
+              <span className={cn("text-sm transition-colors", avail ? "font-medium text-ink" : "text-espresso")}>
+                {t("inStock")}
+              </span>
+              <Switch checked={avail} onCheckedChange={flipAvail} aria-label={t("inStock")} />
+            </label>
+            <label className="flex cursor-pointer items-center justify-between gap-3 py-1.5">
+              <span className={cn("text-sm transition-colors", sale ? "font-medium text-ink" : "text-espresso")}>
+                {t("onSale")}
+              </span>
+              <Switch checked={sale} onCheckedChange={flipSale} aria-label={t("onSale")} />
+            </label>
           </div>,
         )}
       </div>
