@@ -21,6 +21,7 @@ async function saveProduct(formData: FormData) {
       title_ar: String(formData.get("title_ar") || "") || null,
       price: Number(formData.get("price")),
       compare_at: formData.get("compare_at") ? Number(formData.get("compare_at")) : null,
+      sort: Math.trunc(Number(formData.get("sort") || 0)),
       short_desc: String(formData.get("short_desc") || "") || "",
       short_desc_ar: String(formData.get("short_desc_ar") || "") || null,
       lineup_id: String(formData.get("lineup_id") || "") || null,
@@ -268,6 +269,10 @@ export default async function ProductDetail(props: {
                 <label className="block">Title (AR transliteration)<input name="title_ar" defaultValue={p.title_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
                 <label className="block">Price Dhs<input name="price" type="number" step="0.01" defaultValue={p.price} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
                 <label className="block">Compare-at<input name="compare_at" type="number" step="0.01" defaultValue={p.compare_at ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+                <label className="block md:col-span-2">Rank weight
+                  <input name="sort" type="number" step="1" defaultValue={p.sort ?? 0} className="mt-1 w-full border border-ink/20 px-3 py-2" />
+                  <span className="mt-1 block text-xs text-ink/50">0 = automatic (newest first) · negative pins to top · 9999 sinks to bottom · best sellers + sales lift on top</span>
+                </label>
                 <label className="block md:col-span-2">Short about (PDP About block)<textarea name="short_desc" rows={2} defaultValue={p.short_desc ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
                 <label className="block md:col-span-2">Short about AR<textarea name="short_desc_ar" rows={2} defaultValue={p.short_desc_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
                 <label className="block">Lineup

@@ -24,6 +24,7 @@ export function ImageUploader({
       if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
       if (file.size > 3 * 1024 * 1024) throw new Error("Max 3MB per image.");
       const ext = file.name.split(".").pop()?.toLowerCase() || "webp";
+      // eslint-disable-next-line react-hooks/purity -- event handler, not render
       const path = `${prefix}-${Date.now()}.${ext}`;
       const supabase = createClient();
       const { error: upError } = await supabase.storage.from(bucket).upload(path, file, {
@@ -32,6 +33,7 @@ export function ImageUploader({
       });
       if (upError) throw upError;
       const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      setLastUrl(data.publicUrl);
       onUploaded(data.publicUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
@@ -39,6 +41,8 @@ export function ImageUploader({
       setBusy(false);
     }
   }
+
+  const [lastUrl, setLastUrl] = useState<string | null>(null);
 
   return (
     <div>
@@ -56,6 +60,11 @@ export function ImageUploader({
           }}
         />
       </label>
+      {lastUrl && (
+        <p className="mt-1 break-all text-xs text-ink/60" dir="ltr">
+          {lastUrl}
+        </p>
+      )}
       {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
     </div>
   );

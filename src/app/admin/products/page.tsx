@@ -63,12 +63,15 @@ export default async function ProductsPage(props: {
   type Row = {
     id: string; slug: string; title: string; price: number; images: string[];
     is_active?: boolean | null; lineup_id?: string | null;
+    sort?: number | null; sales_count?: number | null;
   };
   let rows = (((prods as Row[] | null) ?? []).map((p) => ({
     ...p,
     images: p.images ?? [],
     is_active: p.is_active ?? true,
   })));
+  // Console default: maison rank (manual weight → sales lift → newest).
+  rows = [...rows].sort((a, b) => ((a.sort ?? 0) - (b.sort ?? 0)) || ((b.sales_count ?? 0) - (a.sales_count ?? 0)));
   if (query) rows = rows.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.slug.includes(query.toLowerCase()));
   if (lineupFilter) rows = rows.filter((p) => p.lineup_id === lineupFilter);
   if (statusFilter === "active") rows = rows.filter((p) => p.is_active);
@@ -201,6 +204,7 @@ export default async function ProductsPage(props: {
                     <p className="truncate text-sm text-ink/60">
                       /{p.slug} · {p.images?.length ?? 0} images · {collCount.get(p.id) ?? 0} collections
                       {p.lineup_id && lineupName.get(p.lineup_id) ? ` · ${lineupName.get(p.lineup_id)}` : ""}
+                      {` · rank ${p.sort ?? 0} · ${p.sales_count ?? 0} sold`}
                     </p>
                   </Link>
                   <p className="shrink-0 font-medium">Dhs {Number(p.price).toFixed(2)}</p>

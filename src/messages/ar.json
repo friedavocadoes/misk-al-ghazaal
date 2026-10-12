@@ -111,14 +111,23 @@
   "Filters": {
     "refine": "تصفية",
     "clear": "مسح",
+    "collection": "المجموعة",
     "availability": "التوفر",
     "inStock": "المتوفر فقط",
+    "onSale": "تخفيض فقط",
+    "minRating": "التقييم",
+    "anyRating": "أي تقييم",
     "maxPrice": "السعر الأقصى",
+    "priceRange": "النطاق السعري",
+    "apply": "تطبيق",
     "sort": "ترتيب حسب",
     "featured": "المميز",
+    "popular": "الأكثر رواجاً",
+    "newest": "الأحدث",
     "priceAsc": "السعر: من الأقل للأعلى",
     "priceDesc": "السعر: من الأعلى للأقل",
-    "rating": "الأعلى تقييماً"
+    "rating": "الأعلى تقييماً",
+    "discount": "أكبر خصم"
   },
   "Collection": {
     "eyebrow": "المجموعة",

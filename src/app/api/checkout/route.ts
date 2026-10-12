@@ -133,6 +133,19 @@ export async function POST(req: Request) {
     for (const l of priced) {
       if (l.variantId) await admin.rpc("decrement_stock", { p_variant_id: l.variantId, p_qty: l.qty });
     }
+    // Light best-seller algo: every sold unit quietly pulls the product up
+    // the maison ranking (score subtracts sales_count — see rankScore).
+    const soldBySlug = new Map<string, number>();
+    for (const l of priced) {
+      soldBySlug.set(l.slug, (soldBySlug.get(l.slug) ?? 0) + l.qty);
+    }
+    for (const [slug, qty] of soldBySlug) {
+      const { data: cur } = await admin.from("products").select("sales_count").eq("slug", slug).single();
+      await admin
+        .from("products")
+        .update({ sales_count: Number((cur as { sales_count?: number } | null)?.sales_count ?? 0) + qty })
+        .eq("slug", slug);
+    }
 
     // Coupon usage accounting.
     if (quote.couponCode) {

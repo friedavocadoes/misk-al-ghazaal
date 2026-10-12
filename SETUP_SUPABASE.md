@@ -20,6 +20,8 @@ Dashboard → SQL Editor → New query, paste in order:
 5. `supabase/migration_delivery_cart.sql` (`delivery_countries` + seed,
    order delivery columns, `profiles.cart`)
 6. `supabase/migration_product_active.sql` (`products.is_active` pause flag)
+7. `supabase/migration_ranking_homepage.sql` (`sort` + `sales_count`,
+   `homepage_sections` + seed mirroring the current home)
 4. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
    coupons, referrals, reviews, PDP copy, order links — includes
    `increment_coupon_use()` + a starter notes library)

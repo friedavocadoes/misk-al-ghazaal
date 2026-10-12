@@ -38,6 +38,11 @@ export interface Product {
   template?: "standard" | "miskalgazaal";
   /** Storefront visibility (admin can pause without deleting). */
   isActive?: boolean;
+  /** Manual rank weight (admin): lower floats up, higher sinks. */
+  sortRank?: number;
+  /** Units sold — the light best-seller signal. */
+  salesCount?: number;
+  createdAt?: string;
   /** Lineup classification (PDP "More from the lineup"). */
   lineupId?: string;
   lineupSlug?: string;

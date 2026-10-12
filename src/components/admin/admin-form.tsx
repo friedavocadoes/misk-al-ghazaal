@@ -166,16 +166,19 @@ export function ActionButton({
   children,
   className,
   danger,
+  ariaLabel,
 }: {
   children: React.ReactNode;
   className?: string;
   danger?: boolean;
+  ariaLabel?: string;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
+      aria-label={ariaLabel}
       className={cn(
         "flex items-center justify-center gap-2 px-4 py-2 text-sm transition disabled:opacity-60",
         danger

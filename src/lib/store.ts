@@ -60,6 +60,9 @@ interface DbProduct {
   lineup_id: string | null;
   is_active: boolean | null;
   ritual_id: string | null;
+  sort: number | null;
+  sales_count: number | null;
+  created_at: string | null;
   notes_image_desktop: string | null;
   notes_image_mobile: string | null;
 }
@@ -155,6 +158,9 @@ function toProduct(
     ...(p.is_best_seller ? { isBestSeller: true } : {}),
     template: p.template ?? "standard",
     isActive: p.is_active ?? true,
+    sortRank: p.sort ?? 0,
+    salesCount: p.sales_count ?? 0,
+    ...(p.created_at ? { createdAt: p.created_at } : {}),
   };
 }
 
@@ -255,8 +261,24 @@ async function fetchProductsWithRelations(filter?: {
   return list;
 }
 
+/** Maison ranking: manual weight first, then the automatic lift
+    (best-seller flag + units sold), newest-first underneath it all.
+    Lower score surfaces first; equal scores break by created_at DESC —
+    so the last ADDED product tops every listing unless weighted. */
+export function rankScore(p: Product): number {
+  return (p.sortRank ?? 0) - (p.isBestSeller ? 5000 : 0) - (p.salesCount ?? 0);
+}
+
+export function rankProducts<T extends Product>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const d = rankScore(a) - rankScore(b);
+    if (d !== 0) return d;
+    return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+  });
+}
+
 export async function getProducts(): Promise<Product[]> {
-  return fetchProductsWithRelations();
+  return rankProducts(await fetchProductsWithRelations());
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -270,11 +292,13 @@ const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
 export async function getProductsByCollection(
   slug: string,
-  opts?: { sort?: string | null; maxPrice?: number | null; inStockOnly?: boolean },
+  opts?: { sort?: string | null; maxPrice?: number | null; minPrice?: number | null; inStockOnly?: boolean; onSaleOnly?: boolean; minRating?: number | null },
 ): Promise<Product[]> {
   requireConfigured();
   let items: Product[];
-  if (FLAG_COLLECTIONS.has(slug)) {
+  if (slug === "all") {
+    items = await fetchProductsWithRelations();
+  } else if (FLAG_COLLECTIONS.has(slug)) {
     const all = await fetchProductsWithRelations();
     items = all.filter((p) =>
       slug === "best-sellers" ? p.isBestSeller : p.isNew,
@@ -292,16 +316,8 @@ export async function getProductsByCollection(
       collectionId: (coll as { id: string }).id,
     });
   }
-  if (opts?.inStockOnly) {
-    items = items.filter((p) => p.variants.some((v) => v.stock > 0));
-  }
-  if (opts?.maxPrice != null) {
-    items = items.filter((p) => p.price <= (opts.maxPrice as number));
-  }
-  if (opts?.sort === "price-asc") items = [...items].sort((a, b) => a.price - b.price);
-  if (opts?.sort === "price-desc") items = [...items].sort((a, b) => b.price - a.price);
-  if (opts?.sort === "rating") items = [...items].sort((a, b) => b.rating - a.rating);
-  return items;
+  items = applyCatalogFacets(items, opts);
+  return applyCatalogSort(items, opts?.sort);
 }
 
 function toCategory(c: {
@@ -455,7 +471,50 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   return toArticle(data as Parameters<typeof toArticle>[0]);
 }
 
-export async function searchCatalog(query: string): Promise<Product[]> {
+export interface CatalogQuery {
+  sort?: string | null;
+  maxPrice?: number | null;
+  minPrice?: number | null;
+  inStockOnly?: boolean;
+  onSaleOnly?: boolean;
+  minRating?: number | null;
+}
+
+function applyCatalogFacets<T extends Product>(
+  items: T[],
+  opts?: CatalogQuery,
+): T[] {
+  let out = items;
+  if (opts?.inStockOnly) out = out.filter((p) => p.variants.some((v) => v.stock > 0));
+  if (opts?.onSaleOnly)
+    out = out.filter((p) => p.compareAtPrice != null && p.compareAtPrice > p.price);
+  if (opts?.minRating != null) out = out.filter((p) => p.rating >= (opts.minRating as number));
+  if (opts?.maxPrice != null) out = out.filter((p) => p.price <= (opts.maxPrice as number));
+  if (opts?.minPrice != null) out = out.filter((p) => p.price >= (opts.minPrice as number));
+  return out;
+}
+
+function applyCatalogSort<T extends Product>(items: T[], sort?: string | null): T[] {
+  if (sort === "price-asc") return [...items].sort((a, b) => a.price - b.price);
+  if (sort === "price-desc") return [...items].sort((a, b) => b.price - a.price);
+  if (sort === "rating") return [...items].sort((a, b) => b.rating - a.rating);
+  if (sort === "discount")
+    return [...items].sort((a, b) => discountPct(b) - discountPct(a) || rankScore(a) - rankScore(b));
+  if (sort === "newest")
+    return [...items].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  if (sort === "popular")
+    return [...items].sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0) || rankScore(a) - rankScore(b));
+  return rankProducts(items);
+}
+
+function discountPct(p: Product): number {
+  if (p.compareAtPrice == null || p.compareAtPrice <= p.price) return 0;
+  return (p.compareAtPrice - p.price) / p.compareAtPrice;
+}
+
+/** Full-text-lite search with the same facet/sort language as collections
+    (powers the search page + /api/catalog infinite scroll). */
+export async function searchCatalog(query: string, opts?: CatalogQuery): Promise<Product[]> {
   if (!query.trim()) return [];
   requireConfigured();
   const supabase = await createClient();
@@ -464,7 +523,7 @@ export async function searchCatalog(query: string): Promise<Product[]> {
     .select("*")
     .is("deleted_at", null)
     .ilike("title", `%${query.trim()}%`)
-    .limit(20);
+    .limit(60);
   if (error || !data) throw error ?? new Error("search failed");
   const ids = (data as DbProduct[]).map((p) => p.id);
   const { data: vars } = ids.length
@@ -476,7 +535,11 @@ export async function searchCatalog(query: string): Promise<Product[]> {
     arr.push(v);
     vmap.set(v.product_id, arr);
   }
-  return (data as DbProduct[]).map((p) => toProduct(p, vmap.get(p.id) ?? [], [], [])).filter((p) => p.isActive !== false);
+  let items = (data as DbProduct[])
+    .map((p) => toProduct(p, vmap.get(p.id) ?? [], [], []))
+    .filter((p) => p.isActive !== false);
+  items = applyCatalogFacets(items, opts);
+  return applyCatalogSort(items, opts?.sort);
 }
 
 export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {
@@ -508,6 +571,69 @@ export async function getLineups(): Promise<Lineup[]> {
   return (data as Parameters<typeof toLineup>[0][]).map(toLineup);
 }
 
+/** Active homepage sections in admin order (drives the home screen). */
+export interface HomepageSection {
+  id: string;
+  kind:
+    | "products_carousel"
+    | "product_tabs"
+    | "collections_grid"
+    | "brand_split"
+    | "parallax_cta"
+    | "story"
+    | "dual_feature"
+    | "testimonials"
+    | "blog_grid"
+    | "instagram"
+    | "image_banner";
+  title: string;
+  titleAr?: string;
+  eyebrow: string;
+  eyebrowAr?: string;
+  config: {
+    mode?: "collection" | "manual";
+    collection?: string;
+    slugs?: string[];
+    limit?: number;
+    src?: string;
+    href?: string;
+    title?: string;
+    cta?: string;
+    ctaAr?: string;
+  };
+}
+
+export async function getHomepageSections(): Promise<HomepageSection[]> {
+  requireConfigured();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("homepage_sections")
+    .select("*")
+    .eq("active", true)
+    .order("sort");
+  if (error || !data) return [];
+  return (data as {
+    id: string; kind: HomepageSection["kind"]; title: string; title_ar: string | null;
+    eyebrow: string | null; eyebrow_ar: string | null; config: HomepageSection["config"] | null;
+  }[]).map((s) => ({
+    id: s.id,
+    kind: s.kind,
+    title: s.title ?? "",
+    ...(s.title_ar ? { titleAr: s.title_ar } : {}),
+    eyebrow: s.eyebrow ?? "",
+    ...(s.eyebrow_ar ? { eyebrowAr: s.eyebrow_ar } : {}),
+    config: s.config ?? {},
+  }));
+}
+
+/** Ordered manual product picks (admin-curated carousel order). */
+export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
+  const clean = [...new Set(slugs.filter(Boolean))];
+  if (!clean.length) return [];
+  const list = await fetchProductsWithRelations({ slugs: clean });
+  const pos = new Map(clean.map((s, i) => [s, i]));
+  return rankProducts(list).sort((a, b) => (pos.get(a.slug) ?? 0) - (pos.get(b.slug) ?? 0));
+}
 /** Siblings in the same lineup (PDP "More from the lineup"). */
 export async function getLineupSiblings(product: Product, limit = 4): Promise<Product[]> {
   if (!product.lineupId) return [];
@@ -523,7 +649,7 @@ export async function getLineupSiblings(product: Product, limit = 4): Promise<Pr
   if (error || !data) return [];
   const slugs = (data as { slug: string }[]).map((r) => r.slug);
   if (!slugs.length) return [];
-  return fetchProductsWithRelations({ slugs });
+  return rankProducts(await fetchProductsWithRelations({ slugs }));
 }
 
 function toRitual(r: {

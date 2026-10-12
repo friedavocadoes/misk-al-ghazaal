@@ -111,14 +111,23 @@
   "Filters": {
     "refine": "Refine",
     "clear": "Clear",
+    "collection": "Collection",
     "availability": "Availability",
     "inStock": "In stock only",
+    "onSale": "On sale only",
+    "minRating": "Rating",
+    "anyRating": "Any rating",
     "maxPrice": "Max price",
+    "priceRange": "Price range",
+    "apply": "Apply",
     "sort": "Sort by",
     "featured": "Featured",
+    "popular": "Most popular",
+    "newest": "Newest",
     "priceAsc": "Price: low to high",
     "priceDesc": "Price: high to low",
-    "rating": "Top rated"
+    "rating": "Top rated",
+    "discount": "Biggest discount"
   },
   "Collection": {
     "eyebrow": "The Collection",

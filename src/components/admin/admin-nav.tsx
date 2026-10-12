@@ -40,6 +40,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/referrals", label: "Referrals" },
       { href: "/admin/reviews", label: "Reviews" },
       { href: "/admin/countries", label: "Countries" },
+      { href: "/admin/homepage", label: "Homepage" },
     ],
   },
 ];
