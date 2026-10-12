@@ -23,6 +23,7 @@ async function saveRitual(formData: FormData) {
     })
     .eq("id", String(formData.get("id")));
   revalidatePath(`/admin/rituals/${String(formData.get("id"))}`);
+  revalidatePath("/", "layout");
 }
 
 export default async function RitualDetail(props: { params: Promise<{ id: string }> }) {

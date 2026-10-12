@@ -28,6 +28,8 @@ async function createCoupon(formData: FormData) {
     is_public: formData.get("is_public") === "on",
   });
   revalidatePath("/admin/coupons");
+  // Coupon strip renders on every PDP — refresh the storefront tree.
+  revalidatePath("/", "layout");
 }
 
 const KIND_HINT: Record<string, string> = {

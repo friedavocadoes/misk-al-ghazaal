@@ -16,14 +16,21 @@ async function approveReview(formData: FormData) {
   const { data: review } = await admin.from("reviews").select("product_id").eq("id", id).single();
   await admin.from("reviews").update({ approved: true }).eq("id", id);
   // Recompute the product aggregate from approved reviews.
+  let slug: string | null = null;
   if (review) {
     const pid = (review as { product_id: string }).product_id;
     const { data: rows } = await admin.from("reviews").select("rating").eq("product_id", pid).eq("approved", true);
     const ratings = ((rows as { rating: number }[] | null) ?? []).map((r) => r.rating);
     const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
     await admin.from("products").update({ rating: Math.round(avg * 100) / 100, review_count: ratings.length }).eq("id", pid);
+    const { data: prod } = await admin.from("products").select("slug").eq("id", pid).single();
+    slug = (prod as { slug?: string } | null)?.slug ?? null;
   }
   revalidatePath("/admin/reviews");
+  if (slug) {
+    revalidatePath(`/product/${slug}`, "page");
+    revalidatePath(`/ar/product/${slug}`, "page");
+  }
 }
 
 async function deleteReview(formData: FormData) {
@@ -31,8 +38,17 @@ async function deleteReview(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const admin = await createAdminClient();
+  const { data: review } = await admin.from("reviews").select("product_id").eq("id", String(formData.get("id"))).single();
   await admin.from("reviews").delete().eq("id", String(formData.get("id")));
   revalidatePath("/admin/reviews");
+  if (review) {
+    const { data: prod } = await admin.from("products").select("slug").eq("id", (review as { product_id: string }).product_id).single();
+    const slug = (prod as { slug?: string } | null)?.slug;
+    if (slug) {
+      revalidatePath(`/product/${slug}`, "page");
+      revalidatePath(`/ar/product/${slug}`, "page");
+    }
+  }
 }
 
 export default async function ReviewsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {

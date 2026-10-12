@@ -709,7 +709,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <form
                 action={locale === "ar" ? "/ar/search" : "/search"}
                 method="get"
-                onSubmit={() => setSearchOpen(false)}
+                // NOTE: never unmount here (setSearchOpen) and rely on native
+                // submit — React flushes the close synchronously and the
+                // browser aborts navigation on a disconnected form
+                // ("closes and does nothing"). Navigate programmatically.
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
+                  setSearchOpen(false);
+                  router.push(`/search${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+                }}
               >
                 <div className="group relative mt-6">
                   <div className="flex items-end gap-3 border-b border-ink/20 pb-3 transition-colors focus-within:border-transparent">

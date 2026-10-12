@@ -11,10 +11,12 @@ export function ProductImagesEditor({
   productId,
   slug,
   initial,
+  revalidate,
 }: {
   productId: string;
   slug: string;
   initial: string[];
+  revalidate: (productId: string) => Promise<void>;
 }) {
   const [images, setImages] = useState<string[]>(initial);
   const [saving, setSaving] = useState(false);
@@ -26,6 +28,9 @@ export function ProductImagesEditor({
       const { error } = await supabase.from("products").update({ images: next }).eq("id", productId);
       if (error) throw error;
       setImages(next);
+      // Browser-client writes skip server actions — refresh the PDP +
+      // listings explicitly or the storefront stays stale.
+      await revalidate(productId);
       toast("Gallery saved", "ok");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Save failed", "bad");

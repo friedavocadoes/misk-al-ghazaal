@@ -18,6 +18,7 @@ async function createLineup(formData: FormData) {
     sort: Number(formData.get("sort") || 0),
   });
   revalidatePath("/admin/lineups");
+  revalidatePath("/", "layout");
 }
 
 async function saveLineup(formData: FormData) {
@@ -34,6 +35,7 @@ async function saveLineup(formData: FormData) {
     })
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/lineups");
+  revalidatePath("/", "layout");
 }
 
 async function deleteLineup(formData: FormData) {
@@ -43,6 +45,7 @@ async function deleteLineup(formData: FormData) {
   const supabase = await createClient();
   await supabase.from("lineups").delete().eq("id", String(formData.get("id")));
   revalidatePath("/admin/lineups");
+  revalidatePath("/", "layout");
 }
 
 export default async function LineupsPage() {

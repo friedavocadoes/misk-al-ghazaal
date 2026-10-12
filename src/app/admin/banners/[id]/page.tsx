@@ -41,6 +41,15 @@ async function saveBanner(formData: FormData) {
   revalidatePath("/ar", "page");
 }
 
+/** Homepage refresh for browser-client artwork saves. */
+async function revalidateHome() {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
+}
+
 async function moveToBin(formData: FormData) {
   "use server";
   const s = await getAdminSession();
@@ -51,6 +60,8 @@ async function moveToBin(formData: FormData) {
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/banners");
+  revalidatePath("/", "page");
+  revalidatePath("/ar", "page");
   redirect("/admin/banners");
 }
 
@@ -122,12 +133,14 @@ export default async function BannerDetail(props: {
               field="src"
               label="Image (src)"
               initial={b.src ?? ""}
+              revalidate={revalidateHome}
             />
             <BannerImageField
               bannerId={b.id}
               field="fallback"
               label="Fallback (shown if src 404s)"
               initial={b.fallback ?? ""}
+              revalidate={revalidateHome}
             />
           </section>
 

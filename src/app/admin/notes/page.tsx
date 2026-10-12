@@ -19,6 +19,7 @@ async function createNote(formData: FormData) {
     description_ar: String(formData.get("description_ar") || "") || null,
   });
   revalidatePath("/admin/notes");
+  revalidatePath("/", "layout");
 }
 
 async function saveNote(formData: FormData) {
@@ -36,6 +37,7 @@ async function saveNote(formData: FormData) {
     })
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/notes");
+  revalidatePath("/", "layout");
 }
 
 async function deleteNote(formData: FormData) {
@@ -45,6 +47,7 @@ async function deleteNote(formData: FormData) {
   const supabase = await createClient();
   await supabase.from("notes").delete().eq("id", String(formData.get("id")));
   revalidatePath("/admin/notes");
+  revalidatePath("/", "layout");
 }
 
 export default async function NotesPage() {

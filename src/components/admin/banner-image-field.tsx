@@ -12,11 +12,13 @@ export function BannerImageField({
   field,
   label,
   initial,
+  revalidate,
 }: {
   bannerId: string;
   field: "src" | "fallback";
   label: string;
   initial: string;
+  revalidate?: () => Promise<void>;
 }) {
   const [url, setUrl] = useState(initial);
   const [draft, setDraft] = useState(initial);
@@ -30,6 +32,8 @@ export function BannerImageField({
     await supabase.from("banners").update({ [field]: next }).eq("id", bannerId);
     setUrl(next);
     setDraft(next);
+    // Browser-client write: refresh the homepage explicitly.
+    if (revalidate) await revalidate();
     setSaving(false);
     setSaved(true);
   }

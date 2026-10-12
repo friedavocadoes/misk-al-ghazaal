@@ -31,6 +31,7 @@ async function saveCoupon(formData: FormData) {
     })
     .eq("id", id);
   revalidatePath(`/admin/coupons/${id}`);
+  revalidatePath("/", "layout");
 }
 
 function toLocal(v: string | null): string {

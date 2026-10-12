@@ -139,6 +139,18 @@ async function saveNotesArtwork(productId: string, field: string, url: string) {
   await touchStorefront(supabase, productId);
 }
 
+/** Storefront refresh for gallery saves (the editor persists via the
+    browser client, so no server action runs to revalidate otherwise —
+    that staleness is why new images needed a restart to appear). */
+async function revalidateGallery(productId: string) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const supabase = await createClient();
+  revalidatePath(`/admin/products/${productId}`);
+  await touchStorefront(supabase, productId);
+}
+
 async function moveToBin(formData: FormData) {
   "use server";
   const s = await getAdminSession();
@@ -304,7 +316,7 @@ export default async function ProductDetail(props: {
             {/* 02 — Gallery */}
             <section id="gallery" className={sectionCls}>
               {sectionHead("02", "Gallery", "Drag-drop · arrows reorder · first is primary")}
-              <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} />
+              <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} revalidate={revalidateGallery} />
             </section>
 
             {/* 03 — Notes artwork */}
