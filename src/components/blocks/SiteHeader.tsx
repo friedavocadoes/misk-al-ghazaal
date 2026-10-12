@@ -480,7 +480,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               }`}
             >
               <Image
-                src="/logo.webp"
+                src="/logo.png"
                 alt="Misk Al Ghazaal"
                 width={176}
                 height={176}
