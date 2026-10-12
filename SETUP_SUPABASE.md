@@ -116,9 +116,10 @@ read, super_admin write via RLS).
     Include apex + `www` + any preview domains you log in from. Supabase
     ignores `redirectTo` for origins missing here and falls back to the
     Site URL — that fallback is what bounces production Google logins to
-    `localhost:3000`. Set `NEXT_PUBLIC_SITE_URL=https://<your-domain>`
-    in production env so every auth redirect uses the exact allowlisted
-    origin. The app's `/auth/callback` finishes the flow and bootstraps
+    `localhost:3000`. (The app always sends the page's own origin from the
+    browser, so no env value can hijack it — but the origins below must
+    still be allowlisted or Supabase falls back regardless.) The app's
+    `/auth/callback` finishes the flow and bootstraps
     `profiles` (unique referral code + `?ref=` attribution).
 3. Email sending (reset links, confirmations): Supabase's built-in mailer
    works out of the box for testing but is heavily rate-limited. For

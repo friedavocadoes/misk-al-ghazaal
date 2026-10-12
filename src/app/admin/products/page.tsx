@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
-import { Plus, Search } from "lucide-react";
+import { AdminProductSearch } from "@/components/admin/admin-product-search";
+import { Plus } from "lucide-react";
 
 async function bulkProducts(formData: FormData) {
   "use server";
@@ -117,18 +118,12 @@ export default async function ProductsPage(props: {
           </div>
         </div>
 
-        {/* Filters: search + group by collection / lineup / status */}
-        <form action="/admin/products" method="get" className="mt-6 flex flex-wrap items-center gap-2">
-          <span className="flex min-w-52 flex-1 items-center gap-2 border border-ink/10 bg-white px-3 focus-within:border-gold">
-            <Search className="size-4 shrink-0 text-fog" />
-            <input
-              name="q"
-              defaultValue={query}
-              placeholder="Search title or slug…"
-              aria-label="Search products"
-              className="w-full bg-transparent py-2 text-sm focus:outline-none"
-            />
-          </span>
+        {/* Filters: live quick-find + group by collection / lineup / status */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <AdminProductSearch />
+        </div>
+        <form action="/admin/products" method="get" className="mt-2 flex flex-wrap items-center gap-2">
+          {query && <input type="hidden" name="q" value={query} />}
           <select name="collection" defaultValue={collectionFilter} className={selectCls} aria-label="Collection">
             <option value="">All collections</option>
             {((collections as { id: string; slug: string; title: string }[] | null) ?? []).map((c) => (

@@ -37,6 +37,7 @@ import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 import type { ShopMenuIcon } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { SearchSuggest, type SearchSuggestHandle } from "@/components/search/SearchSuggest";
 
 const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
   mars: Mars,
@@ -64,6 +65,14 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const [compact, setCompact] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const suggestRef = useRef<SearchSuggestHandle>(null);
+  // Badge pop: fly-to-bag ghosts dispatch `bag-landed` on arrival.
+  const [bagPulse, setBagPulse] = useState(0);
+  useEffect(() => {
+    const onLanded = () => setBagPulse((n) => n + 1);
+    window.addEventListener("bag-landed", onLanded);
+    return () => window.removeEventListener("bag-landed", onLanded);
+  }, []);
   const [langOpen, setLangOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const [shopEntered, setShopEntered] = useState(false);
@@ -608,11 +617,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
+              data-bag-target
               className="relative flex size-9 cursor-pointer items-center justify-center text-espresso transition hover:text-gold"
             >
               <ShoppingBag className={glyph} />
               {bagCount > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
+                <span
+                  key={bagPulse}
+                  className={`absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white ${bagPulse > 0 ? "animate-[bag-pop_0.45s_cubic-bezier(0.34,1.56,0.64,1)]" : ""}`}
+                >
                   {bagCount > 99 ? "99" : bagCount}
                 </span>
               )}
@@ -677,11 +690,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <button
               onClick={() => setCartOpen(true)}
               aria-label={t("bag")}
+              data-bag-target
               className="relative cursor-pointer p-2 text-espresso"
             >
               <ShoppingBag className="size-5" />
               {bagCount > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white">
+                <span
+                  key={bagPulse}
+                  className={`absolute right-0.5 top-0.5 flex size-4 items-center justify-center bg-ink text-[9px] font-bold text-white ${bagPulse > 0 ? "animate-[bag-pop_0.45s_cubic-bezier(0.34,1.56,0.64,1)]" : ""}`}
+                >
                   {bagCount > 99 ? "99" : bagCount}
                 </span>
               )}
@@ -706,46 +723,40 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 {t("searchTitle")}
                 <span className="h-px w-8 bg-gold/50" />
               </p>
-              <form
-                action={locale === "ar" ? "/ar/search" : "/search"}
-                method="get"
-                // NOTE: never unmount here (setSearchOpen) and rely on native
-                // submit — React flushes the close synchronously and the
-                // browser aborts navigation on a disconnected form
-                // ("closes and does nothing"). Navigate programmatically.
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-                  setSearchOpen(false);
-                  router.push(`/search${q ? `?q=${encodeURIComponent(q)}` : ""}`);
-                }}
-              >
-                <div className="group relative mt-6">
-                  <div className="flex items-end gap-3 border-b border-ink/20 pb-3 transition-colors focus-within:border-transparent">
-                    <Search className="mb-1.5 size-5 shrink-0 text-gold" />
-                    <input
-                      name="q"
-                      autoFocus
-                      autoComplete="off"
-                      placeholder={t("searchPlaceholder")}
-                      aria-label={t("search")}
-                      className="w-full bg-transparent font-display text-2xl italic text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
-                    />
-                    <button
-                      type="submit"
-                      aria-label={t("search")}
-                      className="mb-0.5 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink text-white transition-all hover:bg-gold hover:text-ink"
-                    >
-                      <ArrowRight className="size-4" />
-                    </button>
-                  </div>
-                  {/* The gold draw-line: sweeps in from the centre on focus */}
-                  <span
-                    aria-hidden
-                    className="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 bg-gold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:scale-x-100"
+              {/* Live autocomplete: descriptive cards while typing, Enter
+                  submits the full search (the arrow button does the same). */}
+              <div className="group relative mt-6">
+                <div className="flex items-end gap-3 border-b border-ink/20 pb-3 transition-colors focus-within:border-transparent">
+                  <Search className="mb-1.5 size-5 shrink-0 text-gold" />
+                  <SearchSuggest
+                    ref={suggestRef}
+                    autoFocus
+                    recentKey="misk-search-recents"
+                    placeholder={t("searchPlaceholder")}
+                    inputClassName="w-full bg-transparent font-display text-2xl italic text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
+                    pickHref={(it) => `/product/${it.slug}`}
+                    submitLabel={(term) => `${t("searchAll")} “${term}”`}
+                    onSubmitTerm={(term) => {
+                      setSearchOpen(false);
+                      router.push(`/search?q=${encodeURIComponent(term)}`);
+                    }}
+                    onNavigate={() => setSearchOpen(false)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => suggestRef.current?.submit()}
+                    aria-label={t("search")}
+                    className="mb-0.5 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-ink text-white transition-all hover:bg-gold hover:text-ink"
+                  >
+                    <ArrowRight className="size-4" />
+                  </button>
                 </div>
-              </form>
+                {/* The gold draw-line: sweeps in from the centre on focus */}
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-0 h-[2px] origin-center scale-x-0 bg-gold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:scale-x-100"
+                />
+              </div>
               <p className="mt-4 text-[12px] tracking-wide text-fog">
                 {t("searchHint")}
               </p>

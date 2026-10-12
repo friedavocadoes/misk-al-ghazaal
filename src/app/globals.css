@@ -225,3 +225,166 @@ html[lang="ar"] .eyebrow {
 .route-progress-bar {
   animation: route-sweep 1.1s ease-in-out infinite;
 }
+
+/* Route skeletons: ink-tinted blocks with a soft light sweep, so the
+   incoming layout reads as already-there instead of flashing grey. */
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: rgba(28, 25, 23, 0.08);
+}
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 80%
+  );
+  animation: skel-sweep 1.7s ease-in-out infinite;
+}
+@keyframes skel-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes loading-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Refine panel: sections rise in on mount with a stagger. */
+@keyframes filter-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply button armed state: a slow gold shine crossing the button. */
+.apply-armed .apply-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(179, 146, 74, 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: apply-shine 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes apply-shine {
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Wishlist burst: the heart pops, 8 rays fire out and dissolve. */
+@keyframes heart-pop {
+  0% {
+    transform: scale(0.55);
+  }
+  55% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.burst-ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 2px;
+  margin: -1px 0 0 -5.5px;
+  border-radius: 2px;
+  background: #9c2b2e;
+  animation: burst-ray 0.5s ease-out forwards;
+}
+@keyframes burst-ray {
+  from {
+    opacity: 1;
+    transform: rotate(var(--r)) translateX(5px) scaleX(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--r)) translateX(17px) scaleX(1);
+  }
+}
+
+/* Bag badge landing pop after the fly-to-bag ghost arrives. */
+@keyframes bag-pop {
+  0% {
+    transform: scale(0.4);
+  }
+  55% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Max-price single slider: thin track (fill via inline gradient), ink
+   thumb ringed in gold. */
+.max-range {
+  height: 18px;
+}
+.max-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #1c1917;
+  border: 2px solid #b3924a;
+  box-shadow: 0 0 0 4px rgba(179, 146, 74, 0.18);
+  cursor: grab;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.max-range::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 7px rgba(179, 146, 74, 0.22);
+}
+.max-range::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+.max-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #1c1917;
+  border: 2px solid #b3924a;
+  box-shadow: 0 0 0 4px rgba(179, 146, 74, 0.18);
+  cursor: grab;
+}
+.max-range::-moz-range-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel::after,
+  .apply-armed .apply-shine {
+    animation: none;
+  }
+  .burst-ray {
+    display: none;
+  }
+}

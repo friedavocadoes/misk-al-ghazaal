@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { Check, Heart, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { Check, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { ProductGallery } from "@/components/product/ProductGallery";
+import { WishHeart } from "@/components/product/WishHeart";
+import { flyToBag } from "@/lib/fly-to-bag";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
@@ -118,6 +120,7 @@ export function ProductInfo({
   const onWish = async () => {
     const r = await toggle(product.slug);
     if (r === "login") router.push(`/account/login?next=/product/${product.slug}`);
+    return r;
   };
   const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const [qty, setQty] = useState(1);
@@ -135,8 +138,9 @@ export function ProductInfo({
   const catName =
     categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
 
-  const addToBag = () => {
+  const addToBag = (e?: React.MouseEvent) => {
     add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
+    if (e?.currentTarget instanceof HTMLElement) flyToBag(e.currentTarget, product.images[0]);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
@@ -233,19 +237,18 @@ export function ProductInfo({
           {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}{" "}
           {added ? t("added") : t("addToBag")}
         </Button>
-        <button
-          onClick={onWish}
-          aria-label={t("wishlist")}
-          aria-pressed={wished}
+        <WishHeart
+          wished={wished}
+          onToggle={onWish}
+          label={t("wishlist")}
           className={cn(
-            "border px-4 transition",
+            "flex w-[52px] items-center justify-center border transition",
             wished
-              ? "border-[#9c2b2e] text-[#9c2b2e]"
-              : "border-ink/20 text-espresso hover:border-ink hover:text-ink"
+              ? "border-[#9c2b2e]"
+              : "border-ink/20 hover:border-ink",
           )}
-        >
-          <Heart className={cn("size-4", wished && "fill-[#9c2b2e]")} />
-        </button>
+          heartClassName="size-4"
+        />
       </div>
       <Button variant="outline" size="lg" className="mt-2 w-full" onClick={buyNow}>
         {t("buyNow")}

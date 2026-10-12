@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { CatalogInfinite } from "@/components/blocks/CatalogInfinite";
 import { PromoStrip } from "@/components/blocks/PromoStrip";
-import { getCollectionBySlug, getCollections, getProductsByCollection } from "@/lib/store";
+import { getCollectionBySlug, getCollections, getLineups, getProductsByCollection } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
 
@@ -50,9 +50,11 @@ export default async function CollectionPage(
     inStockOnly: searchParams?.avail === "in",
     onSaleOnly: searchParams?.sale === "1",
     minRating: num(searchParams?.rating),
+    lineup: typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
   };
   const items = await getProductsByCollection(slug, opts);
   const bounds = await getProductsByCollection(slug);
+  const [collections, lineups] = await Promise.all([getCollections(), getLineups()]);
   const prices = bounds.map((p) => p.price);
   const floor = Math.min(...prices, 0);
   const ceiling = Math.max(...prices, 200);
@@ -68,10 +70,9 @@ export default async function CollectionPage(
   const filterKey = JSON.stringify({
     a: searchParams?.avail ?? "",
     s: searchParams?.sale ?? "",
-    r: searchParams?.rating ?? "",
-    n: searchParams?.min ?? "",
     x: searchParams?.max ?? "",
     o: searchParams?.sort ?? "",
+    l: searchParams?.lineup ?? "",
   });
 
   return (
@@ -108,6 +109,9 @@ export default async function CollectionPage(
           floor={floor}
           ceiling={ceiling}
           context={isAll ? undefined : { label: title, clearHref: "/collection/all" }}
+          collections={collections.map((c) => ({ slug: c.slug, title: c.title, ...(c.titleAr ? { titleAr: c.titleAr } : {}) }))}
+          lineups={lineups.map((l) => ({ slug: l.slug, title: l.title, ...(l.titleAr ? { titleAr: l.titleAr } : {}) }))}
+          activeLineup={typeof searchParams?.lineup === "string" ? searchParams.lineup : undefined}
         />
         <div>
           {items.length === 0 ? (

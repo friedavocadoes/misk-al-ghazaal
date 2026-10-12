@@ -36,7 +36,7 @@ export function CatalogInfinite({
         const sp = new URLSearchParams({ limit: "12", offset: String(items.length) });
         if (base.collection) sp.set("collection", base.collection);
         if (base.q) sp.set("q", base.q);
-        for (const k of ["sort", "min", "max", "avail", "sale", "rating"]) {
+        for (const k of ["sort", "min", "max", "avail", "sale", "rating", "lineup"]) {
           const v = params.get(k);
           if (v != null && v !== "") sp.set(k, v);
         }

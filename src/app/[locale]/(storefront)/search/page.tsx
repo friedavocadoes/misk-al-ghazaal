@@ -2,7 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { CatalogInfinite } from "@/components/blocks/CatalogInfinite";
-import { searchCatalog } from "@/lib/store";
+import { searchCatalog, getCollections, getLineups } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 
 const PAGE = 12;
@@ -29,8 +29,10 @@ export default async function SearchPage(
     inStockOnly: searchParams?.avail === "in",
     onSaleOnly: searchParams?.sale === "1",
     minRating: num(searchParams?.rating),
+    lineup: typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
   });
   const full = q ? await searchCatalog(q) : [];
+  const [collections, lineups] = await Promise.all([getCollections(), getLineups()]);
   const prices = full.map((p) => p.price);
   const floor = Math.min(...prices, 0);
   const ceiling = Math.max(...prices, 200);
@@ -39,10 +41,9 @@ export default async function SearchPage(
     q,
     a: searchParams?.avail ?? "",
     l: searchParams?.sale ?? "",
-    r: searchParams?.rating ?? "",
-    n: searchParams?.min ?? "",
     x: searchParams?.max ?? "",
     o: searchParams?.sort ?? "",
+    u: searchParams?.lineup ?? "",
   });
 
   return (
@@ -64,6 +65,9 @@ export default async function SearchPage(
             floor={floor}
             ceiling={ceiling}
             context={{ label: `“${q}”`, clearHref: "/search" }}
+            collections={collections.map((c) => ({ slug: c.slug, title: c.title, ...(c.titleAr ? { titleAr: c.titleAr } : {}) }))}
+            lineups={lineups.map((l) => ({ slug: l.slug, title: l.title, ...(l.titleAr ? { titleAr: l.titleAr } : {}) }))}
+            activeLineup={typeof searchParams?.lineup === "string" ? searchParams.lineup : undefined}
           />
           <div>
             <CatalogInfinite

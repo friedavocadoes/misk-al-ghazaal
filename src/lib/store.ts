@@ -167,6 +167,8 @@ function toProduct(
 async function fetchProductsWithRelations(filter?: {
   slugs?: string[];
   collectionId?: string;
+  /** Admin surfaces (quick-find) see paused rows too — shoppers never do. */
+  includeInactive?: boolean;
 }): Promise<Product[]> {
   requireConfigured();
   const supabase = await createClient();
@@ -249,7 +251,7 @@ async function fetchProductsWithRelations(filter?: {
       p.lineup_id ? lineupMap.get(p.lineup_id) : undefined,
     ),
   );
-  list = list.filter((p) => p.isActive !== false);
+  list = filter?.includeInactive ? list : list.filter((p) => p.isActive !== false);
   if (filter?.collectionId) {
     const { data: scoped } = await supabase
       .from("product_collections")
@@ -292,7 +294,7 @@ const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
 export async function getProductsByCollection(
   slug: string,
-  opts?: { sort?: string | null; maxPrice?: number | null; minPrice?: number | null; inStockOnly?: boolean; onSaleOnly?: boolean; minRating?: number | null },
+  opts?: { sort?: string | null; maxPrice?: number | null; minPrice?: number | null; inStockOnly?: boolean; onSaleOnly?: boolean; minRating?: number | null; lineup?: string | null },
 ): Promise<Product[]> {
   requireConfigured();
   let items: Product[];
@@ -478,6 +480,7 @@ export interface CatalogQuery {
   inStockOnly?: boolean;
   onSaleOnly?: boolean;
   minRating?: number | null;
+  lineup?: string | null;
 }
 
 function applyCatalogFacets<T extends Product>(
@@ -491,6 +494,7 @@ function applyCatalogFacets<T extends Product>(
   if (opts?.minRating != null) out = out.filter((p) => p.rating >= (opts.minRating as number));
   if (opts?.maxPrice != null) out = out.filter((p) => p.price <= (opts.maxPrice as number));
   if (opts?.minPrice != null) out = out.filter((p) => p.price >= (opts.minPrice as number));
+  if (opts?.lineup) out = out.filter((p) => p.lineupSlug === opts.lineup);
   return out;
 }
 
@@ -540,6 +544,33 @@ export async function searchCatalog(query: string, opts?: CatalogQuery): Promise
     .filter((p) => p.isActive !== false);
   items = applyCatalogFacets(items, opts);
   return applyCatalogSort(items, opts?.sort);
+}
+
+/** Live suggest index: matches EN + AR titles, hydrates full relations
+    (notes, lineup, variants) for descriptive suggestion cards. Reads live
+    rows on every keystroke-batch, so renames, additions, pauses and bin
+    deletes are reflected with zero sync machinery — Postgres is the index.
+    Client caches repeat queries for 60s (see use-suggest). */
+export async function suggestProducts(
+  query: string,
+  limit = 8,
+  opts?: { includeInactive?: boolean },
+): Promise<Product[]> {
+  const q = query.trim().replace(/[%_,]/g, "");
+  if (q.length < 2) return [];
+  requireConfigured();
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("slug")
+    .is("deleted_at", null)
+    .or(`title.ilike.%${q}%,title_ar.ilike.%${q}%`)
+    .limit(Math.min(24, Math.max(1, limit * 3)));
+  if (error || !data) throw error ?? new Error("suggest failed");
+  const slugs = [...new Set((data as { slug: string }[]).map((r) => r.slug))];
+  if (!slugs.length) return [];
+  const full = await fetchProductsWithRelations({ slugs, includeInactive: opts?.includeInactive });
+  return rankProducts(full).slice(0, Math.min(12, Math.max(1, limit)));
 }
 
 export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {

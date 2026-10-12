@@ -159,7 +159,7 @@ export function getNavLeft(locale: Locale): NavLink[] {
     { label: pick(L("About Us", "من نحن"), locale), href: "/pages/about" },
     {
       label: pick(L("Shop With Us", "تسوّق معنا"), locale),
-      href: "/collections",
+      href: "/collection/all",
     },
   ];
 }
