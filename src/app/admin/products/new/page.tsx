@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ProductCreateForm } from "@/components/admin/product-create-form";
 
@@ -67,10 +68,8 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
   }
 
   revalidatePath("/admin/products");
-  revalidatePath(`/product/${slug}`, "page");
-  revalidatePath(`/ar/product/${slug}`, "page");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateProductPaths(slug);
+  revalidateHome();
   return { ok: true, id: productId };
 }
 

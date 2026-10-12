@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const ref = url.searchParams.get("ref") ?? undefined;
-  const next = url.searchParams.get("next") ?? "/";
+  const rawNext = url.searchParams.get("next") ?? "/";
+  // `next` comes from our own login links — accept internal paths only
+  // (never protocol-relative or absolute URLs).
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   if (code) {
     const supabase = await createClient();
@@ -26,5 +29,13 @@ export async function GET(req: Request) {
       }
     }
   }
-  return NextResponse.redirect(new URL(next, url.origin));
+  // Redirect to the request's public origin, not the internal one:
+  // behind a proxy/CDN `url.origin` can be the internal host (or a stale
+  // default), which bounces freshly-logged-in shoppers to the wrong domain.
+  const headers = (req as unknown as { headers: Headers }).headers;
+  const proto =
+    headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || url.protocol.replace(":", "");
+  const host =
+    headers.get("x-forwarded-host")?.split(",")[0]?.trim() || headers.get("host") || url.host;
+  return NextResponse.redirect(new URL(next, `${proto}://${host}`));
 }

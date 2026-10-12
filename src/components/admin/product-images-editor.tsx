@@ -1,22 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { MultiImageUploader } from "./multi-image-uploader";
 import { toast } from "./admin-form";
 
 /** Product gallery: drag-drop multi-upload, arrow reorder, remove —
-    every change persists straight to products.images. */
+    every change persists through the `save` server action (DB write +
+    orphan purge + storefront revalidation stay atomic). */
 export function ProductImagesEditor({
   productId,
   slug,
   initial,
-  revalidate,
+  save,
 }: {
   productId: string;
   slug: string;
   initial: string[];
-  revalidate: (productId: string) => Promise<void>;
+  save: (productId: string, images: string[]) => Promise<void>;
 }) {
   const [images, setImages] = useState<string[]>(initial);
   const [saving, setSaving] = useState(false);
@@ -24,13 +24,8 @@ export function ProductImagesEditor({
   async function persist(next: string[]) {
     setSaving(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from("products").update({ images: next }).eq("id", productId);
-      if (error) throw error;
+      await save(productId, next);
       setImages(next);
-      // Browser-client writes skip server actions — refresh the PDP +
-      // listings explicitly or the storefront stays stale.
-      await revalidate(productId);
       toast("Gallery saved", "ok");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Save failed", "bad");

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { Plus, Search } from "lucide-react";
@@ -24,11 +25,9 @@ async function bulkProducts(formData: FormData) {
   // Storefront now: every touched PDP + the pages that list them.
   const { data } = await supabase.from("products").select("slug").in("id", ids);
   for (const p of (data as { slug: string }[] | null) ?? []) {
-    revalidatePath(`/product/${p.slug}`, "page");
-    revalidatePath(`/ar/product/${p.slug}`, "page");
+    revalidateProductPaths(p.slug);
   }
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
   revalidatePath("/admin/products");
 }
 

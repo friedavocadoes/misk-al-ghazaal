@@ -3,6 +3,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import {
+  productsBucketPath,
+  revalidateCollectionPaths,
+  revalidateHome,
+  revalidateProductPaths,
+  touchProduct,
+} from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
@@ -37,12 +44,17 @@ async function saveProduct(formData: FormData) {
   revalidatePath("/admin/products");
   // PDP + listings now, no rebuild.
   const slug = (prod as { slug?: string } | null)?.slug;
-  if (slug) {
-    revalidatePath(`/product/${slug}`, "page");
-    revalidatePath(`/ar/product/${slug}`, "page");
+  if (slug) revalidateProductPaths(slug);
+  const { data: links } = await supabase
+    .from("product_collections")
+    .select("collection_id")
+    .eq("product_id", id);
+  const ids = (((links as { collection_id: string }[] | null) ?? []).map((r) => r.collection_id));
+  if (ids.length) {
+    const { data: cols } = await supabase.from("collections").select("slug").in("id", ids);
+    revalidateCollectionPaths((((cols as { slug: string }[] | null) ?? []).map((c) => c.slug)));
   }
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 async function saveVariant(formData: FormData) {
@@ -62,17 +74,7 @@ async function saveVariant(formData: FormData) {
     })
     .eq("id", id);
   revalidatePath(`/admin/products/${productId}`);
-  await touchStorefront(supabase, productId);
-}
-
-async function touchStorefront(supabase: Awaited<ReturnType<typeof createClient>>, productId: string) {
-  const { data } = await supabase.from("products").select("slug").eq("id", productId).single();
-  const slug = (data as { slug?: string } | null)?.slug;
-  if (!slug) return;
-  revalidatePath(`/product/${slug}`, "page");
-  revalidatePath(`/ar/product/${slug}`, "page");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  await touchProduct(supabase, productId);
 }
 
 async function saveProductNotes(formData: FormData) {
@@ -103,7 +105,7 @@ async function saveProductNotes(formData: FormData) {
     if (error) throw new Error(error.message);
   }
   revalidatePath(`/admin/products/${productId}`);
-  await touchStorefront(supabase, productId);
+  await touchProduct(supabase, productId);
 }
 
 async function saveProductCollections(formData: FormData) {
@@ -124,7 +126,7 @@ async function saveProductCollections(formData: FormData) {
       .insert(add.map((collection_id) => ({ product_id: productId, collection_id })));
   }
   revalidatePath(`/admin/products/${productId}`);
-  await touchStorefront(supabase, productId);
+  await touchProduct(supabase, productId);
 }
 
 async function saveNotesArtwork(productId: string, field: string, url: string) {
@@ -136,19 +138,37 @@ async function saveNotesArtwork(productId: string, field: string, url: string) {
   const { error } = await supabase.from("products").update({ [field]: url }).eq("id", productId);
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/products/${productId}`);
-  await touchStorefront(supabase, productId);
+  await touchProduct(supabase, productId);
 }
 
-/** Storefront refresh for gallery saves (the editor persists via the
-    browser client, so no server action runs to revalidate otherwise —
-    that staleness is why new images needed a restart to appear). */
-async function revalidateGallery(productId: string) {
+/** Gallery save: the editor uploads bytes straight to Storage from the
+    browser, but the `images` array is persisted HERE so the DB write and
+    the storefront revalidation can never drift apart (a failed revalidate
+    after a browser-direct write is what left production PDPs stale).
+    Removed files are purged from the bucket best-effort so orphans don't
+    pile up — local `/products/*` fallbacks never match and are untouched. */
+async function saveGallery(productId: string, images: string[]) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: current } = await supabase.from("products").select("images").eq("id", productId).single();
+  const before = new Set(((current as { images?: string[] } | null)?.images ?? []));
+  const { error } = await supabase.from("products").update({ images }).eq("id", productId);
+  if (error) throw new Error(error.message);
+  const orphans = [...before]
+    .filter((u) => !images.includes(u))
+    .map(productsBucketPath)
+    .filter((p): p is string => !!p);
+  if (orphans.length) {
+    try {
+      await supabase.storage.from("products").remove(orphans);
+    } catch {
+      /* orphan cleanup never fails the save */
+    }
+  }
   revalidatePath(`/admin/products/${productId}`);
-  await touchStorefront(supabase, productId);
+  await touchProduct(supabase, productId);
 }
 
 async function moveToBin(formData: FormData) {
@@ -164,12 +184,8 @@ async function moveToBin(formData: FormData) {
     .eq("id", id);
   revalidatePath("/admin/products");
   const dslug = (doomed as { slug?: string } | null)?.slug;
-  if (dslug) {
-    revalidatePath(`/product/${dslug}`, "page");
-    revalidatePath(`/ar/product/${dslug}`, "page");
-  }
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  if (dslug) revalidateProductPaths(dslug);
+  revalidateHome();
   redirect("/admin/products");
 }
 
@@ -316,7 +332,7 @@ export default async function ProductDetail(props: {
             {/* 02 — Gallery */}
             <section id="gallery" className={sectionCls}>
               {sectionHead("02", "Gallery", "Drag-drop · arrows reorder · first is primary")}
-              <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} revalidate={revalidateGallery} />
+              <ProductImagesEditor productId={p.id} slug={p.slug} initial={p.images ?? []} save={saveGallery} />
             </section>
 
             {/* 03 — Notes artwork */}

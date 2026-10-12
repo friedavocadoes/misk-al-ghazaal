@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { ImageUploader } from "@/components/admin/image-uploader";
@@ -46,8 +47,7 @@ async function saveSection(formData: FormData) {
     .eq("id", id);
   revalidatePath(`/admin/homepage/${id}`);
   revalidatePath("/admin/homepage");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 export default async function SectionDetail(props: { params: Promise<{ id: string }> }) {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { BannerCreateButton } from "@/components/admin/banner-create-button";
@@ -36,8 +37,7 @@ async function createBanner(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/banners");
   // Storefront now, no rebuild: both homepage locales re-render on refresh.
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 async function moveToBin(formData: FormData) {
@@ -50,8 +50,7 @@ async function moveToBin(formData: FormData) {
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/banners");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 export default async function BannersPage() {

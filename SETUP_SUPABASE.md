@@ -107,10 +107,19 @@ read, super_admin write via RLS).
    for production) and **Google**: create the OAuth client (Google Cloud
    Console → Credentials), paste Client ID + Secret, and add the redirect URL
    `https://<project>.supabase.co/auth/v1/callback` exactly as shown.
-2. Authentication → URL Configuration → Site URL = your storefront origin;
-   add `http://localhost:3000` to Redirect URLs for local dev. The app's
-   `/auth/callback` finishes the flow and bootstraps `profiles` (unique
-   referral code + `?ref=` attribution).
+2. Authentication → URL Configuration → Site URL = your production
+    storefront origin (e.g. `https://miskalghazaalperfumes.com`), and add
+    EVERY origin the shop can be reached at to Redirect URLs — at minimum:
+    - `https://<your-domain>/auth/callback` (Google OAuth landing)
+    - `https://<your-domain>/**` (covers `/account/reset` recovery links)
+    - `http://localhost:3000/**` (local dev)
+    Include apex + `www` + any preview domains you log in from. Supabase
+    ignores `redirectTo` for origins missing here and falls back to the
+    Site URL — that fallback is what bounces production Google logins to
+    `localhost:3000`. Set `NEXT_PUBLIC_SITE_URL=https://<your-domain>`
+    in production env so every auth redirect uses the exact allowlisted
+    origin. The app's `/auth/callback` finishes the flow and bootstraps
+    `profiles` (unique referral code + `?ref=` attribution).
 3. Email sending (reset links, confirmations): Supabase's built-in mailer
    works out of the box for testing but is heavily rate-limited. For
    production, set up custom SMTP — Dashboard → Authentication → Email →

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { GoogleGlyph } from "@/components/ui/brand-icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean }) {
   const t = useTranslations("Account");
@@ -68,7 +69,7 @@ function LoginPane({ next }: { next: string }) {
     setError("");
     const { error } = await createBrowserClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+      options: { redirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}` },
     });
     if (error) {
       setBusy(false);
@@ -118,7 +119,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
       password,
       options: {
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
+        emailRedirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
       },
     });
     if (error) {
@@ -152,7 +153,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
     const { error } = await createBrowserClient().auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
+        redirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
       },
     });
     if (error) {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { BannerImageField } from "@/components/admin/banner-image-field";
@@ -37,17 +38,15 @@ async function saveBanner(formData: FormData) {
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/banners");
   revalidatePath(`/admin/banners/${String(formData.get("id"))}`);
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 /** Homepage refresh for browser-client artwork saves. */
-async function revalidateHome() {
+async function revalidateHomeAction() {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
 }
 
 async function moveToBin(formData: FormData) {
@@ -60,8 +59,7 @@ async function moveToBin(formData: FormData) {
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
   revalidatePath("/admin/banners");
-  revalidatePath("/", "page");
-  revalidatePath("/ar", "page");
+  revalidateHome();
   redirect("/admin/banners");
 }
 
@@ -133,14 +131,14 @@ export default async function BannerDetail(props: {
               field="src"
               label="Image (src)"
               initial={b.src ?? ""}
-              revalidate={revalidateHome}
+              revalidate={revalidateHomeAction}
             />
             <BannerImageField
               bannerId={b.id}
               field="fallback"
               label="Fallback (shown if src 404s)"
               initial={b.fallback ?? ""}
-              revalidate={revalidateHome}
+              revalidate={revalidateHomeAction}
             />
           </section>
 

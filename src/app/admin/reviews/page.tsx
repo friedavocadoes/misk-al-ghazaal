@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
+import { revalidateProductPaths } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 
@@ -27,10 +28,7 @@ async function approveReview(formData: FormData) {
     slug = (prod as { slug?: string } | null)?.slug ?? null;
   }
   revalidatePath("/admin/reviews");
-  if (slug) {
-    revalidatePath(`/product/${slug}`, "page");
-    revalidatePath(`/ar/product/${slug}`, "page");
-  }
+  if (slug) revalidateProductPaths(slug);
 }
 
 async function deleteReview(formData: FormData) {
@@ -44,10 +42,7 @@ async function deleteReview(formData: FormData) {
   if (review) {
     const { data: prod } = await admin.from("products").select("slug").eq("id", (review as { product_id: string }).product_id).single();
     const slug = (prod as { slug?: string } | null)?.slug;
-    if (slug) {
-      revalidatePath(`/product/${slug}`, "page");
-      revalidatePath(`/ar/product/${slug}`, "page");
-    }
+    if (slug) revalidateProductPaths(slug);
   }
 }
 

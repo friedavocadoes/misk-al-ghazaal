@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 /** Logged-out reset request: Supabase emails the link (works on the
     default mailer; custom SMTP raises the limits — see SETUP notes). */
@@ -23,7 +24,7 @@ export default function ForgotPage() {
     setBusy(true);
     setError("");
     const { error } = await createBrowserClient().auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/account/reset`,
+      redirectTo: `${getSiteUrl()}/account/reset`,
     });
     setBusy(false);
     if (error) setError(error.message);
