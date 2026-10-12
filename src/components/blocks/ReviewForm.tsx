@@ -9,7 +9,7 @@ import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 /** Login-gated review form: pending-moderation note on success. */
-export function ReviewForm({ productId }: { productId: string; productSlug: string; locale: string }) {
+export function ReviewForm({ productId, productSlug }: { productId: string; productSlug: string; locale: string }) {
   const t = useTranslations("Product");
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [checked, setChecked] = useState(false);
@@ -37,7 +37,7 @@ export function ReviewForm({ productId }: { productId: string; productSlug: stri
       <div className="flex flex-col items-start gap-4 border border-ink/10 bg-sand/50 p-6 sm:flex-row sm:items-center">
         <p className="font-display text-xl text-ink">{t("reviewLoginTitle")}</p>
         <Button asChild className="sm:ms-auto">
-          <Link href="/account/login">{t("reviewLoginCta")}</Link>
+          <Link href={`/account/login?next=${encodeURIComponent(`/product/${productSlug}`)}`}>{t("reviewLoginCta")}</Link>
         </Button>
       </div>
     );

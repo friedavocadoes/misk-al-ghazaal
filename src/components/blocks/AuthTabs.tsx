@@ -194,7 +194,9 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
   const t = useTranslations("Account");
   const params = useSearchParams();
-  const next = params.get("next") ?? "/account";
+  const rawNext = params.get("next") ?? "/account";
+  // Internal paths only — never bounce shoppers to an external URL.
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
   const ref = params.get("ref") ?? "";
   return (
     <Tabs defaultValue={defaultTab} className="w-full">

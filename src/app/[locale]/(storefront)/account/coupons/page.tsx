@@ -19,7 +19,7 @@ export default async function AccountCouponsPage(props: {
     return (
       <div className="mx-auto max-w-md px-5 py-16 text-center">
         <p className="mt-3 text-sm text-espresso">{t("referralHint")}</p>
-        <Link href="/account/login" className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+        <Link href="/account/login?next=/account/coupons" className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
           {t("login")}
         </Link>
       </div>

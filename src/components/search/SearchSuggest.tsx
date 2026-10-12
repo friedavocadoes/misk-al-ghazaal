@@ -1,8 +1,8 @@
 "use client";
 
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
-import { useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowUpRight, Clock, Loader2, SearchX, Star } from "lucide-react";
 import type { SuggestItem } from "@/app/api/search/suggest/route";
 import { tx } from "@/lib/i18n";
@@ -15,10 +15,27 @@ export interface SearchSuggestHandle {
   submit: () => void;
 }
 
+/** Provider-free locale: derived from the URL itself, so this works in
+    the locale-free admin console too (no NextIntlClientProvider there). */
+function usePathLocale(): Locale {
+  const pathname = usePathname();
+  return pathname === "/ar" || pathname.startsWith("/ar/") ? "ar" : "en";
+}
+
+/** Prefix storefront hrefs on AR pages (plain next/link keeps whatever it
+    is given — admin `/admin/…` hrefs pass through untouched). */
+function useLocalizeHref() {
+  const pathname = usePathname();
+  const onAr = pathname === "/ar" || pathname.startsWith("/ar/");
+  return (href: string) =>
+    onAr && href.startsWith("/") && !href.startsWith("/ar") && !href.startsWith("/admin")
+      ? `/ar${href}`
+      : href;
+}
+
 /** Descriptive suggestion card: face, lineup eyebrow, serif title, top
     notes + size, price + rating — the whole perfume at a glance. */
-export function SuggestRow({ item, active }: { item: SuggestItem; active: boolean }) {
-  const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
+export function SuggestRow({ item, active, locale }: { item: SuggestItem; active: boolean; locale: Locale }) {
   const title = tx(item.title, item.titleAr, locale);
   const lineup = tx(item.lineupTitle ?? "", item.lineupTitleAr, locale);
   const notes = item.topNotes.map((n) => tx(n.name, n.nameAr, locale)).filter(Boolean);
@@ -105,6 +122,8 @@ export const SearchSuggest = forwardRef<
   const { items, loading } = useSuggest(q, scope);
   const boxRef = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const locale = usePathLocale();
+  const localizeHref = useLocalizeHref();
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -218,15 +237,15 @@ export const SearchSuggest = forwardRef<
                 <ul className="max-h-[340px] overflow-y-auto py-1.5">
                   {items.map((it, i) => (
                     <li key={it.id} id={`${listId}-${i}`} role="option" aria-selected={i === safeActive}>
-                      <Link
+                      <NextLink
                         id={`${listId}-link-${i}`}
-                        href={pickHref(it)}
+                        href={localizeHref(pickHref(it))}
                         onClick={() => pick(it)}
                         onMouseEnter={() => setActive(i)}
                         className={cn("block transition-colors", i === safeActive ? "bg-cream" : "bg-white")}
                       >
-                        <SuggestRow item={it} active={i === safeActive} />
-                      </Link>
+                        <SuggestRow item={it} active={i === safeActive} locale={locale} />
+                      </NextLink>
                     </li>
                   ))}
                 </ul>

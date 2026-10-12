@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Check, ChevronDown, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { tx } from "@/lib/i18n";
@@ -279,7 +278,7 @@ export function CollectionFilters({
               aria-expanded={shopOpen}
               className="h-11 w-full justify-between px-3 text-sm font-medium normal-case tracking-normal"
             >
-              <span className="truncate text-ink">
+              <span className="truncate">
                 {lineup ? lineupName(lineup) : t("all")}
               </span>
               <ChevronDown

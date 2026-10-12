@@ -25,7 +25,7 @@ export default async function AccountOrderDetail(props: {
   if (!session) {
     return (
       <div className="mx-auto max-w-md px-5 py-16 text-center">
-        <Link href="/account/login" className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+        <Link href={`/account/login?next=${encodeURIComponent(`/account/orders/${id}`)}`} className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
           {t("login")}
         </Link>
       </div>
