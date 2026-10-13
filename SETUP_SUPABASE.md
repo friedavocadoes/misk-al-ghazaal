@@ -26,6 +26,7 @@ Dashboard → SQL Editor → New query, paste in order:
    coupons, referrals, reviews, PDP copy, order links — includes
    `increment_coupon_use()` + a starter notes library)
 5. `supabase/migration_coupons_v2.sql` (max discount cap + once-per-account)
+6. `supabase/migration_referrals_v2.sql` (split percents + caps per side)
 2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
    106 collection links incl. for-him/for-her/ramadan, 9 banners, 3 articles.
    Safe to re-run — upserts on slug, wipes + re-inserts variants/links/banners.)

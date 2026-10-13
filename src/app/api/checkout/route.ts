@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
-import { quoteBag, type BagLine } from "@/lib/pricing";
+import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
 import { buildOrderEmail, sendMail } from "@/lib/mailer";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
@@ -171,13 +171,13 @@ export async function POST(req: Request) {
     // referrer's personal single-use coupon and record the introduction.
     if (quote.referralCode && email) {
       const { data: referrer } = await admin.from("profiles").select("id").eq("referral_code", quote.referralCode).single();
-      const { data: settings } = await admin.from("referral_settings").select("percent").eq("id", 1).single();
-      if (referrer && settings) {
-        const percent = Number((settings as { percent: number }).percent ?? 25);
+      const terms = await getReferralTerms();
+      if (referrer && terms.active) {
+        const percent = terms.referrerPercent;
         let rewardCode = "";
         for (let attempt = 0; attempt < 5 && !rewardCode; attempt++) {
           const code = randomCode("REF-", 6);
-          const { error } = await admin.from("coupons").insert({
+          const row: Record<string, string | number | boolean | null> = {
             code,
             kind: "percent",
             amount: percent,
@@ -187,7 +187,14 @@ export async function POST(req: Request) {
             icon: "gift",
             is_public: false,
             owner_id: (referrer as { id: string }).id,
-          });
+            max_discount: terms.referrerCap,
+          };
+          let { error } = await admin.from("coupons").insert(row);
+          if (error && /max_discount/i.test(error.message)) {
+            // Older DBs predate migration_coupons_v2 — mint uncapped.
+            delete row.max_discount;
+            ({ error } = await admin.from("coupons").insert(row));
+          }
           if (!error) rewardCode = code;
         }
         let rewardId: string | null = null;

@@ -133,6 +133,35 @@ export interface ReferralCheck {
   reason?: string;
   referrerId?: string;
   percent?: number;
+  cap?: number;
+}
+
+export interface ReferralTerms {
+  active: boolean;
+  referrerPercent: number;
+  referrerCap: number;
+  refereePercent: number;
+  refereeCap: number;
+}
+
+/** Live referral economics with pending-migration fallbacks (missing
+    columns read as undefined → legacy percent → spec defaults). */
+export async function getReferralTerms(): Promise<ReferralTerms> {
+  const supabase = await createAdminClient();
+  const { data } = await supabase.from("referral_settings").select("*").eq("id", 1).single();
+  const s = (data ?? {}) as {
+    active?: boolean; percent?: number;
+    referrer_percent?: number; referee_percent?: number;
+    referrer_cap?: number; referee_cap?: number;
+  };
+  const legacy = Number(s.percent ?? 25);
+  return {
+    active: s.active ?? true,
+    referrerPercent: Number(s.referrer_percent ?? legacy),
+    referrerCap: Number(s.referrer_cap ?? 50),
+    refereePercent: Number(s.referee_percent ?? legacy),
+    refereeCap: Number(s.referee_cap ?? 50),
+  };
 }
 
 /** Validate a referral code: settings on, referrer exists, newcomer email. */
@@ -140,8 +169,8 @@ export async function checkReferral(code: string, email: string, userId?: string
   const clean = code.trim().toUpperCase();
   if (!clean) return { ok: false, reason: "empty" };
   const supabase = await createAdminClient();
-  const { data: settings } = await supabase.from("referral_settings").select("percent, active").eq("id", 1).single();
-  if (!settings || !(settings as { active: boolean }).active) return { ok: false, reason: "off" };
+  const terms = await getReferralTerms();
+  if (!terms.active) return { ok: false, reason: "off" };
   const { data: referrer } = await supabase.from("profiles").select("id").eq("referral_code", clean).single();
   if (!referrer) return { ok: false, reason: "unknown" };
   if (userId && (referrer as { id: string }).id === userId) return { ok: false, reason: "self" };
@@ -152,7 +181,7 @@ export async function checkReferral(code: string, email: string, userId?: string
     .ilike("referee_email", email)
     .limit(1);
   if (used?.length) return { ok: false, reason: "repeat" };
-  return { ok: true, referrerId: (referrer as { id: string }).id, percent: Number((settings as { percent: number }).percent ?? 25) };
+  return { ok: true, referrerId: (referrer as { id: string }).id, percent: terms.refereePercent, cap: terms.refereeCap };
 }
 
 export async function quoteBag(input: {
@@ -199,7 +228,8 @@ export async function quoteBag(input: {
     const check = await checkReferral(ref, email, input.userId);
     if (!check.ok) throw new Error(`referral:${check.reason ?? "invalid"}`);
     referralCode = ref.toUpperCase();
-    referralDiscount = Math.round((subtotal * Number(check.percent ?? 25)) / 100);
+    const rawReferral = Math.round((subtotal * Number(check.percent ?? 20)) / 100);
+    referralDiscount = Math.min(rawReferral, Number(check.cap ?? 50));
     discount += Math.min(subtotal - discount, referralDiscount);
   }
 
