@@ -47,6 +47,7 @@ export default function CheckoutPage() {
   const [referralState, setReferralState] = useState<"idle" | "checking" | "ok" | "bad">("idle");
   const [referralOpen, setReferralOpen] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [referralError, setReferralError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
   const [offers, setOffers] = useState<Coupon[]>([]);
   const offersRef = useRef<HTMLElement>(null);
@@ -125,6 +126,7 @@ export default function CheckoutPage() {
             setCouponState(appliedCoupon ? "ok" : "idle");
             setReferralState(appliedReferral ? "ok" : "idle");
             setCouponError("");
+            setReferralError("");
           } else {
             const err = typeof j?.error === "string" ? j.error : "";
             if (appliedCoupon && (!err || err.startsWith("coupon"))) {
@@ -132,6 +134,7 @@ export default function CheckoutPage() {
               setCouponError(err);
             } else if (appliedReferral && (!err || err.startsWith("referral"))) {
               setReferralState("bad");
+              setReferralError(err);
             }
           }
         })
@@ -218,7 +221,19 @@ export default function CheckoutPage() {
     if (couponError === "coupon:used") return t("couponUsed");
     if (couponError === "coupon:expired") return t("couponExpired");
     if (couponError === "coupon:exhausted") return t("couponExhausted");
+    if (couponError === "coupon:unknown") return t("couponUnknown");
+    if (couponError === "coupon:inactive") return t("couponInactive");
+    if (couponError === "coupon:early") return t("couponEarly");
+    if (couponError === "coupon:personal") return t("couponPersonal");
+    if (couponError === "coupon:repeat") return t("couponRepeat");
     return t("couponBad");
+  };
+
+  const referralReason = (): string => {
+    if (referralError === "referral:off") return t("referralOff");
+    if (referralError === "referral:self") return t("referralSelf");
+    if (referralError === "referral:repeat") return t("referralRepeat");
+    return t("referralBad");
   };
 
   const friendlyError = (raw: unknown): string => {
@@ -520,7 +535,7 @@ export default function CheckoutPage() {
                           </Button>
                         </div>
                         {referralState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
-                        {referralState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("referralBad")}</p>}
+                        {referralState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{referralReason()}</p>}
                       </div>
                     )}
                   </div>

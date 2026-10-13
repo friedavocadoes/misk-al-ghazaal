@@ -56,6 +56,10 @@ export function PdpOffers({
     if (err === "coupon:min") return t("offerMin");
     if (err === "coupon:login") return t("offerLogin");
     if (err === "coupon:used") return t("offerUsed");
+    if (err === "coupon:personal") return t("offerPersonal");
+    if (err === "coupon:repeat") return t("offerRepeat");
+    if (err === "coupon:expired") return t("offerExpired");
+    if (err === "coupon:exhausted") return t("offerExhausted");
     return t("offerBad");
   };
 
