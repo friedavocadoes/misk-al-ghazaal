@@ -50,8 +50,18 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
             end: 150, 
             scrub: 0.5, 
             snap: {
-              snapTo: [0, 1], 
+              // Priority magnet from the top: any downward intent locks
+              // into fullscreen (never bounces back up on a slight
+              // scroll), upward intent releases to top. No dead zone.
+              // Fires quickly after scroll stops; duration untouched.
+              snapTo: (value, self) => {
+                const dir = self?.direction ?? 0;
+                if (dir > 0) return 1;
+                if (dir < 0) return 0;
+                return value > 0.5 ? 1 : 0;
+              },
               duration: 0.4,
+              delay: 0.1,
               ease: "power2.inOut"
             }
           }
