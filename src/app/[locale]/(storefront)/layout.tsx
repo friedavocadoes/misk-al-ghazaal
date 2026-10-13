@@ -16,16 +16,15 @@ export default async function StorefrontLayout(
   return (
     <CartProvider>
       <WishlistProvider>
-        {/* RouteProgress stays outside (fixed viewport bar). The header
-            rides INSIDE the smoothed content: ScrollSmoother lifts the
-            content to the viewport origin, so chrome left outside would
-            leave the page starting behind the navbar. In-flow order
-            (header → main → footer) is exactly the pre-smoother geometry,
-            morph included — no padding/margin math needed. */}
+        {/* RouteProgress + fixed header live at body level, outside the
+            transformed flow. The bar is hardcore `fixed` (zero JS in its
+            positioning — it cannot move); `#smooth-content` reserves its
+            live height as padding-top (see SmoothScroll) so geometry
+            matches in-flow layout exactly, morph included. */}
         <RouteProgress />
+        <SiteHeader locale={locale} />
         <div id="smooth-wrapper">
           <div id="smooth-content">
-            <SiteHeader locale={locale} />
             <main className="min-h-[60vh]">{props.children}</main>
             <SiteFooter locale={locale} />
           </div>

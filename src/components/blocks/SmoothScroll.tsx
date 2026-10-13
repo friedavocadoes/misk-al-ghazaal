@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { usePathname } from "@/i18n/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -16,9 +16,8 @@ gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
     Leaflet map keeps its own gestures). No pins or spacers anywhere —
     sticky elements hold themselves via `useStickyLock` (paint-only).
     Architecture rules (GSAP caveats):
-    - The sticky header rides INSIDE the content (first child) so in-flow
-      geometry matches the pre-smoother page exactly — nothing starts
-      behind the navbar, morph included.
+    - The header is hardcore `fixed` at body level (zero JS positioning —
+      it cannot move); content reserves its live height as padding-top.
     - `position: fixed` must otherwise live OUTSIDE the wrapper — the shop
       dropdown only opens at rest (scroll closes it), the mobile menu /
       gallery zoom / avatar modal portal to document.body, and
@@ -26,6 +25,23 @@ gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
     - Skipped entirely under prefers-reduced-motion; admin has no smoother. */
 export function SmoothScroll() {
   const pathname = usePathname();
+
+  // Reserve the fixed header's exact height atop the content (before first
+  // paint — no flash of content behind the navbar), then track it live.
+  // ScrollTrigger-safe: hero scrub is scroll-absolute and locks read live
+  // rects, so no forced refresh here (the content RO below fires anyway).
+  useLayoutEffect(() => {
+    const header = document.getElementById("site-header");
+    const content = document.getElementById("smooth-content");
+    if (!header || !content) return;
+    const sync = () => {
+      content.style.paddingTop = `${header.offsetHeight}px`;
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;

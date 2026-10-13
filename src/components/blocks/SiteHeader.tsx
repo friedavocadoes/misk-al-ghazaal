@@ -38,7 +38,6 @@ import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 import type { ShopMenuIcon } from "@/lib/site";
 import { useCart } from "@/lib/cart";
-import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 import { SearchSuggest, type SearchSuggestHandle } from "@/components/search/SearchSuggest";
 
 const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
@@ -91,12 +90,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     provider: "google" | "email";
   } | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
-  const headerRef = useRef<HTMLElement>(null);
-
-  // Bar lock: CSS sticky dies inside ScrollSmoother's fixed viewport
-  // wrapper — the header holds itself via useStickyLock (paint-only,
-  // whole page, no spacer). Morph logic below untouched.
-  useStickyLock(headerRef, () => 0);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toggleLock = useRef(0);
@@ -418,7 +411,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   );
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
+    <header id="site-header" className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
       {/* Background layers: soft gradient at top → light blur when compact.
           The gradient is viewport-anchored (.ivory-flow) so it continues
           seamlessly into the hero gutters below. */}
