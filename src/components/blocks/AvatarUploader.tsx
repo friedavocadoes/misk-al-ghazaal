@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Loader2, Pencil, X } from "lucide-react";
@@ -92,14 +93,17 @@ export function AvatarUploader({
         </span>
       </button>
 
-      {modal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t("avatarUpload")}
-          onClick={() => !busy && setModal(false)}
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-5 backdrop-blur-[2px]"
-        >
+      {/* Portaled to body: `position: fixed` inside the smoothed content
+          would pin to the content, not the viewport (GSAP caveat). */}
+      {modal &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("avatarUpload")}
+            onClick={() => !busy && setModal(false)}
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-5 backdrop-blur-[2px]"
+          >
           <div
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-sm border border-ink/10 bg-cream p-6 text-center shadow-[0_32px_64px_-24px_rgba(28,25,23,0.5)]"
@@ -136,8 +140,9 @@ export function AvatarUploader({
             {saved && <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">{t("avatarSaved")}</p>}
             {error && <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
           </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

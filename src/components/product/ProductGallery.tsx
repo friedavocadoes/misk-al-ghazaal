@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, Expand } from "lucide-react";
@@ -110,25 +111,29 @@ export function ProductGallery({
         </div>
       )}
 
-      {zoom && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setZoom(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Product image fullscreen"
-        >
-          <div className="relative aspect-square w-full max-w-3xl overflow-hidden">
-            <Image
-              src={images[selected]}
-              alt={title}
-              fill
-              sizes="100vw"
-              className="object-contain"
-            />
-          </div>
-        </div>
-      )}
+      {/* Portaled to body: `position: fixed` inside the smoothed content
+          would pin to the content, not the viewport (GSAP caveat). */}
+      {zoom &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+            onClick={() => setZoom(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Product image fullscreen"
+          >
+            <div className="relative aspect-square w-full max-w-3xl overflow-hidden">
+              <Image
+                src={images[selected]}
+                alt={title}
+                fill
+                sizes="100vw"
+                className="object-contain"
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

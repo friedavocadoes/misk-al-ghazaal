@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Ticket } from "lucide-react";
@@ -13,6 +13,7 @@ import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/routing";
 import type { DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
+import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -45,6 +46,11 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [done, setDone] = useState<{ orderNo: string; total: number } | null>(null);
+  const asideRef = useRef<HTMLElement>(null);
+
+  // Summary lock: CSS sticky dies inside ScrollSmoother's fixed viewport
+  // wrapper — holds itself via useStickyLock (paint-only).
+  useStickyLock(asideRef, () => 96);
 
   useEffect(() => {
     createBrowserClient()
@@ -308,7 +314,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Summary */}
-        <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
+        <aside ref={asideRef} className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
           <ul className="divide-y divide-ink/10">
             {lines.map((l) => {
               const m = meta[l.productSlug];

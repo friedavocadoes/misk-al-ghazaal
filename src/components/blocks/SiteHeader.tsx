@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import gsap from "gsap";
@@ -37,6 +38,7 @@ import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 import type { ShopMenuIcon } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 import { SearchSuggest, type SearchSuggestHandle } from "@/components/search/SearchSuggest";
 
 const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
@@ -89,6 +91,12 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     provider: "google" | "email";
   } | null>(null);
   const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Bar lock: CSS sticky dies inside ScrollSmoother's fixed viewport
+  // wrapper — the header holds itself via useStickyLock (paint-only,
+  // whole page, no spacer). Morph logic below untouched.
+  useStickyLock(headerRef, () => 0);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toggleLock = useRef(0);
@@ -410,7 +418,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   );
 
   return (
-    <header className="sticky top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
+    <header ref={headerRef} className="sticky top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
       {/* Background layers: soft gradient at top → light blur when compact.
           The gradient is viewport-anchored (.ivory-flow) so it continues
           seamlessly into the hero gutters below. */}
@@ -845,8 +853,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </div>
         )}
 
-        {/* Mobile menu overlay — staged enter/exit, staggered rows */}
-        {menuOpen && (
+        {/* Mobile menu overlay — staged enter/exit, staggered rows.
+            Portaled to body: `fixed` inside the smoothed content would pin
+            to the content, not the viewport (GSAP caveat). */}
+        {menuOpen &&
+          createPortal(
           <div
             className="fixed inset-0 z-[60] flex flex-col bg-cream transition-opacity duration-300 lg:hidden"
             style={{ opacity: menuEntered ? 1 : 0 }}
@@ -1062,7 +1073,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 </Link>
               )}
             </nav>
-          </div>
+          </div>,
+          document.body,
         )}
 
         <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />

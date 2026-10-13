@@ -13,6 +13,7 @@ import { tx } from "@/lib/i18n";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Banner } from "@/lib/types";
 import { SafeImage } from "@/components/ui/safe-image";
+import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 
 import "swiper/css";
 import "swiper/css/effect-fade";
@@ -26,6 +27,12 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   const sliderWrapperRef = useRef<HTMLDivElement>(null);
   const swiperRef = useRef<SwiperType | null>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
+
+  // Fullscreen lock: the plate's CSS sticky dies inside ScrollSmoother's
+  // fixed viewport wrapper, so it holds itself via useStickyLock — the
+  // exact sticky clamp (hold at header offset, release at section bottom)
+  // as a paint-only transform. Scrub, snap, Swiper and timings untouched.
+  useStickyLock(sliderWrapperRef, () => (window.innerWidth >= 1024 ? 72 : 68));
   
   const [active, setActive] = useState(0);
 

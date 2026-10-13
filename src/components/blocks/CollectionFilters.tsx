@@ -11,6 +11,7 @@ import type { Locale } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 
 export interface ShopOption {
   slug: string;
@@ -44,6 +45,12 @@ export function CollectionFilters({
   const params = useSearchParams();
   const t = useTranslations("Filters");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
+  const asideRef = useRef<HTMLElement>(null);
+
+  // Sidebar lock: CSS sticky dies inside ScrollSmoother's fixed viewport
+  // wrapper — holds itself via useStickyLock (paint-only). Sticky classes
+  // stay as the fallback.
+  useStickyLock(asideRef, () => 96);
 
   const num = (k: string): number | null => {
     const v = params.get(k);
@@ -208,7 +215,7 @@ export function CollectionFilters({
   ];
 
   return (
-    <aside className="h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-white p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto">
+    <aside ref={asideRef} className="h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-white p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
           <SlidersHorizontal className="size-3.5 text-gold" />
