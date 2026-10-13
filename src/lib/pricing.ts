@@ -89,6 +89,7 @@ export async function checkCoupon(code: string, email: string, userId?: string):
   if (!data) return { ok: false, reason: "unknown" };
   const c = data as {
     id: string; code: string; kind: CouponKind; amount: number; min_subtotal: number;
+    max_discount: number | null; once_per_account: boolean | null;
     first_order_only: boolean; active: boolean; icon: string; gift_title: string | null;
     gift_title_ar: string | null; is_public: boolean; owner_id: string | null;
     starts_at: string | null; ends_at: string | null; usage_limit: number | null; used_count: number;
@@ -100,11 +101,24 @@ export async function checkCoupon(code: string, email: string, userId?: string):
   if (c.usage_limit != null && c.used_count >= c.usage_limit) return { ok: false, reason: "exhausted" };
   if (c.owner_id && c.owner_id !== userId) return { ok: false, reason: "personal" };
   if (c.first_order_only && (await hasPriorOrder(supabase, email))) return { ok: false, reason: "repeat" };
+  if (c.once_per_account) {
+    if (!userId) return { ok: false, reason: "login" };
+    const { data: redeemed } = await supabase
+      .from("coupon_redemptions")
+      .select("id")
+      .eq("coupon_id", c.id)
+      .eq("user_id", userId)
+      .limit(1);
+    if (redeemed?.length) return { ok: false, reason: "used" };
+  }
   return {
     ok: true,
     coupon: {
       id: c.id, code: c.code, kind: c.kind, amount: Number(c.amount ?? 0),
-      minSubtotal: Number(c.min_subtotal ?? 0), firstOrderOnly: c.first_order_only,
+      minSubtotal: Number(c.min_subtotal ?? 0),
+      ...(c.max_discount != null ? { maxDiscount: Number(c.max_discount) } : {}),
+      oncePerAccount: c.once_per_account ?? false,
+      firstOrderOnly: c.first_order_only,
       active: c.active, icon: c.icon ?? "tag",
       ...(c.gift_title ? { giftTitle: c.gift_title } : {}),
       ...(c.gift_title_ar ? { giftTitleAr: c.gift_title_ar } : {}),
@@ -167,8 +181,9 @@ export async function quoteBag(input: {
     if (subtotal < c.minSubtotal) throw new Error("coupon:min");
     couponCode = c.code;
     couponKind = c.kind;
-    if (c.kind === "percent") discount += Math.min(subtotal, Math.round((subtotal * Number(c.amount)) / 100));
-    else if (c.kind === "fixed") discount += Math.min(subtotal, Number(c.amount));
+    const cap = (n: number) => (c.maxDiscount != null ? Math.min(n, c.maxDiscount) : n);
+    if (c.kind === "percent") discount += Math.min(subtotal, cap(Math.round((subtotal * Number(c.amount)) / 100)));
+    else if (c.kind === "fixed") discount += Math.min(subtotal, cap(Number(c.amount)));
     else if (c.kind === "free_shipping") {
       shipping = 0;
       freeShipping = true;

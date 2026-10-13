@@ -56,6 +56,12 @@ async function Section({ s, locale, ctx }: {
 }) {
   const t = (v: string, ar?: string) => tx(v || "", ar, locale);
   const ts = await getTranslations({ locale, namespace: "Sections" });
+  const tc = await getTranslations({ locale, namespace: "Common" });
+  const collectionHref = (slug?: string) => {
+    const clean = (slug ?? "").trim();
+    if (clean === "all" || ctx.collections.some((c) => c.slug === clean)) return `/collection/${clean}`;
+    return "/collection/all";
+  };
   switch (s.kind) {
     case "products_carousel": {
       const products = await carouselProducts(s);
@@ -65,6 +71,7 @@ async function Section({ s, locale, ctx }: {
           eyebrow={t(s.eyebrow)}
           title={t(s.title)}
           products={products}
+          viewAllHref={collectionHref(s.config?.collection)}
         />
       );
     }
@@ -83,7 +90,11 @@ async function Section({ s, locale, ctx }: {
       if (!cats.length) return null;
       return (
         <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-          <SectionHeading eyebrow={t(s.eyebrow)} title={t(s.title)} />
+          <SectionHeading
+            eyebrow={t(s.eyebrow)}
+            title={t(s.title)}
+            link={{ label: tc("viewAll"), href: "/collections" }}
+          />
           <CollectionGrid categories={cats} locale={locale} />
         </section>
       );
@@ -94,9 +105,9 @@ async function Section({ s, locale, ctx }: {
         <ProductTabs
           title={t(s.title) || ts("trending")}
           tabs={[
-            { label: ts("tabBest"), value: "best", products: ctx.bestSellers },
-            { label: ts("tabNew"), value: "new", products: ctx.newArrivals },
-            { label: ts("tabFeatured"), value: "featured", products: trending },
+            { label: ts("tabBest"), value: "best", products: ctx.bestSellers, href: "/collection/best-sellers" },
+            { label: ts("tabNew"), value: "new", products: ctx.newArrivals, href: "/collection/new-arrivals" },
+            { label: ts("tabFeatured"), value: "featured", products: trending, href: "/collection/all" },
           ]}
         />
       );
@@ -112,7 +123,11 @@ async function Section({ s, locale, ctx }: {
       if (!articles.length) return null;
       return (
         <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-          <SectionHeading eyebrow={t(s.eyebrow)} title={t(s.title)} />
+          <SectionHeading
+            eyebrow={t(s.eyebrow)}
+            title={t(s.title)}
+            link={{ label: tc("viewAll"), href: "/blog" }}
+          />
           <BlogCardGrid articles={articles} />
         </section>
       );
@@ -154,24 +169,25 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     // Pre-migration (or empty CMS): the classic composition, so the home
     // never renders bare. Disappears the moment sections exist.
     const ts = await getTranslations({ locale, namespace: "Sections" });
+    const tc = await getTranslations({ locale, namespace: "Common" });
     const trending = featured.filter((p) => p.featured);
     return (
       <>
         <HeroSlider slides={slides} />
-        <ProductCarousel eyebrow={ts("bestEyebrow")} title={ts("bestTitle")} products={bestSellers.slice(0, 8)} />
+        <ProductCarousel eyebrow={ts("bestEyebrow")} title={ts("bestTitle")} products={bestSellers.slice(0, 8)} viewAllHref="/collection/best-sellers" />
         <BannerSplit banners={brands} />
-        <ProductCarousel eyebrow={ts("newEyebrow")} title={ts("newTitle")} products={newArrivals.slice(0, 8)} />
+        <ProductCarousel eyebrow={ts("newEyebrow")} title={ts("newTitle")} products={newArrivals.slice(0, 8)} viewAllHref="/collection/new-arrivals" />
         <ParallaxCTA eyebrow={ts("bandEyebrow")} title={ts("bandTitle")} cta={ts("bandCta")} />
         <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-          <SectionHeading eyebrow={ts("libraryEyebrow")} title={ts("libraryTitle")} />
+          <SectionHeading eyebrow={ts("libraryEyebrow")} title={ts("libraryTitle")} link={{ label: tc("viewAll"), href: "/collections" }} />
           <CollectionGrid categories={collections.slice(0, 6)} locale={locale} />
         </section>
         <ProductTabs
           title={ts("trending")}
           tabs={[
-            { label: ts("tabBest"), value: "best", products: bestSellers },
-            { label: ts("tabNew"), value: "new", products: newArrivals },
-            { label: ts("tabFeatured"), value: "featured", products: trending },
+            { label: ts("tabBest"), value: "best", products: bestSellers, href: "/collection/best-sellers" },
+            { label: ts("tabNew"), value: "new", products: newArrivals, href: "/collection/new-arrivals" },
+            { label: ts("tabFeatured"), value: "featured", products: trending, href: "/collection/all" },
           ]}
         />
         <StoryBlock />
@@ -182,7 +198,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
           title={ts("testiTitle")}
         />
         <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
-          <SectionHeading eyebrow={ts("journalEyebrow")} title={ts("journalTitle")} />
+          <SectionHeading eyebrow={ts("journalEyebrow")} title={ts("journalTitle")} link={{ label: tc("viewAll"), href: "/blog" }} />
           <BlogCardGrid articles={articles.slice(0, 3)} />
         </section>
         <InstagramFeed eyebrow={ts("instaEyebrow")} title={ts("instaTitle")} />

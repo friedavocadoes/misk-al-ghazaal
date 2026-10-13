@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { Check, ChevronDown, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  RotateCcw,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { tx } from "@/lib/i18n";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
@@ -65,12 +71,18 @@ export function CollectionFilters({
   const [sort, setSort] = useState(params.get("sort") ?? "featured");
   const [lineup, setLineup] = useState(activeLineup ?? "");
   const [shopOpen, setShopOpen] = useState(false);
-  const [openSections, setOpenSections] = useState({ shop: true, avail: true, price: true, sort: true });
+  const [openSections, setOpenSections] = useState({
+    shop: true,
+    avail: true,
+    price: true,
+    sort: true,
+  });
   const shopRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (shopRef.current && !shopRef.current.contains(e.target as Node)) setShopOpen(false);
+      if (shopRef.current && !shopRef.current.contains(e.target as Node))
+        setShopOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShopOpen(false);
@@ -84,7 +96,11 @@ export function CollectionFilters({
   }, []);
 
   const activeCount =
-    (avail ? 1 : 0) + (sale ? 1 : 0) + (max < ceiling ? 1 : 0) + (sort !== "featured" ? 1 : 0) + (lineup ? 1 : 0);
+    (avail ? 1 : 0) +
+    (sale ? 1 : 0) +
+    (max < ceiling ? 1 : 0) +
+    (sort !== "featured" ? 1 : 0) +
+    (lineup ? 1 : 0);
 
   const dirty =
     avail !== (params.get("avail") === "in") ||
@@ -173,7 +189,11 @@ export function CollectionFilters({
   const toggleSection = (k: keyof typeof openSections) =>
     setOpenSections((s) => ({ ...s, [k]: !s[k] }));
 
-  const sectionHead = (k: keyof typeof openSections, label: string, badge?: string) => (
+  const sectionHead = (
+    k: keyof typeof openSections,
+    label: string,
+    badge?: string,
+  ) => (
     <button
       type="button"
       onClick={() => toggleSection(k)}
@@ -183,18 +203,27 @@ export function CollectionFilters({
       <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
         {label}
         {badge && (
-          <span key={badge} className="animate-[heart-pop_0.35s_ease-out] bg-gold px-1.5 py-px text-[9px] font-bold tracking-normal text-white">
+          <span
+            key={badge}
+            className="animate-[heart-pop_0.35s_ease-out] bg-gold px-1.5 py-px text-[9px] font-bold tracking-normal text-white"
+          >
             {badge}
           </span>
         )}
       </span>
       <ChevronDown
-        className={cn("size-3.5 text-fog transition-transform duration-300", openSections[k] && "rotate-180")}
+        className={cn(
+          "size-3.5 text-fog transition-transform duration-300",
+          openSections[k] && "rotate-180",
+        )}
       />
     </button>
   );
 
-  const sectionBody = (k: keyof typeof openSections, children: React.ReactNode) => (
+  const sectionBody = (
+    k: keyof typeof openSections,
+    children: React.ReactNode,
+  ) => (
     <div
       className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
       style={{ gridTemplateRows: openSections[k] ? "1fr" : "0fr" }}
@@ -215,7 +244,10 @@ export function CollectionFilters({
   ];
 
   return (
-    <aside ref={asideRef} className="h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-white p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto">
+    <aside
+      ref={asideRef}
+      className="h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-white p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto"
+    >
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
           <SlidersHorizontal className="size-3.5 text-gold" />
@@ -248,7 +280,9 @@ export function CollectionFilters({
             <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-fog">
               {t("collection")}
             </span>
-            <span className="block truncate text-sm font-medium text-ink">{context.label}</span>
+            <span className="block truncate text-sm font-medium text-ink">
+              {context.label}
+            </span>
           </span>
           <X className="size-4 shrink-0 text-gold transition group-hover:rotate-90 group-hover:text-ink" />
         </Link>
@@ -289,7 +323,10 @@ export function CollectionFilters({
                 {lineup ? lineupName(lineup) : t("all")}
               </span>
               <ChevronDown
-                className={cn("size-4 shrink-0 text-gold transition-transform duration-300", shopOpen && "rotate-180")}
+                className={cn(
+                  "size-4 shrink-0 text-gold transition-transform duration-300",
+                  shopOpen && "rotate-180",
+                )}
               />
             </Button>
             {shopOpen && (
@@ -312,7 +349,9 @@ export function CollectionFilters({
                     onClick={() => setShopOpen(false)}
                     className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-espresso transition hover:translate-x-0.5 hover:bg-cream hover:text-ink rtl:hover:-translate-x-0.5"
                   >
-                    <span className="truncate">{tx(c.title, c.titleAr, locale)}</span>
+                    <span className="truncate">
+                      {tx(c.title, c.titleAr, locale)}
+                    </span>
                   </Link>
                 ))}
                 {lineups.length > 0 && (
@@ -324,22 +363,32 @@ export function CollectionFilters({
                       <button
                         key={l.slug}
                         type="button"
-                        onClick={() => applyLineup(lineup === l.slug ? "" : l.slug)}
+                        onClick={() =>
+                          applyLineup(lineup === l.slug ? "" : l.slug)
+                        }
                         className={cn(
                           "flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-cream",
-                          lineup === l.slug ? "font-medium text-ink" : "text-espresso hover:text-ink",
+                          lineup === l.slug
+                            ? "font-medium text-ink"
+                            : "text-espresso hover:text-ink",
                         )}
                       >
                         <span className="flex items-center gap-2 truncate">
                           <span
                             className={cn(
                               "size-1.5 shrink-0 rounded-full transition-all duration-300",
-                              lineup === l.slug ? "scale-125 bg-gold" : "bg-ink/20",
+                              lineup === l.slug
+                                ? "scale-125 bg-gold"
+                                : "bg-ink/20",
                             )}
                           />
-                          <span className="truncate">{tx(l.title, l.titleAr, locale)}</span>
+                          <span className="truncate">
+                            {tx(l.title, l.titleAr, locale)}
+                          </span>
                         </span>
-                        {lineup === l.slug && <Check className="size-3.5 shrink-0 text-gold" />}
+                        {lineup === l.slug && (
+                          <Check className="size-3.5 shrink-0 text-gold" />
+                        )}
                       </button>
                     ))}
                   </>
@@ -351,21 +400,43 @@ export function CollectionFilters({
       </div>
 
       <div className="mt-5 animate-[filter-in_0.5s_0.15s_cubic-bezier(0.22,1,0.36,1)_backwards] border-t border-ink/10 pt-5">
-        {sectionHead("avail", t("availability"), avail || sale ? String((avail ? 1 : 0) + (sale ? 1 : 0)) : undefined)}
+        {sectionHead(
+          "avail",
+          t("availability"),
+          avail || sale ? String((avail ? 1 : 0) + (sale ? 1 : 0)) : undefined,
+        )}
         {sectionBody(
           "avail",
           <div className="space-y-1">
             <label className="flex cursor-pointer items-center justify-between gap-3 py-1.5">
-              <span className={cn("text-sm transition-colors", avail ? "font-medium text-ink" : "text-espresso")}>
+              <span
+                className={cn(
+                  "text-sm transition-colors",
+                  avail ? "font-medium text-ink" : "text-espresso",
+                )}
+              >
                 {t("inStock")}
               </span>
-              <Switch checked={avail} onCheckedChange={flipAvail} aria-label={t("inStock")} />
+              <Switch
+                checked={avail}
+                onCheckedChange={flipAvail}
+                aria-label={t("inStock")}
+              />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3 py-1.5">
-              <span className={cn("text-sm transition-colors", sale ? "font-medium text-ink" : "text-espresso")}>
+              <span
+                className={cn(
+                  "text-sm transition-colors",
+                  sale ? "font-medium text-ink" : "text-espresso",
+                )}
+              >
                 {t("onSale")}
               </span>
-              <Switch checked={sale} onCheckedChange={flipSale} aria-label={t("onSale")} />
+              <Switch
+                checked={sale}
+                onCheckedChange={flipSale}
+                aria-label={t("onSale")}
+              />
             </label>
           </div>,
         )}
@@ -378,7 +449,10 @@ export function CollectionFilters({
           "price",
           <div>
             <p className="text-sm text-espresso" aria-live="polite">
-              {t("upTo")} <span className="text-base font-semibold tabular-nums text-ink">Dhs {max}</span>
+              {t("upTo")}{" "}
+              <span className="text-base font-semibold tabular-nums text-ink">
+                AED {max}
+              </span>
             </p>
             <div className="relative mt-3 h-6">
               <input
@@ -398,8 +472,8 @@ export function CollectionFilters({
               />
             </div>
             <div className="flex justify-between text-[11px] tabular-nums text-fog">
-              <span>Dhs {floor}</span>
-              <span>Dhs {ceiling}</span>
+              <span>AED {floor}</span>
+              <span>AED {ceiling}</span>
             </div>
           </div>,
         )}
@@ -421,13 +495,17 @@ export function CollectionFilters({
                   onClick={() => setSort(o.v)}
                   className={cn(
                     "group flex w-full cursor-pointer items-center gap-2.5 px-2 py-2 text-left text-sm transition-all duration-300",
-                    on ? "bg-gold-wash/50 font-medium text-ink" : "text-espresso hover:translate-x-1 hover:bg-cream/70 hover:text-ink rtl:hover:-translate-x-1",
+                    on
+                      ? "bg-gold-wash/50 font-medium text-ink"
+                      : "text-espresso hover:translate-x-1 hover:bg-cream/70 hover:text-ink rtl:hover:-translate-x-1",
                   )}
                 >
                   <span
                     className={cn(
                       "size-1.5 shrink-0 rounded-full transition-all duration-300",
-                      on ? "scale-150 bg-gold shadow-[0_0_8px_rgba(138,109,47,0.8)]" : "bg-ink/20 group-hover:bg-gold/60",
+                      on
+                        ? "scale-150 bg-gold shadow-[0_0_8px_rgba(138,109,47,0.8)]"
+                        : "bg-ink/20 group-hover:bg-gold/60",
                     )}
                   />
                   {o.label}
@@ -443,7 +521,8 @@ export function CollectionFilters({
         disabled={!dirty}
         className={cn(
           "relative mt-6 h-12 w-full overflow-hidden text-[12px] tracking-[0.2em]",
-          dirty && "apply-armed shadow-[0_10px_28px_-12px_rgba(138,109,47,0.9)]",
+          dirty &&
+            "apply-armed shadow-[0_10px_28px_-12px_rgba(138,109,47,0.9)]",
         )}
       >
         <span className="relative z-10">

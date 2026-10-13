@@ -19,7 +19,9 @@ export function ProductCreateForm({
   create,
 }: {
   lists: CreateLists;
-  create: (formData: FormData) => Promise<{ ok: boolean; id?: string; error?: string }>;
+  create: (
+    formData: FormData,
+  ) => Promise<{ ok: boolean; id?: string; error?: string }>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -59,9 +61,15 @@ export function ProductCreateForm({
             placeholder="Midnight Oudh"
             className={field}
             onChange={(e) => {
-              const slugInput = (e.currentTarget.form as HTMLFormElement | null)?.elements.namedItem("slug") as HTMLInputElement | null;
+              const slugInput = (
+                e.currentTarget.form as HTMLFormElement | null
+              )?.elements.namedItem("slug") as HTMLInputElement | null;
               if (slugInput && !slugTouched) {
-                slugInput.value = e.target.value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+                slugInput.value = e.target.value
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-+|-+$/g, "");
               }
             }}
           />
@@ -83,12 +91,25 @@ export function ProductCreateForm({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
-            Price Dhs *
-            <input name="price" type="number" step="0.01" min={0} required className={field} />
+            Price AED *
+            <input
+              name="price"
+              type="number"
+              step="0.01"
+              min={0}
+              required
+              className={field}
+            />
           </label>
           <label className="block text-sm">
             Compare-at
-            <input name="compare_at" type="number" step="0.01" min={0} className={field} />
+            <input
+              name="compare_at"
+              type="number"
+              step="0.01"
+              min={0}
+              className={field}
+            />
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -97,7 +118,9 @@ export function ProductCreateForm({
             <select name="lineup_id" className={field} defaultValue="">
               <option value="">— none —</option>
               {lists.lineups.map((l) => (
-                <option key={l.id} value={l.id}>{l.title}</option>
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
               ))}
             </select>
           </label>
@@ -106,24 +129,36 @@ export function ProductCreateForm({
             <select name="ritual_id" className={field} defaultValue="">
               <option value="">— none —</option>
               {lists.rituals.map((r) => (
-                <option key={r.id} value={r.id}>{r.title}</option>
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
               ))}
             </select>
           </label>
         </div>
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2 border border-gold/50 bg-gold-wash/60 px-3 py-1.5">
-            <input type="checkbox" name="is_active" defaultChecked /> Visible on store
+            <input type="checkbox" name="is_active" defaultChecked /> Visible on
+            store
           </label>
-          <label><input type="checkbox" name="featured" /> Featured</label>
-          <label><input type="checkbox" name="is_new" /> New</label>
-          <label><input type="checkbox" name="is_best_seller" /> Best seller</label>
+          <label>
+            <input type="checkbox" name="featured" /> Featured
+          </label>
+          <label>
+            <input type="checkbox" name="is_new" /> New
+          </label>
+          <label>
+            <input type="checkbox" name="is_best_seller" /> Best seller
+          </label>
         </div>
         <div>
           <p className="text-sm font-medium">Collections</p>
           <div className="mt-2 grid max-h-44 gap-1 overflow-y-auto border border-ink/10 p-3 text-sm sm:grid-cols-2">
             {lists.collections.map((c) => (
-              <label key={c.id} className="flex cursor-pointer items-center gap-2 py-0.5">
+              <label
+                key={c.id}
+                className="flex cursor-pointer items-center gap-2 py-0.5"
+              >
                 <input type="checkbox" name="collections" value={c.id} />
                 {c.title}
               </label>
@@ -136,20 +171,59 @@ export function ProductCreateForm({
         <section className="border border-ink/10 bg-white p-6">
           <h2 className="font-display text-xl">Images (direct upload)</h2>
           <div className="mt-3">
-            <MultiImageUploader bucket="products" prefix={prefix} images={images} onChange={setImages} />
-            <p className="mt-1 text-xs text-ink/60">Straight into the `products` bucket.</p>
+            <MultiImageUploader
+              bucket="products"
+              prefix={prefix}
+              images={images}
+              onChange={setImages}
+            />
+            <p className="mt-1 text-xs text-ink/60">
+              Straight into the `products` bucket.
+            </p>
           </div>
         </section>
 
         <section className="space-y-3 border border-ink/10 bg-white p-6">
           <h2 className="font-display text-xl">First variant</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <label className="block">Size *<input name="v_title" required placeholder="50ml" className={field} /></label>
-            <label className="block">Price Dhs *<input name="v_price" type="number" step="0.01" min={0} required className={field} /></label>
-            <label className="block">Stock<input name="v_stock" type="number" min={0} defaultValue={25} className={field} /></label>
-            <label className="block">SKU<input name="v_sku" className={field} /></label>
+            <label className="block">
+              Size *
+              <input
+                name="v_title"
+                required
+                placeholder="50ml"
+                className={field}
+              />
+            </label>
+            <label className="block">
+              Price AED *
+              <input
+                name="v_price"
+                type="number"
+                step="0.01"
+                min={0}
+                required
+                className={field}
+              />
+            </label>
+            <label className="block">
+              Stock
+              <input
+                name="v_stock"
+                type="number"
+                min={0}
+                defaultValue={25}
+                className={field}
+              />
+            </label>
+            <label className="block">
+              SKU
+              <input name="v_sku" className={field} />
+            </label>
           </div>
-          <p className="text-xs text-ink/60">More variants can be added on the product page afterwards.</p>
+          <p className="text-xs text-ink/60">
+            More variants can be added on the product page afterwards.
+          </p>
         </section>
 
         <button

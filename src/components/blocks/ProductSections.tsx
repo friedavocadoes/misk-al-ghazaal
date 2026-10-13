@@ -1,13 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { Star, Ticket } from "lucide-react";
+import { Star } from "lucide-react";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
-import { CouponIcon } from "@/components/ui/coupon-icons";
-import { CopyCode } from "@/components/ui/copy-code";
 import {
   getApprovedReviews,
   getLineupSiblings,
-  getPublicCoupons,
   getRitualById,
 } from "@/lib/store";
 import { L } from "@/lib/site";
@@ -169,52 +166,6 @@ export function DetailedNotes({ product, locale }: { product: Product; locale: L
           className={`w-full border border-ink/10 object-cover ${product.notesImageDesktop ? "md:hidden" : ""}`}
         />
       )}
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// 4. Coupons strip: ticket cards with copy-code.
-// ---------------------------------------------------------------------------
-export async function CouponStrip({ locale }: { locale: Locale }) {
-  const coupons = await getPublicCoupons();
-  if (!coupons.length) return null;
-  const t = await getTranslations({ locale, namespace: "Product" });
-  const blurb = (kind: string, amount: number, min: number, gift?: string) => {
-    const over = min > 0 ? ` · ${t("couponOver")} ${min}` : "";
-    if (kind === "percent") return `${amount}% ${t("couponOff")}${over}`;
-    if (kind === "fixed") return `${t("couponSave")} ${amount}${over}`;
-    if (kind === "free_shipping") return t("couponShip");
-    return gift || t("couponGift");
-  };
-  return (
-    <section className="mt-12 border border-gold/40 bg-gold-wash/50 p-6 md:p-8" aria-label={t("couponsTitle")}>
-      <p className="eyebrow flex items-center gap-2 text-gold">
-        <Ticket className="size-4" /> {t("couponsEyebrow")}
-      </p>
-      <h2 className="mt-2 font-display text-2xl text-ink md:text-3xl">{t("couponsTitle")}</h2>
-      <ul className="mt-6 grid gap-3 md:grid-cols-2">
-        {coupons.map((c) => (
-          <li
-            key={c.id}
-            className="relative flex items-center gap-4 border border-dashed border-gold/60 bg-cream p-4"
-          >
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-gold-soft">
-              <CouponIcon icon={c.icon} className="size-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-mono text-base font-bold tracking-[0.12em] text-ink">
-                {c.code}
-              </span>
-              <span className="mt-0.5 block text-[13px] text-espresso">
-                {blurb(c.kind, c.amount, c.minSubtotal, c.giftTitle ? tx(c.giftTitle, c.giftTitleAr, locale) : undefined)}
-                {c.firstOrderOnly ? ` · ${t("couponFirst")}` : ""}
-              </span>
-            </span>
-            <CopyCode code={c.code} label={t("couponCopy")} copied={t("couponCopied")} />
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

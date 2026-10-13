@@ -1,6 +1,13 @@
 "use client";
 
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, Clock, Loader2, SearchX, Star } from "lucide-react";
@@ -28,24 +35,43 @@ function useLocalizeHref() {
   const pathname = usePathname();
   const onAr = pathname === "/ar" || pathname.startsWith("/ar/");
   return (href: string) =>
-    onAr && href.startsWith("/") && !href.startsWith("/ar") && !href.startsWith("/admin")
+    onAr &&
+    href.startsWith("/") &&
+    !href.startsWith("/ar") &&
+    !href.startsWith("/admin")
       ? `/ar${href}`
       : href;
 }
 
 /** Descriptive suggestion card: face, lineup eyebrow, serif title, top
     notes + size, price + rating — the whole perfume at a glance. */
-export function SuggestRow({ item, active, locale }: { item: SuggestItem; active: boolean; locale: Locale }) {
+export function SuggestRow({
+  item,
+  active,
+  locale,
+}: {
+  item: SuggestItem;
+  active: boolean;
+  locale: Locale;
+}) {
   const title = tx(item.title, item.titleAr, locale);
   const lineup = tx(item.lineupTitle ?? "", item.lineupTitleAr, locale);
-  const notes = item.topNotes.map((n) => tx(n.name, n.nameAr, locale)).filter(Boolean);
-  const onSale = item.compareAtPrice != null && item.compareAtPrice > item.price;
+  const notes = item.topNotes
+    .map((n) => tx(n.name, n.nameAr, locale))
+    .filter(Boolean);
+  const onSale =
+    item.compareAtPrice != null && item.compareAtPrice > item.price;
   return (
     <span className="flex items-center gap-3 px-4 py-2.5 text-start">
       <span className="relative size-12 shrink-0 overflow-hidden bg-sand">
         {item.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image} alt="" className="size-full object-cover" loading="lazy" />
+          <img
+            src={item.image}
+            alt=""
+            className="size-full object-cover"
+            loading="lazy"
+          />
         ) : (
           <span className="flex size-full items-center justify-center font-display text-lg italic text-fog">
             {title.charAt(0)}
@@ -73,10 +99,12 @@ export function SuggestRow({ item, active, locale }: { item: SuggestItem; active
       </span>
       <span className="shrink-0 text-end">
         <span className="block text-[12px] font-semibold tracking-wide text-ink">
-          Dhs {item.price.toFixed(0)}
+          AED {item.price.toFixed(0)}
         </span>
         {onSale && item.compareAtPrice ? (
-          <s className="block text-[10px] text-ink/35">Dhs {item.compareAtPrice.toFixed(0)}</s>
+          <s className="block text-[10px] text-ink/35">
+            AED {item.compareAtPrice.toFixed(0)}
+          </s>
         ) : item.reviewCount > 0 ? (
           <span className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-fog">
             <Star className="size-2.5 fill-gold text-gold" />
@@ -87,7 +115,9 @@ export function SuggestRow({ item, active, locale }: { item: SuggestItem; active
       <ArrowUpRight
         className={cn(
           "size-4 shrink-0 transition-all",
-          active ? "translate-x-0 text-gold opacity-100" : "-translate-x-1 opacity-0",
+          active
+            ? "translate-x-0 text-gold opacity-100"
+            : "-translate-x-1 opacity-0",
         )}
       />
     </span>
@@ -112,7 +142,17 @@ export const SearchSuggest = forwardRef<
     inputClassName?: string;
   }
 >(function SearchSuggest(
-  { placeholder, autoFocus, scope = "store", recentKey, pickHref, submitLabel, onSubmitTerm, onNavigate, inputClassName },
+  {
+    placeholder,
+    autoFocus,
+    scope = "store",
+    recentKey,
+    pickHref,
+    submitLabel,
+    onSubmitTerm,
+    onNavigate,
+    inputClassName,
+  },
   ref,
 ) {
   const [q, setQ] = useState("");
@@ -127,7 +167,8 @@ export const SearchSuggest = forwardRef<
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -166,7 +207,9 @@ export const SearchSuggest = forwardRef<
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}
-        aria-activedescendant={safeActive >= 0 ? `${listId}-${safeActive}` : undefined}
+        aria-activedescendant={
+          safeActive >= 0 ? `${listId}-${safeActive}` : undefined
+        }
         placeholder={placeholder}
         aria-label={placeholder}
         onChange={(e) => {
@@ -181,7 +224,12 @@ export const SearchSuggest = forwardRef<
         onKeyDown={(e) => {
           if (e.key === "ArrowDown" && showResults) {
             e.preventDefault();
-            setActive((a) => Math.min((a < 0 || a >= items.length ? -1 : a) + 1, items.length - 1));
+            setActive((a) =>
+              Math.min(
+                (a < 0 || a >= items.length ? -1 : a) + 1,
+                items.length - 1,
+              ),
+            );
           } else if (e.key === "ArrowUp" && showResults) {
             e.preventDefault();
             setActive((a) => Math.max(a - 1, -1));
@@ -225,8 +273,7 @@ export const SearchSuggest = forwardRef<
             <>
               {loading && items.length === 0 ? (
                 <p className="flex items-center gap-2 px-4 py-3.5 text-sm text-fog">
-                  <Loader2 className="size-4 animate-spin text-gold" />
-                  …
+                  <Loader2 className="size-4 animate-spin text-gold" />…
                 </p>
               ) : items.length === 0 ? (
                 <p className="flex items-center gap-2 px-4 py-3.5 text-sm text-fog">
@@ -236,15 +283,27 @@ export const SearchSuggest = forwardRef<
               ) : (
                 <ul className="max-h-[340px] overflow-y-auto py-1.5">
                   {items.map((it, i) => (
-                    <li key={it.id} id={`${listId}-${i}`} role="option" aria-selected={i === safeActive}>
+                    <li
+                      key={it.id}
+                      id={`${listId}-${i}`}
+                      role="option"
+                      aria-selected={i === safeActive}
+                    >
                       <NextLink
                         id={`${listId}-link-${i}`}
                         href={localizeHref(pickHref(it))}
                         onClick={() => pick(it)}
                         onMouseEnter={() => setActive(i)}
-                        className={cn("block transition-colors", i === safeActive ? "bg-cream" : "bg-white")}
+                        className={cn(
+                          "block transition-colors",
+                          i === safeActive ? "bg-cream" : "bg-white",
+                        )}
                       >
-                        <SuggestRow item={it} active={i === safeActive} locale={locale} />
+                        <SuggestRow
+                          item={it}
+                          active={i === safeActive}
+                          locale={locale}
+                        />
                       </NextLink>
                     </li>
                   ))}

@@ -19,9 +19,15 @@ async function bulkProducts(formData: FormData) {
   if (op !== "activate" && op !== "deactivate" && op !== "delete") return;
   const supabase = await createClient();
   if (op === "delete") {
-    await supabase.from("products").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+    await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", ids);
   } else {
-    await supabase.from("products").update({ is_active: op === "activate" }).in("id", ids);
+    await supabase
+      .from("products")
+      .update({ is_active: op === "activate" })
+      .in("id", ids);
   }
   // Storefront now: every touched PDP + the pages that list them.
   const { data } = await supabase.from("products").select("slug").in("id", ids);
@@ -33,7 +39,12 @@ async function bulkProducts(formData: FormData) {
 }
 
 export default async function ProductsPage(props: {
-  searchParams: Promise<{ q?: string; collection?: string; lineup?: string; status?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    collection?: string;
+    lineup?: string;
+    status?: string;
+  }>;
 }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
@@ -48,31 +59,55 @@ export default async function ProductsPage(props: {
   const supabase = await createClient();
   // select("*"): never breaks on pending migrations (missing columns read
   // as undefined below instead of 500ing the whole console).
-  const [{ data: prods }, { data: collections }, { data: lineups }, { data: links }] = await Promise.all([
+  const [
+    { data: prods },
+    { data: collections },
+    { data: lineups },
+    { data: links },
+  ] = await Promise.all([
     supabase
       .from("products")
       .select("*")
       .is("deleted_at", null)
       .order("title")
       .limit(300),
-    supabase.from("collections").select("id,slug,title").is("deleted_at", null).order("sort"),
+    supabase
+      .from("collections")
+      .select("id,slug,title")
+      .is("deleted_at", null)
+      .order("sort"),
     supabase.from("lineups").select("id,slug,title").order("sort"),
     supabase.from("product_collections").select("product_id,collection_id"),
   ]);
 
   type Row = {
-    id: string; slug: string; title: string; price: number; images: string[];
-    is_active?: boolean | null; lineup_id?: string | null;
-    sort?: number | null; sales_count?: number | null;
+    id: string;
+    slug: string;
+    title: string;
+    price: number;
+    images: string[];
+    is_active?: boolean | null;
+    lineup_id?: string | null;
+    sort?: number | null;
+    sales_count?: number | null;
   };
-  let rows = (((prods as Row[] | null) ?? []).map((p) => ({
+  let rows = ((prods as Row[] | null) ?? []).map((p) => ({
     ...p,
     images: p.images ?? [],
     is_active: p.is_active ?? true,
-  })));
+  }));
   // Console default: maison rank (manual weight → sales lift → newest).
-  rows = [...rows].sort((a, b) => ((a.sort ?? 0) - (b.sort ?? 0)) || ((b.sales_count ?? 0) - (a.sales_count ?? 0)));
-  if (query) rows = rows.filter((p) => p.title.toLowerCase().includes(query.toLowerCase()) || p.slug.includes(query.toLowerCase()));
+  rows = [...rows].sort(
+    (a, b) =>
+      (a.sort ?? 0) - (b.sort ?? 0) ||
+      (b.sales_count ?? 0) - (a.sales_count ?? 0),
+  );
+  if (query)
+    rows = rows.filter(
+      (p) =>
+        p.title.toLowerCase().includes(query.toLowerCase()) ||
+        p.slug.includes(query.toLowerCase()),
+    );
   if (lineupFilter) rows = rows.filter((p) => p.lineup_id === lineupFilter);
   if (statusFilter === "active") rows = rows.filter((p) => p.is_active);
   if (statusFilter === "paused") rows = rows.filter((p) => !p.is_active);
@@ -85,9 +120,16 @@ export default async function ProductsPage(props: {
     rows = rows.filter((p) => inColl.has(p.id));
   }
 
-  const lineupName = new Map(((lineups as { id: string; title: string }[] | null) ?? []).map((l) => [l.id, l.title]));
+  const lineupName = new Map(
+    ((lineups as { id: string; title: string }[] | null) ?? []).map((l) => [
+      l.id,
+      l.title,
+    ]),
+  );
   const collCount = new Map<string, number>();
-  for (const l of ((links as { product_id: string; collection_id: string }[] | null) ?? [])) {
+  for (const l of (links as
+    | { product_id: string; collection_id: string }[]
+    | null) ?? []) {
     collCount.set(l.product_id, (collCount.get(l.product_id) ?? 0) + 1);
   }
 
@@ -100,7 +142,12 @@ export default async function ProductsPage(props: {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 pb-6">
           <div>
             <p className="eyebrow">Products</p>
-            <h1 className="font-display text-3xl">Catalog {rows.length > 0 && <span className="text-lg text-ink/50">({rows.length})</span>}</h1>
+            <h1 className="font-display text-3xl">
+              Catalog{" "}
+              {rows.length > 0 && (
+                <span className="text-lg text-ink/50">({rows.length})</span>
+              )}
+            </h1>
           </div>
           <div className="flex gap-2">
             <Link
@@ -122,21 +169,50 @@ export default async function ProductsPage(props: {
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <AdminProductSearch />
         </div>
-        <form action="/admin/products" method="get" className="mt-2 flex flex-wrap items-center gap-2">
+        <form
+          action="/admin/products"
+          method="get"
+          className="mt-2 flex flex-wrap items-center gap-2"
+        >
           {query && <input type="hidden" name="q" value={query} />}
-          <select name="collection" defaultValue={collectionFilter} className={selectCls} aria-label="Collection">
+          <select
+            name="collection"
+            defaultValue={collectionFilter}
+            className={selectCls}
+            aria-label="Collection"
+          >
             <option value="">All collections</option>
-            {((collections as { id: string; slug: string; title: string }[] | null) ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
+            {(
+              (collections as
+                | { id: string; slug: string; title: string }[]
+                | null) ?? []
+            ).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
             ))}
           </select>
-          <select name="lineup" defaultValue={lineupFilter} className={selectCls} aria-label="Lineup">
+          <select
+            name="lineup"
+            defaultValue={lineupFilter}
+            className={selectCls}
+            aria-label="Lineup"
+          >
             <option value="">All lineups</option>
-            {((lineups as { id: string; title: string }[] | null) ?? []).map((l) => (
-              <option key={l.id} value={l.id}>{l.title}</option>
-            ))}
+            {((lineups as { id: string; title: string }[] | null) ?? []).map(
+              (l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ),
+            )}
           </select>
-          <select name="status" defaultValue={statusFilter} className={selectCls} aria-label="Status">
+          <select
+            name="status"
+            defaultValue={statusFilter}
+            className={selectCls}
+            aria-label="Status"
+          >
             <option value="all">Active + paused</option>
             <option value="active">Active only</option>
             <option value="paused">Paused only</option>
@@ -144,8 +220,15 @@ export default async function ProductsPage(props: {
           <button className="cursor-pointer border border-ink bg-ink px-4 py-2 text-sm text-white transition hover:bg-ink/85">
             Filter
           </button>
-          {(query || collectionFilter || lineupFilter || statusFilter !== "all") && (
-            <Link href="/admin/products" className="px-2 text-xs text-fog hover:text-ink" aria-label="Clear filters">
+          {(query ||
+            collectionFilter ||
+            lineupFilter ||
+            statusFilter !== "all") && (
+            <Link
+              href="/admin/products"
+              className="px-2 text-xs text-fog hover:text-ink"
+              aria-label="Clear filters"
+            >
               ✕ Clear
             </Link>
           )}
@@ -153,13 +236,27 @@ export default async function ProductsPage(props: {
 
         {rows.length === 0 ? (
           <p className="mt-6 border border-ink/10 bg-white p-6 text-center text-sm text-ink/60">
-            No products match — <Link href="/admin/products/new" className="link-underline">create one</Link> or clear the filters.
+            No products match —{" "}
+            <Link href="/admin/products/new" className="link-underline">
+              create one
+            </Link>{" "}
+            or clear the filters.
           </p>
         ) : (
-          <form action={bulkProducts} className="mt-6 border border-ink/10 bg-white">
+          <form
+            action={bulkProducts}
+            className="mt-6 border border-ink/10 bg-white"
+          >
             <div className="flex flex-wrap items-center gap-2 border-b border-ink/10 bg-cream/60 px-4 py-3 text-sm">
-              <span className="me-1 text-ink/60">{rows.length} shown — tick to bulk-edit:</span>
-              <select name="op" defaultValue="deactivate" className={selectCls} aria-label="Bulk action">
+              <span className="me-1 text-ink/60">
+                {rows.length} shown — tick to bulk-edit:
+              </span>
+              <select
+                name="op"
+                defaultValue="deactivate"
+                className={selectCls}
+                aria-label="Bulk action"
+              >
                 <option value="deactivate">Pause (hide)</option>
                 <option value="activate">Activate (show)</option>
                 <option value="delete">Move to bin</option>
@@ -168,7 +265,10 @@ export default async function ProductsPage(props: {
             </div>
             <div className="divide-y divide-ink/10">
               {rows.map((p) => (
-                <div key={p.id} className="admin-row flex items-center gap-4 p-4">
+                <div
+                  key={p.id}
+                  className="admin-row flex items-center gap-4 p-4"
+                >
                   <input
                     type="checkbox"
                     name="ids"
@@ -176,17 +276,28 @@ export default async function ProductsPage(props: {
                     aria-label={`Select ${p.title}`}
                     className="size-4 shrink-0 cursor-pointer accent-[#1c1917]"
                   />
-                  <Link href={`/admin/products/${p.id}`} className="block size-12 shrink-0 overflow-hidden border border-ink/10 bg-sand">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="block size-12 shrink-0 overflow-hidden border border-ink/10 bg-sand"
+                  >
                     {p.images?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.images[0]} alt="" className="size-full object-cover" loading="lazy" />
+                      <img
+                        src={p.images[0]}
+                        alt=""
+                        className="size-full object-cover"
+                        loading="lazy"
+                      />
                     ) : (
                       <span className="flex size-full items-center justify-center font-display text-lg italic text-fog">
                         {p.title.charAt(0)}
                       </span>
                     )}
                   </Link>
-                  <Link href={`/admin/products/${p.id}`} className="min-w-0 flex-1">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="min-w-0 flex-1"
+                  >
                     <p className="truncate font-medium">
                       {p.title}
                       {!p.is_active && (
@@ -196,12 +307,17 @@ export default async function ProductsPage(props: {
                       )}
                     </p>
                     <p className="truncate text-sm text-ink/60">
-                      /{p.slug} · {p.images?.length ?? 0} images · {collCount.get(p.id) ?? 0} collections
-                      {p.lineup_id && lineupName.get(p.lineup_id) ? ` · ${lineupName.get(p.lineup_id)}` : ""}
+                      /{p.slug} · {p.images?.length ?? 0} images ·{" "}
+                      {collCount.get(p.id) ?? 0} collections
+                      {p.lineup_id && lineupName.get(p.lineup_id)
+                        ? ` · ${lineupName.get(p.lineup_id)}`
+                        : ""}
                       {` · rank ${p.sort ?? 0} · ${p.sales_count ?? 0} sold`}
                     </p>
                   </Link>
-                  <p className="shrink-0 font-medium">Dhs {Number(p.price).toFixed(2)}</p>
+                  <p className="shrink-0 font-medium">
+                    AED {Number(p.price).toFixed(2)}
+                  </p>
                 </div>
               ))}
             </div>

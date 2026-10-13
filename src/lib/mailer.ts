@@ -21,7 +21,11 @@ function transporter(): Transporter | null {
   });
 }
 
-function shell(title: string, preheader: string, body: string): { html: string; text: string } {
+function shell(
+  title: string,
+  preheader: string,
+  body: string,
+): { html: string; text: string } {
   const text = `${title}\n${preheader}\n\n${body.replace(/<[^>]*>/g, "")}`;
   const html = `<!doctype html><html><body style="margin:0;background:#faf7f1;font-family:Georgia,serif;color:#1c1917">
 <div style="max-width:560px;margin:0 auto;padding:32px 24px">
@@ -69,12 +73,12 @@ export function orderLinesHtml(
   const rows = lines
     .map(
       (l) =>
-        `<tr><td style="padding:8px 0;border-bottom:1px solid #e9e1d2">${l.title} × ${l.qty}</td><td align="right" style="padding:8px 0;border-bottom:1px solid #e9e1d2">Dhs ${(l.unit * l.qty).toFixed(2)}</td></tr>`,
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #e9e1d2">${l.title} × ${l.qty}</td><td align="right" style="padding:8px 0;border-bottom:1px solid #e9e1d2">AED ${(l.unit * l.qty).toFixed(2)}</td></tr>`,
     )
     .join("");
   return `<table style="width:100%;border-collapse:collapse">${rows}</table>
-<p>Subtotal Dhs ${subtotal.toFixed(2)}${discount > 0 ? ` · Discount −Dhs ${discount.toFixed(2)}` : ""} · Shipping ${shipping === 0 ? "complimentary" : `Dhs ${shipping.toFixed(2)}`}</p>
-<p style="font-size:20px">Total Dhs ${total.toFixed(2)} — cash on delivery.</p>`;
+<p>Subtotal AED ${subtotal.toFixed(2)}${discount > 0 ? ` · Discount −AED ${discount.toFixed(2)}` : ""} · Shipping ${shipping === 0 ? "complimentary" : `AED ${shipping.toFixed(2)}`}</p>
+<p style="font-size:20px">Total AED ${total.toFixed(2)} — cash on delivery.</p>`;
 }
 
 /** Full order-page email: header, items, totals, delivery + pin, tracking,
@@ -84,7 +88,13 @@ export function buildOrderEmail(opts: {
   date: string;
   statusLabel: string;
   customerName: string;
-  lines: { title: string; qty: number; unit: number; image?: string; href?: string }[];
+  lines: {
+    title: string;
+    qty: number;
+    unit: number;
+    image?: string;
+    href?: string;
+  }[];
   origin: string;
   subtotal: number;
   discount: number;
@@ -102,11 +112,13 @@ export function buildOrderEmail(opts: {
       const img = l.image
         ? `<img src="${l.image.startsWith("http") ? l.image : `${o.origin}${l.image}`}" width="56" style="width:56px;height:70px;object-fit:cover;display:block" alt="" />`
         : "";
-      const title = l.href ? `<a href="${o.origin}${l.href}" style="color:#1c1917">${l.title}</a>` : l.title;
+      const title = l.href
+        ? `<a href="${o.origin}${l.href}" style="color:#1c1917">${l.title}</a>`
+        : l.title;
       return `<tr>
 <td style="padding:10px 0;border-bottom:1px solid #e9e1d2;vertical-align:top">${img}</td>
 <td style="padding:10px 0 10px 12px;border-bottom:1px solid #e9e1d2;vertical-align:top">${title}<br /><span style="color:#78716c">× ${l.qty}</span></td>
-<td align="right" style="padding:10px 0;border-bottom:1px solid #e9e1d2;vertical-align:top">Dhs ${(l.unit * l.qty).toFixed(2)}</td>
+<td align="right" style="padding:10px 0;border-bottom:1px solid #e9e1d2;vertical-align:top">AED ${(l.unit * l.qty).toFixed(2)}</td>
 </tr>`;
     })
     .join("");
@@ -115,13 +127,16 @@ export function buildOrderEmail(opts: {
     : "";
   return {
     subject: `Order ${o.orderNo} — ${o.statusLabel} · Misk Al Ghazaal`,
-    title: o.statusLabel === "received" ? "Shukran — order received." : `Order ${o.statusLabel.toLowerCase()}.`,
+    title:
+      o.statusLabel === "received"
+        ? "Shukran — order received."
+        : `Order ${o.statusLabel.toLowerCase()}.`,
     preheader: `${o.orderNo} · ${o.date} · cash on delivery`,
     bodyHtml: `<p>Dear ${o.customerName},</p>
 <p>Your order <strong>${o.orderNo}</strong> (${o.date}) is now <strong>${o.statusLabel}</strong>.</p>
 <table style="width:100%;border-collapse:collapse">${itemRows}</table>
-<p>Subtotal Dhs ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −Dhs ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `Dhs ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>
-<p style="font-size:20px">Total Dhs ${o.total.toFixed(2)} — cash on delivery.</p>
+<p>Subtotal AED ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −AED ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `AED ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>
+<p style="font-size:20px">Total AED ${o.total.toFixed(2)} — cash on delivery.</p>
 <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Delivery</h3>
 <p>${o.addressHtml}</p>
 ${o.pinUrl ? `<p><a href="${o.pinUrl}">View delivery pin</a></p>` : ""}

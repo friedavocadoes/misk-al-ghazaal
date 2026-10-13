@@ -379,9 +379,37 @@ html[lang="ar"] .eyebrow {
   background: transparent;
 }
 
+/* Coupon reject: quick sideways shake + red edge. Re-triggered by
+   keying the wrapper per attempt (see checkout / PDP offers). */
+@keyframes coupon-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+.coupon-shake {
+  animation: coupon-shake 0.45s ease;
+}
+.coupon-shake input {
+  border-color: #9c2b2e;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skel::after,
-  .apply-armed .apply-shine {
+  .apply-armed .apply-shine,
+  .coupon-shake {
     animation: none;
   }
   .burst-ray {

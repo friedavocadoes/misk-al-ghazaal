@@ -44,7 +44,7 @@ export const SITE = {
     "عطور مِسك الغزال والدخون والبخور والعود المقدس — صُنعت في الإمارات.",
   ),
   announcement: L(
-    "Complimentary delivery across the UAE on orders above Dhs 200 · Cash on Delivery",
+    "Complimentary delivery across the UAE on orders above AED 200 · Cash on Delivery",
     "توصيل مجاني في الإمارات للطلبات فوق 200 درهم · الدفع عند الاستلام",
   ),
   email: "info@miskalghazaalperfumes.com",
@@ -112,7 +112,12 @@ export const LOCATIONS: { store: StoreLocation; factory: StoreLocation } = {
     id: "factory",
     kind: L("The Factory", "المصنع"),
     name: L("Misk Al Ghazaal Factory", "مصنع مسك الغزال"),
-    lines: [L("Misk Al Ghazaal, Al Jerf Industrial 1, Ajman", "دبي، الإمارات العربية المتحدة")],
+    lines: [
+      L(
+        "Misk Al Ghazaal, Al Jerf Industrial 1, Ajman",
+        "دبي، الإمارات العربية المتحدة",
+      ),
+    ],
     hours: [],
     mapsHref: "",
     embedSrc:
@@ -299,7 +304,7 @@ const FAQS: Localizable<Faq>[] = [
   {
     en: {
       q: "What are the shipping charges?",
-      a: "Delivery is complimentary above Dhs 200; a flat Dhs 26 applies below that.",
+      a: "Delivery is complimentary above AED 200; a flat AED 26 applies below that.",
     },
     ar: {
       q: "ما هي رسوم الشحن؟",
@@ -337,7 +342,7 @@ const PERKS: Localizable<Perk>[] = [
   {
     en: {
       title: "Complimentary Shipping & Samples",
-      desc: "On orders above 200 Dhs",
+      desc: "On orders above 200 AED",
     },
     ar: {
       title: "شحن وعينات مجانية",

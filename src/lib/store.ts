@@ -819,6 +819,8 @@ export function toCouponRow(c: {
   kind: Coupon["kind"];
   amount: number;
   min_subtotal: number;
+  max_discount: number | null;
+  once_per_account: boolean;
   first_order_only: boolean;
   active: boolean;
   icon: string;
@@ -837,6 +839,8 @@ export function toCouponRow(c: {
     kind: c.kind,
     amount: Number(c.amount ?? 0),
     minSubtotal: Number(c.min_subtotal ?? 0),
+    ...(c.max_discount != null ? { maxDiscount: Number(c.max_discount) } : {}),
+    oncePerAccount: c.once_per_account ?? false,
     firstOrderOnly: c.first_order_only,
     active: c.active,
     icon: c.icon ?? "tag",

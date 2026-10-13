@@ -3,17 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, Ticket } from "lucide-react";
+import { Check, ChevronDown, Loader2, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useCartMeta } from "@/lib/cart-meta";
 import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
+import { CouponTicket } from "@/components/blocks/CouponTicket";
+import { celebrate } from "@/lib/confetti";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import type { Locale } from "@/i18n/routing";
-import type { DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
+import type { Coupon, DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
 import { useStickyLock } from "@/components/blocks/use-sticky-lock";
+import { cn } from "@/lib/utils";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -42,6 +45,12 @@ export default function CheckoutPage() {
   const [referral, setReferral] = useState("");
   const [appliedReferral, setAppliedReferral] = useState("");
   const [referralState, setReferralState] = useState<"idle" | "checking" | "ok" | "bad">("idle");
+  const [referralOpen, setReferralOpen] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [shakeKey, setShakeKey] = useState(0);
+  const [offers, setOffers] = useState<Coupon[]>([]);
+  const offersRef = useRef<HTMLElement>(null);
+  const prevCouponState = useRef(couponState);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -68,6 +77,23 @@ export default function CheckoutPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (Array.isArray(j?.countries)) setCountries(j.countries as DeliveryCountry[]);
+      })
+      .catch(() => {});
+    // Pick up a code applied on a product page.
+    try {
+      const saved = localStorage.getItem("misk-coupon")?.trim().toUpperCase();
+      if (saved) {
+        setCoupon(saved);
+        setAppliedCoupon(saved);
+        setCouponState("checking");
+      }
+    } catch {
+      /* private mode — no handoff */
+    }
+    fetch("/api/coupons")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (Array.isArray(j?.coupons)) setOffers(j.coupons as Coupon[]);
       })
       .catch(() => {});
   }, []);
@@ -98,10 +124,12 @@ export default function CheckoutPage() {
             setQuote(j.quote);
             setCouponState(appliedCoupon ? "ok" : "idle");
             setReferralState(appliedReferral ? "ok" : "idle");
+            setCouponError("");
           } else {
             const err = typeof j?.error === "string" ? j.error : "";
             if (appliedCoupon && (!err || err.startsWith("coupon"))) {
               setCouponState(err === "coupon:min" ? "min" : "bad");
+              setCouponError(err);
             } else if (appliedReferral && (!err || err.startsWith("referral"))) {
               setReferralState("bad");
             }
@@ -120,6 +148,28 @@ export default function CheckoutPage() {
     // Empty apply = clear: a deleted code must never block checkout.
     setAppliedCoupon(clean);
     setCouponState(clean ? "checking" : "idle");
+    if (!clean) setCouponError("");
+  };
+  const quickApply = (code: string) => {
+    setCoupon(code);
+    setAppliedCoupon(code);
+    setCouponState("checking");
+  };
+  const removeCoupon = () => {
+    setCoupon("");
+    setAppliedCoupon("");
+    setCouponState("idle");
+    setCouponError("");
+    try {
+      localStorage.removeItem("misk-coupon");
+    } catch {
+      /* ignore */
+    }
+  };
+  const removeReferral = () => {
+    setReferral("");
+    setAppliedReferral("");
+    setReferralState("idle");
   };
   const applyReferral = () => {
     const clean = referral.trim().toUpperCase();
@@ -140,6 +190,35 @@ export default function CheckoutPage() {
       setAppliedReferral("");
       setReferralState("idle");
     }
+  };
+
+  // Persist the applied code (PDP handoff) and celebrate/shake on
+  // transitions only — re-quotes while bad must not re-shake.
+  useEffect(() => {
+    try {
+      if (appliedCoupon) localStorage.setItem("misk-coupon", appliedCoupon);
+      else localStorage.removeItem("misk-coupon");
+    } catch {
+      /* ignore */
+    }
+  }, [appliedCoupon]);
+
+  useEffect(() => {
+    const prev = prevCouponState.current;
+    prevCouponState.current = couponState;
+    if (couponState === "ok" && prev !== "ok") celebrate(offersRef.current);
+    if ((couponState === "bad" || couponState === "min") && prev !== couponState) {
+      setShakeKey((k) => k + 1);
+    }
+  }, [couponState]);
+
+  const couponReason = (): string => {
+    if (couponState === "min") return t("couponMin");
+    if (couponError === "coupon:login") return t("couponLogin");
+    if (couponError === "coupon:used") return t("couponUsed");
+    if (couponError === "coupon:expired") return t("couponExpired");
+    if (couponError === "coupon:exhausted") return t("couponExhausted");
+    return t("couponBad");
   };
 
   const friendlyError = (raw: unknown): string => {
@@ -192,6 +271,11 @@ export default function CheckoutPage() {
     setPlacing(false);
     if (res.ok && j?.order_no) {
       setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0) });
+      try {
+        localStorage.removeItem("misk-coupon");
+      } catch {
+        /* ignore */
+      }
       clear();
     } else {
       setOrderError(friendlyError(j?.error));
@@ -281,33 +365,166 @@ export default function CheckoutPage() {
           </section>
 
           {/* Offers */}
-          <section className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("offersTitle")}>
+          <section ref={offersRef} className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("offersTitle")}>
             <h2 className="flex items-center gap-2 font-display text-2xl text-ink">
               <Ticket className="size-5 text-gold" /> {t("offersTitle")}
             </h2>
-            <div className="mt-5 grid gap-4">
-              <div>
-                <div className="flex gap-2">
-                  <Input value={coupon} onChange={(e) => onCouponInput(e.target.value)} placeholder={t("couponPh")} aria-label={t("couponPh")} className="font-mono uppercase" />
-                  <Button variant="outline" onClick={applyCoupon} disabled={couponState === "checking"}>
-                    {couponState === "checking" ? t("couponChecking") : t("apply")}
+
+            {appliedCoupon && couponState === "ok" ? (
+              <div
+                key={`ok-${appliedCoupon}`}
+                className="mt-5 flex animate-[heart-pop_0.4s_cubic-bezier(0.34,1.56,0.64,1)] items-center gap-3 border border-[#1e7a46]/40 bg-[#1e7a46]/[0.07] p-4"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1e7a46] text-white">
+                  <Check className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-base font-bold tracking-[0.12em] text-ink">
+                    {appliedCoupon}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">
+                    {t("couponOk")}
+                    {quote && quote.discount > 0 ? ` · −${formatAED(quote.discount)}` : ""}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  aria-label={t("couponRemove")}
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 border border-ink/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:border-[#9c2b2e] hover:text-[#9c2b2e]"
+                >
+                  <X className="size-3.5" /> {t("couponRemove")}
+                </button>
+              </div>
+            ) : (
+              <div key={`in-${shakeKey}`} className={cn(couponState === "bad" || couponState === "min" ? "coupon-shake" : "")}>
+                <label htmlFor="coupon-input" className="mt-5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
+                  {t("couponLabel")}
+                </label>
+                <div className="mt-2 flex gap-2">
+                  <Input
+                    id="coupon-input"
+                    value={coupon}
+                    onChange={(e) => onCouponInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        applyCoupon();
+                      }
+                    }}
+                    placeholder="XXXX"
+                    aria-label={t("couponLabel")}
+                    dir="ltr"
+                    className={cn(
+                      "font-mono uppercase",
+                      (couponState === "bad" || couponState === "min") && "border-[#9c2b2e]",
+                    )}
+                  />
+                  <Button variant="outline" onClick={applyCoupon} disabled={couponState === "checking" || !coupon.trim()} className="shrink-0">
+                    {couponState === "checking" ? <Loader2 className="size-4 animate-spin" /> : t("apply")}
                   </Button>
                 </div>
                 {couponState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
-                {couponState === "ok" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">{t("couponOk")}</p>}
-                {couponState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("couponBad")}</p>}
-                {couponState === "min" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("couponMin")}</p>}
+                {(couponState === "bad" || couponState === "min") && (
+                  <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{couponReason()}</p>
+                )}
               </div>
-              <div>
-                <div className="flex gap-2">
-                  <Input value={referral} onChange={(e) => onReferralInput(e.target.value)} placeholder={t("referralPh")} aria-label={t("referralPh")} className="font-mono uppercase" />
-                  <Button variant="outline" onClick={applyReferral} disabled={referralState === "checking"}>
-                    {referralState === "checking" ? t("couponChecking") : t("apply")}
-                  </Button>
+            )}
+
+            {offers.length > 0 && !(appliedCoupon && couponState === "ok") && (
+              <div className="mt-6">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
+                  {t("offersPick")}
+                </p>
+                <ul className="mt-3 grid gap-3">
+                  {offers
+                    .filter((o) => o.code !== appliedCoupon)
+                    .map((o) => (
+                      <li key={o.id}>
+                        <CouponTicket
+                          coupon={o}
+                          locale={locale}
+                          compact
+                          action={
+                            <button
+                              type="button"
+                              onClick={() => quickApply(o.code)}
+                              className="shrink-0 cursor-pointer border border-ink bg-ink px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-gold-soft hover:text-ink"
+                            >
+                              {t("apply")}
+                            </button>
+                          }
+                        />
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-6 border-t border-ink/10 pt-5">
+              <button
+                type="button"
+                onClick={() => setReferralOpen((v) => !v)}
+                aria-expanded={referralOpen}
+                className="flex w-full cursor-pointer items-center justify-between text-left"
+              >
+                <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
+                  {t("referralQ")}
+                </span>
+                <ChevronDown className={cn("size-4 text-gold transition-transform duration-300", referralOpen && "rotate-180")} />
+              </button>
+              <div
+                className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                style={{ gridTemplateRows: referralOpen ? "1fr" : "0fr" }}
+              >
+                <div className="overflow-hidden">
+                  <div className="pt-4">
+                    {appliedReferral && referralState === "ok" ? (
+                      <div className="flex items-center gap-3 border border-[#1e7a46]/40 bg-[#1e7a46]/[0.07] p-4">
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-mono text-base font-bold tracking-[0.12em] text-ink">
+                            {appliedReferral}
+                          </span>
+                          <span className="mt-0.5 block text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">
+                            {t("referralOk")}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeReferral}
+                          aria-label={t("couponRemove")}
+                          className="flex shrink-0 cursor-pointer items-center gap-1.5 border border-ink/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:border-[#9c2b2e] hover:text-[#9c2b2e]"
+                        >
+                          <X className="size-3.5" /> {t("couponRemove")}
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex gap-2">
+                          <Input
+                            value={referral}
+                            onChange={(e) => onReferralInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                applyReferral();
+                              }
+                            }}
+                            placeholder="XXXX"
+                            aria-label={t("referralPh")}
+                            dir="ltr"
+                            className="font-mono uppercase"
+                          />
+                          <Button variant="outline" onClick={applyReferral} disabled={referralState === "checking" || !referral.trim()} className="shrink-0">
+                            {referralState === "checking" ? <Loader2 className="size-4 animate-spin" /> : t("apply")}
+                          </Button>
+                        </div>
+                        {referralState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
+                        {referralState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("referralBad")}</p>}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {referralState === "checking" && <p className="mt-2 animate-pulse text-[12px] font-semibold uppercase tracking-[0.14em] text-fog">{t("couponChecking")}</p>}
-                {referralState === "ok" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">{t("referralOk")}</p>}
-                {referralState === "bad" && <p className="mt-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{t("referralBad")}</p>}
               </div>
             </div>
           </section>

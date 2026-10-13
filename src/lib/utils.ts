@@ -6,5 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatAED(value: number): string {
-  return `Dhs ${value.toFixed(2)}`;
+  return `AED ${value.toFixed(2)}`;
 }

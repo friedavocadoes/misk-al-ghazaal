@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
 import { TrustBadges } from "./TrustBadges";
+import { PdpOffers } from "./PdpOffers";
+import type { Coupon } from "@/lib/types";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 
@@ -103,6 +105,7 @@ export function ProductInfo({
   categoryName,
   rating,
   reviewCount,
+  coupons,
 }: {
   product: Product;
   layout?: "standard" | "miskalgazaal";
@@ -111,6 +114,8 @@ export function ProductInfo({
   /** Real aggregates (approved reviews only) — fall back to catalog values. */
   rating?: number;
   reviewCount?: number;
+  /** Public offers for the buy-box coupon picker. */
+  coupons?: Coupon[];
 }) {
   const t = useTranslations("Product");
   const router = useRouter();
@@ -253,6 +258,9 @@ export function ProductInfo({
       <Button variant="outline" size="lg" className="mt-2 w-full" onClick={buyNow}>
         {t("buyNow")}
       </Button>
+      {!!coupons?.length && (
+        <PdpOffers slug={product.slug} variantId={variant?.id} coupons={coupons} locale={locale} />
+      )}
 
       {layout === "miskalgazaal" ? (
         <div className="mt-8 border-t border-ink/10 pt-6">

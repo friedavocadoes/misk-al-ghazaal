@@ -19,6 +19,8 @@ async function saveCoupon(formData: FormData) {
       kind: String(formData.get("kind")),
       amount: Number(formData.get("amount") || 0),
       min_subtotal: Number(formData.get("min_subtotal") || 0),
+      max_discount: formData.get("max_discount") ? Number(formData.get("max_discount")) : null,
+      once_per_account: formData.get("once_per_account") === "on",
       first_order_only: formData.get("first_order_only") === "on",
       active: formData.get("active") === "on",
       starts_at: String(formData.get("starts_at") || "") || null,
@@ -70,6 +72,7 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
           </label>
           <label className="block">Amount<input name="amount" type="number" step="0.01" defaultValue={c.amount} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <label className="block">Min subtotal AED<input name="min_subtotal" type="number" step="0.01" defaultValue={c.min_subtotal} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
+          <label className="block">Max discount AED (blank = ∞)<input name="max_discount" type="number" step="0.01" defaultValue={c.max_discount ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <label className="block">Usage limit<input name="usage_limit" type="number" defaultValue={c.usage_limit ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <label className="block">Icon
             <select name="icon" defaultValue={c.icon} className="mt-1 w-full border border-ink/20 px-3 py-2">
@@ -85,6 +88,7 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
           <label className="block">Gift title AR<input name="gift_title_ar" defaultValue={c.gift_title_ar ?? ""} className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <div className="flex flex-wrap gap-5 md:col-span-2">
             <label><input type="checkbox" name="first_order_only" defaultChecked={c.first_order_only} /> First orders only</label>
+            <label><input type="checkbox" name="once_per_account" defaultChecked={c.once_per_account ?? false} /> Once per account</label>
             <label><input type="checkbox" name="active" defaultChecked={c.active} /> Active</label>
             <label><input type="checkbox" name="is_public" defaultChecked={c.is_public} /> Show on product pages</label>
           </div>

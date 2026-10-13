@@ -10,7 +10,6 @@ import {
 } from "@/components/blocks/ProductDetails";
 import {
   AboutShort,
-  CouponStrip,
   DetailedNotes,
   LineupRow,
   NotesBrief,
@@ -24,6 +23,7 @@ import {
   getApprovedReviews,
   getProductBySlug,
   getProducts,
+  getPublicCoupons,
   getRelatedProducts,
 } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
@@ -46,6 +46,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
 
   const related = await getRelatedProducts(slug, 4);
   const collection = await getCollectionBySlug(product.categorySlugs[0]);
+  const coupons = await getPublicCoupons();
   // Real review aggregates (approved only) — fetched once, shared by the
   // buy-box line and the reviews section. Never seeded numbers.
   const approvedReviews = await getApprovedReviews(product.id, 500);
@@ -87,6 +88,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
             categoryName={catTitle}
             rating={liveRating}
             reviewCount={approvedReviews.length}
+            coupons={coupons}
           />
         </div>
       </div>
@@ -94,7 +96,6 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
       <NotesBrief product={product} locale={locale} />
       <RitualSection product={product} locale={locale} />
       <DetailedNotes product={product} locale={locale} />
-      <CouponStrip locale={locale} />
       <ProductTabsAccordion product={product} locale={locale} />
       <LineupRow product={product} locale={locale} />
       <ReviewsSection product={product} locale={locale} reviews={approvedReviews} />
