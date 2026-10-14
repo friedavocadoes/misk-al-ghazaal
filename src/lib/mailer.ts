@@ -157,6 +157,6 @@ export function buildWelcomeEmail(name: string): {
     title: `Ahlan wa sahlan${name ? `, ${name}` : ""}.`,
     preheader: "Your account is ready — invite friends, earn together.",
     bodyHtml: `<p>Your maison account is ready. From here you can track every parcel, keep a wishlist, hold reward coupons — and invite friends: you both earn on their first order.</p>
-<p>Start with the icons: best sellers, new arrivals, holy oudh. Every order leaves with complimentary samples.</p>`,
+<p>Start with the icons: best sellers, new arrivals. Every order leaves with complimentary samples.</p>`,
   };
 }

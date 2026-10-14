@@ -13,7 +13,6 @@ export async function getFooterColumns(locale: Locale): Promise<FooterColumn[]> 
     "best-sellers",
     "new-arrivals",
     "dukhoon",
-    "holy-oudh",
     "misk-al-ghazaal",
   ].flatMap((s) => {
     const c = collections.find((x) => x.slug === s);

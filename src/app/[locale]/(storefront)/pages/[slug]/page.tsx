@@ -36,14 +36,14 @@ const PAGES: Record<
     titleAr: "قصتنا",
     eyebrow: "Maison Misk Al Ghazaal",
     eyebrowAr: "دار مسك الغزال",
-    html: "<p>Misk Al Ghazaal perfumes, dukhoon and holy oudh — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates, and cash on delivery.</p>",
+    html: "<p>Misk Al Ghazaal perfumes and dukhoon — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates, and cash on delivery.</p>",
   },
   brands: {
     title: "Our Brands",
     titleAr: "علاماتنا",
     eyebrow: "Maisons",
     eyebrowAr: "العلامات",
-    html: "<p>Misk Al Ghazaal · Noorjes · Holy Oudh · plus our maison exclusive blends.</p>",
+    html: "<p>Misk Al Ghazaal · Noorjes · plus our maison exclusive blends.</p>",
   },
   women: {
     title: "The Women's Edit",
@@ -72,13 +72,6 @@ const PAGES: Record<
     eyebrow: "Index",
     eyebrowAr: "فهرس",
     html: "<p>Shop, collections, journal, account and client-care pages.</p>",
-  },
-  "holy-oudh": {
-    title: "Holy Oudh",
-    titleAr: "العود المقدس",
-    eyebrow: "Rare Oils",
-    eyebrowAr: "زيوت نادرة",
-    html: "<p>Rare Hindi and Cambodi dehn al oud for connoisseurs.</p>",
   },
   "ramadan-offer": {
     title: "The Ramadan Offer",

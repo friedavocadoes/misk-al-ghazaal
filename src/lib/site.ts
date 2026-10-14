@@ -40,7 +40,7 @@ export const L = <T>(en: T, ar?: T): Localizable<T> => ({ en, ar });
 export const SITE = {
   name: "Misk Al Ghazaal",
   tagline: L(
-    "Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — crafted in the UAE.",
+    "Misk Al Ghazaal perfumes, dukhoon and bakhoor — crafted in the UAE.",
     "عطور مِسك الغزال والدخون والبخور والعود المقدس — صُنعت في الإمارات.",
   ),
   announcement: L(
