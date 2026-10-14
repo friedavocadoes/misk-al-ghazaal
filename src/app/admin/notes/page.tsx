@@ -4,19 +4,31 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 async function createNote(formData: FormData) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase.from("notes").insert({
+  const name = String(formData.get("name"));
+  const { data, error } = await supabase.from("notes").insert({
     slug: String(formData.get("slug")).trim().toLowerCase().replace(/\s+/g, "-"),
-    name: String(formData.get("name")),
+    name,
     name_ar: String(formData.get("name_ar") || "") || null,
     color: String(formData.get("color") || "#8a6d2f"),
     description: String(formData.get("description") || "") || "",
     description_ar: String(formData.get("description_ar") || "") || null,
+  }).select("id").single();
+  if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "notes",
+    action: "create",
+    entity: "note",
+    entityId: (data as { id: string } | null)?.id ?? "",
+    label: name,
+    summary: `Added fragrance note “${name}”`,
+    details: { name },
   });
   revalidatePath("/admin/notes");
   revalidatePath("/", "layout");
@@ -36,6 +48,15 @@ async function saveNote(formData: FormData) {
       description: String(formData.get("description") || "") || "",
     })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "notes",
+    action: "update",
+    entity: "note",
+    entityId: String(formData.get("id")),
+    label: String(formData.get("name")),
+    summary: `Updated fragrance note “${String(formData.get("name"))}”`,
+    details: { name: String(formData.get("name")), color: String(formData.get("color") || "") },
+  });
   revalidatePath("/admin/notes");
   revalidatePath("/", "layout");
 }
@@ -45,7 +66,18 @@ async function deleteNote(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("notes").select("slug, name").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as { slug?: string; name?: string };
   await supabase.from("notes").delete().eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "notes",
+    action: "delete",
+    entity: "note",
+    entityId: String(formData.get("id")),
+    label: d.name ?? d.slug ?? String(formData.get("id")),
+    summary: `Deleted fragrance note “${d.name ?? d.slug ?? String(formData.get("id"))}”`,
+    details: { id: String(formData.get("id")), snapshot: doomed ?? null },
+  });
   revalidatePath("/admin/notes");
   revalidatePath("/", "layout");
 }

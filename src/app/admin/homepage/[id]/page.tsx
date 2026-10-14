@@ -7,6 +7,7 @@ import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { ImageUploader } from "@/components/admin/image-uploader";
+import { logAdmin } from "@/lib/audit";
 
 async function saveSection(formData: FormData) {
   "use server";
@@ -47,6 +48,15 @@ async function saveSection(formData: FormData) {
     .eq("id", id);
   revalidatePath(`/admin/homepage/${id}`);
   revalidatePath("/admin/homepage");
+  await logAdmin(supabase, s, {
+    category: "homepage",
+    action: "update",
+    entity: "homepage_section",
+    entityId: id,
+    label: String(formData.get("title") || ""),
+    summary: `Edited home section “${String(formData.get("title") || id)}”`,
+    details: { title: String(formData.get("title") || ""), kind },
+  });
   revalidateHome();
 }
 

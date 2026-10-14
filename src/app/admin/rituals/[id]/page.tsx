@@ -5,6 +5,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 async function saveRitual(formData: FormData) {
   "use server";
@@ -22,6 +23,15 @@ async function saveRitual(formData: FormData) {
       video_url: String(formData.get("video_url") || "") || "",
     })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "rituals",
+    action: "update",
+    entity: "ritual",
+    entityId: String(formData.get("id")),
+    label: String(formData.get("title")),
+    summary: `Updated ritual guide “${String(formData.get("title"))}”`,
+    details: { title: String(formData.get("title")) },
+  });
   revalidatePath(`/admin/rituals/${String(formData.get("id"))}`);
   revalidatePath("/", "layout");
 }

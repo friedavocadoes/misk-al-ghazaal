@@ -7,6 +7,7 @@ import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { BannerImageField } from "@/components/admin/banner-image-field";
+import { logAdmin } from "@/lib/audit";
 
 async function saveBanner(formData: FormData) {
   "use server";
@@ -36,16 +37,39 @@ async function saveBanner(formData: FormData) {
       focal: text("focal"),
     })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "banners",
+    action: "update",
+    entity: "banner",
+    entityId: String(formData.get("id")),
+    label: text("title") ?? `[${String(formData.get("slot") ?? "hero")}]`,
+    summary: `Updated banner copy “${text("title") ?? String(formData.get("id"))}”`,
+    details: { slot: String(formData.get("slot") ?? "hero"), sort: Number(formData.get("sort") ?? 0) },
+  });
   revalidatePath("/admin/banners");
   revalidatePath(`/admin/banners/${String(formData.get("id"))}`);
   revalidateHome();
 }
 
-/** Homepage refresh for browser-client artwork saves. */
-async function revalidateHomeAction() {
+/** Homepage refresh + audit for browser-client artwork saves (the field
+    persists straight from the browser, so this action is its paper trail). */
+async function revalidateHomeAction(bannerId: string, field: string) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const supabase = await createClient();
+  const { data: b } = await supabase.from("banners").select("slot, title").eq("id", bannerId).single();
+  const row = (b ?? {}) as { slot?: string; title?: string | null };
+  await logAdmin(supabase, s, {
+    category: "banners",
+    action: "update",
+    entity: "banner_artwork",
+    entityId: bannerId,
+    label: row.title ?? `[${row.slot ?? "?"}]`,
+    summary: `Updated banner artwork (${field})`,
+    details: { banner_id: bannerId, field },
+  });
+  revalidatePath(`/admin/banners/${bannerId}`);
   revalidateHome();
 }
 
@@ -54,10 +78,21 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as { slot?: string; title?: string | null };
   await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "banners",
+    action: "delete",
+    entity: "banner",
+    entityId: String(formData.get("id")),
+    label: d.title ?? `[${d.slot ?? "?"}]`,
+    summary: `Moved banner “${d.title ?? String(formData.get("id"))}” to the bin`,
+    details: { id: String(formData.get("id")), slot: d.slot ?? null },
+  });
   revalidatePath("/admin/banners");
   revalidateHome();
   redirect("/admin/banners");

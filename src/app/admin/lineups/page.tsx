@@ -4,18 +4,31 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 async function createLineup(formData: FormData) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase.from("lineups").insert({
-    slug: String(formData.get("slug")).trim().toLowerCase().replace(/\s+/g, "-"),
-    title: String(formData.get("title")),
+  const slug = String(formData.get("slug")).trim().toLowerCase().replace(/\s+/g, "-");
+  const title = String(formData.get("title"));
+  const { data, error } = await supabase.from("lineups").insert({
+    slug,
+    title,
     title_ar: String(formData.get("title_ar") || "") || null,
     description: String(formData.get("description") || "") || "",
     sort: Number(formData.get("sort") || 0),
+  }).select("id").single();
+  if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "lineups",
+    action: "create",
+    entity: "lineup",
+    entityId: (data as { id: string } | null)?.id ?? "",
+    label: title,
+    summary: `Created lineup “${title}” (/${slug})`,
+    details: { slug, title },
   });
   revalidatePath("/admin/lineups");
   revalidatePath("/", "layout");
@@ -34,6 +47,15 @@ async function saveLineup(formData: FormData) {
       sort: Number(formData.get("sort") || 0),
     })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "lineups",
+    action: "update",
+    entity: "lineup",
+    entityId: String(formData.get("id")),
+    label: String(formData.get("title")),
+    summary: `Updated lineup “${String(formData.get("title"))}”`,
+    details: { title: String(formData.get("title")), sort: Number(formData.get("sort") || 0) },
+  });
   revalidatePath("/admin/lineups");
   revalidatePath("/", "layout");
 }
@@ -43,7 +65,18 @@ async function deleteLineup(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("lineups").select("slug, title").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as { slug?: string; title?: string };
   await supabase.from("lineups").delete().eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "lineups",
+    action: "delete",
+    entity: "lineup",
+    entityId: String(formData.get("id")),
+    label: d.title ?? d.slug ?? String(formData.get("id")),
+    summary: `Deleted lineup “${d.title ?? d.slug ?? String(formData.get("id"))}”`,
+    details: { id: String(formData.get("id")), snapshot: doomed ?? null },
+  });
   revalidatePath("/admin/lineups");
   revalidatePath("/", "layout");
 }

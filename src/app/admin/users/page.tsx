@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/service";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { Search, User as UserIcon } from "lucide-react";
+import { logAdmin } from "@/lib/audit";
 
 async function setRole(formData: FormData) {
   "use server";
@@ -19,8 +20,19 @@ async function setRole(formData: FormData) {
   // Service client: profiles UPDATE policy is self-only, so staff edits go
   // through the secret key here (server action, never shipped to browsers).
   const admin = await createAdminClient();
+  const { data: before } = await admin.from("profiles").select("email, role").eq("id", id).single();
+  const b = (before ?? {}) as { email?: string | null; role?: string };
   const { error } = await admin.from("profiles").update({ role }).eq("id", id);
   if (error) throw new Error(error.message);
+  await logAdmin(admin, s, {
+    category: "users",
+    action: "role",
+    entity: "profile",
+    entityId: id,
+    label: b.email ?? id,
+    summary: `Changed role for ${b.email ?? id}: ${b.role ?? "?"} → ${role}`,
+    details: { profile_id: id, email: b.email ?? null, from: b.role ?? null, to: role },
+  });
   revalidatePath("/admin/users");
 }
 

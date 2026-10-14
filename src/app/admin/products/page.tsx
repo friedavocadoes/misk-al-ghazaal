@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
+import { logAdmin } from "@/lib/audit";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { AdminProductSearch } from "@/components/admin/admin-product-search";
@@ -35,6 +36,13 @@ async function bulkProducts(formData: FormData) {
     revalidateProductPaths(p.slug);
   }
   revalidateHome();
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product",
+    summary: `Bulk ${op} on ${ids.length} product${ids.length === 1 ? "" : "s"}`,
+    details: { op, ids, slugs: ((data as { slug: string }[] | null) ?? []).map((p) => p.slug) },
+  });
   revalidatePath("/admin/products");
 }
 

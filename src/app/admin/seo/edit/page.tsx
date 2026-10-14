@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admin/seo-fields";
+import { logAdmin } from "@/lib/audit";
 import {
   SEO_TYPE_LABELS,
   parseSchemaJson,
@@ -57,6 +58,27 @@ async function saveSeoRow(formData: FormData) {
     { onConflict: "page_type,slug" },
   );
   if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "seo",
+    action: "update",
+    entity: "page_seo",
+    entityId: `${type}:${slug || "-"}`,
+    label: slug || (SEO_TYPE_LABELS[type as SeoPageType] ?? type),
+    summary: `Saved SEO for ${SEO_TYPE_LABELS[type as SeoPageType] ?? type}${slug ? ` /${slug}` : ""}`,
+    details: {
+      page_type: type,
+      slug,
+      h1: f.h1,
+      has_meta: !!(f.meta_title || f.meta_description),
+      has_schema: (() => {
+        try {
+          return Object.keys(parseSchemaJson(f.schemaRaw) as object).length > 0;
+        } catch {
+          return false;
+        }
+      })(),
+    },
+  });
   // Instant storefront refresh so SEO scores can be re-checked at once.
   revalidatePath("/admin/seo");
   const t = type as SeoPageType;

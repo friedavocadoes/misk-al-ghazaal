@@ -5,16 +5,28 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 async function createRitual(formData: FormData) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase.from("rituals").insert({
+  const title = String(formData.get("title"));
+  const { data, error } = await supabase.from("rituals").insert({
     slug: String(formData.get("slug")).trim().toLowerCase().replace(/\s+/g, "-"),
-    title: String(formData.get("title")),
+    title,
     title_ar: String(formData.get("title_ar") || "") || null,
+  }).select("id").single();
+  if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "rituals",
+    action: "create",
+    entity: "ritual",
+    entityId: (data as { id: string } | null)?.id ?? "",
+    label: title,
+    summary: `Created ritual guide “${title}”`,
+    details: { title },
   });
   revalidatePath("/admin/rituals");
 }

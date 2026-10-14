@@ -39,6 +39,15 @@ export default function AdminLogin() {
         setError("This door is for maison staff — your shopper account lives at /account.");
         return;
       }
+      try {
+        await fetch("/api/admin/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "login" }),
+        });
+      } catch {
+        /* audit must never block login */
+      }
       router.replace("/admin");
       router.refresh();
     } catch (err) {

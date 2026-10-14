@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { COUPON_ICONS } from "@/components/ui/coupon-icons";
+import { logAdmin } from "@/lib/audit";
 
 async function saveCoupon(formData: FormData) {
   "use server";
@@ -13,6 +14,8 @@ async function saveCoupon(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id"));
   const supabase = await createClient();
+  const { data: before } = await supabase.from("coupons").select("code").eq("id", id).single();
+  const code = (before as { code?: string } | null)?.code ?? id;
   await supabase
     .from("coupons")
     .update({
@@ -32,6 +35,24 @@ async function saveCoupon(formData: FormData) {
       is_public: formData.get("is_public") === "on",
     })
     .eq("id", id);
+  await logAdmin(supabase, s, {
+    category: "coupons",
+    action: "update",
+    entity: "coupon",
+    entityId: id,
+    label: code,
+    summary: `Updated coupon ${code}`,
+    details: {
+      kind: String(formData.get("kind")),
+      amount: Number(formData.get("amount") || 0),
+      min_subtotal: Number(formData.get("min_subtotal") || 0),
+      max_discount: formData.get("max_discount") ? Number(formData.get("max_discount")) : null,
+      once_per_account: formData.get("once_per_account") === "on",
+      first_order_only: formData.get("first_order_only") === "on",
+      active: formData.get("active") === "on",
+      is_public: formData.get("is_public") === "on",
+    },
+  });
   revalidatePath(`/admin/coupons/${id}`);
   revalidatePath("/", "layout");
 }

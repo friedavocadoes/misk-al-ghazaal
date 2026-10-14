@@ -6,15 +6,18 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
 import { CouponIcon, COUPON_ICONS } from "@/components/ui/coupon-icons";
+import { logAdmin } from "@/lib/audit";
 
 async function createCoupon(formData: FormData) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase.from("coupons").insert({
-    code: String(formData.get("code")).trim().toUpperCase(),
-    kind: String(formData.get("kind")),
+  const code = String(formData.get("code")).trim().toUpperCase();
+  const kind = String(formData.get("kind"));
+  const { data, error } = await supabase.from("coupons").insert({
+    code,
+    kind,
     amount: Number(formData.get("amount") || 0),
     min_subtotal: Number(formData.get("min_subtotal") || 0),
     max_discount: formData.get("max_discount")
@@ -32,6 +35,16 @@ async function createCoupon(formData: FormData) {
     gift_title: String(formData.get("gift_title") || "") || "",
     gift_title_ar: String(formData.get("gift_title_ar") || "") || null,
     is_public: formData.get("is_public") === "on",
+  }).select("id").single();
+  if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "coupons",
+    action: "create",
+    entity: "coupon",
+    entityId: (data as { id: string } | null)?.id ?? "",
+    label: code,
+    summary: `Created coupon ${code} (${kind} ${formData.get("amount")})`,
+    details: { code, kind, amount: Number(formData.get("amount") || 0) },
   });
   revalidatePath("/admin/coupons");
   // Coupon strip renders on every PDP — refresh the storefront tree.

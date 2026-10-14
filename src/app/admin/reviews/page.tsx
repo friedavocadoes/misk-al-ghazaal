@@ -5,6 +5,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { revalidateProductPaths } from "@/lib/revalidate";
+import { logAdmin } from "@/lib/audit";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 
@@ -14,7 +15,7 @@ async function approveReview(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id"));
   const admin = await createAdminClient();
-  const { data: review } = await admin.from("reviews").select("product_id").eq("id", id).single();
+  const { data: review } = await admin.from("reviews").select("product_id, rating").eq("id", id).single();
   await admin.from("reviews").update({ approved: true }).eq("id", id);
   // Recompute the product aggregate from approved reviews.
   let slug: string | null = null;
@@ -29,6 +30,16 @@ async function approveReview(formData: FormData) {
   }
   revalidatePath("/admin/reviews");
   if (slug) revalidateProductPaths(slug);
+  const rv = review as { product_id: string; rating?: number } | null;
+  await logAdmin(admin, s, {
+    category: "reviews",
+    action: "approve",
+    entity: "review",
+    entityId: id,
+    label: slug ?? id,
+    summary: `Approved ${rv?.rating ?? "?"}-star review${slug ? ` on “${slug}”` : ""}`,
+    details: { review_id: id, product_id: rv?.product_id ?? null, rating: rv?.rating ?? null, slug },
+  });
 }
 
 async function deleteReview(formData: FormData) {
@@ -36,13 +47,23 @@ async function deleteReview(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const admin = await createAdminClient();
-  const { data: review } = await admin.from("reviews").select("product_id").eq("id", String(formData.get("id"))).single();
+  const { data: review } = await admin.from("reviews").select("product_id, rating").eq("id", String(formData.get("id"))).single();
   await admin.from("reviews").delete().eq("id", String(formData.get("id")));
   revalidatePath("/admin/reviews");
+  const rv = review as { product_id: string; rating?: number } | null;
   if (review) {
     const { data: prod } = await admin.from("products").select("slug").eq("id", (review as { product_id: string }).product_id).single();
     const slug = (prod as { slug?: string } | null)?.slug;
     if (slug) revalidateProductPaths(slug);
+    await logAdmin(admin, s, {
+      category: "reviews",
+      action: "delete",
+      entity: "review",
+      entityId: String(formData.get("id")),
+      label: slug ?? String(formData.get("id")),
+      summary: `Deleted ${rv?.rating ?? "?"}-star review${slug ? ` on “${slug}”` : ""}`,
+      details: { review_id: String(formData.get("id")), product_id: rv?.product_id ?? null, rating: rv?.rating ?? null, slug },
+    });
   }
 }
 

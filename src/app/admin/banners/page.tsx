@@ -7,6 +7,7 @@ import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { BannerCreateButton } from "@/components/admin/banner-create-button";
+import { logAdmin } from "@/lib/audit";
 
 const text = (fd: FormData, k: string) => {
   const v = String(fd.get(k) ?? "").trim();
@@ -35,6 +36,14 @@ async function createBanner(formData: FormData) {
     href: text(formData, "href"),
   });
   if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "banners",
+    action: "create",
+    entity: "banner",
+    label: `[${String(formData.get("slot") ?? "hero")}] ${String(formData.get("title") ?? "")}`,
+    summary: `Created banner “${String(formData.get("title") ?? "untitled")}” (${formData.get("slot")})`,
+    details: { slot: String(formData.get("slot") ?? "hero"), title: String(formData.get("title") ?? "") },
+  });
   revalidatePath("/admin/banners");
   // Storefront now, no rebuild: both homepage locales re-render on refresh.
   revalidateHome();
@@ -45,10 +54,21 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as { slot?: string; title?: string | null };
   await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "banners",
+    action: "delete",
+    entity: "banner",
+    entityId: String(formData.get("id")),
+    label: d.title ?? `[${d.slot ?? "?"}]`,
+    summary: `Moved banner “${d.title ?? String(formData.get("id"))}” to the bin`,
+    details: { id: String(formData.get("id")), slot: d.slot ?? null },
+  });
   revalidatePath("/admin/banners");
   revalidateHome();
 }

@@ -7,6 +7,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { autoDeleteAt, purgeExpiredBin, type BinTable } from "@/lib/trash";
 import { revalidateHome, touchProduct } from "@/lib/revalidate";
+import { logAdmin } from "@/lib/audit";
 
 const TABS: { key: BinTable; label: string; superOnly?: boolean }[] = [
   { key: "orders", label: "Orders" },
@@ -23,7 +24,22 @@ async function restoreItem(formData: FormData) {
     redirect("/admin/bin");
   }
   const supabase = await createClient();
+  const { data: row } = await supabase.from(table).select("*").eq("id", String(formData.get("id"))).single();
+  const r = (row ?? {}) as Record<string, unknown>;
+  const label =
+    table === "products" ? String(r.title ?? r.slug ?? formData.get("id"))
+    : table === "orders" ? String(r.order_no ?? formData.get("id"))
+    : String(r.title ?? r.slot ?? formData.get("id"));
   await supabase.from(table).update({ deleted_at: null }).eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "bin",
+    action: "restore",
+    entity: table === "products" ? "product" : table === "orders" ? "order" : "banner",
+    entityId: String(formData.get("id")),
+    label,
+    summary: `Restored ${label} from the bin`,
+    details: { table, id: String(formData.get("id")) },
+  });
   revalidatePath("/admin/bin");
   // Restored rows are live again — refresh their storefront surfaces too.
   if (table === "banners") revalidateHome();
@@ -39,6 +55,13 @@ async function destroyItem(formData: FormData) {
     redirect("/admin/bin");
   }
   const supabase = await createClient();
+  // Snapshot first: hard deletes are forever, the audit row keeps them.
+  const { data: doomed } = await supabase.from(table).select("*").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as Record<string, unknown>;
+  const label =
+    table === "products" ? String(d.title ?? d.slug ?? formData.get("id"))
+    : table === "orders" ? String(d.order_no ?? formData.get("id"))
+    : String(d.title ?? d.slot ?? formData.get("id"));
   // Hard-deleting a banner also removes its artwork from Storage so dead
   // files never pile up (soft-deletes keep files for restores).
   if (table === "banners") {
@@ -54,6 +77,15 @@ async function destroyItem(formData: FormData) {
     if (paths.length) await supabase.storage.from("banners").remove(paths);
   }
   await supabase.from(table).delete().eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "bin",
+    action: "delete",
+    entity: table === "products" ? "product" : table === "orders" ? "order" : "banner",
+    entityId: String(formData.get("id")),
+    label,
+    summary: `Permanently deleted ${label} (${table})`,
+    details: { table, id: String(formData.get("id")), snapshot: doomed ?? null },
+  });
   revalidatePath("/admin/bin");
   if (table === "banners") revalidateHome();
 }

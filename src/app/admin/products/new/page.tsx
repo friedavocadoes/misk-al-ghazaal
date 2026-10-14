@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
+import { logAdmin } from "@/lib/audit";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ProductCreateForm } from "@/components/admin/product-create-form";
 
@@ -70,6 +71,15 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
   revalidatePath("/admin/products");
   revalidateProductPaths(slug);
   revalidateHome();
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "create",
+    entity: "product",
+    entityId: productId,
+    label: slug,
+    summary: `Created product “${title}” (/${slug})`,
+    details: { slug, title, price, collections: collIds.length, variant: true },
+  });
   return { ok: true, id: productId };
 }
 

@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 const clampPct = (v: unknown, fb: number) => Math.min(90, Math.max(0, Number(v || fb)));
 const clampCap = (v: unknown, fb: number) => {
@@ -17,17 +18,27 @@ async function saveSettings(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const row = {
+    percent: clampPct(formData.get("referrer_percent"), 25),
+    referrer_percent: clampPct(formData.get("referrer_percent"), 25),
+    referee_percent: clampPct(formData.get("referee_percent"), 20),
+    referrer_cap: clampCap(formData.get("referrer_cap"), 50),
+    referee_cap: clampCap(formData.get("referee_cap"), 50),
+    active: formData.get("active") === "on",
+  };
   await supabase
     .from("referral_settings")
-    .update({
-      percent: clampPct(formData.get("referrer_percent"), 25),
-      referrer_percent: clampPct(formData.get("referrer_percent"), 25),
-      referee_percent: clampPct(formData.get("referee_percent"), 20),
-      referrer_cap: clampCap(formData.get("referrer_cap"), 50),
-      referee_cap: clampCap(formData.get("referee_cap"), 50),
-      active: formData.get("active") === "on",
-    })
+    .update(row)
     .eq("id", 1);
+  await logAdmin(supabase, s, {
+    category: "referrals",
+    action: "update",
+    entity: "referral_settings",
+    entityId: "1",
+    label: "program",
+    summary: `Updated referral program (${row.referrer_percent}%→referrer, ${row.referee_percent}%→newcomer)`,
+    details: row,
+  });
   revalidatePath("/admin/referrals");
 }
 

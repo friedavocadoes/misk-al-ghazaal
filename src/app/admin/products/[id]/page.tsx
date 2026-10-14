@@ -20,6 +20,7 @@ import { ProductImagesEditor } from "@/components/admin/product-images-editor";
 import { NotesArtworkField } from "@/components/admin/notes-artwork-field";
 import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admin/seo-fields";
 import { parseSchemaJson } from "@/lib/seo";
+import { logAdmin } from "@/lib/audit";
 
 async function saveProduct(formData: FormData) {
   "use server";
@@ -74,6 +75,26 @@ async function saveProduct(formData: FormData) {
     );
   }
   revalidateHome();
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product",
+    entityId: id,
+    label: String(formData.get("title")),
+    summary: `Updated product details for “${String(formData.get("title"))}”`,
+    details: {
+      title: String(formData.get("title")),
+      price: Number(formData.get("price")),
+      compare_at: formData.get("compare_at") ? Number(formData.get("compare_at")) : null,
+      sort: Math.trunc(Number(formData.get("sort") || 0)),
+      lineup_id: String(formData.get("lineup_id") || "") || null,
+      ritual_id: String(formData.get("ritual_id") || "") || null,
+      featured: formData.get("featured") === "on",
+      is_new: formData.get("is_new") === "on",
+      is_best_seller: formData.get("is_best_seller") === "on",
+      is_active: formData.get("is_active") === "on",
+    },
+  });
 }
 
 async function saveVariant(formData: FormData) {
@@ -94,6 +115,21 @@ async function saveVariant(formData: FormData) {
     .eq("id", id);
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "variant",
+    entityId: id,
+    label: String(formData.get("v_title")),
+    summary: `Updated variant “${String(formData.get("v_title"))}” (Dhs ${formData.get("v_price")}, stock ${formData.get("v_stock")})`,
+    details: {
+      product_id: productId,
+      title: String(formData.get("v_title")),
+      price: Number(formData.get("v_price")),
+      stock: Number(formData.get("v_stock")),
+      sku: String(formData.get("v_sku") || "") || null,
+    },
+  });
 }
 
 async function saveProductNotes(formData: FormData) {
@@ -139,6 +175,14 @@ async function saveProductNotes(formData: FormData) {
   }
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product_notes",
+    entityId: productId,
+    summary: `Rebuilt fragrance notes (${rows.length} assigned)`,
+    details: { product_id: productId, assigned: rows },
+  });
 }
 
 async function saveProductCollections(formData: FormData) {
@@ -176,6 +220,14 @@ async function saveProductCollections(formData: FormData) {
   }
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product_collections",
+    entityId: productId,
+    summary: `Updated collection assignments (+${add.length}/−${drop.length})`,
+    details: { product_id: productId, added: add, removed: drop },
+  });
 }
 
 async function saveNotesArtwork(productId: string, field: string, url: string) {
@@ -192,6 +244,15 @@ async function saveNotesArtwork(productId: string, field: string, url: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product_artwork",
+    entityId: productId,
+    label: field,
+    summary: url ? `Updated detailed-notes artwork (${field})` : `Removed detailed-notes artwork (${field})`,
+    details: { product_id: productId, field, url },
+  });
 }
 
 /** Gallery save: the editor uploads bytes straight to Storage from the
@@ -231,6 +292,14 @@ async function saveGallery(productId: string, images: string[]) {
   }
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "update",
+    entity: "product_gallery",
+    entityId: productId,
+    summary: `Saved gallery (${images.length} images${orphans.length ? `, purged ${orphans.length} orphans` : ""})`,
+    details: { product_id: productId, count: images.length, images, purged: orphans.length },
+  });
 }
 
 /** Invisible crawler layer for the PDP (H1/meta/schema): upserted into
@@ -272,6 +341,27 @@ async function saveSeo(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
+  await logAdmin(supabase, s, {
+    category: "seo",
+    action: "update",
+    entity: "page_seo",
+    entityId: slug,
+    label: slug,
+    summary: `Saved product SEO for “${slug}”`,
+    details: {
+      page_type: "product",
+      slug,
+      h1: f.h1,
+      has_meta: !!(f.meta_title || f.meta_description),
+      has_schema: (() => {
+        try {
+          return Object.keys(parseSchemaJson(f.schemaRaw) as object).length > 0;
+        } catch {
+          return false;
+        }
+      })(),
+    },
+  });
 }
 
 async function moveToBin(formData: FormData) {
@@ -293,6 +383,15 @@ async function moveToBin(formData: FormData) {
   const dslug = (doomed as { slug?: string } | null)?.slug;
   if (dslug) revalidateProductPaths(dslug);
   revalidateHome();
+  await logAdmin(supabase, s, {
+    category: "products",
+    action: "delete",
+    entity: "product",
+    entityId: id,
+    label: dslug ?? id,
+    summary: `Moved product “${dslug ?? id}” to the bin`,
+    details: { product_id: id, slug: dslug ?? null },
+  });
   redirect("/admin/products");
 }
 

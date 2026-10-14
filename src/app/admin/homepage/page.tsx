@@ -7,6 +7,7 @@ import { revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { logAdmin } from "@/lib/audit";
 
 const KINDS = [
   "products_carousel",
@@ -46,6 +47,15 @@ async function createSection(formData: FormData) {
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+  await logAdmin(supabase, s, {
+    category: "homepage",
+    action: "create",
+    entity: "homepage_section",
+    entityId: (data as { id: string }).id,
+    label: String(formData.get("title") || "New section"),
+    summary: `Added home section “${String(formData.get("title") || "New section")}” (${formData.get("kind")})`,
+    details: { kind: String(formData.get("kind") || "products_carousel"), title: String(formData.get("title") || "New section"), sort },
+  });
   touchHome();
   redirect(`/admin/homepage/${(data as { id: string }).id}`);
 }
@@ -66,6 +76,16 @@ async function moveSection(formData: FormData) {
   const b = rows[j]!;
   await supabase.from("homepage_sections").update({ sort: b.sort }).eq("id", a.id);
   await supabase.from("homepage_sections").update({ sort: a.sort }).eq("id", b.id);
+  const { data: moved } = await supabase.from("homepage_sections").select("title").eq("id", id).single();
+  await logAdmin(supabase, s, {
+    category: "homepage",
+    action: "update",
+    entity: "homepage_section",
+    entityId: id,
+    label: (moved as { title?: string } | null)?.title ?? id,
+    summary: `Moved home section “${(moved as { title?: string } | null)?.title ?? id}” ${dir === -1 ? "up" : "down"}`,
+    details: { direction: dir === -1 ? "up" : "down" },
+  });
   touchHome();
 }
 
@@ -74,11 +94,21 @@ async function toggleSection(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: cur } = await supabase.from("homepage_sections").select("active").eq("id", String(formData.get("id"))).single();
+  const { data: cur } = await supabase.from("homepage_sections").select("active, title").eq("id", String(formData.get("id"))).single();
+  const turning = !((cur as { active: boolean } | null)?.active);
   await supabase
     .from("homepage_sections")
-    .update({ active: !(cur as { active: boolean } | null)?.active })
+    .update({ active: turning })
     .eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "homepage",
+    action: "update",
+    entity: "homepage_section",
+    entityId: String(formData.get("id")),
+    label: (cur as { title?: string } | null)?.title ?? String(formData.get("id")),
+    summary: `${turning ? "Enabled" : "Disabled"} home section “${(cur as { title?: string } | null)?.title ?? String(formData.get("id"))}”`,
+    details: { active: turning },
+  });
   touchHome();
 }
 
@@ -87,7 +117,18 @@ async function deleteSection(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  const { data: doomed } = await supabase.from("homepage_sections").select("kind, title").eq("id", String(formData.get("id"))).single();
+  const d = (doomed ?? {}) as { kind?: string; title?: string };
   await supabase.from("homepage_sections").delete().eq("id", String(formData.get("id")));
+  await logAdmin(supabase, s, {
+    category: "homepage",
+    action: "delete",
+    entity: "homepage_section",
+    entityId: String(formData.get("id")),
+    label: d.title ?? String(formData.get("id")),
+    summary: `Deleted home section “${d.title ?? String(formData.get("id"))}”`,
+    details: { id: String(formData.get("id")), snapshot: doomed ?? null },
+  });
   touchHome();
 }
 

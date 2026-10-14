@@ -120,6 +120,9 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           <Link href="/admin/bin" aria-current={active("/admin/bin") ? "page" : undefined} className={linkCls(active("/admin/bin"))}>
             Bin
           </Link>
+          <Link href="/admin/logs" aria-current={active("/admin/logs") ? "page" : undefined} className={linkCls(active("/admin/logs"))}>
+            Logs
+          </Link>
         </nav>
         <span className="hidden shrink-0 text-xs text-ink/50 md:block">{email}</span>
         <Link

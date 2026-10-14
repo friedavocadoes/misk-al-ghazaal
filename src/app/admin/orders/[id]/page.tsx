@@ -8,6 +8,7 @@ import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-fo
 import { PrintButton } from "@/components/admin/print-button";
 import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
 import { sendMail, buildOrderEmail } from "@/lib/mailer";
+import { logAdmin } from "@/lib/audit";
 
 const NEXT_STATUSES = ORDER_STATUSES;
 
@@ -77,6 +78,22 @@ async function updateOrder(formData: FormData) {
     });
     await sendMail({ to: cur.email, ...mail });
   }
+  await logAdmin(supabase, session, {
+    category: "orders",
+    action: "status",
+    entity: "order",
+    entityId: id,
+    label: cur?.order_no ?? id,
+    summary: `Order ${cur?.order_no ?? id}: ${cur?.status ?? "?"} → ${toStatus}`,
+    details: {
+      from: cur?.status ?? null,
+      to: toStatus,
+      tracking_no: trackingNo,
+      tracking_url: trackingUrl,
+      internal_note: internalNote,
+      mailed: !!(cur?.email && cur.status !== toStatus),
+    },
+  });
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");
 }
@@ -87,6 +104,11 @@ async function moveToBin(formData: FormData) {
   if (!session) redirect("/admin/login");
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
+  const { data: doomed } = await supabase
+    .from("orders")
+    .select("order_no")
+    .eq("id", id)
+    .single();
   await supabase
     .from("orders")
     .update({ deleted_at: new Date().toISOString() })
@@ -97,6 +119,15 @@ async function moveToBin(formData: FormData) {
     to_status: "binned",
     changed_by: session.userId,
     note: "Moved to recycle bin",
+  });
+  await logAdmin(supabase, session, {
+    category: "orders",
+    action: "delete",
+    entity: "order",
+    entityId: id,
+    label: (doomed as { order_no?: string } | null)?.order_no ?? id,
+    summary: `Moved order ${(doomed as { order_no?: string } | null)?.order_no ?? id} to the bin`,
+    details: { order_id: id },
   });
   revalidatePath("/admin/orders");
   redirect("/admin/orders");

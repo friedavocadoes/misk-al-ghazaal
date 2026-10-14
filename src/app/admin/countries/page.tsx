@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton } from "@/components/admin/admin-form";
+import { logAdmin } from "@/lib/audit";
 
 type StateRow = { en: string; ar?: string };
 
@@ -37,6 +38,19 @@ async function saveCountry(formData: FormData) {
       states: parseStates(String(formData.get("states") || "")),
     })
     .eq("id", String(formData.get("id")));
+  const states = parseStates(String(formData.get("states") || ""));
+  await logAdmin(supabase, s, {
+    category: "countries",
+    action: "update",
+    entity: "delivery_country",
+    entityId: String(formData.get("id")),
+    summary: `Updated delivery country (${String(formData.get("name_en"))})`,
+    details: {
+      name_en: String(formData.get("name_en")),
+      active: formData.get("active") === "on",
+      states: states.length,
+    },
+  });
   revalidatePath("/admin/countries");
 }
 
@@ -52,6 +66,18 @@ async function createCountry(formData: FormData) {
     active: formData.get("active") === "on",
     states: parseStates(String(formData.get("states") || "")),
     sort: Number(formData.get("sort") || 99),
+  });
+  await logAdmin(supabase, s, {
+    category: "countries",
+    action: "create",
+    entity: "delivery_country",
+    label: String(formData.get("code")).trim().toUpperCase(),
+    summary: `Added delivery country ${String(formData.get("code")).trim().toUpperCase()} (${String(formData.get("name_en"))})`,
+    details: {
+      code: String(formData.get("code")).trim().toUpperCase(),
+      name_en: String(formData.get("name_en")),
+      active: formData.get("active") === "on",
+    },
   });
   revalidatePath("/admin/countries");
 }
