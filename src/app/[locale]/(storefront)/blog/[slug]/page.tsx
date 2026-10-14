@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
@@ -7,10 +8,25 @@ import { BlogCardGrid } from "@/components/blocks/ContentBlocks";
 import { getArticleBySlug, getArticles } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { articleJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const all = await getArticles();
   return all.map((a) => ({ slug: a.slug }));
+}
+
+export async function generateMetadata(props: PageProps<"/[locale]/blog/[slug]">): Promise<Metadata> {
+  const { slug, locale: rawLocale } = await props.params;
+  const locale = toLocale(rawLocale);
+  const [article, seo] = await Promise.all([getArticleBySlug(slug), getPageSeo("article", slug)]);
+  if (!article) return {};
+  const title = tx(article.title, article.titleAr, locale);
+  return seoMetadata(
+    seo,
+    { title: `${title} — Misk Al Ghazaal Journal`, description: article.excerpt.slice(0, 160) },
+    locale,
+  );
 }
 
 export default async function ArticlePage(
@@ -23,9 +39,11 @@ export default async function ArticlePage(
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
   const rest = (await getArticles()).filter((a) => a.slug !== article.slug);
+  const seo = await getPageSeo("article", slug);
 
   return (
     <article className="mx-auto max-w-3xl px-5 py-12 md:px-8">
+      <SeoJsonLd blocks={articleJsonLd(article, seo, locale)} />
       <Link
         href="/blog"
         className="link-underline text-[11px] font-semibold uppercase tracking-[0.2em] text-gold"
@@ -36,7 +54,7 @@ export default async function ArticlePage(
         {article.date} · {article.author}
       </p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
-        {tx(article.title, article.titleAr, locale)}
+        {tx(seo?.h1 ?? "", seo?.h1Ar, locale) || tx(article.title, article.titleAr, locale)}
       </h1>
       <span className="relative mt-6 block aspect-[16/9] overflow-hidden bg-sand">
         <Image

@@ -1,6 +1,11 @@
 import { setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
+import { toLocale } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { customJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
 
 const PROCESS = [
   {
@@ -41,13 +46,31 @@ const GALLERY = [
   "/products/misk-al-ghazaal-abukhalid-50ml-1.jpg",
 ];
 
+export async function generateMetadata(props: PageProps<"/[locale]/private-label">): Promise<Metadata> {
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
+  const seo = await getPageSeo("private-label");
+  return seoMetadata(
+    seo,
+    {
+      title: "Private Label Perfume Manufacturing — Misk Al Ghazaal",
+      description:
+        "White-label attars, bakhoor and eau de parfum, crafted at origin for boutiques, hotels and retailers.",
+    },
+    locale,
+  );
+}
+
 export default async function PrivateLabelPage(
   props: PageProps<"/[locale]/private-label">
 ) {
-  const { locale } = await props.params;
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
   setRequestLocale(locale);
+  const seo = await getPageSeo("private-label");
   return (
     <div>
+      <SeoJsonLd blocks={customJsonLd(seo)} />
       {/* Hero */}
       <section className="relative overflow-hidden bg-ink text-white">
         <span className="absolute inset-0">
@@ -67,7 +90,7 @@ export default async function PrivateLabelPage(
             Private Label & Contract Manufacturing
           </p>
           <h1 className="mt-5 max-w-3xl font-display text-5xl leading-[1.04] md:text-7xl">
-            Your scent, crafted at origin.
+            {tx(seo?.h1 ?? "", seo?.h1Ar, locale) || "Your scent, crafted at origin."}
           </h1>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-white/80">
             Misk Al Ghazaal is a working perfume manufactory — the same house

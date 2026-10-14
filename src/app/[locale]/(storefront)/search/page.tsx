@@ -1,11 +1,29 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { CatalogInfinite } from "@/components/blocks/CatalogInfinite";
 import { searchCatalog, getCollections, getLineups } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { customJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
 
 const PAGE = 12;
+
+export async function generateMetadata(props: PageProps<"/[locale]/search">): Promise<Metadata> {
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
+  const seo = await getPageSeo("search");
+  return seoMetadata(
+    seo,
+    {
+      title: "Search the Maison — Misk Al Ghazaal",
+      description: "Search perfumes, dukhoon, bakhoor and holy oudh.",
+    },
+    locale,
+  );
+}
 
 export default async function SearchPage(
   props: PageProps<"/[locale]/search">
@@ -32,7 +50,7 @@ export default async function SearchPage(
     lineup: typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
   });
   const full = q ? await searchCatalog(q) : [];
-  const [collections, lineups] = await Promise.all([getCollections(), getLineups()]);
+  const [collections, lineups, seo] = await Promise.all([getCollections(), getLineups(), getPageSeo("search")]);
   const prices = full.map((p) => p.price);
   const floor = Math.min(...prices, 0);
   const ceiling = Math.max(...prices, 200);
@@ -48,9 +66,10 @@ export default async function SearchPage(
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
+      <SeoJsonLd blocks={customJsonLd(seo)} />
       <p className="eyebrow text-gold">{t("eyebrow")}</p>
       <h1 className="mt-2.5 font-display text-4xl text-ink md:text-5xl">
-        {q ? `“${q}”` : t("title")}
+        {q ? `“${q}”` : tx(seo?.h1 ?? "", seo?.h1Ar, locale) || t("title")}
       </h1>
       <p className="mt-3 text-sm text-fog">
         {q

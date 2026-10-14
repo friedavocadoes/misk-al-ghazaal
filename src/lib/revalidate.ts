@@ -18,6 +18,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Route Handlers, never from client components.
  */
 
+/** Any storefront path (unprefixed, e.g. `/blog/x`) as a locale triple. */
+export function revalidatePagePaths(path: string) {
+  const clean = path.startsWith("/") ? path : `/${path}`;
+  for (const p of [clean, `/en${clean}`, `/ar${clean}`]) revalidatePath(p, "page");
+}
+
 export function revalidateHome() {
   for (const p of ["/", "/en", "/ar"]) revalidatePath(p, "page");
 }

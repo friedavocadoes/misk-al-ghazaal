@@ -1,5 +1,6 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { HeroSlider } from "@/components/sections/HeroSlider";
 import { BannerSplit } from "@/components/sections/BannerSplit";
 import { StoryBlock } from "@/components/sections/StoryBlock";
@@ -30,6 +31,23 @@ import {
 import { getTestimonials } from "@/lib/site";
 import { toLocale, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { customJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
+
+export async function generateMetadata(props: PageProps<"/[locale]">): Promise<Metadata> {
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
+  const seo = await getPageSeo("home");
+  return seoMetadata(
+    seo,
+    {
+      title: "Misk Al Ghazaal — Perfumes, Dukhoon, Bakhoor & Holy Oudh",
+      description:
+        "Authentic Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — direct from manufacturer, delivered across the UAE.",
+    },
+    locale,
+  );
+}
 
 /** Resolve a carousel's products: explicit admin-ordered picks win;
     otherwise the ranked collection (manual rank → sales lift → newest). */
@@ -174,6 +192,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     return (
       <>
         <HeroSlider slides={slides} />
+        <HomeSeo locale={locale} />
         <ProductCarousel eyebrow={ts("bestEyebrow")} title={ts("bestTitle")} products={bestSellers.slice(0, 8)} viewAllHref="/collection/best-sellers" />
         <BannerSplit banners={brands} />
         <ProductCarousel eyebrow={ts("newEyebrow")} title={ts("newTitle")} products={newArrivals.slice(0, 8)} viewAllHref="/collection/new-arrivals" />
@@ -208,9 +227,23 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
   return (
     <>
       <HeroSlider slides={slides} />
+      <HomeSeo locale={locale} />
       {sections.map((s) => (
         <Section key={s.id} s={s} locale={locale} ctx={ctx} />
       ))}
+    </>
+  );
+}
+
+async function HomeSeo({ locale }: { locale: Locale }) {
+  // The home composition carries no visible H1 — the SEO H1 renders
+  // screen-reader-only so crawlers get exactly one H1, layout untouched.
+  const seo = await getPageSeo("home");
+  const h1 = tx(seo?.h1 ?? "", seo?.h1Ar, locale);
+  return (
+    <>
+      <SeoJsonLd blocks={customJsonLd(seo)} />
+      {h1 && <h1 className="sr-only">{h1}</h1>}
     </>
   );
 }

@@ -18,6 +18,8 @@ import {
 } from "@/components/admin/admin-form";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
 import { NotesArtworkField } from "@/components/admin/notes-artwork-field";
+import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admin/seo-fields";
+import { parseSchemaJson } from "@/lib/seo";
 
 async function saveProduct(formData: FormData) {
   "use server";
@@ -231,6 +233,47 @@ async function saveGallery(productId: string, images: string[]) {
   await touchProduct(supabase, productId);
 }
 
+/** Invisible crawler layer for the PDP (H1/meta/schema): upserted into
+    page_seo, validated JSON, PDP revalidated instantly for fast scoring. */
+async function saveSeo(formData: FormData) {
+  "use server";
+  const s = await getAdminSession();
+  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const productId = String(formData.get("product_id"));
+  const slug = String(formData.get("product_slug"));
+  const supabase = await createClient();
+  const f = readSeoFields(formData);
+  let schemaJson: unknown = {};
+  try {
+    schemaJson = parseSchemaJson(f.schemaRaw);
+  } catch {
+    throw new Error("Schema must be valid JSON.");
+  }
+  const { error } = await supabase.from("page_seo").upsert(
+    {
+      page_type: "product",
+      slug,
+      h1: f.h1,
+      h1_ar: f.h1_ar,
+      meta_title: f.meta_title,
+      meta_title_ar: f.meta_title_ar,
+      meta_description: f.meta_description,
+      meta_description_ar: f.meta_description_ar,
+      canonical: f.canonical,
+      robots: f.robots,
+      og_title: f.og_title,
+      og_description: f.og_description,
+      og_image: f.og_image,
+      schema_json: schemaJson,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "page_type,slug" },
+  );
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/products/${productId}`);
+  await touchProduct(supabase, productId);
+}
+
 async function moveToBin(formData: FormData) {
   "use server";
   const s = await getAdminSession();
@@ -272,6 +315,14 @@ export default async function ProductDetail(props: {
     .select("*")
     .eq("product_id", id)
     .order("title");
+  // SEO row may not exist yet (or the migration may be pending) — either
+  // way the form renders blank instead of breaking.
+  const { data: seoRow } = await supabase
+    .from("page_seo")
+    .select("*")
+    .eq("page_type", "product")
+    .eq("slug", (p as { slug: string }).slug)
+    .maybeSingle();
   const [
     { data: lineups },
     { data: rituals },
@@ -397,6 +448,7 @@ export default async function ProductDetail(props: {
                 ["fragrance", "04 · Fragrance notes"],
                 ["collections", "05 · Collections"],
                 ["variants", "06 · Variants + stock"],
+                ["seo", "07 · SEO"],
               ].map(([href, label]) => (
                 <li key={href}>
                   <a
@@ -776,6 +828,17 @@ export default async function ProductDetail(props: {
                   ),
                 )}
               </div>
+            </section>
+
+            {/* 07 — SEO (invisible crawler layer) */}
+            <section id="seo" className={sectionCls}>
+              {sectionHead("07", "SEO", "H1 · meta · schema — never visible on page")}
+              <AdminForm action={saveSeo} success="SEO saved" className="grid gap-4 text-sm md:grid-cols-2">
+                <input type="hidden" name="product_id" value={p.id} />
+                <input type="hidden" name="product_slug" value={p.slug} />
+                <SeoFields initial={(seoRow ?? null) as SeoFieldValues | null} />
+                <SaveButton className="md:col-span-2">Save SEO</SaveButton>
+              </AdminForm>
             </section>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
@@ -28,10 +29,28 @@ import {
 } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { getPageSeo, productJsonLd, seoMetadata, stripHtml } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const all = await getProducts();
   return all.map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata(props: PageProps<"/[locale]/product/[slug]">): Promise<Metadata> {
+  const { slug, locale: rawLocale } = await props.params;
+  const locale = toLocale(rawLocale);
+  const [product, seo] = await Promise.all([getProductBySlug(slug), getPageSeo("product", slug)]);
+  if (!product) return {};
+  const title = tx(product.title, product.titleAr, locale);
+  return seoMetadata(
+    seo,
+    {
+      title: `${title} — Misk Al Ghazaal`,
+      description: product.shortDesc ?? stripHtml(product.descriptionHtml).slice(0, 160),
+    },
+    locale,
+  );
 }
 
 export default async function ProductPage(props: PageProps<"/[locale]/product/[slug]">) {
@@ -47,6 +66,8 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   const related = await getRelatedProducts(slug, 4);
   const collection = await getCollectionBySlug(product.categorySlugs[0]);
   const coupons = await getPublicCoupons();
+  const seo = await getPageSeo("product", slug);
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
   // Real review aggregates (approved only) — fetched once, shared by the
   // buy-box line and the reviews section. Never seeded numbers.
   const approvedReviews = await getApprovedReviews(product.id, 500);
@@ -59,6 +80,14 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
 
   return (
     <>
+      <SeoJsonLd
+        blocks={productJsonLd(
+          { ...product, rating: liveRating, reviewCount: approvedReviews.length },
+          seo,
+          locale,
+          origin,
+        )}
+      />
       <PromoStrip locale={locale} />
       <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
       <nav aria-label="Breadcrumb" className="mb-8 text-[11px] uppercase tracking-[0.18em] text-fog">
@@ -89,6 +118,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
             rating={liveRating}
             reviewCount={approvedReviews.length}
             coupons={coupons}
+            heading={tx(seo?.h1 ?? "", seo?.h1Ar, locale) || undefined}
           />
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -8,6 +9,8 @@ import { PromoStrip } from "@/components/blocks/PromoStrip";
 import { getCollectionBySlug, getCollections, getLineups, getProductsByCollection } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { customJsonLd, getPageSeo, seoMetadata, stripHtml } from "@/lib/seo";
 
 // Canonical collection route (singular /collection — mirrors Shopify /collections
 // handles: collection.json, collection.holy-odh.json,
@@ -24,6 +27,29 @@ export async function generateStaticParams() {
 }
 
 const PAGE = 12;
+
+export async function generateMetadata(
+  props: PageProps<"/[locale]/collection/[slug]">,
+): Promise<Metadata> {
+  const { slug: raw, locale: rawLocale } = await props.params;
+  const locale = toLocale(rawLocale);
+  const slug = ALIASES[raw] ?? raw;
+  const [category, seo] = await Promise.all([
+    slug === "all" ? null : getCollectionBySlug(slug),
+    getPageSeo("collection", slug),
+  ]);
+  const title = category ? tx(category.title, category.titleAr, locale) : "Shop All";
+  return seoMetadata(
+    seo,
+    {
+      title: `${title} — Misk Al Ghazaal`,
+      description: category?.description
+        ? stripHtml(category.description).slice(0, 160)
+        : `${title}: authentic perfumes, dukhoon and oudh from the manufacturer.`,
+    },
+    locale,
+  );
+}
 
 export default async function CollectionPage(
   props: PageProps<"/[locale]/collection/[slug]">
@@ -65,6 +91,8 @@ export default async function CollectionPage(
   const desc = isAll
     ? ""
     : tx(category!.description ?? "", category!.descriptionAr, locale);
+  const seo = await getPageSeo("collection", slug);
+  const h1 = tx(seo?.h1 ?? "", seo?.h1Ar, locale) || title;
 
   // Remount key: filter/sort navigations rebuild staged controls + page one.
   const filterKey = JSON.stringify({
@@ -77,6 +105,7 @@ export default async function CollectionPage(
 
   return (
     <>
+      <SeoJsonLd blocks={customJsonLd(seo)} />
       <PromoStrip locale={locale} />
       <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
       <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.18em] text-fog">
@@ -90,7 +119,7 @@ export default async function CollectionPage(
       <div className="border-b border-ink/10 pb-8 pt-6 text-center">
         <p className="eyebrow text-gold">{t("eyebrow")}</p>
         <h1 className="mt-3 font-display text-4xl text-ink md:text-5xl">
-          {title}
+          {h1}
         </h1>
         {desc && (
           <p className="mx-auto mt-3 max-w-xl text-sm text-espresso">

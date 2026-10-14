@@ -1,4 +1,5 @@
 import { setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
 import {
   ArrowRight,
@@ -13,9 +14,12 @@ import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { CopyButton } from "@/components/ui/copy-button";
 import { LOCATIONS, STORE_CONTACT, waLink, type StoreLocation } from "@/lib/site";
 import { pick, type Localizable } from "@/lib/i18n";
+import { tx } from "@/lib/i18n";
 import { L } from "@/lib/site";
 import { toLocale } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
+import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
+import { customJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
 
 const WA_GREEN = "text-[#1e7a46]";
 
@@ -101,12 +105,27 @@ function MapFrame({ loc }: { loc: StoreLocation }) {
   );
 }
 
+export async function generateMetadata(props: PageProps<"/[locale]/locate-us">): Promise<Metadata> {
+  const { locale: raw } = await props.params;
+  const locale = toLocale(raw);
+  const seo = await getPageSeo("locate-us");
+  return seoMetadata(
+    seo,
+    {
+      title: "Locate Us — Misk Al Ghazaal Boutique & Factory",
+      description: "Visit the Mamzar boutique or talk manufacturing at the factory.",
+    },
+    locale,
+  );
+}
+
 export default async function LocateUsPage(
   props: PageProps<"/[locale]/locate-us">,
 ) {
   const { locale: raw } = await props.params;
   const locale: Locale = toLocale(raw);
   setRequestLocale(locale);
+  const seo = await getPageSeo("locate-us");
 
   const eyebrow = pick(L("Locate Us", "موقعنا"), locale);
   const title = pick(L("Two doors, one maison.", "بابان ودار واحدة."), locale);
@@ -140,6 +159,7 @@ export default async function LocateUsPage(
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
+      <SeoJsonLd blocks={customJsonLd(seo)} />
       {/* Editorial header */}
       <div className="flex flex-col items-center text-center">
         <p className="eyebrow flex items-center gap-3 tracking-[0.3em] text-gold">
@@ -148,7 +168,7 @@ export default async function LocateUsPage(
           <span className="h-px w-8 bg-gold/50" />
         </p>
         <h1 className="mt-6 max-w-2xl font-display text-4xl leading-tight text-ink md:text-6xl">
-          {title}
+          {tx(seo?.h1 ?? "", seo?.h1Ar, locale) || title}
         </h1>
         <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-espresso md:text-base">
           {sub}

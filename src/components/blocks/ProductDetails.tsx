@@ -106,6 +106,7 @@ export function ProductInfo({
   rating,
   reviewCount,
   coupons,
+  heading,
 }: {
   product: Product;
   layout?: "standard" | "miskalgazaal";
@@ -116,6 +117,8 @@ export function ProductInfo({
   reviewCount?: number;
   /** Public offers for the buy-box coupon picker. */
   coupons?: Coupon[];
+  /** SEO H1 override — replaces the visible title as the single H1. */
+  heading?: string;
 }) {
   const t = useTranslations("Product");
   const router = useRouter();
@@ -158,7 +161,7 @@ export function ProductInfo({
     <div>
       <p className="eyebrow text-gold">{catName}</p>
       <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-[2.75rem]">
-        {title}
+        {heading ?? title}
       </h1>
       <p className="mt-3 flex items-center gap-2 text-[13px] text-fog">
         <span className="flex gap-0.5" aria-hidden>
