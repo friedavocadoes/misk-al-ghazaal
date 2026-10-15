@@ -119,7 +119,7 @@
     "work": "Work",
     "addrPin": "Pin on map",
     "addrLocate": "Use my location",
-    "addrMapHint": "Tap the map (or drag the pin) — country, city & pincode fill themselves in.",
+    "addrMapHint": "Tap the map (or drag the pin) — street, area, city & pincode fill themselves in. Everything stays editable.",
     "addrBuilding": "Building / flat no.",
     "addrCountry": "Country",
     "addrSearch": "Search…",

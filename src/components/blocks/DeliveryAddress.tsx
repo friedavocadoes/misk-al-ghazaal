@@ -23,6 +23,11 @@ interface NominatimAddress {
   village?: string;
   municipality?: string;
   suburb?: string;
+  neighbourhood?: string;
+  city_district?: string;
+  quarter?: string;
+  road?: string;
+  house_number?: string;
   postcode?: string;
 }
 
@@ -119,12 +124,36 @@ export function DeliveryAddress({
       return;
     }
     setCountryCode(match.code);
-    const want = [addr.state ?? "", addr.city ?? "", addr.town ?? ""].join(" ").toLowerCase();
+    // Emirate/region: match admin states against every locality grain
+    // the geocoder returns (state first, finer areas as fallback).
+    const want = [
+      addr.state ?? "", addr.city ?? "", addr.town ?? "",
+      addr.suburb ?? "", addr.neighbourhood ?? "", addr.city_district ?? "",
+    ]
+      .join(" ")
+      .toLowerCase();
     const hit = match.states.find(
       (s) => want.includes(s.en.toLowerCase()) || (s.ar && want.includes(s.ar)),
     );
     if (hit) setState(hit.en);
-    setCity(addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? addr.suburb ?? "");
+    // City = the finest grain available (Marina, Deira…) — the old
+    // city-first order just echoed the emirate name back.
+    setCity(
+      addr.neighbourhood ??
+        addr.suburb ??
+        addr.city_district ??
+        addr.quarter ??
+        addr.town ??
+        addr.village ??
+        addr.municipality ??
+        addr.city ??
+        "",
+    );
+    // Street: road-level data when OSM has it (good inside cities,
+    // sparse outskirts/building numbers in the UAE — the field stays
+    // editable either way). Never wipes a typed line on empty results.
+    const street = [addr.house_number ?? "", addr.road ?? ""].join(" ").trim();
+    if (street) setLine(street);
     setPostcode(addr.postcode ?? "");
   };
 

@@ -109,6 +109,11 @@ export default async function AccountPage(
             <p className="mt-1.5 truncate text-sm text-fog" dir="ltr">
               {user.email ?? "—"}
             </p>
+            {storedPhone && (
+              <p className="mt-1 truncate text-sm text-fog" dir="ltr">
+                {storedPhone}
+              </p>
+            )}
             <p className="mt-1 text-[12px] text-fog/80">
               {t("loggedInWith")}{" "}
               {provider === "google" ? (

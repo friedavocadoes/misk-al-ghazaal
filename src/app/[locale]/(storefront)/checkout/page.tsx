@@ -13,6 +13,7 @@ import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
 import { CouponTicket } from "@/components/blocks/CouponTicket";
 import { celebrate } from "@/lib/confetti";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { DIAL_CODES, combinePhone, splitPhone, DEFAULT_DIAL } from "@/lib/dial-codes";
 import type { Locale } from "@/i18n/routing";
 import type { Coupon, DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
 import { useStickyLock } from "@/components/blocks/use-sticky-lock";
@@ -37,7 +38,10 @@ export default function CheckoutPage() {
   } | null>(null);
   const [addrReady, setAddrReady] = useState(false);
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [dial, setDial] = useState(DEFAULT_DIAL);
+  const [national, setNational] = useState("");
+  const phoneTouched = useRef(false);
+  const phone = combinePhone(dial, national);
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Dubai");
@@ -86,7 +90,11 @@ export default function CheckoutPage() {
               const nm = typeof j.name === "string" ? j.name : "";
               const ph = typeof j.phone === "string" ? j.phone : "";
               if (nm) setName((v) => v || nm);
-              if (ph) setPhone((v) => v || ph);
+              if (ph && !phoneTouched.current) {
+                const split = splitPhone(ph);
+                setDial(split.dial);
+                setNational(split.national);
+              }
               const saved = (j.defaultAddress ?? null) as {
                 line?: string; city?: string; state?: string; postcode?: string;
                 country_code?: string; countryCode?: string; label?: string;
@@ -385,7 +393,8 @@ export default function CheckoutPage() {
   }
 
   const hasMap = countries.length > 0;
-  const valid = name.trim() && phone.trim() && (hasMap ? deliveryValid : address.trim()) && quote;
+  const phoneOk = national.replace(/\D/g, "").length >= 7;
+  const valid = name.trim() && phoneOk && (hasMap ? deliveryValid : address.trim()) && quote;
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
@@ -414,7 +423,38 @@ export default function CheckoutPage() {
             )}
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${t("name")} *`} aria-label={t("name")} className={inputCls} autoComplete="name" />
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`${t("phone")} *`} aria-label={t("phone")} dir="ltr" className={inputCls} autoComplete="tel" />
+              <div className="flex gap-2" dir="ltr">
+                <label className="shrink-0">
+                  <span className="sr-only">{t("phone")}</span>
+                  <select
+                    value={dial}
+                    onChange={(e) => {
+                      phoneTouched.current = true;
+                      setDial(e.target.value);
+                    }}
+                    aria-label={t("phone")}
+                    className="h-full cursor-pointer rounded-[2px] border border-ink/20 bg-white px-2 py-3 text-sm text-ink focus:border-gold focus:outline-none"
+                  >
+                    {DIAL_CODES.map((d) => (
+                      <option key={`${d.code}-${d.country}`} value={d.code}>
+                        +{d.code}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <input
+                  value={national}
+                  onChange={(e) => {
+                    phoneTouched.current = true;
+                    setNational(e.target.value.replace(/\D/g, "").slice(0, 12));
+                  }}
+                  placeholder={`${t("phone")} *`}
+                  aria-label={t("phone")}
+                  inputMode="numeric"
+                  autoComplete="tel-national"
+                  className={`${inputCls} min-w-0 flex-1`}
+                />
+              </div>
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} type="email" aria-label={t("email")} dir="ltr" className={`${inputCls} sm:col-span-2`} autoComplete="email" />
             </div>
             {userId && (
