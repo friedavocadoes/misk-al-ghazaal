@@ -29,6 +29,10 @@ Dashboard → SQL Editor → New query, paste in order:
 6. `supabase/migration_referrals_v2.sql` (split percents + caps per side)
 7. `supabase/migration_page_seo.sql` (invisible SEO layer per page)
 8. `supabase/migration_audit_log.sql` (append-only admin audit trail)
+9. `supabase/migration_emails_promo.sql` (promo opt-in, hello template, campaigns)
+10. `supabase/migration_orders_lock.sql` (STRICT order isolation: user_id-only
+    shopper RLS + `expected_delivery_date` + shopper contact profile —
+    run even on existing DBs; guest orders are auto-claimed at next login)
 2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
    106 collection links incl. for-him/for-her/ramadan, 9 banners, 3 articles.
    Safe to re-run — upserts on slug, wipes + re-inserts variants/links/banners.)

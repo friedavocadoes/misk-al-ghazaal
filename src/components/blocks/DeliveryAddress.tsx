@@ -40,24 +40,48 @@ async function reverse(lat: number, lng: number): Promise<NominatimAddress | nul
   }
 }
 
+export interface DeliveryInitial {
+  line?: string;
+  building?: string;
+  countryCode?: string;
+  state?: string;
+  city?: string;
+  postcode?: string;
+  label?: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
 export function DeliveryAddress({
   locale,
   countries,
   onChange,
+  initial,
 }: {
   locale: Locale;
   countries: DeliveryCountry[];
   onChange: (answer: DeliveryAnswer, valid: boolean) => void;
+  /** Last-used address: pre-fills every field once (still fully editable). */
+  initial?: DeliveryInitial | null;
 }) {
   const t = useTranslations("Checkout");
-  const [label, setLabel] = useState<"home" | "work">("home");
-  const [line, setLine] = useState("");
-  const [building, setBuilding] = useState("");
-  const [countryCode, setCountryCode] = useState(countries.find((c) => c.code === "AE")?.code ?? countries[0]?.code ?? "");
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
-  const [postcode, setPostcode] = useState("");
-  const [point, setPoint] = useState<PinnedPoint | null>(null);
+  const [label, setLabel] = useState<"home" | "work">(
+    initial?.label === "Work" || initial?.label === "work" ? "work" : "home",
+  );
+  const [line, setLine] = useState(initial?.line ?? "");
+  const [building, setBuilding] = useState(initial?.building ?? "");
+  const [countryCode, setCountryCode] = useState(
+    initial?.countryCode ??
+      countries.find((c) => c.code === "AE")?.code ?? countries[0]?.code ?? "",
+  );
+  const [state, setState] = useState(initial?.state ?? "");
+  const [city, setCity] = useState(initial?.city ?? "");
+  const [postcode, setPostcode] = useState(initial?.postcode ?? "");
+  const [point, setPoint] = useState<PinnedPoint | null>(
+    typeof initial?.lat === "number" && typeof initial?.lng === "number"
+      ? { lat: initial.lat, lng: initial.lng }
+      : null,
+  );
   const [geoBusy, setGeoBusy] = useState(false);
   const [mapError, setMapError] = useState("");
 

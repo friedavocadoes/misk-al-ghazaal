@@ -16,6 +16,15 @@ export function ShopperSignOut() {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
+        // Device hygiene: the local bag + any applied-code handoff belong
+        // to this account — the next login on this browser must start
+        // clean instead of inheriting them.
+        try {
+          localStorage.removeItem("misk-cart-v1");
+          localStorage.removeItem("misk-coupon");
+        } catch {
+          /* private mode */
+        }
         await createBrowserClient().auth.signOut();
         router.push("/");
         router.refresh();

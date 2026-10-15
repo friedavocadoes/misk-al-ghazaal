@@ -21,6 +21,8 @@ async function updateOrder(formData: FormData) {
   const trackingNo = String(formData.get("tracking_no") ?? "").trim() || null;
   const trackingUrl = String(formData.get("tracking_url") ?? "").trim() || null;
   const internalNote = String(formData.get("internal_note") ?? "").trim() || null;
+  const etaRaw = String(formData.get("expected_delivery_date") ?? "").trim();
+  const eta = /^\d{4}-\d{2}-\d{2}$/.test(etaRaw) ? etaRaw : null;
   if (!NEXT_STATUSES.includes(toStatus as (typeof NEXT_STATUSES)[number])) return;
 
   const supabase = await createClient();
@@ -31,7 +33,7 @@ async function updateOrder(formData: FormData) {
     .single();
   await supabase
     .from("orders")
-    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote })
+    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote, expected_delivery_date: eta })
     .eq("id", id);
   await supabase.from("order_status_history").insert({
     order_id: id,
@@ -90,6 +92,7 @@ async function updateOrder(formData: FormData) {
       to: toStatus,
       tracking_no: trackingNo,
       tracking_url: trackingUrl,
+      expected_delivery_date: eta,
       internal_note: internalNote,
       mailed: !!(cur?.email && cur.status !== toStatus),
     },
@@ -215,6 +218,10 @@ export default async function OrderDetail(props: {
             {order.notes && <div><dt className="text-ink/60">Customer note</dt><dd>{order.notes}</dd></div>}
             <div><dt className="text-ink/60">Payment</dt><dd>{order.payment_method === "cod" ? "Cash on delivery" : "Card"}</dd></div>
             <div><dt className="text-ink/60">Total (COD to collect)</dt><dd className="font-medium">AED {Number(order.total).toFixed(2)}</dd></div>
+            <div>
+              <dt className="text-ink/60">Expected delivery (shopper sees this)</dt>
+              <dd>{(order as { expected_delivery_date?: string | null }).expected_delivery_date ?? "— not set"}</dd>
+            </div>
           </dl>
           <a
             href={waHref}
@@ -254,6 +261,15 @@ export default async function OrderDetail(props: {
             <label className="block text-sm">
               Tracking link (courier URL — shopper gets a Track button)
               <input name="tracking_url" defaultValue={(order as { tracking_url?: string }).tracking_url ?? ""} placeholder="https://…" dir="ltr" className="mt-1 w-full border border-ink/20 px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              Expected delivery date (shown to the shopper)
+              <input
+                type="date"
+                name="expected_delivery_date"
+                defaultValue={(order as { expected_delivery_date?: string | null }).expected_delivery_date ?? ""}
+                className="mt-1 w-full border border-ink/20 px-3 py-2"
+              />
             </label>
             <label className="block text-sm">
               Internal note (staff only)

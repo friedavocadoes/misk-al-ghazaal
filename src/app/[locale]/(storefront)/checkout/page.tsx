@@ -29,6 +29,13 @@ export default function CheckoutPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [guest, setGuest] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+  const [savePhone, setSavePhone] = useState(true);
+  const [addrInitial, setAddrInitial] = useState<{
+    line?: string; building?: string; countryCode?: string; state?: string;
+    city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
+  } | null>(null);
+  const [addrReady, setAddrReady] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -69,11 +76,59 @@ export default function CheckoutPage() {
         if (data.user) {
           setUserId(data.user.id);
           if (data.user.email) setEmail((e) => e || data.user.email!);
+          // Autofill from the account (profile → last order fallback).
+          // Functional sets only fill blanks, so a fast typer is never
+          // clobbered by the late response.
+          fetch("/api/account/profile")
+            .then((r) => (r.ok ? r.json() : null))
+            .then((j) => {
+              if (!j || typeof j !== "object") return;
+              const nm = typeof j.name === "string" ? j.name : "";
+              const ph = typeof j.phone === "string" ? j.phone : "";
+              if (nm) setName((v) => v || nm);
+              if (ph) setPhone((v) => v || ph);
+              const saved = (j.defaultAddress ?? null) as {
+                line?: string; city?: string; state?: string; postcode?: string;
+                country_code?: string; countryCode?: string; label?: string;
+                lat?: number | null; lng?: number | null;
+              } | null;
+              const last = (j.lastOrder ?? null) as {
+                address?: string; city?: string; emirate?: string; state_name?: string;
+                postcode?: string; country_code?: string;
+              } | null;
+              if (saved && typeof saved === "object") {
+                setAddrInitial({
+                  line: saved.line ?? "",
+                  countryCode: saved.countryCode ?? saved.country_code ?? undefined,
+                  state: saved.state ?? "",
+                  city: saved.city ?? "",
+                  postcode: saved.postcode ?? "",
+                  label: saved.label ?? "",
+                  lat: saved.lat ?? null,
+                  lng: saved.lng ?? null,
+                });
+                setAddress((v) => v || saved.line || "");
+                setCity((v) => (v && v !== "Dubai") || !saved.city ? v : saved.city || v);
+                setEmirate((v) => (v && v !== "Dubai") || !saved.state ? v : saved.state || v);
+              } else if (last) {
+                setAddress((v) => v || last.address || "");
+                if (last.city) setCity((v) => (v && v !== "Dubai" ? v : last.city!));
+                const st = last.state_name || last.emirate || "";
+                if (st) setEmirate((v) => (v && v !== "Dubai" ? v : st));
+              }
+              setPrefilled(true);
+            })
+            .catch(() => {})
+            .finally(() => setAddrReady(true));
         } else {
           setGuest(true);
+          setAddrReady(true);
         }
       })
-      .catch(() => setGuest(true));
+      .catch(() => {
+        setGuest(true);
+        setAddrReady(true);
+      });
     fetch("/api/countries")
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
@@ -274,6 +329,7 @@ export default function CheckoutPage() {
         coupon_code: appliedCoupon || undefined,
         referral_code: appliedReferral || undefined,
         user_id: userId ?? undefined,
+        save_phone: userId ? savePhone : undefined,
         country_code: addr ? addr.countryCode : undefined,
         state: finalState,
         postcode: addr ? addr.postcode : undefined,
@@ -353,21 +409,40 @@ export default function CheckoutPage() {
           {/* Details */}
           <section className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("contactTitle")}>
             <h2 className="font-display text-2xl text-ink">{t("contactTitle")}</h2>
+            {prefilled && (
+              <p className="mt-1.5 text-[13px] text-[#1e7a46]">{t("prefilled")}</p>
+            )}
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${t("name")} *`} aria-label={t("name")} className={inputCls} />
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`${t("phone")} *`} aria-label={t("phone")} dir="ltr" className={inputCls} />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} type="email" aria-label={t("email")} dir="ltr" className={`${inputCls} sm:col-span-2`} />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${t("name")} *`} aria-label={t("name")} className={inputCls} autoComplete="name" />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={`${t("phone")} *`} aria-label={t("phone")} dir="ltr" className={inputCls} autoComplete="tel" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} type="email" aria-label={t("email")} dir="ltr" className={`${inputCls} sm:col-span-2`} autoComplete="email" />
             </div>
+            {userId && (
+              <label className="mt-3 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-fog">
+                <input
+                  type="checkbox"
+                  checked={savePhone}
+                  onChange={(e) => setSavePhone(e.target.checked)}
+                  className="mt-0.5 size-3.5 shrink-0 cursor-pointer accent-[#8a6d2f]"
+                />
+                <span>{t("savePhone")}</span>
+              </label>
+            )}
             <div className="mt-6">
               {hasMap ? (
-                <DeliveryAddress
-                  locale={locale}
-                  countries={countries}
-                  onChange={(a, v) => {
-                    setDelivery(a);
-                    setDeliveryValid(v);
-                  }}
-                />
+                addrReady ? (
+                  <DeliveryAddress
+                    locale={locale}
+                    countries={countries}
+                    initial={addrInitial}
+                    onChange={(a, v) => {
+                      setDelivery(a);
+                      setDeliveryValid(v);
+                    }}
+                  />
+                ) : (
+                  <div className="h-64 w-full animate-pulse border border-ink/15 bg-sand md:h-72" />
+                )
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={`${t("address")} *`} aria-label={t("address")} className={`${inputCls} sm:col-span-2`} />

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
 import { buildOrderEmail, sendMailboxMail } from "@/lib/mailer";
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
       address_label?: string;
       lat?: number | null;
       lng?: number | null;
+      save_phone?: boolean;
     };
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -53,6 +55,23 @@ export async function POST(req: Request) {
     }
 
     const admin = createAdminClient();
+    // Identity is server-authoritative: the session decides the owner.
+    // A client-supplied user_id that disagrees with the session is
+    // ignored (it would otherwise let anyone bind orders — and personal
+    // coupons — to somebody else's account).
+    let sessionUserId: string | null = null;
+    let sessionEmail: string | null = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user: sessionUser },
+      } = await supabase.auth.getUser();
+      sessionUserId = sessionUser?.id ?? null;
+      sessionEmail = sessionUser?.email ?? null;
+    } catch {
+      /* no session — guest checkout */
+    }
+    const ownerId = sessionUserId;
     // Delivery zone guard: the country must be active in the admin list
     // (the map already enforces this; the server has the final word).
     const countryCode = (body.country_code ?? "").trim().toUpperCase();
@@ -67,10 +86,10 @@ export async function POST(req: Request) {
     }
     const { priced, quote } = await quoteBag({
       lines: items,
-      email,
+      email: email || sessionEmail || "",
       couponCode: body.coupon_code,
       referralCode: body.referral_code,
-      userId: body.user_id,
+      userId: ownerId ?? undefined,
     });
 
     const { data: order, error: oErr } = await admin
@@ -79,7 +98,7 @@ export async function POST(req: Request) {
         order_no: "", // trigger assigns MG-0001…
         customer_name: name,
         phone,
-        email: email || null,
+        email: email || sessionEmail || null,
         address,
         city: (body.city ?? "Dubai").trim() || "Dubai",
         emirate: (body.emirate ?? "Dubai").trim() || "Dubai",
@@ -90,7 +109,7 @@ export async function POST(req: Request) {
         total: quote.total,
         coupon_code: quote.couponCode || "",
         referral_code: quote.referralCode || "",
-        user_id: body.user_id || null,
+        user_id: ownerId,
         country_code: countryCode,
         state_name: (body.state ?? "").trim(),
         postcode: (body.postcode ?? "").trim(),
@@ -154,7 +173,7 @@ export async function POST(req: Request) {
         await admin.from("coupon_redemptions").insert({
           coupon_id: (coupon as { id: string }).id,
           order_id: orderId,
-          user_id: body.user_id || null,
+          user_id: ownerId,
         });
         await admin.rpc("increment_coupon_use", { p_coupon_id: (coupon as { id: string }).id }).then(
           () => {},
@@ -169,7 +188,8 @@ export async function POST(req: Request) {
 
     // Referral reward: newcomer already saved via the quote; now mint the
     // referrer's personal single-use coupon and record the introduction.
-    if (quote.referralCode && email) {
+    const refereeEmail = email || sessionEmail || "";
+    if (quote.referralCode && refereeEmail) {
       const { data: referrer } = await admin.from("profiles").select("id").eq("referral_code", quote.referralCode).single();
       const terms = await getReferralTerms();
       if (referrer && terms.active) {
@@ -204,8 +224,8 @@ export async function POST(req: Request) {
         }
         await admin.from("referrals").insert({
           referrer_id: (referrer as { id: string }).id,
-          referee_email: email,
-          referee_user_id: body.user_id || null,
+          referee_email: refereeEmail,
+          referee_user_id: ownerId,
           order_id: orderId,
           reward_coupon_id: rewardId,
           status: "rewarded",
@@ -213,14 +233,46 @@ export async function POST(req: Request) {
         const { data: prof } = await admin.from("profiles").select("referral_uses").eq("id", (referrer as { id: string }).id).single();
         await admin.from("profiles").update({ referral_uses: Number((prof as { referral_uses: number } | null)?.referral_uses ?? 0) + 1 }).eq("id", (referrer as { id: string }).id);
         // Remember who introduced a signed-in newcomer.
-        if (body.user_id) {
-          await admin.from("profiles").update({ referred_by: (referrer as { id: string }).id }).eq("id", body.user_id).is("referred_by", null);
+        if (ownerId) {
+          await admin.from("profiles").update({ referred_by: (referrer as { id: string }).id }).eq("id", ownerId).is("referred_by", null);
         }
       }
     }
 
+    // Remember the shopper for next time (logged-in only): the last
+    // delivery snapshot always refreshes (autofill source), the name
+    // fills once (never clobbers), the phone ONLY with explicit consent.
+    if (ownerId) {
+      try {
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("full_name, phone")
+          .eq("id", ownerId)
+          .single();
+        const p = (prof as { full_name?: string | null; phone?: string | null } | null) ?? {};
+        const patch: Record<string, unknown> = {
+          default_address: {
+            line: address,
+            city: (body.city ?? "Dubai").trim() || "Dubai",
+            state: (body.state ?? body.emirate ?? "Dubai").trim() || "Dubai",
+            postcode: (body.postcode ?? "").trim(),
+            country_code: countryCode,
+            label: (body.address_label ?? "").trim(),
+            lat: typeof body.lat === "number" ? body.lat : null,
+            lng: typeof body.lng === "number" ? body.lng : null,
+          },
+        };
+        if (name && !p.full_name) patch.full_name = name;
+        if (body.save_phone && phone) patch.phone = phone;
+        await admin.from("profiles").update(patch).eq("id", ownerId);
+      } catch {
+        /* profile memory must never block checkout */
+      }
+    }
+
     // Order confirmation email (free SMTP; skipped when unconfigured).
-    if (email) {
+    const receiptEmail = email || sessionEmail || "";
+    if (receiptEmail) {
       const origin = new URL(req.url).origin;
       const { data: faces } = await admin
         .from("products")
@@ -251,7 +303,7 @@ export async function POST(req: Request) {
         addressHtml: addrHtml,
         couponCode: quote.couponCode || undefined,
       });
-      await sendMailboxMail("noreply", { to: email, ...mail });
+      await sendMailboxMail("noreply", { to: receiptEmail, ...mail });
     }
 
     return NextResponse.json({

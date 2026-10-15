@@ -35,13 +35,14 @@ export default async function OrdersPage(props: {
     total: number;
     status: string;
     created_at: string;
+    expected_delivery_date: string | null;
   }[] = [];
 
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     let q = supabase
       .from("orders")
-      .select("id,order_no,customer_name,phone,total,status,created_at")
+      .select("id,order_no,customer_name,phone,total,status,created_at,expected_delivery_date")
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -109,6 +110,9 @@ export default async function OrdersPage(props: {
               </p>
               <p className="text-sm text-ink/60">
                 {o.phone} · {new Date(o.created_at).toLocaleString("en-AE")}
+                {o.expected_delivery_date && (
+                  <> · <span className="font-medium text-[#1e7a46]">ETA {o.expected_delivery_date}</span></>
+                )}
               </p>
             </div>
             <div className="shrink-0 text-right">

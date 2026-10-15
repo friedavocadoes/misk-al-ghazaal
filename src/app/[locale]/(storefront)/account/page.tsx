@@ -9,6 +9,7 @@ import { CopyCode } from "@/components/ui/copy-code";
 import { AvatarUploader } from "@/components/blocks/AvatarUploader";
 import { GoogleGlyph } from "@/components/ui/brand-icons";
 import { ShopperSignOut } from "@/components/blocks/ShopperSignOut";
+import { ProfileContactForm } from "./contact-form";
 import { avatarOf, displayName, providerOf } from "@/lib/shopper-identity";
 import { requireShopper } from "@/lib/shopper";
 import { toLocale } from "@/lib/i18n";
@@ -40,13 +41,15 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
   const { supabase, user } = session;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("referral_code, referral_uses, avatar_url, role")
+    .select("referral_code, referral_uses, avatar_url, role, full_name, phone")
     .eq("id", user.id)
     .single();
 
   const code = (profile as { referral_code?: string } | null)?.referral_code ?? "";
   const uses = (profile as { referral_uses?: number } | null)?.referral_uses ?? 0;
-  const name = displayName(user);
+  const storedName = (profile as { full_name?: string | null } | null)?.full_name ?? "";
+  const storedPhone = (profile as { phone?: string | null } | null)?.phone ?? "";
+  const name = storedName || displayName(user);
   const avatar = avatarOf(user, profile as { avatar_url?: string | null } | null);
   const provider = providerOf(user);
   const staff = ["super_admin", "orders"].includes(
@@ -108,6 +111,33 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
           </div>
         )}
       </section>
+
+      {/* Contact — name + mobile live here; checkout borrows them */}
+      <ProfileContactForm
+        initialName={storedName}
+        initialPhone={storedPhone}
+        labels={
+          locale === "ar"
+            ? {
+                title: "بيانات التواصل",
+                name: "الاسم الكامل",
+                phone: "رقم الهاتف / واتساب",
+                save: "حفظ",
+                saving: "يُحفظ…",
+                saved: "تم الحفظ ✓",
+                hint: "تُستخدم هذه البيانات لتعبئة الطلبات تلقائياً — ويمكنك تعديلها عند كل طلب.",
+              }
+            : {
+                title: "Contact details",
+                name: "Full name",
+                phone: "Mobile / WhatsApp",
+                save: "Save",
+                saving: "Saving…",
+                saved: "Saved ✓",
+                hint: "Checkout autofills from here — you can still edit everything per order.",
+              }
+        }
+      />
 
       {/* Referral card */}
       <section className="mt-6 border border-gold/40 bg-gold-wash/50 p-6 md:p-8">

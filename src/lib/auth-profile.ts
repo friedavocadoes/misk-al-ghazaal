@@ -77,3 +77,28 @@ export async function ensureProfile(
   }
   return { created: false };
 }
+
+/** Adopt guest orders placed with this address before signup: the auth
+    email is verified by Supabase, so matching user_id-NULL rows are
+    unambiguously this shopper's. Exact lower() match only (never LIKE). */
+export async function claimGuestOrders(
+  admin: SupabaseClient,
+  userId: string,
+  email: string,
+): Promise<void> {
+  try {
+    const { data } = await admin
+      .from("orders")
+      .select("id, email")
+      .is("user_id", null);
+    const ids = (
+      (data as { id: string; email: string | null }[] | null) ?? []
+    )
+      .filter((o) => (o.email ?? "").toLowerCase() === email.toLowerCase())
+      .map((o) => o.id);
+    if (!ids.length) return;
+    await admin.from("orders").update({ user_id: userId }).in("id", ids);
+  } catch {
+    /* claiming must never block login */
+  }
+}

@@ -100,15 +100,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Pull once per login: union server cart with this device, converge.
+  // Account switch (A → B without a reload) resets to B's world: the
+  // local bag belonged to A and must never ride into B's account.
+  // Guest → login keeps the union (anonymous bag adoption is intended).
+  const prevUser = useRef<string | null>(null);
   useEffect(() => {
-    if (!hydrated || !userId || pulledFor.current === userId) return;
+    if (!hydrated) return;
+    if (!userId) {
+      prevUser.current = null;
+      return;
+    }
+    if (prevUser.current && prevUser.current !== userId) {
+      // A different account on the same device: the local bag belonged
+      // to the previous account — start empty, then converge with the
+      // new account's server cart below.
+      pulledFor.current = null;
+      setLines([]);
+    }
+    prevUser.current = userId;
+    if (pulledFor.current === userId) return;
     pulledFor.current = userId;
     (async () => {
       try {
         const sb = createBrowserClient();
         const { data } = await sb.from("profiles").select("cart").eq("id", userId).single();
         const server = validLines((data as { cart?: unknown } | null)?.cart);
-        if (server.length) setLines((prev) => mergeLines(prev, server));
+        if (prevUser.current === userId) setLines((prev) => mergeLines(prev, server));
       } catch {
         /* offline/RLS — local bag keeps working */
       }

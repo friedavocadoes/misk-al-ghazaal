@@ -1,7 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ArrowLeft, ArrowUpRight, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
@@ -31,10 +31,12 @@ export default async function AccountOrdersPage(props: {
   }
 
   const { supabase, user } = session;
+  // Strictly this account's orders — claimed guest rows carry user_id
+  // (see claimGuestOrders); typed-email matching is gone by design.
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_no, total, subtotal, discount, shipping, status, created_at, tracking_no, tracking_url, order_items(title, qty, unit_price)")
-    .or(`user_id.eq.${user.id}${user.email ? `,email.ilike.${user.email}` : ""}`)
+    .select("id, order_no, total, subtotal, discount, shipping, status, created_at, tracking_no, tracking_url, expected_delivery_date, order_items(title, qty, unit_price)")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -42,6 +44,7 @@ export default async function AccountOrdersPage(props: {
     id: string; order_no: string; total: number; subtotal: number; discount: number;
     shipping: number; status: string; created_at: string;
     tracking_no: string | null; tracking_url: string | null;
+    expected_delivery_date: string | null;
     order_items: { title: string; qty: number; unit_price: number }[];
   }[] | null) ?? [];
 
@@ -68,6 +71,13 @@ export default async function AccountOrdersPage(props: {
               </div>
               <p className="mt-1 text-[13px] text-fog">
                 {new Date(o.created_at).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+                {o.expected_delivery_date && (
+                  <span className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-[#1e7a46]">
+                    <CalendarDays className="size-3.5" />
+                    {t("expectedDelivery")}:{" "}
+                    {new Date(`${o.expected_delivery_date}T00:00:00`).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+                  </span>
+                )}
               </p>
 
               <OrderTimeline status={o.status} locale={locale} />

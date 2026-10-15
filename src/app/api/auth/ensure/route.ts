@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
-import { ensureProfile } from "@/lib/auth-profile";
+import { ensureProfile, claimGuestOrders } from "@/lib/auth-profile";
 import { buildHelloEmail, sendMailboxMail } from "@/lib/mailer";
 import { getHelloProducts, getHelloSettings } from "@/lib/email-settings";
 
@@ -25,6 +25,8 @@ export async function POST(req: Request) {
     ref,
     promoOptIn,
   );
+  if (user.email) await claimGuestOrders(admin, user.id, user.email);
+  if (user.email) await claimGuestOrders(admin, user.id, user.email);
   if (created && user.email) {
     const meta = (user.user_metadata ?? {}) as { full_name?: string; name?: string };
     const name = meta.full_name || meta.name || user.email.split("@")[0] || "";

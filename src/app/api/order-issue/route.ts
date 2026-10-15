@@ -32,12 +32,13 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "login" }, { status: 401 });
 
-    // Verify ownership (same rule as the order pages: user_id or email).
+    // Strict ownership: claimed orders carry user_id (see
+    // claimGuestOrders) — no typed-email matching, ever.
     const { data: order } = await supabase
       .from("orders")
       .select("id, order_no, customer_name, phone, email, status, address, city")
       .eq("id", orderId)
-      .or(`user_id.eq.${user.id}${user.email ? `,email.ilike.${user.email}` : ""}`)
+      .eq("user_id", user.id)
       .single();
     if (!order) return NextResponse.json({ error: "Not found." }, { status: 404 });
     const o = order as {

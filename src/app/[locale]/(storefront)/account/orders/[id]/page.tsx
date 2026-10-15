@@ -2,7 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import { ArrowLeft, ArrowUpRight, Gift, MapPin, Phone, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Gift, MapPin, Phone, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
@@ -38,7 +38,7 @@ export default async function AccountOrderDetail(props: {
     .from("orders")
     .select("*")
     .eq("id", id)
-    .or(`user_id.eq.${user.id}${user.email ? `,email.ilike.${user.email}` : ""}`)
+    .eq("user_id", user.id)
     .single();
 
   if (!order) {
@@ -60,6 +60,7 @@ export default async function AccountOrderDetail(props: {
     postcode: string | null; address_label: string | null;
     delivery_lat: number | null; delivery_lng: number | null;
     tracking_no: string | null; tracking_url: string | null;
+    expected_delivery_date: string | null;
   };
   const { data: items } = await supabase
     .from("order_items")
@@ -99,6 +100,13 @@ export default async function AccountOrderDetail(props: {
 
       <div className="mt-2 border border-ink/10 bg-white p-5 md:p-6">
         <OrderTimeline status={o.status} locale={locale} />
+        {o.expected_delivery_date && (
+          <p className="mt-3 flex items-center gap-2 border-t border-ink/10 pt-3 text-sm font-medium text-[#1e7a46]">
+            <CalendarDays className="size-4" />
+            {t("expectedDelivery")}:{" "}
+            {new Date(`${o.expected_delivery_date}T00:00:00`).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })}
+          </p>
+        )}
       </div>
 
       {(o.tracking_no || o.tracking_url) && (
