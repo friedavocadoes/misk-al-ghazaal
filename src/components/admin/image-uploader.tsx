@@ -10,7 +10,7 @@ export function ImageUploader({
   prefix,
   onUploaded,
 }: {
-  bucket: "products" | "banners";
+  bucket: "products" | "banners" | "promo";
   prefix: string;
   onUploaded: (url: string) => void;
 }) {

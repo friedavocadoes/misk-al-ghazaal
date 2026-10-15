@@ -30,7 +30,7 @@ export const PAGES: Record<
     titleAr: "الجملة",
     eyebrow: "Trade",
     eyebrowAr: "تجارة",
-    html: "<p><strong>Bulk orders accepting.</strong> Partner with Misk Al Ghazaal for retail and distribution of fine perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:gazaalperfumes@gmail.com'>gazaalperfumes@gmail.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
+    html: "<p><strong>Bulk orders accepting.</strong> Partner with Misk Al Ghazaal for retail and distribution of fine perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:support@miskalghazaalperfumes.com'>support@miskalghazaalperfumes.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
   },
   contact: { title: "Write to the Maison", eyebrow: "Correspondence", html: "" },
   faq: { title: "Questions, Answered", titleAr: "أسئلة وأجوبة", eyebrow: "Client Care", eyebrowAr: "خدمة العملاء", html: "" },
@@ -68,7 +68,7 @@ export const PAGES: Record<
     titleAr: "الإرجاع والشروط",
     eyebrow: "Client Care",
     eyebrowAr: "خدمة العملاء",
-    html: "<p>30-day returns on unopened items with receipt. Refunds return to the original payment method within 10–45 days depending on the issuing bank.</p><p>Damaged or incorrect items are always made right — write to gazaalperfumes@gmail.com.</p>",
+    html: "<p>30-day returns on unopened items with receipt. Refunds return to the original payment method within 10–45 days depending on the issuing bank.</p><p>Damaged or incorrect items are always made right — write to support@miskalghazaalperfumes.com.</p>",
   },
   sitemap: {
     title: "Sitemap",

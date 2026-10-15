@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
-import { buildOrderEmail, sendMail } from "@/lib/mailer";
+import { buildOrderEmail, sendMailboxMail } from "@/lib/mailer";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
 // (coupons + referral + shipping in one place), gift lines, coupon usage +
@@ -251,7 +251,7 @@ export async function POST(req: Request) {
         addressHtml: addrHtml,
         couponCode: quote.couponCode || undefined,
       });
-      await sendMail({ to: email, ...mail });
+      await sendMailboxMail("noreply", { to: email, ...mail });
     }
 
     return NextResponse.json({

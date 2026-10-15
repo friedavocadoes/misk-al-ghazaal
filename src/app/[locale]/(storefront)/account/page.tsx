@@ -143,6 +143,22 @@ export default async function AccountPage(props: PageProps<"/[locale]/account">)
           <span className="font-display text-xl text-ink transition group-hover:text-gold">{t("rewardsTitle")}</span>
         </Link>
       </div>
+      <a
+        href="mailto:support@miskalghazaalperfumes.com"
+        className="mt-3 block border border-ink/10 bg-white p-5 text-sm transition hover:border-gold/60"
+      >
+        <span className="block font-display text-xl text-ink">
+          {locale === "ar" ? "شكوى أو اقتراح؟" : "Complaints & support"}
+        </span>
+        <span className="mt-1 block text-espresso" dir="ltr">
+          support@miskalghazaalperfumes.com
+        </span>
+        <span className="mt-0.5 block text-[13px] text-fog">
+          {locale === "ar"
+            ? "راسلنا مباشرة — نرد خلال ٢٤ ساعة."
+            : "Write to us directly — we reply within 24 hours."}
+        </span>
+      </a>
       {staff && (
         <NextLink
           href="/admin"

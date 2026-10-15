@@ -25,6 +25,8 @@ export const AUDIT_CATEGORIES = [
   "bin",
   "seo",
   "auth",
+  "emails",
+  "promo",
 ] as const;
 
 export type AuditCategory = (typeof AUDIT_CATEGORIES)[number];

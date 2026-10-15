@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { ensureProfile } from "@/lib/auth-profile";
-import { buildWelcomeEmail, sendMail } from "@/lib/mailer";
+import { buildHelloEmail, sendMailboxMail } from "@/lib/mailer";
+import { getHelloProducts, getHelloSettings } from "@/lib/email-settings";
 
 /** OAuth + email-confirm landing: exchanges the code, bootstraps the
     profile (referral code + optional ?ref= attribution), welcomes brand-new
@@ -25,7 +26,17 @@ export async function GET(req: Request) {
       if (created && data.user.email) {
         const meta = (data.user.user_metadata ?? {}) as { full_name?: string; name?: string };
         const name = meta.full_name || meta.name || data.user.email.split("@")[0] || "";
-        await sendMail({ to: data.user.email, ...buildWelcomeEmail(name) });
+        const settings = await getHelloSettings();
+        const products = await getHelloProducts(settings.productSlugs);
+        const h = (req as unknown as { headers: Headers }).headers;
+        const p0 = h.get("x-forwarded-proto")?.split(",")[0]?.trim() || url.protocol.replace(":", "");
+        const h0 = h.get("x-forwarded-host")?.split(",")[0]?.trim() || h.get("host") || url.host;
+        const origin = `${p0}://${h0}`;
+        await sendMailboxMail("hello", {
+          to: data.user.email,
+          subject: settings.subject,
+          ...buildHelloEmail({ name, heading: settings.heading, bodyHtml: settings.bodyHtml, products, origin }),
+        });
       }
     }
   }

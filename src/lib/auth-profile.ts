@@ -21,6 +21,7 @@ export async function ensureProfile(
   userId: string,
   email: string | null,
   referredByCode?: string,
+  promoOptIn?: boolean,
 ): Promise<{ created: boolean }> {
   const { data: existing } = await admin
     .from("profiles")
@@ -44,6 +45,7 @@ export async function ensureProfile(
         role: "customer",
         referral_code: code,
         referred_by: referrerId,
+        promo_opt_in: promoOptIn ?? true,
       });
       if (!error) return { created: true };
       // Collision on referral_code (or a racing insert) — retry, then
@@ -53,7 +55,7 @@ export async function ensureProfile(
     }
   }
 
-  const patch: { referral_code?: string; referred_by?: string } = {};
+  const patch: { referral_code?: string; referred_by?: string; promo_opt_in?: boolean } = {};
   if (!(existing as { referral_code?: string } | null)?.referral_code) {
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = randomCode();
@@ -68,6 +70,8 @@ export async function ensureProfile(
   if (referrerId && !(existing as { referred_by?: string } | null)?.referred_by) {
     patch.referred_by = referrerId;
   }
+  // Login-pane opt-in syncs the flag for existing accounts (unchecked = off).
+  if (promoOptIn !== undefined) patch.promo_opt_in = promoOptIn;
   if (Object.keys(patch).length) {
     await admin.from("profiles").update(patch).eq("id", userId);
   }

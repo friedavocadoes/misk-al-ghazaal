@@ -31,6 +31,10 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
             {pick(SITE.address, locale)}
             <br />
             {pick(SITE.hours, locale)}
+            <br />
+            <a href={`mailto:${SITE.email}`} className="underline underline-offset-4 transition hover:text-gold" dir="ltr">
+              {SITE.email}
+            </a>
           </p>
         </div>
         {columns.map((col) => (

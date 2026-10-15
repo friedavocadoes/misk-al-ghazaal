@@ -44,6 +44,13 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/seo", label: "Page SEO" },
     ],
   },
+  {
+    label: "Emails",
+    items: [
+      { href: "/admin/emails/hello", label: "Hello mail" },
+      { href: "/admin/promo", label: "Promo mail" },
+    ],
+  },
 ];
 
 export function AdminNav({ email, role }: { email: string; role: AdminRole }) {

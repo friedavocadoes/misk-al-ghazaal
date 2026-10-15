@@ -47,7 +47,7 @@ export const SITE = {
     "Complimentary delivery across the UAE on orders above AED 200 · Cash on Delivery",
     "توصيل مجاني في الإمارات للطلبات فوق 200 درهم · الدفع عند الاستلام",
   ),
-  email: "info@miskalghazaalperfumes.com",
+  email: "support@miskalghazaalperfumes.com",
   phone: "+971 4 000 0000",
   address: L("Mamzar Center, Shop No. 08, Dubai", "ممرز سنتر، دبي، الإمارات"),
   hours: L("Open Mon–Sat, 10AM–5PM", "مفتوح من الاثنين للسبت، 10ص–5م"),
@@ -59,6 +59,13 @@ export const SITE = {
 // OWNER TODOs: replace the placeholder digits below with the real numbers.
 // Store hours are edited in SITE above (single source).
 // ---------------------------------------------------------------------------
+
+export const SUPPORT_EMAIL =
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@miskalghazaalperfumes.com";
+export const HELLO_EMAIL = "hello@miskalghazaalperfumes.com";
+export const ORDERS_EMAIL = "orders@miskalghazaalperfumes.com";
+export const PROMO_EMAIL = "promo@miskalghazaalperfumes.com";
+export const NOREPLY_EMAIL = "noreply@miskalghazaalperfumes.com";
 
 export const INSTAGRAM_URL = "https://www.instagram.com/misk.al.ghazaal";
 
@@ -324,11 +331,11 @@ const FAQS: Localizable<Faq>[] = [
   {
     en: {
       q: "What is your return policy?",
-      a: "Unopened items may be returned within 7 days (30 days with receipt for eligible items). Write to gazaalperfumes@gmail.com to begin.",
+      a: "Unopened items may be returned within 7 days (30 days with receipt for eligible items). Write to support@miskalghazaalperfumes.com to begin.",
     },
     ar: {
       q: "ما هي سياسة الإرجاع؟",
-      a: "يمكن إرجاع القطع غير المفتوحة خلال 7 أيام (30 يوماً مع الإيصال للقطع المؤهلة). راسلنا على gazaalperfumes@gmail.com للبدء.",
+      a: "يمكن إرجاع القطع غير المفتوحة خلال 7 أيام (30 يوماً مع الإيصال للقطع المؤهلة). راسلنا على support@miskalghazaalperfumes.com للبدء.",
     },
   },
 ];

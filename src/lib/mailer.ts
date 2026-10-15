@@ -2,21 +2,59 @@ import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 
 // ---------------------------------------------------------------------------
-// Transactional mail over the owner's own SMTP (free — no service cost).
-// Graceful no-op when SMTP_* env is missing, so dev/staging never crash.
-// Configure in Supabase? No — this is app-side: any SMTP host works
-// (Gmail app password, domain mail, Resend SMTP). See SETUP_SUPABASE.md.
+// Domain mailboxes (cPanel, one SMTP login per address).
+//   hello   → welcome mail on account creation
+//   noreply → order confirmations + status updates (never reply-monitored)
+//   promo   → newsletters / offers (promo_opt_in shoppers only)
+//   orders  → shopper order-issue forms, forwarded to SUPPORT_EMAIL
+//   support → human inbox, mailto-only (no SMTP — see SUPPORT_EMAIL)
+// Graceful no-op when a mailbox is unconfigured, so dev/staging never crash.
+// Every mailbox reads its own *_SMTP_* env block and falls back to the
+// legacy SMTP_* block, so existing single-sender setups keep working.
 // ---------------------------------------------------------------------------
 
-function transporter(): Transporter | null {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+export type Mailbox = "hello" | "noreply" | "promo" | "orders";
+
+const MAILBOX_PREFIX: Record<Mailbox, string> = {
+  hello: "HELLO",
+  noreply: "NOREPLY",
+  promo: "PROMO",
+  orders: "ORDERS",
+};
+
+export const SUPPORT_EMAIL =
+  process.env.SUPPORT_EMAIL ?? "support@miskalghazaalperfumes.com";
+
+export function mailboxAddress(m: Mailbox): string {
+  const p = MAILBOX_PREFIX[m];
+  return (
+    process.env[`${p}_SMTP_FROM`] ??
+    process.env[`${p}_SMTP_USER`] ??
+    process.env.SMTP_FROM ??
+    process.env.SMTP_USER ??
+    `${m}@miskalghazaalperfumes.com`
+  );
+}
+
+function mailboxTransporter(m: Mailbox): Transporter | null {
+  const p = MAILBOX_PREFIX[m];
+  const host =
+    process.env[`${p}_SMTP_HOST`] ?? process.env.SMTP_HOST ?? null;
+  const user =
+    process.env[`${p}_SMTP_USER`] ?? process.env.SMTP_USER ?? null;
+  const pass =
+    process.env[`${p}_SMTP_PASS`] ?? process.env.SMTP_PASS ?? null;
   if (!host || !user || !pass) return null;
+  const portRaw =
+    process.env[`${p}_SMTP_PORT`] ?? process.env.SMTP_PORT ?? "465";
+  const port = Number(portRaw) || 465;
+  const secureRaw =
+    process.env[`${p}_SMTP_SECURE`] ?? process.env.SMTP_SECURE;
+  const secure = secureRaw !== undefined ? secureRaw === "1" : port === 465;
   return nodemailer.createTransport({
     host,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "1",
+    port,
+    secure,
     auth: { user, pass },
   });
 }
@@ -33,11 +71,42 @@ function shell(
 <h1 style="font-size:28px;font-weight:400;margin:12px 0 4px">${title}</h1>
 <p style="font-size:13px;color:#78716c;margin:0 0 20px">${preheader}</p>
 <div style="border-top:1px solid #e9e1d2;padding-top:20px;font-size:15px;line-height:1.7">${body}</div>
-<p style="margin-top:28px;font-size:12px;color:#78716c">Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Cash on delivery across the UAE.</p>
+<p style="margin-top:28px;font-size:12px;color:#78716c">Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Cash on delivery across the UAE.<br />Need help? Write to <a href="mailto:${SUPPORT_EMAIL}" style="color:#8a6d2f">${SUPPORT_EMAIL}</a></p>
 </div></body></html>`;
   return { html, text };
 }
 
+export async function sendMailboxMail(
+  mailbox: Mailbox,
+  opts: {
+    to: string;
+    subject: string;
+    title: string;
+    preheader: string;
+    bodyHtml: string;
+    replyTo?: string;
+  },
+): Promise<{ sent: boolean }> {
+  const tp = mailboxTransporter(mailbox);
+  if (!tp || !opts.to.includes("@")) return { sent: false };
+  try {
+    const { html, text } = shell(opts.title, opts.preheader, opts.bodyHtml);
+    await tp.sendMail({
+      from: `"Misk Al Ghazaal" <${mailboxAddress(mailbox)}>`,
+      to: opts.to,
+      subject: opts.subject,
+      text,
+      html,
+      ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    });
+    return { sent: true };
+  } catch (e) {
+    console.error(`[mailer:${mailbox}]`, e instanceof Error ? e.message : e);
+    return { sent: false };
+  }
+}
+
+/** Legacy single-sender entry — now routes via noreply (order mail). */
 export async function sendMail(opts: {
   to: string;
   subject: string;
@@ -45,22 +114,7 @@ export async function sendMail(opts: {
   preheader: string;
   bodyHtml: string;
 }): Promise<{ sent: boolean }> {
-  const tp = transporter();
-  if (!tp || !opts.to.includes("@")) return { sent: false };
-  try {
-    const { html, text } = shell(opts.title, opts.preheader, opts.bodyHtml);
-    await tp.sendMail({
-      from: `"Misk Al Ghazaal" <${process.env.SMTP_FROM ?? process.env.SMTP_USER}>`,
-      to: opts.to,
-      subject: opts.subject,
-      text,
-      html,
-    });
-    return { sent: true };
-  } catch (e) {
-    console.error("[mailer]", e instanceof Error ? e.message : e);
-    return { sent: false };
-  }
+  return sendMailboxMail("noreply", opts);
 }
 
 export function orderLinesHtml(
@@ -158,5 +212,57 @@ export function buildWelcomeEmail(name: string): {
     preheader: "Your account is ready — invite friends, earn together.",
     bodyHtml: `<p>Your maison account is ready. From here you can track every parcel, keep a wishlist, hold reward coupons — and invite friends: you both earn on their first order.</p>
 <p>Start with the icons: best sellers, new arrivals. Every order leaves with complimentary samples.</p>`,
+  };
+}
+
+/** Elegant hello mail with best-seller cards. Products carry
+    { title, price, image, href } resolved by the caller (admin-picked
+    slugs, falling back to live best sellers). Subject lives in the admin
+    settings — this returns title/preheader/body only. */
+export function buildHelloEmail(opts: {
+  name: string;
+  heading: string;
+  bodyHtml: string;
+  products: { title: string; price: number; image?: string; href: string }[];
+  origin: string;
+}): { title: string; preheader: string; bodyHtml: string } {
+  const cards = opts.products
+    .map(
+      (p) => `<td style="padding:0 6px;vertical-align:top" width="33%">
+<a href="${opts.origin}${p.href}" style="text-decoration:none;color:#1c1917">
+${p.image ? `<img src="${p.image.startsWith("http") ? p.image : `${opts.origin}${p.image}`}" width="150" style="width:100%;height:180px;object-fit:cover;display:block" alt="" />` : ""}
+<p style="font-family:Georgia,serif;font-size:15px;margin:10px 0 2px">${p.title}</p>
+<p style="font-size:13px;color:#8a6d2f;margin:0">AED ${p.price.toFixed(2)} — shop →</p>
+</a></td>`,
+    )
+    .join("");
+  return {
+    title: opts.heading.replace("{name}", opts.name || "friend"),
+    preheader: "Your account is ready — here is where to begin.",
+    bodyHtml: `<div style="text-align:center;padding:8px 0 4px;font-size:42px;line-height:1">✦</div>
+${opts.bodyHtml}
+${cards ? `<h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f;margin-top:24px">Begin with the icons</h3><table style="width:100%;border-collapse:collapse"><tr>${cards}</tr></table>` : ""}
+<p style="margin-top:24px">Every order leaves with complimentary samples — cash on delivery across the UAE.</p>`,
+  };
+}
+
+/** Order-issue forwarding (orders@ → support@): shopper request + order context. */
+export function buildOrderIssueEmail(opts: {
+  orderNo: string;
+  type: string;
+  typeLabel: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  detailsHtml: string;
+}): { subject: string; title: string; preheader: string; bodyHtml: string } {
+  return {
+    subject: `Order ${opts.orderNo} — ${opts.typeLabel} · via website`,
+    title: `Order ${opts.orderNo} — ${opts.typeLabel.toLowerCase()}.`,
+    preheader: `${opts.orderNo} · ${opts.type} · ${opts.customerName}`,
+    bodyHtml: `<p><strong>Type:</strong> ${opts.typeLabel}</p>
+<p><strong>Order:</strong> ${opts.orderNo}</p>
+<p><strong>Customer:</strong> ${opts.customerName} · ${opts.customerEmail} · ${opts.customerPhone}</p>
+<div style="border-top:1px solid #e9e1d2;margin-top:16px;padding-top:16px">${opts.detailsHtml}</div>`,
   };
 }

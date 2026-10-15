@@ -7,7 +7,7 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
 import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
-import { sendMail, buildOrderEmail } from "@/lib/mailer";
+import { sendMailboxMail, buildOrderEmail } from "@/lib/mailer";
 import { logAdmin } from "@/lib/audit";
 
 const NEXT_STATUSES = ORDER_STATUSES;
@@ -76,7 +76,7 @@ async function updateOrder(formData: FormData) {
       trackingUrl: trackingUrl ?? undefined,
       couponCode: f.coupon_code || undefined,
     });
-    await sendMail({ to: cur.email, ...mail });
+    await sendMailboxMail("noreply", { to: cur.email, ...mail });
   }
   await logAdmin(supabase, session, {
     category: "orders",

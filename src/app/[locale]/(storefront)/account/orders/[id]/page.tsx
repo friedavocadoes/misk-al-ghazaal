@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowUpRight, Gift, MapPin, Phone, Truck } from "lucide-reac
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
+import { OrderIssueBox } from "@/components/blocks/OrderIssueBox";
 import { CopyCode } from "@/components/ui/copy-code";
 import { WhatsAppIcon } from "@/components/ui/brand-icons";
 import { STORE_CONTACT, waLink } from "@/lib/site";
@@ -217,6 +218,9 @@ export default async function AccountOrderDetail(props: {
           )}
         </div>
       </section>
+
+      {/* Order issue → orders@ → support@ */}
+      <OrderIssueBox orderId={id} orderNo={o.order_no} status={o.status} />
 
       {/* Contact the factory */}
       <section className="mt-6 border border-gold/40 bg-gold-wash/50 p-5 md:p-6">

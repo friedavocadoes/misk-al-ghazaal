@@ -95,15 +95,25 @@ read, super_admin write via RLS).
 - Realtime: add a `supabase.channel('orders').on('postgres_changes', …)` listener
   on the orders page later for a new-order toast — no extra service needed.
 
-## 6b. Order emails (free, optional)
+## 6b. Domain emails (cPanel, one login per address)
 
-- Confirmation + every status change email the shopper automatically —
-  through YOUR SMTP (`SMTP_HOST/PORT/USER/PASS/FROM` in `.env`), so there is
-  no per-email service cost. Unset = silently skipped (orders still work).
-- Easiest free setup: Gmail app password (Google Account → Security →
-  2-Step Verification → App passwords → Mail), `SMTP_HOST=smtp.gmail.com`,
-  `SMTP_PORT=587`. Alternatives: your domain/host mailbox, or Resend's
-  free SMTP tier. No code changes — `lib/mailer.ts` picks env up.
+Run `supabase/migration_emails_promo.sql` once (adds `profiles.promo_opt_in`,
+`hello_mail_settings`, `promo_campaigns`, `promo` bucket).
+
+| Address | Sends | Via |
+|---|---|---|
+| `hello@` | Welcome mail on account creation (copy + 2–3 products edited at `/admin/emails/hello`) | `HELLO_SMTP_*` |
+| `noreply@` | Order confirmation + every admin status change | `NOREPLY_SMTP_*` |
+| `promo@` | Newsletters/offers, composed at `/admin/promo` (Write/HTML tabs, phone+PC preview, artwork uploads to `promo` bucket) — only to promo-opted-in shoppers | `PROMO_SMTP_*` |
+| `orders@` | Shopper order-issue forms (`/account/orders` cards + order page) forwarded to support | `ORDERS_SMTP_*` |
+| `support@` | Human inbox — mailto links (contact, account, footer, every mail footer). No SMTP needed. | — |
+
+cPanel values per mailbox (each address has its OWN password):
+`HOST=miskalghazaalperfumes.com PORT=465 SECURE=1 USER=<full address> PASS=<mailbox password> FROM=<same address>`.
+Example: `HELLO_SMTP_HOST / HELLO_SMTP_PORT / HELLO_SMTP_USER / HELLO_SMTP_PASS / HELLO_SMTP_FROM / HELLO_SMTP_SECURE`.
+See `.env.example` — every block falls back to the legacy `SMTP_*`, and any
+unconfigured mailbox is a graceful no-op skip (orders/auth still succeed).
+Login/register carry the promo checkbox (on by default, quiet styling).
 
 ## 6c. Shopper auth (email + Google) + referrals
 

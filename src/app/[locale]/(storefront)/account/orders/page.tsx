@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowUpRight, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
+import { OrderIssueBox } from "@/components/blocks/OrderIssueBox";
 import { CopyCode } from "@/components/ui/copy-code";
 import { requireShopper } from "@/lib/shopper";
 import { toLocale } from "@/lib/i18n";
@@ -111,6 +112,7 @@ export default async function AccountOrdersPage(props: {
                   <span aria-hidden className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1">→</span>
                 </Link>
               </div>
+              <OrderIssueBox orderId={o.id} orderNo={o.order_no} status={o.status} />
             </li>
           ))}
         </ul>
