@@ -38,18 +38,14 @@ export function mailboxAddress(m: Mailbox): string {
 
 function mailboxTransporter(m: Mailbox): Transporter | null {
   const p = MAILBOX_PREFIX[m];
-  const host =
-    process.env[`${p}_SMTP_HOST`] ?? process.env.SMTP_HOST ?? null;
-  const user =
-    process.env[`${p}_SMTP_USER`] ?? process.env.SMTP_USER ?? null;
-  const pass =
-    process.env[`${p}_SMTP_PASS`] ?? process.env.SMTP_PASS ?? null;
+  const host = process.env[`${p}_SMTP_HOST`] ?? process.env.SMTP_HOST ?? null;
+  const user = process.env[`${p}_SMTP_USER`] ?? process.env.SMTP_USER ?? null;
+  const pass = process.env[`${p}_SMTP_PASS`] ?? process.env.SMTP_PASS ?? null;
   if (!host || !user || !pass) return null;
   const portRaw =
     process.env[`${p}_SMTP_PORT`] ?? process.env.SMTP_PORT ?? "465";
   const port = Number(portRaw) || 465;
-  const secureRaw =
-    process.env[`${p}_SMTP_SECURE`] ?? process.env.SMTP_SECURE;
+  const secureRaw = process.env[`${p}_SMTP_SECURE`] ?? process.env.SMTP_SECURE;
   const secure = secureRaw !== undefined ? secureRaw === "1" : port === 465;
   return nodemailer.createTransport({
     host,
@@ -85,6 +81,7 @@ export async function sendMailboxMail(
     preheader: string;
     bodyHtml: string;
     replyTo?: string;
+    attachments?: { filename: string; content: Buffer; contentType: string }[];
   },
 ): Promise<{ sent: boolean }> {
   const tp = mailboxTransporter(mailbox);
@@ -98,6 +95,15 @@ export async function sendMailboxMail(
       text,
       html,
       ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+      ...(opts.attachments?.length
+        ? {
+            attachments: opts.attachments.map((a) => ({
+              filename: a.filename,
+              content: a.content,
+              contentType: a.contentType,
+            })),
+          }
+        : {}),
     });
     return { sent: true };
   } catch (e) {
@@ -193,7 +199,7 @@ export function buildOrderEmail(opts: {
 <p style="font-size:20px">Total AED ${o.total.toFixed(2)} — cash on delivery.</p>
 <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Delivery</h3>
 <p>${o.addressHtml}</p>
-${o.pinUrl ? `<p><a href="${o.pinUrl}">View delivery pin</a></p>` : ""}
+${o.pinUrl ? `<p><a href="${o.pinUrl}">View location on map</a></p>` : ""}
 ${tracking}
 <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Need a hand?</h3>
 <p>Reply to this email or WhatsApp the factory — quote order ${o.orderNo}.</p>`,

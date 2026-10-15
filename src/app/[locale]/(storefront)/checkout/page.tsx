@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, ChevronDown, Loader2, Ticket, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
@@ -37,6 +37,14 @@ export default function CheckoutPage() {
     city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
   } | null>(null);
   const [addrReady, setAddrReady] = useState(false);
+  const [addrKey, setAddrKey] = useState(0);
+  const [savedAddr, setSavedAddr] = useState<{
+    initial: {
+      line?: string; building?: string; countryCode?: string; state?: string;
+      city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
+    };
+    summary: string;
+  } | null>(null);
   const [name, setName] = useState("");
   const [dial, setDial] = useState(DEFAULT_DIAL);
   const [national, setNational] = useState("");
@@ -105,7 +113,7 @@ export default function CheckoutPage() {
                 postcode?: string; country_code?: string;
               } | null;
               if (saved && typeof saved === "object") {
-                setAddrInitial({
+                const initial = {
                   line: saved.line ?? "",
                   countryCode: saved.countryCode ?? saved.country_code ?? undefined,
                   state: saved.state ?? "",
@@ -114,7 +122,10 @@ export default function CheckoutPage() {
                   label: saved.label ?? "",
                   lat: saved.lat ?? null,
                   lng: saved.lng ?? null,
-                });
+                };
+                setAddrInitial(initial);
+                const bits = [saved.line ?? "", saved.city ?? "", saved.state ?? ""].filter(Boolean);
+                if (bits.length) setSavedAddr({ initial, summary: bits.join(" · ") });
                 setAddress((v) => v || saved.line || "");
                 setCity((v) => (v && v !== "Dubai") || !saved.city ? v : saved.city || v);
                 setEmirate((v) => (v && v !== "Dubai") || !saved.state ? v : saved.state || v);
@@ -469,9 +480,28 @@ export default function CheckoutPage() {
               </label>
             )}
             <div className="mt-6">
+              {savedAddr && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddrInitial(savedAddr.initial);
+                    setAddrKey((k) => k + 1);
+                  }}
+                  className="mb-4 flex w-full cursor-pointer items-center gap-3 border border-gold/50 bg-gold-wash/50 p-4 text-left transition hover:border-gold"
+                >
+                  <MapPin className="size-5 shrink-0 text-gold" />
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
+                      {t("savedAddrTitle")}
+                    </span>
+                    <span className="mt-0.5 block truncate text-sm text-ink">{savedAddr.summary}</span>
+                  </span>
+                </button>
+              )}
               {hasMap ? (
                 addrReady ? (
                   <DeliveryAddress
+                    key={addrKey}
                     locale={locale}
                     countries={countries}
                     initial={addrInitial}

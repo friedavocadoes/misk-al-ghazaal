@@ -3,11 +3,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/service";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
 import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
 import { sendMailboxMail, buildOrderEmail } from "@/lib/mailer";
+import { resolveInvoiceAttachment } from "@/lib/invoice-attach";
 import { wantsOrderMail } from "@/lib/email-settings";
 import { logAdmin } from "@/lib/audit";
 
@@ -24,6 +26,8 @@ async function updateOrder(formData: FormData) {
   const internalNote = String(formData.get("internal_note") ?? "").trim() || null;
   const etaRaw = String(formData.get("expected_delivery_date") ?? "").trim();
   const eta = /^\d{4}-\d{2}-\d{2}$/.test(etaRaw) ? etaRaw : null;
+  const invoiceSource = formData.get("invoice_source") === "upload" ? "upload" : "auto";
+  const attachInvoice = formData.get("attach_invoice") === "on";
   if (!NEXT_STATUSES.includes(toStatus as (typeof NEXT_STATUSES)[number])) return;
 
   const supabase = await createClient();
@@ -34,7 +38,7 @@ async function updateOrder(formData: FormData) {
     .single();
   await supabase
     .from("orders")
-    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote, expected_delivery_date: eta })
+    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote, expected_delivery_date: eta, invoice_source: invoiceSource })
     .eq("id", id);
   await supabase.from("order_status_history").insert({
     order_id: id,
@@ -81,7 +85,20 @@ async function updateOrder(formData: FormData) {
       trackingUrl: trackingUrl ?? undefined,
       couponCode: f.coupon_code || undefined,
     });
-    mailed = (await sendMailboxMail("noreply", { to: cur.email, ...mail })).sent;
+    // Per-update choice: attach the current invoice (uploaded file or
+    // fresh system PDF) only when the admin ticked the box. Bytes come
+    // from the secret client: the invoices bucket has no direct reads
+    // (it holds PII — everything flows through code-checked paths).
+    const invoiceFile = attachInvoice
+      ? await resolveInvoiceAttachment(await createAdminClient(), id)
+      : null;
+    mailed = (
+      await sendMailboxMail("noreply", {
+        to: cur.email,
+        ...mail,
+        ...(attachInvoice && invoiceFile ? { attachments: [invoiceFile] } : {}),
+      })
+    ).sent;
   }
   await logAdmin(supabase, session, {
     category: "orders",
@@ -96,12 +113,91 @@ async function updateOrder(formData: FormData) {
       tracking_no: trackingNo,
       tracking_url: trackingUrl,
       expected_delivery_date: eta,
+      invoice_source: invoiceSource,
+      attach_invoice: attachInvoice,
       internal_note: internalNote,
       mailed,
     },
   });
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");
+}
+
+async function uploadInvoice(formData: FormData) {
+  "use server";
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const id = String(formData.get("id") ?? "");
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return;
+  const okType =
+    file.type === "application/pdf" ||
+    file.type === "image/png" ||
+    file.type === "image/jpeg" ||
+    file.type === "image/webp";
+  if (!okType || file.size > 5 * 1024 * 1024) return;
+  const supabase = await createClient();
+  const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "invoice";
+  const storagePath = `${id}/${Date.now()}-${safe}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { error } = await supabase.storage.from("invoices").upload(storagePath, bytes, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) return;
+  // Replace any previous upload for this order (one override at a time).
+  const { data: prev } = await supabase
+    .from("orders")
+    .select("invoice_file_path")
+    .eq("id", id)
+    .single();
+  const prevPath = (prev as { invoice_file_path?: string | null } | null)?.invoice_file_path;
+  await supabase
+    .from("orders")
+    .update({ invoice_file_path: storagePath, invoice_source: "upload" })
+    .eq("id", id);
+  if (prevPath && prevPath !== storagePath) {
+    await supabase.storage.from("invoices").remove([prevPath]);
+  }
+  await logAdmin(supabase, session, {
+    category: "orders",
+    action: "invoice",
+    entity: "order",
+    entityId: id,
+    label: safe,
+    summary: `Uploaded invoice override (${(file.size / 1024).toFixed(0)} KB)`,
+    details: { path: storagePath },
+  });
+  revalidatePath(`/admin/orders/${id}`);
+}
+
+async function removeInvoice(formData: FormData) {
+  "use server";
+  const session = await getAdminSession();
+  if (!session) redirect("/admin/login");
+  const id = String(formData.get("id") ?? "");
+  const supabase = await createClient();
+  const { data: prev } = await supabase
+    .from("orders")
+    .select("invoice_file_path")
+    .eq("id", id)
+    .single();
+  const prevPath = (prev as { invoice_file_path?: string | null } | null)?.invoice_file_path;
+  await supabase
+    .from("orders")
+    .update({ invoice_file_path: null, invoice_source: "auto" })
+    .eq("id", id);
+  if (prevPath) await supabase.storage.from("invoices").remove([prevPath]);
+  await logAdmin(supabase, session, {
+    category: "orders",
+    action: "invoice",
+    entity: "order",
+    entityId: id,
+    label: "removed",
+    summary: "Removed invoice override — back to system PDF",
+    details: { path: prevPath ?? null },
+  });
+  revalidatePath(`/admin/orders/${id}`);
 }
 
 async function moveToBin(formData: FormData) {
@@ -278,12 +374,74 @@ export default async function OrderDetail(props: {
               Internal note (staff only)
               <input name="internal_note" defaultValue={order.internal_note ?? ""} placeholder="Called twice, deliver after 6pm" className="mt-1 w-full border border-ink/20 px-3 py-2" />
             </label>
+            <fieldset className="block text-sm">
+              <span className="mb-1 block">Invoice the shopper sees</span>
+              <label className="flex cursor-pointer items-center gap-2 py-1">
+                <input
+                  type="radio"
+                  name="invoice_source"
+                  value="auto"
+                  defaultChecked={(order as { invoice_source?: string }).invoice_source !== "upload"}
+                  className="size-4 accent-[#1c1917]"
+                />
+                System PDF (auto-generated, always current)
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 py-1">
+                <input
+                  type="radio"
+                  name="invoice_source"
+                  value="upload"
+                  defaultChecked={(order as { invoice_source?: string }).invoice_source === "upload"}
+                  className="size-4 accent-[#1c1917]"
+                />
+                Uploaded file {(order as { invoice_file_path?: string | null }).invoice_file_path ? "(on file)" : "(none uploaded yet)"}
+              </label>
+            </fieldset>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input type="checkbox" name="attach_invoice" className="size-4 accent-[#1c1917]" />
+              Attach invoice PDF to this update mail
+            </label>
             <SaveButton className="w-full">
               Save — current: {String(order.status).replaceAll("_", " ")}
             </SaveButton>
           </AdminForm>
         </section>
       </div>
+
+      <section className="mt-6 border border-ink/10 bg-white p-6">
+        <h2 className="font-display text-xl">Invoice override</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Upload a PDF or image to replace the system invoice for this order. Uploading switches
+          the invoice to your file immediately.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <a
+            href={`/api/orders/${order.id}/invoice`}
+            target="_blank"
+            rel="noreferrer"
+            className="border border-ink/20 px-4 py-2 transition hover:border-ink/50"
+          >
+            Preview current invoice
+          </a>
+          {(order as { invoice_file_path?: string | null }).invoice_file_path && (
+            <AdminForm action={removeInvoice} success="Invoice override removed">
+              <input type="hidden" name="id" value={order.id} />
+              <ActionButton>Remove upload — back to system PDF</ActionButton>
+            </AdminForm>
+          )}
+        </div>
+        <AdminForm action={uploadInvoice} success="Invoice uploaded" className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <input type="hidden" name="id" value={order.id} />
+          <input
+            type="file"
+            name="file"
+            accept="application/pdf,image/png,image/jpeg,image/webp"
+            className="max-w-full cursor-pointer border border-ink/20 bg-white px-3 py-2"
+          />
+          {/* ActionButton: file inputs don't trip AdminForm dirty-tracking reliably. */}
+          <ActionButton>Upload invoice (PDF/image, max 5MB)</ActionButton>
+        </AdminForm>
+      </section>
 
       <section className="mt-6 border border-ink/10 bg-white p-6">
         <h2 className="font-display text-xl">Timeline</h2>

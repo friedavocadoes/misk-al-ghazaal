@@ -1,7 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ArrowLeft, ArrowUpRight, CalendarDays, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Download, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
@@ -112,15 +112,26 @@ export default async function AccountOrdersPage(props: {
               )}
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-ink/10 pt-4">
                 <span className="font-display text-lg text-ink">{formatAED(Number(o.total))}</span>
-                <Link
-                  href={`/account/orders/${o.id}`}
-                  className="group inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink"
-                >
-                  <span className="border-b border-ink/30 pb-0.5 transition group-hover:border-gold group-hover:text-gold">
-                    {t("viewDetails")}
-                  </span>
-                  <span aria-hidden className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1">→</span>
-                </Link>
+                <span className="flex items-center gap-4">
+                  <a
+                    href={`/api/orders/${o.id}/invoice?download=1`}
+                    className="group inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink"
+                  >
+                    <Download className="size-3.5 text-gold" />
+                    <span className="border-b border-ink/30 pb-0.5 transition group-hover:border-gold group-hover:text-gold">
+                      {t("invoiceDownload")}
+                    </span>
+                  </a>
+                  <Link
+                    href={`/account/orders/${o.id}`}
+                    className="group inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink"
+                  >
+                    <span className="border-b border-ink/30 pb-0.5 transition group-hover:border-gold group-hover:text-gold">
+                      {t("viewDetails")}
+                    </span>
+                    <span aria-hidden className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1">→</span>
+                  </Link>
+                </span>
               </div>
               <OrderIssueBox orderId={o.id} orderNo={o.order_no} status={o.status} />
             </li>

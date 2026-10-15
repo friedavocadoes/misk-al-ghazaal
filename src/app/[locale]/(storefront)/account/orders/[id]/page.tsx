@@ -2,7 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import { ArrowLeft, ArrowUpRight, CalendarDays, Gift, MapPin, Phone, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CalendarDays, Download, Gift, MapPin, Phone, ReceiptText, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
@@ -195,6 +195,22 @@ export default async function AccountOrderDetail(props: {
             <dd>{formatAED(Number(o.total))}</dd>
           </div>
         </dl>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a
+            href={`/api/orders/${id}/invoice`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 border border-ink/20 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink transition hover:border-gold hover:text-gold"
+          >
+            <ReceiptText className="size-3.5" /> {t("invoiceView")}
+          </a>
+          <a
+            href={`/api/orders/${id}/invoice?download=1`}
+            className="inline-flex items-center gap-1.5 border border-ink/20 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink transition hover:border-gold hover:text-gold"
+          >
+            <Download className="size-3.5" /> {t("invoiceDownload")}
+          </a>
+        </div>
       </section>
 
       {/* Delivery */}

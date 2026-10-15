@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
 import { buildOrderEmail, sendMailboxMail } from "@/lib/mailer";
+import { resolveInvoiceAttachment } from "@/lib/invoice-attach";
 import { wantsOrderMail } from "@/lib/email-settings";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
@@ -305,7 +306,14 @@ export async function POST(req: Request) {
         addressHtml: addrHtml,
         couponCode: quote.couponCode || undefined,
       });
-      await sendMailboxMail("noreply", { to: receiptEmail, ...mail });
+      // System invoice rides along as a PDF attachment (generated live;
+      // a failure here must never fail the order itself).
+      const invoiceFile = await resolveInvoiceAttachment(admin, orderId);
+      await sendMailboxMail("noreply", {
+        to: receiptEmail,
+        ...mail,
+        ...(invoiceFile ? { attachments: [invoiceFile] } : {}),
+      });
     }
 
     return NextResponse.json({

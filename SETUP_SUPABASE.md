@@ -35,6 +35,9 @@ Dashboard → SQL Editor → New query, paste in order:
     run even on existing DBs; guest orders are auto-claimed at next login)
 11. `supabase/migration_email_prefs.sql` (`profiles.order_updates_opt_in`,
     default ON — gates noreply confirmation + status mails per account)
+12. `supabase/migration_invoices.sql` (private `invoices` bucket + order
+    invoice source/file columns; invoices served via
+    `/api/orders/[id]/invoice`, never public URLs)
 2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
    106 collection links incl. for-him/for-her/ramadan, 9 banners, 3 articles.
    Safe to re-run — upserts on slug, wipes + re-inserts variants/links/banners.)
