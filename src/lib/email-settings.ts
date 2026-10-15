@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/service";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProductBySlug, getProductsByCollection } from "@/lib/store";
 
 export interface HelloSettings {
@@ -104,4 +105,26 @@ export async function getPromoSubscribers(): Promise<
     .limit(5000);
   const rows = (data as { id: string; email: string; created_at: string }[] | null) ?? [];
   return rows.filter((r) => r.email && r.email.includes("@"));
+}
+
+/** Order-mail gate: guests default ON; account holders decide on
+    /account/notifications. Null-safe pre-migration (missing column or
+    row reads as opted-in — mail must fail open, never silently drop). */
+export async function wantsOrderMail(
+  client: SupabaseClient,
+  userId: string | null,
+): Promise<boolean> {
+  if (!userId) return true;
+  try {
+    const { data } = await client
+      .from("profiles")
+      .select("order_updates_opt_in")
+      .eq("id", userId)
+      .single();
+    const v = (data as { order_updates_opt_in?: boolean | null } | null)
+      ?.order_updates_opt_in;
+    return v !== false;
+  } catch {
+    return true;
+  }
 }

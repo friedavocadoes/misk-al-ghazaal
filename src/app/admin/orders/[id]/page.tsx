@@ -8,6 +8,7 @@ import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-fo
 import { PrintButton } from "@/components/admin/print-button";
 import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
 import { sendMailboxMail, buildOrderEmail } from "@/lib/mailer";
+import { wantsOrderMail } from "@/lib/email-settings";
 import { logAdmin } from "@/lib/audit";
 
 const NEXT_STATUSES = ORDER_STATUSES;
@@ -28,7 +29,7 @@ async function updateOrder(formData: FormData) {
   const supabase = await createClient();
   const { data: current } = await supabase
     .from("orders")
-    .select("status, email, customer_name, order_no")
+    .select("status, email, customer_name, order_no, user_id")
     .eq("id", id)
     .single();
   await supabase
@@ -41,9 +42,11 @@ async function updateOrder(formData: FormData) {
     to_status: toStatus,
     changed_by: session.userId,
   });
-  // Status email (free SMTP; skipped when unconfigured or on no-change).
-  const cur = current as { status?: string; email?: string | null; customer_name?: string; order_no?: string } | null;
-  if (cur?.email && cur.status !== toStatus) {
+  // Status email (skipped when unconfigured, on no-change, or when the
+  // account holder switched order updates off in email preferences).
+  const cur = current as { status?: string; email?: string | null; customer_name?: string; order_no?: string; user_id?: string | null } | null;
+  let mailed = false;
+  if (cur?.email && cur.status !== toStatus && (await wantsOrderMail(supabase, cur.user_id ?? null))) {
     const { data: full } = await supabase
       .from("orders")
       .select("total, subtotal, discount, shipping, address, city, emirate, country_code, state_name, postcode, address_label, delivery_lat, delivery_lng, coupon_code, created_at")
@@ -78,7 +81,7 @@ async function updateOrder(formData: FormData) {
       trackingUrl: trackingUrl ?? undefined,
       couponCode: f.coupon_code || undefined,
     });
-    await sendMailboxMail("noreply", { to: cur.email, ...mail });
+    mailed = (await sendMailboxMail("noreply", { to: cur.email, ...mail })).sent;
   }
   await logAdmin(supabase, session, {
     category: "orders",
@@ -94,7 +97,7 @@ async function updateOrder(formData: FormData) {
       tracking_url: trackingUrl,
       expected_delivery_date: eta,
       internal_note: internalNote,
-      mailed: !!(cur?.email && cur.status !== toStatus),
+      mailed,
     },
   });
   revalidatePath(`/admin/orders/${id}`);

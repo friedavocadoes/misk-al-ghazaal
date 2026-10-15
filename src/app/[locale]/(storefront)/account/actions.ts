@@ -32,5 +32,35 @@ export async function saveContactDetails(input: {
   revalidatePath("/account");
   revalidatePath("/en/account");
   revalidatePath("/ar/account");
+  revalidatePath("/account/settings");
+  revalidatePath("/account/notifications");
+  return { ok: true, error: "" };
+}
+
+/** Email preferences — the switches that actually gate mail sending:
+    order updates gate noreply confirmation + status mails, promo gates
+    promo@ campaigns. Both fail open (default ON) pre-migration. */
+export async function saveEmailPrefs(input: {
+  orderUpdates: boolean;
+  promo: boolean;
+}): Promise<{ ok: boolean; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please sign in again." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      order_updates_opt_in: input.orderUpdates,
+      promo_opt_in: input.promo,
+    })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "Could not save — try again." };
+  revalidatePath("/account");
+  revalidatePath("/en/account");
+  revalidatePath("/ar/account");
+  revalidatePath("/account/settings");
+  revalidatePath("/account/notifications");
   return { ok: true, error: "" };
 }

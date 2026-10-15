@@ -169,7 +169,7 @@ export default async function PromoDetailPage(props: {
               Sends from <span className="font-mono" dir="ltr">promo@miskalghazaalperfumes.com</span>{" "}
               to <strong>{subs.length}</strong> opted-in shoppers. This cannot be undone.
             </p>
-            <SaveButton className="mt-3">Send to {subs.length} subscribers</SaveButton>
+            <ActionButton className="mt-3">Send to {subs.length} subscribers</ActionButton>
           </AdminForm>
         ) : (
           <p className="mt-4 border border-ink/10 bg-white p-4 text-sm text-ink/60">

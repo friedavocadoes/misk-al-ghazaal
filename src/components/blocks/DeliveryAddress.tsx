@@ -219,11 +219,11 @@ export function DeliveryAddress({
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <span className="sm:col-span-2">
           <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">{t("address")} *</span>
-          <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="Jumeirah Street, near…" className={inputCls} />
+          <input value={line} onChange={(e) => setLine(e.target.value)} placeholder="Landmark, street number, street name..." className={inputCls} />
         </span>
         <span className="sm:col-span-2">
           <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">{t("addrBuilding")}</span>
-          <input value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="Bldg 12, Flat 304" className={inputCls} />
+          <input value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="Building name, Flat Number.." className={inputCls} />
         </span>
         <span>
           <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">{t("addrCountry")} *</span>

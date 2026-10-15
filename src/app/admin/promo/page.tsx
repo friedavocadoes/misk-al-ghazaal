@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { AdminForm, SaveButton } from "@/components/admin/admin-form";
+import { ActionButton } from "@/components/admin/admin-form";
 import { logAdmin } from "@/lib/audit";
 import { getPromoSubscribers } from "@/lib/email-settings";
 import { mailboxAddress } from "@/lib/mailer";
@@ -71,9 +71,11 @@ export default async function PromoListPage() {
           receive these.
         </p>
 
-        <AdminForm action={createCampaign} success="Draft created" className="mt-6">
-          <SaveButton>+ New campaign</SaveButton>
-        </AdminForm>
+        {/* No inputs here — a plain form + ActionButton (SaveButton
+            stays disabled until dirty, which an input-less form never is). */}
+        <form action={createCampaign} className="mt-6">
+          <ActionButton>+ New campaign</ActionButton>
+        </form>
 
         <h2 className="mt-8 font-display text-xl">Campaigns</h2>
         <ul className="mt-4 divide-y divide-ink/10 border border-ink/10 bg-white text-sm">

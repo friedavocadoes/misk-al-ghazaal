@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
 import { buildOrderEmail, sendMailboxMail } from "@/lib/mailer";
+import { wantsOrderMail } from "@/lib/email-settings";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
 // (coupons + referral + shipping in one place), gift lines, coupon usage +
@@ -270,9 +271,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Order confirmation email (free SMTP; skipped when unconfigured).
+    // Order confirmation email (skipped when unconfigured OR the
+    // account holder switched order updates off in email preferences).
     const receiptEmail = email || sessionEmail || "";
-    if (receiptEmail) {
+    if (receiptEmail && (await wantsOrderMail(admin, ownerId))) {
       const origin = new URL(req.url).origin;
       const { data: faces } = await admin
         .from("products")
