@@ -6,7 +6,6 @@ import { WishlistProvider } from "@/lib/wishlist";
 import { RouteProgress } from "@/components/blocks/RouteProgress";
 import { SiteHeader } from "@/components/blocks/SiteHeader";
 import { SiteFooter } from "@/components/blocks/SiteFooter";
-import { SmoothScroll } from "@/components/blocks/SmoothScroll";
 import { AdminEditBar } from "@/components/blocks/AdminEditBar";
 
 export default async function StorefrontLayout(
@@ -21,21 +20,18 @@ export default async function StorefrontLayout(
   return (
     <CartProvider>
       <WishlistProvider>
-        {/* RouteProgress + fixed header live at body level, outside the
-            transformed flow. The bar is hardcore `fixed` (zero JS in its
-            positioning — it cannot move); `#smooth-content` reserves its
-            live height as padding-top (see SmoothScroll) so geometry
-            matches in-flow layout exactly, morph included. */}
+        {/* RouteProgress + fixed header live at body level. The bar is
+            hardcore `fixed` (zero JS in its positioning — it cannot move);
+            `#page-content` reserves the header's live height as padding-top
+            (synced pre-paint + RO inside SiteHeader) so geometry matches
+            in-flow layout exactly, morph included. */}
         <RouteProgress />
         <SiteHeader locale={locale} />
-        <div id="smooth-wrapper">
-          <div id="smooth-content">
-            {editable && <AdminEditBar />}
-            <main className="min-h-[60vh]">{props.children}</main>
-            <SiteFooter locale={locale} />
-          </div>
+        <div id="page-content">
+          {editable && <AdminEditBar />}
+          <main className="min-h-[60vh]">{props.children}</main>
+          <SiteFooter locale={locale} />
         </div>
-        <SmoothScroll />
       </WishlistProvider>
     </CartProvider>
   );

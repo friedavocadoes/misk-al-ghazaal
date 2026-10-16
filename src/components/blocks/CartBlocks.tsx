@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -9,7 +8,6 @@ import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
 import { formatAED } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 import { ProductCard } from "@/components/product/ProductCard";
 import type { Product } from "@/lib/types";
 import { useCart } from "@/lib/cart";
@@ -21,11 +19,6 @@ export function BagView() {
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   const { lines, setQty, remove } = useCart();
   const { meta } = useCartMeta(lines.map((l) => l.productSlug));
-  const asideRef = useRef<HTMLElement>(null);
-
-  // Summary lock: CSS sticky dies inside ScrollSmoother's fixed viewport
-  // wrapper — holds itself via useStickyLock (paint-only).
-  useStickyLock(asideRef, () => 96);
 
   const rows = lines
     .map((l) => ({ ...l, product: meta[l.productSlug] }))
@@ -98,7 +91,7 @@ export function BagView() {
         ))}
       </ul>
 
-      <aside ref={asideRef} className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24">
+      <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24">
         <h2 className="font-display text-xl text-ink">{t("summary")}</h2>
         <dl className="mt-5 space-y-2.5 text-sm">
           <div className="flex justify-between">

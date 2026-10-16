@@ -76,6 +76,21 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   }, []);
   const [langOpen, setLangOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
+  // Reserve the fixed header's exact height atop the page content
+  // (before first paint — no flash of content behind the navbar), then
+  // track it live across the scroll morph.
+  useLayoutEffect(() => {
+    const header = document.getElementById("site-header");
+    const content = document.getElementById("page-content");
+    if (!header || !content) return;
+    const sync = () => {
+      content.style.paddingTop = `${header.offsetHeight}px`;
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(header);
+    return () => ro.disconnect();
+  }, []);
   const [shopEntered, setShopEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuEntered, setMenuEntered] = useState(false);
@@ -708,7 +723,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         </div>
 
         {/* Search panel — a single underline, no boxes. The gold rule draws
-            itself on focus; the serif italic field keeps it maison. */}
+            itself on focus; the serif field keeps it maison. */}
         {searchOpen && (
           <div className="relative border-t border-ink/10 bg-cream/95 backdrop-blur-md">
             <button
@@ -734,7 +749,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     autoFocus
                     recentKey="misk-search-recents"
                     placeholder={t("searchPlaceholder")}
-                    inputClassName="w-full bg-transparent font-display text-2xl italic text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
+                    inputClassName="w-full bg-transparent font-display text-2xl text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
                     pickHref={(it) => `/product/${it.slug}`}
                     submitLabel={(term) => `${t("searchAll")} “${term}”`}
                     onSubmitTerm={(term) => {

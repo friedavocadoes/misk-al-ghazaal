@@ -16,7 +16,6 @@ import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { DIAL_CODES, combinePhone, splitPhone, DEFAULT_DIAL } from "@/lib/dial-codes";
 import type { Locale } from "@/i18n/routing";
 import type { Coupon, DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
-import { useStickyLock } from "@/components/blocks/use-sticky-lock";
 import { cn } from "@/lib/utils";
 
 const inputCls =
@@ -75,11 +74,6 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [done, setDone] = useState<{ orderNo: string; total: number } | null>(null);
-  const asideRef = useRef<HTMLElement>(null);
-
-  // Summary lock: CSS sticky dies inside ScrollSmoother's fixed viewport
-  // wrapper — holds itself via useStickyLock (paint-only).
-  useStickyLock(asideRef, () => 96);
 
   useEffect(() => {
     createBrowserClient()
@@ -691,7 +685,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* Summary */}
-        <aside ref={asideRef} className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
+        <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
           <ul className="divide-y divide-ink/10">
             {lines.map((l) => {
               const m = meta[l.productSlug];
