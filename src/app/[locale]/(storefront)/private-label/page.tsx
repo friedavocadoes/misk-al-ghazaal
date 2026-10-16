@@ -75,11 +75,11 @@ export default async function PrivateLabelPage(
       <section className="relative overflow-hidden bg-ink text-white">
         <span className="absolute inset-0">
           <Image
-            src="/products/amber-wood-1.jpg"
+            src="/banners/hero-private-label.jpg"
             alt=""
             fill
             sizes="100vw"
-            className="object-cover opacity-30"
+            className="object-cover opacity-45"
             priority
           />
         </span>

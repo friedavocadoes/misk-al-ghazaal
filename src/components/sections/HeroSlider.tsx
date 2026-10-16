@@ -10,7 +10,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
 import type { Banner } from "@/lib/types";
 import { SafeImage } from "@/components/ui/safe-image";
 
@@ -22,75 +22,52 @@ gsap.registerPlugin(ScrollTrigger);
 export function HeroSlider({ slides }: { slides: Banner[] }) {
   const t = useTranslations("Hero");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
-  
+
   const sliderWrapperRef = useRef<HTMLDivElement>(null);
   const swiperRef = useRef<SwiperType | null>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
 
-  // Fullscreen lock: the plate holds itself with native CSS sticky
-  // (hold at header offset, release at section bottom); the GSAP scrub
-  // below only rides clip-path, Swiper and timings untouched.
-  
   const [active, setActive] = useState(0);
 
-  // 1. Hardware-Accelerated Expansion
+  // Fluid, non-hijacking architectural frame expansion on scroll
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         sliderWrapperRef.current,
-        { clipPath: "inset(24px 24px 24px 24px round 24px)" },
-        { 
-          clipPath: "inset(0px 0px 0px 0px round 0px)", 
+        { clipPath: "inset(16px 20px 16px 20px round 4px)" },
+        {
+          clipPath: "inset(0px 0px 0px 0px round 0px)",
           ease: "none",
           scrollTrigger: {
-            start: 0, 
-            end: 150, 
-            scrub: 0.5, 
-            snap: {
-              // Priority magnet from the top: any downward intent locks
-              // into fullscreen (never bounces back up on a slight
-              // scroll), upward intent releases to top. No dead zone.
-              // Fires quickly after scroll stops; duration untouched.
-              snapTo: (value, self) => {
-                const dir = self?.direction ?? 0;
-                if (dir > 0) return 1;
-                if (dir < 0) return 0;
-                return value > 0.5 ? 1 : 0;
-              },
-              duration: 0.4,
-              delay: 0.1,
-              ease: "power2.inOut"
-            }
-          }
-        }
+            start: 0,
+            end: 140,
+            scrub: 0.35,
+          },
+        },
       );
     }, sliderWrapperRef);
 
     return () => ctx.revert();
   }, []);
 
-  // 2. Flawless Text Reveal (Hooked directly to Swiper to prevent ghosting)
+  // Staggered haute-parfumerie text choreography
   const animateText = (swiper: SwiperType) => {
     setActive(swiper.realIndex);
-    
-    // Kill any ongoing tweens to prevent stuttering if the user clicks "Next" rapidly
+
     gsap.killTweensOf(".slide-text-el");
-    
-    // Reset all text globally to hidden
-    gsap.set(".slide-text-el", { opacity: 0, y: 15 });
-    
-    // Animate ONLY the nodes inside the currently visible slide
+    gsap.set(".slide-text-el", { opacity: 0, y: 22 });
+
     const activeSlide = swiper.slides[swiper.activeIndex];
     if (activeSlide) {
       const targets = activeSlide.querySelectorAll(".slide-text-el");
       gsap.to(targets, {
-        y: 0, 
-        opacity: 1, 
-        duration: 0.8, 
-        stagger: 0.1, 
-        ease: "power3.out",
-        delay: 0.2, // Waits for the image crossfade to begin
-        overwrite: "auto"
+        y: 0,
+        opacity: 1,
+        duration: 1.05,
+        stagger: 0.11,
+        ease: "expo.out",
+        delay: 0.18,
+        overwrite: "auto",
       });
     }
   };
@@ -105,31 +82,38 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     swiperRef.current.slideToLoop(i);
   };
 
+  if (!slides.length) return null;
+
   return (
-    <section 
-      aria-label="Featured" 
+    <section
+      aria-label="Featured Creations"
       className="ivory-flow relative w-full"
-      style={{ height: "calc(100svh + 150px)" }} 
     >
-      <div 
-        ref={sliderWrapperRef} 
-        className="sticky top-[68px] lg:top-[72px] h-[calc(100svh-68px)] lg:h-[calc(100svh-72px)] w-full overflow-hidden bg-ink"
+      <div
+        ref={sliderWrapperRef}
+        className="relative h-[calc(100svh-68px)] min-h-[580px] max-h-[960px] w-full overflow-hidden bg-ink lg:h-[calc(100svh-88px)]"
       >
+        {/* Subtle inner gold frame border */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-4 z-20 border border-gold-soft/20 md:inset-7"
+        />
+
         <Swiper
           modules={[Autoplay, EffectFade, Parallax]}
           effect="fade"
           fadeEffect={{ crossFade: true }}
-          speed={1000}
+          speed={1300}
           loop
           parallax
           autoplay={{
-            delay: 6500,
+            delay: 6800,
             disableOnInteraction: false,
             pauseOnMouseEnter: true,
           }}
           onSwiper={(s) => {
             swiperRef.current = s;
-            animateText(s); // Trigger initial load animation
+            animateText(s);
           }}
           onSlideChange={animateText}
           onAutoplayTimeLeft={(_, __, p) => {
@@ -137,16 +121,18 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
               progressRef.current.style.transform = `scaleX(${1 - p})`;
             }
           }}
-          className="h-full w-full"
+          className="hero-swiper h-full w-full"
         >
           {slides.map((s, i) => {
             const isActive = i === active;
-            
+            const slideNum = String(i + 1).padStart(2, "0");
+            const totalNum = String(slides.length).padStart(2, "0");
+
             return (
-              <SwiperSlide key={s.src} className="relative h-full w-full overflow-hidden">
-                {/* 
-                  Strictly object-cover to prevent black borders. 
-                */}
+              <SwiperSlide
+                key={s.src + i}
+                className="relative h-full w-full overflow-hidden bg-ink"
+              >
                 <SafeImage
                   src={s.src}
                   fallback={s.fallback}
@@ -155,43 +141,68 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                   priority={i === 0}
                   sizes="100vw"
                   style={s.focal ? { objectPosition: s.focal } : undefined}
-                  className={`absolute inset-0 h-full w-full max-w-none object-cover opacity-90 transition-transform duration-[8500ms] ease-out ${
-                    isActive ? "scale-100" : "scale-[1.12]"
+                  className={`absolute inset-0 h-full w-full max-w-none object-cover transition-transform duration-[9500ms] ease-out ${
+                    isActive ? "scale-100" : "scale-[1.1]"
                   }`}
                 />
-                
-                {/* Refined side-gradient to support left-aligned text */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/10 to-transparent rtl:bg-gradient-to-l" />
 
-                {/* Left/Bottom Aligned Content Container */}
-                <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-7xl flex-col items-start px-6 pb-24 md:px-10 md:pb-28">
-                  <div className="max-w-xl text-left rtl:text-right">
-                    <p className="slide-text-el flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-gold-soft opacity-0">
-                      <span className="inline-block h-px w-8 bg-gold-soft" />
+                {/* Multi-layered editorial chiaroscuro scrims for crisp legibility on both light and dark art */}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/25 to-ink/20" />
+                <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/40 to-transparent rtl:bg-gradient-to-l" />
+
+                {/* Top Maison Provenance Badge */}
+                <div className="absolute inset-x-0 top-0 z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-8 pt-10 md:px-14 md:pt-12">
+                  <div className="slide-text-el flex items-center gap-3 opacity-0">
+                    <span className="font-display text-xs italic tracking-[0.2em] text-gold-soft">
+                      {slideNum}
+                    </span>
+                    <span className="h-px w-8 bg-gold-soft/50" />
+                    <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/60">
+                      {totalNum} · MAISON MISK AL GHAZAAL
+                    </span>
+                  </div>
+                  <div className="hidden items-center gap-2 border border-white/15 bg-ink/35 px-3.5 py-1.5 backdrop-blur-md md:flex">
+                    <Sparkles className="size-3 text-gold-soft" />
+                    <span className="text-[9.5px] font-semibold uppercase tracking-[0.24em] text-gold-wash">
+                      {locale === "ar"
+                        ? "صُنع في الإمارات · أصالة مضمونة"
+                        : "Haute Parfumerie · Crafted in the UAE"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Main Editorial Narrative Block */}
+                <div className="absolute inset-x-0 bottom-0 z-10 mx-auto flex w-full max-w-7xl flex-col items-start px-8 pb-28 md:px-14 md:pb-32">
+                  <div className="max-w-2xl text-left rtl:text-right">
+                    <p className="slide-text-el flex items-center gap-3.5 text-[10.5px] font-semibold uppercase tracking-[0.32em] text-gold-soft opacity-0">
+                      <span className="inline-block h-px w-10 bg-gold-soft" />
                       {tx(s.eyebrow ?? s.alt, s.eyebrowAr, locale)}
                     </p>
+
                     {s.title && (
-                      <h2 className="slide-text-el mt-3 font-display text-4xl leading-[1.05] text-white drop-shadow-md md:text-5xl lg:text-6xl opacity-0">
+                      <h2 className="slide-text-el mt-4 font-display text-4xl leading-[1.03] tracking-[-0.01em] text-cream drop-shadow-sm sm:text-5xl md:text-6xl lg:text-[4.25rem] opacity-0">
                         {tx(s.title, s.titleAr, locale)}
                       </h2>
                     )}
+
                     {s.desc && (
-                      <p className="slide-text-el mt-4 text-[13px] leading-relaxed text-white/85 md:text-sm opacity-0">
+                      <p className="slide-text-el mt-5 max-w-lg text-[13.5px] leading-[1.75] text-cream/85 md:text-[15px] opacity-0">
                         {tx(s.desc, s.descAr, locale)}
                       </p>
                     )}
+
                     {s.cta && s.href && (
-                      <div className="slide-text-el mt-8 flex items-center gap-6 opacity-0">
+                      <div className="slide-text-el mt-9 flex flex-wrap items-center gap-5 opacity-0">
                         <Link
                           href={s.href}
-                          className="bg-white px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-ink transition-all hover:scale-105 hover:bg-gold-wash active:scale-95"
+                          className="group relative inline-flex items-center gap-3 overflow-hidden border border-gold-soft/60 bg-cream px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-ink transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-gold-soft hover:bg-gold-wash"
                         >
-                          {tx(s.cta, s.ctaAr, locale)}
+                          <span>{tx(s.cta, s.ctaAr, locale)}</span>
+                          <ArrowUpRight className="size-3.5 text-gold transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </Link>
                         <Link
                           href="/collections"
-                          className="link-underline hidden text-[11px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:inline"
+                          className="inline-flex items-center gap-2 border border-white/20 bg-white/5 px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-cream backdrop-blur-sm transition-all duration-500 hover:border-gold-soft/60 hover:bg-white/15"
                         >
                           {t("exploreAll")}
                         </Link>
@@ -204,48 +215,75 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
           })}
         </Swiper>
 
-        <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center pb-8">
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              onClick={() => go(-1)}
-              aria-label={t("prev")}
-              className="cursor-pointer p-2 text-white/60 transition-colors hover:text-white"
-            >
-              <ArrowLeft className="size-5 rtl:rotate-180" />
-            </button>
-            <div className="flex items-center gap-3">
-              {slides.map((s, i) => (
-                <button
-                  key={s.src}
-                  type="button"
-                  onClick={() => goTo(i)}
-                  aria-label={`${t("next")} ${i + 1} / ${slides.length}`}
-                  aria-current={i === active}
-                  className={`relative h-[3px] cursor-pointer overflow-hidden rounded-full transition-all duration-700 ease-out ${
-                    i === active
-                      ? "w-16 bg-white/20"
-                      : "w-6 bg-white/30 hover:bg-white/70"
-                  }`}
-                >
-                  {i === active && (
+        {/* Bottom Architectural Gallery Navigation Bar */}
+        <div className="absolute inset-x-0 bottom-0 z-30 border-t border-white/10 bg-ink/45 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-14">
+            {/* Numbered Slide Chapters */}
+            <div className="flex flex-1 items-center gap-3 sm:gap-5">
+              {slides.map((s, i) => {
+                const isCurrent = i === active;
+                return (
+                  <button
+                    key={s.src + i}
+                    type="button"
+                    onClick={() => goTo(i)}
+                    aria-label={`${t("next")} ${i + 1} / ${slides.length}`}
+                    aria-current={isCurrent}
+                    className="group flex cursor-pointer items-center gap-2.5 py-1 text-left transition-opacity"
+                  >
                     <span
-                      ref={progressRef}
-                      className="absolute inset-0 origin-left bg-gold-soft rtl:origin-right"
-                      style={{ transform: "scaleX(0)" }}
-                    />
-                  )}
-                </button>
-              ))}
+                      className={`font-display text-xs tracking-[0.16em] transition-colors duration-500 ${
+                        isCurrent
+                          ? "font-semibold text-gold-soft"
+                          : "text-white/45 group-hover:text-white/80"
+                      }`}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className={`relative h-[2px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                        isCurrent
+                          ? "w-14 bg-white/20 sm:w-20"
+                          : "w-4 bg-white/15 group-hover:bg-white/40"
+                      }`}
+                    >
+                      {isCurrent && (
+                        <span
+                          ref={progressRef}
+                          className="absolute inset-0 origin-left bg-gold-soft rtl:origin-right"
+                          style={{ transform: "scaleX(0)" }}
+                        />
+                      )}
+                    </span>
+                    {isCurrent && s.title && (
+                      <span className="hidden max-w-[150px] truncate text-[10px] font-medium uppercase tracking-[0.2em] text-white/80 lg:inline-block">
+                        {tx(s.title, s.titleAr, locale)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <button
-              type="button"
-              onClick={() => go(1)}
-              aria-label={t("next")}
-              className="cursor-pointer p-2 text-white/60 transition-colors hover:text-white"
-            >
-              <ArrowRight className="size-5 rtl:rotate-180" />
-            </button>
+
+            {/* Tactile Prev / Next Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => go(-1)}
+                aria-label={t("prev")}
+                className="flex size-9 cursor-pointer items-center justify-center border border-white/15 text-white/75 transition-all duration-300 hover:border-gold-soft hover:bg-gold-soft/15 hover:text-white"
+              >
+                <ArrowLeft className="size-4 rtl:rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => go(1)}
+                aria-label={t("next")}
+                className="flex size-9 cursor-pointer items-center justify-center border border-white/15 text-white/75 transition-all duration-300 hover:border-gold-soft hover:bg-gold-soft/15 hover:text-white"
+              >
+                <ArrowRight className="size-4 rtl:rotate-180" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

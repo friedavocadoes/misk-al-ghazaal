@@ -2,6 +2,7 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { HeroSlider } from "@/components/sections/HeroSlider";
+import { OlfactoryShowcase } from "@/components/sections/OlfactoryShowcase";
 import { BannerSplit } from "@/components/sections/BannerSplit";
 import { StoryBlock } from "@/components/sections/StoryBlock";
 import { DualFeature } from "@/components/sections/DualFeature";
@@ -107,7 +108,7 @@ async function Section({ s, locale, ctx }: {
       const cats = ctx.collections.slice(0, s.config?.limit ?? 6);
       if (!cats.length) return null;
       return (
-        <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
           <SectionHeading
             eyebrow={t(s.eyebrow)}
             title={t(s.title)}
@@ -140,7 +141,7 @@ async function Section({ s, locale, ctx }: {
       const articles = ctx.articles.slice(0, s.config?.limit ?? 3);
       if (!articles.length) return null;
       return (
-        <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
           <SectionHeading
             eyebrow={t(s.eyebrow)}
             title={t(s.title)}
@@ -183,6 +184,8 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     ]);
 
   const ctx = { collections, brands, bestSellers, newArrivals, featured, articles };
+  const showcasePool = bestSellers.length ? bestSellers : newArrivals;
+
   if (!sections.length) {
     // Pre-migration (or empty CMS): the classic composition, so the home
     // never renders bare. Disappears the moment sections exist.
@@ -193,11 +196,12 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
       <>
         <HeroSlider slides={slides} />
         <HomeSeo locale={locale} />
+        <OlfactoryShowcase products={showcasePool} />
         <ProductCarousel eyebrow={ts("bestEyebrow")} title={ts("bestTitle")} products={bestSellers.slice(0, 8)} viewAllHref="/collection/best-sellers" />
         <BannerSplit banners={brands} />
         <ProductCarousel eyebrow={ts("newEyebrow")} title={ts("newTitle")} products={newArrivals.slice(0, 8)} viewAllHref="/collection/new-arrivals" />
         <ParallaxCTA eyebrow={ts("bandEyebrow")} title={ts("bandTitle")} cta={ts("bandCta")} />
-        <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
           <SectionHeading eyebrow={ts("libraryEyebrow")} title={ts("libraryTitle")} link={{ label: tc("viewAll"), href: "/collections" }} />
           <CollectionGrid categories={collections.slice(0, 6)} locale={locale} />
         </section>
@@ -216,7 +220,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
           eyebrow={ts("testiEyebrow")}
           title={ts("testiTitle")}
         />
-        <section className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-16">
+        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
           <SectionHeading eyebrow={ts("journalEyebrow")} title={ts("journalTitle")} link={{ label: tc("viewAll"), href: "/blog" }} />
           <BlogCardGrid articles={articles.slice(0, 3)} />
         </section>
@@ -228,6 +232,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     <>
       <HeroSlider slides={slides} />
       <HomeSeo locale={locale} />
+      <OlfactoryShowcase products={showcasePool} />
       {sections.map((s) => (
         <Section key={s.id} s={s} locale={locale} ctx={ctx} />
       ))}

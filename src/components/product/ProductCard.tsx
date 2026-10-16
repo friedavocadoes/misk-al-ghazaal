@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import Image from "next/image";
-import { ShoppingBag, Zap } from "lucide-react";
+import { Check, ShoppingBag, Zap } from "lucide-react";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
@@ -35,25 +35,39 @@ export function ProductCard({
     product.compareAtPrice !== undefined &&
     product.compareAtPrice > product.price;
 
+  const variantLabel = product.variants[0]?.title;
+  const previewNotes = product.notes?.slice(0, 3) ?? [];
+
   const addToBag = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    add({ productSlug: product.slug, variantId: product.variants[0]?.id, qty: 1 });
-    if (e.currentTarget instanceof HTMLElement) flyToBag(e.currentTarget, primary);
+    add({
+      productSlug: product.slug,
+      variantId: product.variants[0]?.id,
+      qty: 1,
+    });
+    if (e.currentTarget instanceof HTMLElement) {
+      flyToBag(e.currentTarget, primary);
+    }
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
-  
+
   const buyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    add({ productSlug: product.slug, variantId: product.variants[0]?.id, qty: 1 });
+    add({
+      productSlug: product.slug,
+      variantId: product.variants[0]?.id,
+      qty: 1,
+    });
     router.push("/checkout");
   };
-  
+
   const onWish = async () => {
     const r = await toggle(product.slug);
-    if (r === "login") router.push(`/account/login?next=/product/${product.slug}`);
+    if (r === "login")
+      router.push(`/account/login?next=/product/${product.slug}`);
     return r;
   };
 
@@ -62,72 +76,80 @@ export function ProductCard({
       wished={wished}
       onToggle={onWish}
       label={title}
-      className="absolute right-4 top-4 z-20 flex size-8 items-center justify-center bg-transparent text-ink/30 transition-all duration-300 hover:scale-105 hover:text-[#9c2b2e]"
+      className="absolute right-3.5 top-3.5 z-20 flex size-8 items-center justify-center rounded-full bg-cream/80 text-ink/40 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-cream hover:text-[#9c2b2e]"
       heartClassName="size-4 active:scale-90"
     />
   );
 
   const badges = (
-    <span className="absolute left-4 top-4 z-20 flex flex-col items-start gap-1.5">
+    <span className="absolute left-3.5 top-3.5 z-20 flex flex-col items-start gap-1.5">
       {onSale && (
-        <span className="border border-ink/10 bg-white/70 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e] backdrop-blur-sm">
-          Sale
+        <span className="border border-[#9c2b2e]/25 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-[#9c2b2e] backdrop-blur-sm">
+          {locale === "ar" ? "عرض" : "Privilege"}
         </span>
       )}
       {product.isNew && (
-        <span className="border border-ink/10 bg-white/70 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-ink backdrop-blur-sm">
-          New
+        <span className="border border-gold/35 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-gold backdrop-blur-sm">
+          {locale === "ar" ? "جديد" : "Nouveau"}
+        </span>
+      )}
+      {!product.isNew && product.isBestSeller && (
+        <span className="border border-ink/15 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-ink backdrop-blur-sm">
+          {locale === "ar" ? "أيقونة" : "Icon"}
         </span>
       )}
     </span>
   );
 
-  // DESKTOP HOVER ACTIONS: Positioned flush at the bottom, sliding up snappily in 300ms.
+  // DESKTOP HOVER ACTIONS: Silky cubic-bezier slide-up bar inside the pedestal frame
   const desktopActionBar = (
-    <div className="absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-2 p-3 transition-transform duration-300 group-hover:translate-y-0 md:flex">
+    <div className=" absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-1.5 bg-gradient-to-t from-cream/95 via-cream/90 to-transparent p-3 pt-6 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 md:flex">
       <button
         onClick={addToBag}
-        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-ink/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-ink"
+        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-ink py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:border-gold hover:bg-gold"
+      >
+        {added ? <Check className="size-3" /> : <ShoppingBag className="size-3" />}
+        {added
+          ? locale === "ar"
+            ? "أُضيفت"
+            : "Added"
+          : locale === "ar"
+            ? "أضف للسلة"
+            : "Add to Bag"}
+      </button>
+      <button
+        onClick={buyNow}
+        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink/80 bg-cream/95 py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 hover:border-gold hover:bg-gold-wash"
+      >
+        <Zap className="size-3 text-gold" />
+        {locale === "ar" ? "اشترِ الآن" : "Buy Now"}
+      </button>
+    </div>
+  );
+
+  // MOBILE ACTIONS: Clean hairline pair below the price block
+  const mobileActions = (
+    <div className="mt-3.5 flex w-full gap-1.5 md:hidden">
+      <button
+        onClick={addToBag}
+        className="flex flex-1 items-center justify-center gap-1.5 border border-ink/80 bg-transparent py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-ink transition active:bg-ink active:text-white"
       >
         <ShoppingBag className="size-3" />
-        {added ? "Added" : "Add to Bag"}
+        {added
+          ? locale === "ar"
+            ? "أُضيفت"
+            : "Added"
+          : locale === "ar"
+            ? "أضف"
+            : "Add"}
       </button>
       <button
         onClick={buyNow}
-        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-white/95 py-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink shadow-sm backdrop-blur-sm transition-colors hover:bg-ink hover:text-white"
+        className="flex flex-1 items-center justify-center gap-1.5 bg-ink py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-white transition active:bg-gold"
       >
-        <Zap className="size-3" />
-        Buy Now
+        <Zap className="size-3 text-gold-soft" />
+        {locale === "ar" ? "اشترِ" : "Buy"}
       </button>
-    </div>
-  );
-
-  // MOBILE ACTIONS: Thumb-friendly, statically placed below the price block for touch devices.
-  const mobileActions = (
-    <div className="mt-4 flex w-full gap-2 md:hidden">
-      <button
-        onClick={addToBag}
-        className="flex flex-1 items-center justify-center gap-1.5 border border-ink py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-ink transition active:bg-ink active:text-white"
-      >
-        <ShoppingBag className="size-3.5" />
-        {added ? "Added" : "Add"}
-      </button>
-      <button
-        onClick={buyNow}
-        className="flex flex-1 items-center justify-center gap-1.5 bg-ink py-2.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-white transition active:bg-ink/80"
-      >
-        <Zap className="size-3.5" />
-        Buy
-      </button>
-    </div>
-  );
-
-  const priceDisplay = (
-    <div className="mt-1 flex items-center justify-center gap-2 text-[12px] font-medium tracking-widest text-ink/80">
-      <span>AED {product.price.toFixed(2)}</span>
-      {onSale && product.compareAtPrice && (
-        <s className="text-ink/30">AED {product.compareAtPrice.toFixed(2)}</s>
-      )}
     </div>
   );
 
@@ -136,27 +158,29 @@ export function ProductCard({
       <div className={cn("flex gap-5 bg-transparent", className)}>
         <Link
           href={`/product/${product.slug}`}
-          className="relative h-32 w-24 shrink-0 overflow-hidden bg-[#F6F5F3]"
+          className="flacon-pedestal relative h-32 w-24 shrink-0 overflow-hidden border border-ink/10"
         >
           <Image
             src={primary}
             alt={title}
             fill
             sizes="96px"
-            className="object-cover transition duration-500 hover:scale-[1.04]"
+            className="object-contain p-2 mix-blend-multiply transition duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-[1.06]"
           />
         </Link>
         <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
           <Link
             href={`/product/${product.slug}`}
-            className="truncate font-display text-[15px] uppercase tracking-wider text-ink transition-colors hover:text-gold-soft"
+            className="truncate font-display text-[15px] uppercase tracking-wider text-ink transition-colors hover:text-gold"
           >
             {title}
           </Link>
           <div className="mt-1 text-[12px] tracking-wider text-ink/80">
             <span className="font-medium">AED {product.price.toFixed(2)}</span>
             {onSale && product.compareAtPrice && (
-              <s className="ml-2 text-ink/30">AED {product.compareAtPrice.toFixed(2)}</s>
+              <s className="ml-2 text-ink/35">
+                AED {product.compareAtPrice.toFixed(2)}
+              </s>
             )}
           </div>
           <div className="mt-4 flex gap-1.5">
@@ -169,7 +193,7 @@ export function ProductCard({
             </button>
             <button
               onClick={buyNow}
-              className="flex cursor-pointer items-center gap-1.5 bg-ink px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-ink/85"
+              className="flex cursor-pointer items-center gap-1.5 bg-ink px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-gold"
             >
               <Zap className="size-3" />
               Buy
@@ -180,21 +204,29 @@ export function ProductCard({
     );
   }
 
-  // default: grid with metadata positioned underneath the image card
   return (
-    <div className={cn("group relative flex flex-col bg-transparent", className)}>
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#F6F5F3]">
-        <Link href={`/product/${product.slug}`} aria-label={title} className="absolute inset-0">
+    <div
+      className={cn(
+        "group relative flex flex-col bg-transparent",
+        className,
+      )}
+    >
+      {/* Museum Plinth Image Frame */}
+      <div className="flacon-pedestal relative aspect-[3/4] overflow-hidden border border-ink/[0.08] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:border-gold/45 group-hover:shadow-[0_24px_48px_-24px_rgba(28,25,23,0.16)]">
+        <Link
+          href={`/product/${product.slug}`}
+          aria-label={title}
+          className="absolute inset-0"
+        >
           <Image
             src={primary}
             alt={title}
             fill
             sizes="(min-width:1024px) 25vw, 50vw"
             className={cn(
-              "object-cover transition duration-500 group-hover:scale-[1.04]",
-              secondary && "group-hover:opacity-0"
+              "object-cover transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]",
+              secondary && "group-hover:opacity-0",
             )}
-            priority
           />
           {secondary && (
             <Image
@@ -203,28 +235,59 @@ export function ProductCard({
               aria-hidden
               fill
               sizes="(min-width:1024px) 25vw, 50vw"
-              className="object-cover opacity-0 transition duration-500 group-hover:scale-[1.04] group-hover:opacity-100"
+              className="object-cover opacity-0 transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:opacity-100"
             />
           )}
         </Link>
-        
-        {/* Subtle shadow ensuring text reads clearly if sliding over white backgrounds */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 hidden md:block" />
 
         {badges}
         {wishBtn()}
         {desktopActionBar}
       </div>
-      
-      {/* Editorial Type Block Below the Frame */}
+
+      {/* Editorial Caption Block Below the Frame */}
       <div className="pt-4 text-center">
+        {/* Olfactory Notes or Lineup Micro-Caption */}
+        {previewNotes.length > 0 ? (
+          <div className="mb-1.5 flex items-center justify-center gap-2 text-[10px] tracking-[0.14em] text-fog">
+            {previewNotes.map((n) => (
+              <span key={n.id} className="inline-flex items-center gap-1">
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ backgroundColor: n.color }}
+                />
+                <span className="truncate max-w-[72px]">
+                  {tx(n.name, n.nameAr, locale)}
+                </span>
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="mb-1 text-[9.5px] font-semibold uppercase tracking-[0.24em] text-gold/85">
+            {tx(
+              product.lineupTitle ?? variantLabel ?? "Maison Creation",
+              product.lineupTitleAr,
+              locale,
+            )}
+          </p>
+        )}
+
         <Link
           href={`/product/${product.slug}`}
-          className="block font-display text-[15px] uppercase tracking-wider text-ink transition-colors duration-300 hover:text-gold-soft"
+          className="block font-display text-[16px] leading-snug tracking-wide text-ink transition-colors duration-300 hover:text-gold"
         >
           <h3 className="line-clamp-1">{title}</h3>
         </Link>
-        {priceDisplay}
+
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-[12px] font-medium tracking-[0.14em] text-espresso">
+          <span>AED {product.price.toFixed(2)}</span>
+          {onSale && product.compareAtPrice && (
+            <s className="text-fog/60">
+              AED {product.compareAtPrice.toFixed(2)}
+            </s>
+          )}
+        </div>
+
         {mobileActions}
       </div>
     </div>
