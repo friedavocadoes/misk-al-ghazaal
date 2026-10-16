@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import { ProductCard } from "@/components/product/ProductCard";
 import { SectionHeading } from "./ProductCarousel";
-import { INSTAGRAM_URL } from "@/lib/site";
+import { INSTAGRAM_URL, PARALLAX_SECTION_DEFAULTS } from "@/lib/site";
 
 export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
   return (
@@ -206,17 +206,24 @@ export function ParallaxCTA({
   eyebrow,
   title,
   cta,
+  src,
+  href,
 }: {
   eyebrow: string;
   title: string;
   cta: string;
+  src?: string;
+  href?: string;
 }) {
+  const imageSrc = src || PARALLAX_SECTION_DEFAULTS.image;
+  const linkHref = href || PARALLAX_SECTION_DEFAULTS.href;
+
   return (
     <section className="relative overflow-hidden border-y border-gold-soft/25 bg-ink">
       <span className="relative block h-[380px] md:h-[460px]">
         <Image
-          src="/banners/brand-holy-oudh.jpg"
-          alt="Holy Oudh & Bakhoor Sanctuary"
+          src={imageSrc}
+          alt={title}
           fill
           sizes="100vw"
           className="object-cover opacity-55"
@@ -228,21 +235,27 @@ export function ParallaxCTA({
         className="pointer-events-none absolute inset-5 border border-gold-soft/30 md:inset-8"
       />
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-        <p className="eyebrow flex items-center gap-3 text-gold-soft">
-          <span className="inline-block h-px w-8 bg-gold-soft" />
-          {eyebrow}
-          <span className="inline-block h-px w-8 bg-gold-soft" />
-        </p>
-        <h2 className="mt-4 max-w-2xl font-display text-3xl leading-tight text-cream md:text-5xl lg:text-6xl">
-          {title}
-        </h2>
-        <Link
-          href="/collection/best-sellers"
-          className="group mt-8 inline-flex items-center gap-2.5 border border-gold-soft/60 bg-cream px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-ink transition-all duration-300 hover:bg-gold-wash"
-        >
-          <span>{cta}</span>
-          <ArrowUpRight className="size-3.5 text-gold transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        </Link>
+        {eyebrow && (
+          <p className="eyebrow flex items-center gap-3 text-gold-soft">
+            <span className="inline-block h-px w-8 bg-gold-soft" />
+            {eyebrow}
+            <span className="inline-block h-px w-8 bg-gold-soft" />
+          </p>
+        )}
+        {title && (
+          <h2 className="mt-4 max-w-2xl font-display text-3xl leading-tight text-cream md:text-5xl lg:text-6xl">
+            {title}
+          </h2>
+        )}
+        {cta && (
+          <Link
+            href={linkHref}
+            className="group mt-8 inline-flex items-center gap-2.5 border border-gold-soft/60 bg-cream px-8 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-ink transition-all duration-300 hover:bg-gold-wash"
+          >
+            <span>{cta}</span>
+            <ArrowUpRight className="size-3.5 text-gold transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+        )}
       </div>
     </section>
   );

@@ -3,15 +3,12 @@ import { pick, type Localizable } from "./i18n";
 
 // ---------------------------------------------------------------------------
 // Site content layer. Everything rendered as chrome/content (nav, footer,
-// testimonials, FAQs, perks) lives here — never hardcoded in components.
-// Phase 2: each getter below becomes a Supabase query with the same signature.
+// testimonials, FAQs, perks, and homepage section defaults) lives here —
+// never hardcoded in components.
 //
 // LOCALIZATION CONTRACT (admin-ready): every human string is Localizable
 // { en, ar? }. Components call getters with the request locale; pick()
-// resolves Arabic when present and falls back to English otherwise. The
-// admin panel will one day write the `ar` side — until then, English shows
-// everywhere with zero code changes. Static UI labels (buttons, aria)
-// live in src/messages/{en,ar}.json via next-intl, not here.
+// resolves Arabic when present and falls back to English otherwise.
 // ---------------------------------------------------------------------------
 
 export interface FooterColumn {
@@ -53,13 +50,6 @@ export const SITE = {
   hours: L("Open Mon–Sat, 10AM–5PM", "مفتوح من الاثنين للسبت، 10ص–5م"),
 };
 
-// ---------------------------------------------------------------------------
-// Locations & direct channels (Locate Us + Contact pages).
-//
-// OWNER TODOs: replace the placeholder digits below with the real numbers.
-// Store hours are edited in SITE above (single source).
-// ---------------------------------------------------------------------------
-
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@miskalghazaalperfumes.com";
 export const HELLO_EMAIL = "hello@miskalghazaalperfumes.com";
@@ -85,15 +75,11 @@ export function waLink(display: string): string {
 
 export interface StoreLocation {
   id: "store" | "factory";
-  /** Eyebrow, e.g. "The Boutique" / "The Factory". */
   kind: Localizable<string>;
   name: Localizable<string>;
   lines: Localizable<string>[];
-  /** Empty when no hours are published (factory). */
   hours: Localizable<string>[];
-  /** Directions URL — empty string renders no button (factory for now). */
   mapsHref: string;
-  /** Maps embed src — empty string renders the "coming soon" frame. */
   embedSrc: string;
 }
 
@@ -249,11 +235,6 @@ export function getShopMenu(locale: Locale): ShopMenuColumn[] {
   ];
 }
 
-// NOTE: footer columns moved to lib/footer.ts (server-only: needs store.ts,
-// which pulls in next/headers; site.ts must stay client-importable).
-
-// Testimonials / FAQs / perks: English today (fallback path). The admin
-// panel adds `ar` per entry later — pick() resolves automatically.
 const TESTIMONIALS: Localizable<Testimonial>[] = [
   {
     en: {
@@ -344,7 +325,6 @@ export function getFaqs(locale: Locale): Faq[] {
   return FAQS.map((f) => pick(f, locale));
 }
 
-/** Reassurance strip (was hardcoded `reassurance` blocks in main-product). */
 const PERKS: Localizable<Perk>[] = [
   {
     en: {
@@ -373,3 +353,179 @@ const PERKS: Localizable<Perk>[] = [
 export function getPerks(locale: Locale): Perk[] {
   return PERKS.map((p) => pick(p, locale));
 }
+
+// ---------------------------------------------------------------------------
+// HOMEPAGE SECTION DEFAULTS (Centralized & Overridable from Admin Panel)
+// Edit here in code OR override dynamically in /admin/homepage and /admin/banners.
+// Zero hardcoded copy or image paths inside section components.
+// ---------------------------------------------------------------------------
+
+export interface AlchemistAccord {
+  slug: string;
+  nameEn: string;
+  nameAr: string;
+  subtitleEn: string;
+  subtitleAr: string;
+  color: string;
+  /** Product slugs or keywords associated with this accord when DB product_notes aren't assigned yet. */
+  matchSlugs: string[];
+  matchKeywords: string[];
+}
+
+export const ALCHEMIST_DEFAULTS = {
+  eyebrow: L("Interactive Scent Alchemist", "خيميائي العطور التفاعلي"),
+  title: L("The Art of High Perfumery", "فن العطور الراقية"),
+  prompt: L(
+    "Tap up to 3 accords to compose your aura",
+    "اختر حتى 3 نوتات لتركيب هالتك العطرية",
+  ),
+  resetLabel: L("Clear", "مسح"),
+  shuffleLabel: L("Surprise Me", "فاجئني"),
+  matchLabel: L("Your Olfactory Match", "تطابقك العطري"),
+  viewDossierLabel: L("Explore Bottle", "استكشف العطر"),
+  accords: [
+    {
+      slug: "oud",
+      nameEn: "Aged Oud",
+      nameAr: "عود معتّق",
+      subtitleEn: "Smoky · Resinous",
+      subtitleAr: "دخاني · عميق",
+      color: "#5c3a21",
+      matchSlugs: [
+        "classic-oud",
+        "amber-oud-100ml-unisex",
+        "dukhoonak-big-boss",
+        "al-qasar-oud-abyad-from-misk-al-ghazal-bakhoor-tablets",
+      ],
+      matchKeywords: ["oud", "oudh", "classic", "wood", "bakhoor", "dukhoon"],
+    },
+    {
+      slug: "musk",
+      nameEn: "Royal Misk",
+      nameAr: "مسك الغزال",
+      subtitleEn: "Velvety · Skin-Warm",
+      subtitleAr: "مخملي · دافئ",
+      color: "#b3924a",
+      matchSlugs: [
+        "misk-al-ghazaal-abukhalid-50ml",
+        "golden-musk-100ml-unisex",
+        "be-musky-100ml-unisex",
+        "misk-al-hob",
+        "misk-al-khaleej",
+      ],
+      matchKeywords: ["misk", "musk", "musky", "abukhalid", "white"],
+    },
+    {
+      slug: "rose",
+      nameEn: "Taif Rose",
+      nameAr: "ورد طائفي",
+      subtitleEn: "Luminous · Floral",
+      subtitleAr: "مشرق · زهري",
+      color: "#a8384b",
+      matchSlugs: [
+        "anfasic-al-ward",
+        "pink-bouquet",
+        "floral-garden-eau-de-parfum-100ml-for-women",
+        "petals",
+        "hob-al-banaat",
+      ],
+      matchKeywords: ["ward", "rose", "floral", "pink", "petals", "maya"],
+    },
+    {
+      slug: "amber",
+      nameEn: "Golden Amber",
+      nameAr: "عنبر ذهبي",
+      subtitleEn: "Balsamic · Rich",
+      subtitleAr: "بلسمي · غني",
+      color: "#c98a2d",
+      matchSlugs: [
+        "amber-wood",
+        "amber-oud-100ml-unisex",
+        "opulence",
+        "the-legend-eau-de-parfum-100ml-unisex",
+        "no-7-zabeel-eau-de-parfum-100ml",
+      ],
+      matchKeywords: ["amber", "gold", "golden", "legend", "zabeel", "opulence"],
+    },
+    {
+      slug: "bakhoor-smoke",
+      nameEn: "Majlis Incense",
+      nameAr: "دخون المجالس",
+      subtitleEn: "Spiced · Ceremonial",
+      subtitleAr: "متبّل · احتفالي",
+      color: "#78716c",
+      matchSlugs: [
+        "dukhoonak-big-boss",
+        "dukhoon-misk-al-ghazaal",
+        "jawahara-from-misk-al-ghazal-bakhoor-tablets-arabic-insence",
+        "dukhoon-eshq",
+        "qasar-al-shiukh-from-misk-al-ghazal-bakhoor-tablets",
+      ],
+      matchKeywords: ["dukhoon", "bakhoor", "mubakhar", "muattar", "jawahara", "qasar"],
+    },
+    {
+      slug: "citrus",
+      nameEn: "Bergamot & Neroli",
+      nameAr: "برغموت ونيرولي",
+      subtitleEn: "Crisp · Sunlit",
+      subtitleAr: "منعش · مشرق",
+      color: "#d4af37",
+      matchSlugs: [
+        "noorjes-imagine",
+        "white-mood-eau-de-parfum-100ml-unisex",
+        "noorjes-star-times-all-over-spray-100ml",
+        "gazaal-my-wish-edp-100ml",
+      ],
+      matchKeywords: ["imagine", "noorjes", "white-mood", "star", "wish", "fresh"],
+    },
+  ] satisfies AlchemistAccord[],
+};
+
+export const WORLDS_SECTION_DEFAULTS = {
+  eyebrow: L("The Maison Worlds", "عوالم الدار"),
+  title: L("Worlds of Misk Al Ghazaal", "عوالم مسك الغزال العطرية"),
+  linkLabel: L("Explore All Collections", "استكشف جميع المجموعات"),
+  linkHref: "/collections",
+  cardCtaFallback: L("Enter Gallery", "ادخل المعرض"),
+  cardFallbacks: [
+    {
+      src: "/banners/brand-maison-boutique.jpg",
+      eyebrow: L("Signature Parfums & Pure Misk", "العطور التوقيعية والمسك الخالص"),
+    },
+    {
+      src: "/banners/brand-holy-oudh.jpg",
+      eyebrow: L("Rare Aged Agarwood & Dehn Al Oud", "العود المعتّق ودهن العود الملكي"),
+    },
+    {
+      src: "/banners/brand-maison-exclusives.jpg",
+      eyebrow: L("Limited Editions & Artisanal Bakhoor", "الإصدارات الحصرية والبخور الفاخر"),
+    },
+  ],
+};
+
+export const STORY_SECTION_DEFAULTS = {
+  primaryImage: "/banners/brand-maison-boutique.jpg",
+  secondaryImage: "/banners/hero-misk-signature.jpg",
+  badge: L("DUBAI & AJMAN · UAE", "دبي وعجمان · الإمارات"),
+  primaryHref: "/pages/about",
+  secondaryLabel: L("Visit Boutique & Manufactory", "زُر البوتيك والمصنع"),
+  secondaryHref: "/locate-us",
+};
+
+export const DUAL_FEATURE_DEFAULTS = {
+  left: {
+    tag: "I · LA MAISON",
+    image: "/banners/hero-misk-signature.jpg",
+    href: "/collection/misk-al-ghazaal",
+  },
+  right: {
+    tag: "II · L'ATELIER",
+    image: "/banners/hero-private-label.jpg",
+    href: "/private-label",
+  },
+};
+
+export const PARALLAX_SECTION_DEFAULTS = {
+  image: "/banners/brand-holy-oudh.jpg",
+  href: "/collection/best-sellers",
+};

@@ -9,6 +9,7 @@
 import type {
   Article,
   Banner,
+  BannerTextAlign,
   Category,
   Coupon,
   CountryState,
@@ -21,9 +22,6 @@ import type {
   Ritual,
   Variant,
 } from "./types";
-// Public (cookie-free) client: storefront reads are anonymous and must work
-// in generateStaticParams. Staff-scoped reads live in admin pages via
-// supabase/server (cookie session) instead.
 import { createPublicClient as createClient } from "./supabase/public";
 import { isSupabaseConfigured } from "./supabase/keys";
 
@@ -167,16 +165,10 @@ function toProduct(
 async function fetchProductsWithRelations(filter?: {
   slugs?: string[];
   collectionId?: string;
-  /** Admin surfaces (quick-find) see paused rows too — shoppers never do. */
   includeInactive?: boolean;
 }): Promise<Product[]> {
   requireConfigured();
   const supabase = await createClient();
-  // Bin AND inactive products are invisible to shoppers: hidden rows never
-  // leave the DB layer (admin toggles is_active for seasonal pauses).
-  // The is_active predicate is applied in JS (not SQL) so builds keep
-  // working against databases where migration_product_active.sql hasn't
-  // run yet — missing column reads as visible, never as broken.
   let pq = supabase.from("products").select("*").is("deleted_at", null);
   if (filter?.slugs?.length) pq = pq.in("slug", filter.slugs);
   const { data: prods, error } = await pq;
@@ -263,10 +255,6 @@ async function fetchProductsWithRelations(filter?: {
   return list;
 }
 
-/** Maison ranking: manual weight first, then the automatic lift
-    (best-seller flag + units sold), newest-first underneath it all.
-    Lower score surfaces first; equal scores break by created_at DESC —
-    so the last ADDED product tops every listing unless weighted. */
 export function rankScore(p: Product): number {
   return (p.sortRank ?? 0) - (p.isBestSeller ? 5000 : 0) - (p.salesCount ?? 0);
 }
@@ -288,8 +276,6 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return list[0] ?? null;
 }
 
-// best-sellers / new-arrivals stay flag-derived (admin toggles flags in
-// /admin/products); every other collection resolves via product_collections.
 const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
 export async function getProductsByCollection(
@@ -346,10 +332,10 @@ export async function getCollections(): Promise<Category[]> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
-      .from("collections")
-      .select("*")
-      .is("deleted_at", null)
-      .order("sort");
+    .from("collections")
+    .select("*")
+    .is("deleted_at", null)
+    .order("sort");
   if (error || !data) throw error ?? new Error("collections failed");
   return data.map(toCategory);
 }
@@ -357,17 +343,19 @@ export async function getCollections(): Promise<Category[]> {
 export async function getCollectionBySlug(slug: string): Promise<Category | null> {
   requireConfigured();
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("collections")
-      .select("*")
-      .eq("slug", slug)
-      .is("deleted_at", null)
-      .single();
+  const { data, error } = await supabase
+    .from("collections")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
+    .single();
   if (error || !data) return null;
   return toCategory(data as Parameters<typeof toCategory>[0]);
 }
 
 function toBanner(b: {
+  id?: string;
+  slot?: string;
   src: string;
   fallback: string;
   alt: string;
@@ -383,7 +371,14 @@ function toBanner(b: {
   fit: "cover" | "contain" | null;
   focal: string | null;
 }): Banner {
+  // For hero banners, `eyebrow` can store text alignment ("center" | "bottom-left")
+  // so no SQL schema migration is required on existing `banners` tables.
+  const rawAlign = (b.eyebrow ?? "").trim().toLowerCase();
+  const align: BannerTextAlign =
+    rawAlign === "center" ? "center" : "bottom-left";
+
   return {
+    ...(b.id ? { id: b.id } : {}),
     src: b.src,
     fallback: b.fallback || b.src,
     alt: b.alt,
@@ -398,6 +393,7 @@ function toBanner(b: {
     ...(b.href ? { href: b.href } : {}),
     ...(b.fit ? { fit: b.fit } : {}),
     ...(b.focal ? { focal: b.focal } : {}),
+    align,
   };
 }
 
@@ -451,11 +447,11 @@ function toArticle(a: {
 export async function getArticles(): Promise<Article[]> {
   requireConfigured();
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("articles")
-      .select("*")
-      .is("deleted_at", null)
-      .order("date", { ascending: false });
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*")
+    .is("deleted_at", null)
+    .order("date", { ascending: false });
   if (error || !data) throw error ?? new Error("articles failed");
   return (data as Parameters<typeof toArticle>[0][]).map(toArticle);
 }
@@ -463,12 +459,12 @@ export async function getArticles(): Promise<Article[]> {
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
   requireConfigured();
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("slug", slug)
-      .is("deleted_at", null)
-      .single();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
+    .single();
   if (error || !data) return null;
   return toArticle(data as Parameters<typeof toArticle>[0]);
 }
@@ -516,8 +512,6 @@ function discountPct(p: Product): number {
   return (p.compareAtPrice - p.price) / p.compareAtPrice;
 }
 
-/** Full-text-lite search with the same facet/sort language as collections
-    (powers the search page + /api/catalog infinite scroll). */
 export async function searchCatalog(query: string, opts?: CatalogQuery): Promise<Product[]> {
   if (!query.trim()) return [];
   requireConfigured();
@@ -546,11 +540,6 @@ export async function searchCatalog(query: string, opts?: CatalogQuery): Promise
   return applyCatalogSort(items, opts?.sort);
 }
 
-/** Live suggest index: matches EN + AR titles, hydrates full relations
-    (notes, lineup, variants) for descriptive suggestion cards. Reads live
-    rows on every keystroke-batch, so renames, additions, pauses and bin
-    deletes are reflected with zero sync machinery — Postgres is the index.
-    Client caches repeat queries for 60s (see use-suggest). */
 export async function suggestProducts(
   query: string,
   limit = 8,
@@ -603,6 +592,47 @@ export async function getLineups(): Promise<Lineup[]> {
 }
 
 /** Active homepage sections in admin order (drives the home screen). */
+export interface HomepageSectionConfig {
+  mode?: "collection" | "manual";
+  collection?: string;
+  slugs?: string[];
+  limit?: number;
+  src?: string;
+  secondarySrc?: string;
+  href?: string;
+  secondaryHref?: string;
+  title?: string;
+  desc?: string;
+  descAr?: string;
+  cta?: string;
+  ctaAr?: string;
+  secondaryCta?: string;
+  secondaryCtaAr?: string;
+  badge?: string;
+  badgeAr?: string;
+  /** Scent Alchemist overrides (stored inside JSONB config) */
+  prompt?: string;
+  promptAr?: string;
+  noteSlugs?: string[];
+  /** Dual Feature overrides */
+  leftEyebrow?: string;
+  leftEyebrowAr?: string;
+  leftTitle?: string;
+  leftTitleAr?: string;
+  leftCta?: string;
+  leftCtaAr?: string;
+  leftHref?: string;
+  leftSrc?: string;
+  rightEyebrow?: string;
+  rightEyebrowAr?: string;
+  rightTitle?: string;
+  rightTitleAr?: string;
+  rightCta?: string;
+  rightCtaAr?: string;
+  rightHref?: string;
+  rightSrc?: string;
+}
+
 export interface HomepageSection {
   id: string;
   kind:
@@ -616,22 +646,13 @@ export interface HomepageSection {
     | "testimonials"
     | "blog_grid"
     | "instagram"
-    | "image_banner";
+    | "image_banner"
+    | "scent_alchemist";
   title: string;
   titleAr?: string;
   eyebrow: string;
   eyebrowAr?: string;
-  config: {
-    mode?: "collection" | "manual";
-    collection?: string;
-    slugs?: string[];
-    limit?: number;
-    src?: string;
-    href?: string;
-    title?: string;
-    cta?: string;
-    ctaAr?: string;
-  };
+  config: HomepageSectionConfig;
 }
 
 export async function getHomepageSections(): Promise<HomepageSection[]> {
@@ -644,8 +665,13 @@ export async function getHomepageSections(): Promise<HomepageSection[]> {
     .order("sort");
   if (error || !data) return [];
   return (data as {
-    id: string; kind: HomepageSection["kind"]; title: string; title_ar: string | null;
-    eyebrow: string | null; eyebrow_ar: string | null; config: HomepageSection["config"] | null;
+    id: string;
+    kind: HomepageSection["kind"];
+    title: string;
+    title_ar: string | null;
+    eyebrow: string | null;
+    eyebrow_ar: string | null;
+    config: HomepageSectionConfig | null;
   }[]).map((s) => ({
     id: s.id,
     kind: s.kind,
@@ -657,7 +683,6 @@ export async function getHomepageSections(): Promise<HomepageSection[]> {
   }));
 }
 
-/** Ordered manual product picks (admin-curated carousel order). */
 export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   const clean = [...new Set(slugs.filter(Boolean))];
   if (!clean.length) return [];
@@ -665,7 +690,7 @@ export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   const pos = new Map(clean.map((s, i) => [s, i]));
   return rankProducts(list).sort((a, b) => (pos.get(a.slug) ?? 0) - (pos.get(b.slug) ?? 0));
 }
-/** Siblings in the same lineup (PDP "More from the lineup"). */
+
 export async function getLineupSiblings(product: Product, limit = 4): Promise<Product[]> {
   if (!product.lineupId) return [];
   requireConfigured();
@@ -743,7 +768,6 @@ function maskEmail(email: string): string {
   return local.length <= 2 ? `${local}···` : `${local.slice(0, 2)}···`;
 }
 
-/** Active delivery countries (the map + checkout validate against these). */
 export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
   requireConfigured();
   const supabase = await createClient();
@@ -795,7 +819,6 @@ export async function getApprovedReviews(productId: string, limit = 20): Promise
   }));
 }
 
-/** Active public promo coupons for the storefront coupon strip. */
 export async function getPublicCoupons(): Promise<Coupon[]> {
   requireConfigured();
   const supabase = await createClient();

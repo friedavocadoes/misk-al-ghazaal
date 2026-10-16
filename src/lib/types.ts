@@ -166,12 +166,16 @@ export interface DeliveryAnswer {
   lng: number | null;
 }
 
-/** Homepage / collection hero banner.
- *  `src` is the EXACT original Shopify file expected in `public/banners/`;
- *  `fallback` is a guaranteed-local image shown until you drop the file in.
- *  `fit`/`focal` are per-banner art direction (a future admin panel will
- *  edit these per slide — never hardcode presentation in components). */
+export type BannerTextAlign = "bottom-left" | "center";
+
+/** Homepage / collection hero banner & brand world card.
+ *  `src` is the image URL (Supabase Storage or `/banners/*`);
+ *  `fallback` is the guaranteed fallback image.
+ *  For `hero` slides, `align` ("bottom-left" | "center") controls where the
+ *  single line of text + optional button sits (stored in `eyebrow` on hero rows
+ *  for zero-migration compatibility with existing `banners` schema). */
 export interface Banner {
+  id?: string;
   src: string;
   fallback: string;
   alt: string;
@@ -182,6 +186,8 @@ export interface Banner {
   href?: string;
   fit?: "cover" | "contain";
   focal?: string;
+  /** Hero text placement: "bottom-left" (default) or "center" (dead center). */
+  align?: BannerTextAlign;
   eyebrowAr?: string;
   titleAr?: string;
   descAr?: string;

@@ -10,6 +10,7 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { logAdmin } from "@/lib/audit";
 
 const KINDS = [
+  "scent_alchemist",
   "products_carousel",
   "product_tabs",
   "collections_grid",
@@ -23,6 +24,21 @@ const KINDS = [
   "image_banner",
 ] as const;
 
+const KIND_LABELS: Record<(typeof KINDS)[number], string> = {
+  scent_alchemist: "scent alchemist (The Art of High Perfumery)",
+  products_carousel: "products carousel",
+  product_tabs: "product tabs (Trending)",
+  collections_grid: "collections grid (Shop by Ritual)",
+  brand_split: "brand split (Worlds of Misk Al Ghazaal)",
+  parallax_cta: "parallax cta (Full-bleed banner)",
+  story: "story (Our Story block)",
+  dual_feature: "dual feature (Maison vs Private Label)",
+  testimonials: "testimonials",
+  blog_grid: "blog grid (Journal)",
+  instagram: "instagram feed",
+  image_banner: "image banner",
+};
+
 function touchHome() {
   revalidatePath("/admin/homepage");
   revalidateHome();
@@ -33,28 +49,47 @@ async function createSection(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: last } = await supabase.from("homepage_sections").select("sort").order("sort", { ascending: false }).limit(1);
+  const { data: last } = await supabase
+    .from("homepage_sections")
+    .select("sort")
+    .order("sort", { ascending: false })
+    .limit(1);
   const sort = ((last as { sort: number }[] | null)?.[0]?.sort ?? 0) + 10;
+  const kind = String(formData.get("kind") || "products_carousel");
+  const title = String(
+    formData.get("title") ||
+      (kind === "scent_alchemist"
+        ? "The Art of High Perfumery"
+        : kind === "brand_split"
+          ? "Worlds of Misk Al Ghazaal"
+          : "New section"),
+  );
   const { data, error } = await supabase
     .from("homepage_sections")
     .insert({
-      kind: String(formData.get("kind") || "products_carousel"),
-      title: String(formData.get("title") || "New section"),
+      kind,
+      title,
       sort,
       active: true,
       config: {},
     })
     .select("id")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    throw new Error(
+      error.message.includes("homepage_sections_kind_check")
+        ? "Run supabase/migration_luxury_revamp.sql in Supabase SQL Editor once to unlock the 'scent_alchemist' section kind."
+        : error.message,
+    );
+  }
   await logAdmin(supabase, s, {
     category: "homepage",
     action: "create",
     entity: "homepage_section",
     entityId: (data as { id: string }).id,
-    label: String(formData.get("title") || "New section"),
-    summary: `Added home section “${String(formData.get("title") || "New section")}” (${formData.get("kind")})`,
-    details: { kind: String(formData.get("kind") || "products_carousel"), title: String(formData.get("title") || "New section"), sort },
+    label: title,
+    summary: `Added home section “${title}” (${kind})`,
+    details: { kind, title, sort },
   });
   touchHome();
   redirect(`/admin/homepage/${(data as { id: string }).id}`);
@@ -146,17 +181,35 @@ export default async function HomepageAdmin() {
     <>
       <AdminNav email={session.email} role={session.role} />
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <p className="eyebrow">Homepage CMS</p>
-        <h1 className="mt-1 font-display text-4xl">Home screen</h1>
-        <p className="mt-2 max-w-xl text-sm text-ink/60">
-          Order, enable, edit and add sections — the storefront home follows this list on refresh. No deploys.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/10 pb-6">
+          <div>
+            <p className="eyebrow">Homepage CMS</p>
+            <h1 className="mt-1 font-display text-4xl">Home screen</h1>
+            <p className="mt-2 max-w-xl text-sm text-ink/60">
+              Order, enable, edit and add sections — including the interactive Scent Alchemist and Worlds of Misk Al Ghazaal.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/admin/banners"
+              className="border border-ink/20 bg-white px-4 py-2 transition hover:border-ink/50"
+            >
+              Manage Hero & World Banners →
+            </Link>
+            <Link
+              href="/admin/notes"
+              className="border border-ink/20 bg-white px-4 py-2 transition hover:border-ink/50"
+            >
+              Manage Scent Notes →
+            </Link>
+          </div>
+        </div>
 
         <AdminForm action={createSection} success="Section created" className="mt-8 flex flex-wrap items-end gap-3 border border-ink/10 bg-white p-5 text-sm">
           <label className="block">Kind
             <select name="kind" className="mt-1 border border-ink/20 bg-white px-3 py-2" defaultValue="products_carousel">
               {KINDS.map((k) => (
-                <option key={k} value={k}>{k.replaceAll("_", " ")}</option>
+                <option key={k} value={k}>{KIND_LABELS[k] ?? k}</option>
               ))}
             </select>
           </label>
@@ -175,9 +228,11 @@ export default async function HomepageAdmin() {
               <span className="font-display text-lg italic text-gold">{String(i + 1).padStart(2, "0")}</span>
               <span className="min-w-0 flex-1">
                 <Link href={`/admin/homepage/${r.id}`} className="block truncate font-medium hover:text-gold">
-                  {r.title || "(untitled)"}
+                  {r.title || "(untitled) — click to edit"}
                 </Link>
-                <span className="font-mono text-xs text-ink/50">{r.kind.replaceAll("_", " ")}</span>
+                <span className="font-mono text-xs text-ink/50">
+                  {KIND_LABELS[r.kind as (typeof KINDS)[number]] ?? r.kind.replaceAll("_", " ")}
+                </span>
               </span>
               <span className="flex items-center gap-1">
                 <form action={moveSection}>

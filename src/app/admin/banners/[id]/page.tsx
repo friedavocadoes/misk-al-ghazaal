@@ -51,8 +51,6 @@ async function saveBanner(formData: FormData) {
   revalidateHome();
 }
 
-/** Homepage refresh + audit for browser-client artwork saves (the field
-    persists straight from the browser, so this action is its paper trail). */
 async function revalidateHomeAction(bannerId: string, field: string) {
   "use server";
   const s = await getAdminSession();
@@ -103,11 +101,13 @@ function Field({
   label,
   defaultValue,
   type,
+  placeholder,
 }: {
   name: string;
   label: string;
   defaultValue?: string | number | null;
   type?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="block text-sm">
@@ -116,6 +116,7 @@ function Field({
         name={name}
         type={type ?? "text"}
         defaultValue={defaultValue ?? ""}
+        placeholder={placeholder}
         className="mt-1 w-full border border-ink/20 px-3 py-2"
       />
     </label>
@@ -137,6 +138,12 @@ export default async function BannerDetail(props: {
     .is("deleted_at", null)
     .single();
   if (!b) redirect("/admin/banners");
+
+  const isHero = b.slot === "hero";
+  const heroAlign =
+    String(b.eyebrow ?? "").trim().toLowerCase() === "center"
+      ? "center"
+      : "bottom-left";
 
   return (
     <>
@@ -192,8 +199,8 @@ export default async function BannerDetail(props: {
                   defaultValue={b.slot}
                   className="mt-1 w-full border border-ink/20 bg-white px-3 py-2"
                 >
-                  <option value="hero">hero</option>
-                  <option value="brand">brand</option>
+                  <option value="hero">hero (fullscreen slider)</option>
+                  <option value="brand">brand (Worlds card)</option>
                 </select>
               </label>
               <label className="block text-sm">
@@ -212,25 +219,96 @@ export default async function BannerDetail(props: {
                   defaultValue={b.fit ?? ""}
                   className="mt-1 w-full border border-ink/20 bg-white px-3 py-2"
                 >
-                  <option value="">auto</option>
+                  <option value="">auto (cover)</option>
                   <option value="cover">cover</option>
                   <option value="contain">contain</option>
                 </select>
               </label>
             </div>
-            <Field name="alt" label="Alt text" defaultValue={b.alt} />
-            <Field name="href" label="Link" defaultValue={b.href} />
-            <Field name="focal" label="Focal point (e.g. center)" defaultValue={b.focal} />
+
+            {isHero ? (
+              <label className="block text-sm">
+                Text Position on Banner
+                <select
+                  name="eyebrow"
+                  defaultValue={heroAlign}
+                  className="mt-1 w-full border border-ink/20 bg-white px-3 py-2"
+                >
+                  <option value="bottom-left">Bottom-Left Corner</option>
+                  <option value="center">Dead Center</option>
+                </select>
+                <span className="mt-1 block text-xs text-ink/55">
+                  Hero banners show a single line of text (Title) and an optional button.
+                </span>
+              </label>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  name="eyebrow"
+                  label="Card Subtitle / Eyebrow (EN)"
+                  defaultValue={b.eyebrow}
+                  placeholder="Signature Parfums & Pure Misk"
+                />
+                <Field
+                  name="eyebrow_ar"
+                  label="Card Subtitle / Eyebrow (AR)"
+                  defaultValue={b.eyebrow_ar}
+                />
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
-              <Field name="eyebrow" label="Eyebrow (EN)" defaultValue={b.eyebrow} />
-              <Field name="eyebrow_ar" label="Eyebrow (AR)" defaultValue={b.eyebrow_ar} />
-              <Field name="title" label="Title (EN)" defaultValue={b.title} />
-              <Field name="title_ar" label="Title (AR)" defaultValue={b.title_ar} />
-              <Field name="desc" label="Description (EN)" defaultValue={b.desc} />
-              <Field name="desc_ar" label="Description (AR)" defaultValue={b.desc_ar} />
-              <Field name="cta" label="Button (EN)" defaultValue={b.cta} />
-              <Field name="cta_ar" label="Button (AR)" defaultValue={b.cta_ar} />
+              <Field
+                name="title"
+                label={isHero ? "Single-Line Text (EN)" : "World Title (EN)"}
+                defaultValue={b.title}
+              />
+              <Field
+                name="title_ar"
+                label={isHero ? "Single-Line Text (AR)" : "World Title (AR)"}
+                defaultValue={b.title_ar}
+              />
+              {!isHero && (
+                <>
+                  <Field
+                    name="desc"
+                    label="Description (EN — optional)"
+                    defaultValue={b.desc}
+                  />
+                  <Field
+                    name="desc_ar"
+                    label="Description (AR — optional)"
+                    defaultValue={b.desc_ar}
+                  />
+                </>
+              )}
+              <Field
+                name="cta"
+                label="Optional Button (EN)"
+                defaultValue={b.cta}
+              />
+              <Field
+                name="cta_ar"
+                label="Optional Button (AR)"
+                defaultValue={b.cta_ar}
+              />
             </div>
+
+            <Field
+              name="href"
+              label="Optional Button / Card Link"
+              defaultValue={b.href}
+              placeholder="/collection/…"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Field name="alt" label="Alt text" defaultValue={b.alt} />
+              <Field
+                name="focal"
+                label="Image Focal Point (e.g. center)"
+                defaultValue={b.focal}
+              />
+            </div>
+
             <SaveButton className="w-full">Save banner</SaveButton>
           </AdminForm>
         </div>

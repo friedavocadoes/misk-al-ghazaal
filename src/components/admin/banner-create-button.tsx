@@ -7,7 +7,7 @@ import { ImageUploader } from "./image-uploader";
 import { toast } from "./admin-form";
 
 /** Top-of-page creation: full banner form + direct artboard upload in a
-    modal (no more bottom-of-page URL pasting). */
+    modal (supports both `hero` minimalist slides and `brand` world cards). */
 export function BannerCreateButton({
   create,
 }: {
@@ -16,6 +16,7 @@ export function BannerCreateButton({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [slot, setSlot] = useState<"hero" | "brand">("hero");
   const [src, setSrc] = useState("");
   const [fallback, setFallback] = useState("");
 
@@ -37,8 +38,7 @@ export function BannerCreateButton({
     }
   };
 
-  const field =
-    "mt-1 w-full border border-ink/20 bg-white px-3 py-2";
+  const field = "mt-1 w-full border border-ink/20 bg-white px-3 py-2";
 
   return (
     <>
@@ -80,9 +80,14 @@ export function BannerCreateButton({
             <form onSubmit={submit} className="mt-6 grid gap-4 text-sm md:grid-cols-2">
               <label className="block">
                 Slot
-                <select name="slot" className={field} defaultValue="hero">
-                  <option value="hero">hero (homepage slider)</option>
-                  <option value="brand">brand (shop-by-brand)</option>
+                <select
+                  name="slot"
+                  className={field}
+                  value={slot}
+                  onChange={(e) => setSlot(e.target.value as "hero" | "brand")}
+                >
+                  <option value="hero">hero (homepage fullscreen slider)</option>
+                  <option value="brand">brand (Worlds of Misk Al Ghazaal card)</option>
                 </select>
               </label>
               <label className="block">
@@ -93,7 +98,11 @@ export function BannerCreateButton({
               <div className="md:col-span-2">
                 <p className="mb-1 text-sm font-medium">Artwork *</p>
                 {src ? (
-                  <img src={src} alt="" className="aspect-[16/9] w-full border border-ink/10 bg-sand object-cover" />
+                  <img
+                    src={src}
+                    alt=""
+                    className="aspect-[16/9] w-full border border-ink/10 bg-sand object-cover"
+                  />
                 ) : (
                   <div className="flex h-36 items-center justify-center border border-dashed border-ink/25 bg-white text-xs text-ink/50">
                     Upload the banner art below
@@ -106,24 +115,124 @@ export function BannerCreateButton({
               </div>
 
               <div className="md:col-span-2">
-                <p className="mb-1 text-sm font-medium">Fallback art (shown if artwork 404s)</p>
+                <p className="mb-1 text-sm font-medium">
+                  Fallback art (optional — shown if artwork 404s)
+                </p>
                 {fallback && (
-                  <img src={fallback} alt="" className="mb-2 aspect-[16/9] w-full border border-ink/10 bg-sand object-cover" />
+                  <img
+                    src={fallback}
+                    alt=""
+                    className="mb-2 aspect-[16/9] w-full border border-ink/10 bg-sand object-cover"
+                  />
                 )}
-                <ImageUploader bucket="banners" prefix="banner-fallback" onUploaded={setFallback} />
+                <ImageUploader
+                  bucket="banners"
+                  prefix="banner-fallback"
+                  onUploaded={setFallback}
+                />
                 <input type="hidden" name="fallback" value={fallback} />
               </div>
 
-              <label className="block">Title (EN)<input name="title" placeholder="Misk Al Ghazaal" className={field} /></label>
-              <label className="block">Title (AR)<input name="title_ar" className={field} /></label>
-              <label className="block">Eyebrow (EN)<input name="eyebrow" className={field} /></label>
-              <label className="block">Eyebrow (AR)<input name="eyebrow_ar" className={field} /></label>
-              <label className="block md:col-span-2">Description (EN)<textarea name="desc" rows={2} className={field} /></label>
-              <label className="block md:col-span-2">Description (AR)<textarea name="desc_ar" rows={2} className={field} /></label>
-              <label className="block">Button (EN)<input name="cta" className={field} /></label>
-              <label className="block">Button (AR)<input name="cta_ar" className={field} /></label>
-              <label className="block">Link<input name="href" placeholder="/collection/…" dir="ltr" className={field} /></label>
-              <label className="block">Alt text<input name="alt" className={field} /></label>
+              {slot === "hero" ? (
+                <>
+                  <label className="block md:col-span-2">
+                    Text Position on Banner
+                    <select name="eyebrow" defaultValue="bottom-left" className={field}>
+                      <option value="bottom-left">Bottom-Left Corner</option>
+                      <option value="center">Dead Center</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    Single-Line Text (EN — optional)
+                    <input
+                      name="title"
+                      placeholder="Misk Al Ghazaal"
+                      className={field}
+                    />
+                  </label>
+                  <label className="block">
+                    Single-Line Text (AR — optional)
+                    <input name="title_ar" placeholder="مسك الغزال" className={field} />
+                  </label>
+                  <label className="block">
+                    Optional Button Text (EN)
+                    <input name="cta" placeholder="Discover" className={field} />
+                  </label>
+                  <label className="block">
+                    Optional Button Text (AR)
+                    <input name="cta_ar" placeholder="اكتشف" className={field} />
+                  </label>
+                  <label className="block">
+                    Optional Button Link
+                    <input
+                      name="href"
+                      placeholder="/collection/…"
+                      dir="ltr"
+                      className={field}
+                    />
+                  </label>
+                  <label className="block">
+                    Alt text
+                    <input name="alt" placeholder="Misk Al Ghazaal" className={field} />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className="block">
+                    Card Subtitle / Eyebrow (EN)
+                    <input
+                      name="eyebrow"
+                      placeholder="Signature Parfums & Pure Misk"
+                      className={field}
+                    />
+                  </label>
+                  <label className="block">
+                    Card Subtitle / Eyebrow (AR)
+                    <input
+                      name="eyebrow_ar"
+                      placeholder="العطور التوقيعية والمسك الخالص"
+                      className={field}
+                    />
+                  </label>
+                  <label className="block">
+                    World Title (EN)
+                    <input name="title" placeholder="Misk Al Ghazaal" className={field} />
+                  </label>
+                  <label className="block">
+                    World Title (AR)
+                    <input name="title_ar" placeholder="مسك الغزال" className={field} />
+                  </label>
+                  <label className="block md:col-span-2">
+                    Short Description (EN — optional)
+                    <textarea name="desc" rows={2} className={field} />
+                  </label>
+                  <label className="block md:col-span-2">
+                    Short Description (AR — optional)
+                    <textarea name="desc_ar" rows={2} className={field} />
+                  </label>
+                  <label className="block">
+                    Link Label (EN — optional)
+                    <input name="cta" placeholder="Enter Gallery" className={field} />
+                  </label>
+                  <label className="block">
+                    Link Label (AR — optional)
+                    <input name="cta_ar" placeholder="ادخل المعرض" className={field} />
+                  </label>
+                  <label className="block">
+                    Destination Link
+                    <input
+                      name="href"
+                      placeholder="/collection/…"
+                      dir="ltr"
+                      className={field}
+                    />
+                  </label>
+                  <label className="block">
+                    Alt text
+                    <input name="alt" className={field} />
+                  </label>
+                </>
+              )}
 
               <button
                 type="submit"
