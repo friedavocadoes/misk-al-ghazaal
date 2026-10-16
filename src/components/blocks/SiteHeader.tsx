@@ -38,7 +38,10 @@ import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
 import type { ShopMenuIcon } from "@/lib/site";
 import { useCart } from "@/lib/cart";
-import { SearchSuggest, type SearchSuggestHandle } from "@/components/search/SearchSuggest";
+import {
+  SearchSuggest,
+  type SearchSuggestHandle,
+} from "@/components/search/SearchSuggest";
 
 const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
   mars: Mars,
@@ -245,7 +248,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   // callbacks own all updates.
   useEffect(() => {
     const sb = createBrowserClient();
-    const apply = (u: { email?: string | null; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | null) => {
+    const apply = (
+      u: {
+        email?: string | null;
+        app_metadata?: Record<string, unknown>;
+        user_metadata?: Record<string, unknown>;
+      } | null,
+    ) => {
       if (!u?.email) {
         setShopper(null);
         return;
@@ -261,7 +270,9 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     sb.auth.getUser().then(({ data }) => {
       if (live) apply(data.user);
     });
-    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => apply(session?.user ?? null));
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) =>
+      apply(session?.user ?? null),
+    );
     return () => {
       live = false;
       sub.subscription.unsubscribe();
@@ -400,7 +411,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? -1 : 0}
       aria-hidden={compact}
-      className="inline-flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
+      className="inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
@@ -419,14 +430,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? 0 : -1}
       aria-hidden={!compact}
-      className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
+      className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
     </Link>
   );
 
   return (
-    <header id="site-header" className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]">
+    <header
+      id="site-header"
+      className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]"
+    >
       {/* Background layers: soft gradient at top → light blur when compact.
           The gradient is viewport-anchored (.ivory-flow) so it continues
           seamlessly into the hero gutters below. */}
@@ -437,7 +451,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-cream/85 backdrop-blur-md transition-opacity duration-500"
+        className={`pointer-events-none absolute inset-0 ${compact ? "bg-cream/75" : "bg-cream/85" }  backdrop-blur-md transition-opacity duration-500`}
         style={{ opacity: compact ? 1 : 0 }}
       />
 
@@ -445,7 +459,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         {/* Main crest row — slimmer now that the wordmark sits in the page, not the bar */}
         <div
           className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
-          style={{ height: compact ? 72 : 108 }}
+          style={{ height: compact ? 72 : 90 }}
         >
           <div className="flex items-center">
             <span className="relative flex h-9 items-center">
@@ -455,7 +469,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 className="flex h-9 items-center gap-1.5 px-2 text-espresso transition hover:text-gold cursor-pointer"
               >
                 <Globe className={glyph} />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em]">
                   {locale}
                 </span>
               </button>
@@ -494,14 +508,14 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             href="/"
             aria-label={t("home")}
-            className="group flex items-center justify-center justify-self-center py-1"
+            className="group flex items-center justify-center justify-self-center"
           >
             {/* Fixed-size artwork, GPU-scaled to fit the shrinking frame:
                 the pixels interpolate smoothly instead of reflowing, so the
                 crest glides 88 → 64 with no shrink-then-grow hitch. */}
             <span
-              className={`flex items-center justify-center transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[1px] ${
-                compact ? "size-16" : "size-[88px]"
+              className={`flex items-center justify-center transition-all ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                compact ? "size-16" : "size-[70px]"
               }`}
             >
               <Image
@@ -510,8 +524,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                 width={176}
                 height={176}
                 priority
-                className={`h-[88px] w-[88px] object-contain transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:drop-shadow-[0_12px_16px_rgba(0,0,0,0.06)] ${
-                  compact ? "scale-[0.727]" : "scale-100"
+                className={`h-[88px] w-[88px] object-contain transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-1.2 ${
+                  compact ? "scale-[0.927]" : "scale-100"
                 }`}
               />
             </span>
@@ -531,7 +545,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               <MapPin className={`${glyph} shrink-0`} />
               {!compact && (
-                <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                <span className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
                   {t("locateUs")}
                 </span>
               )}
@@ -549,12 +563,16 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   className="flex h-9 cursor-pointer items-center gap-1.5 px-2 text-espresso transition hover:text-gold"
                 >
                   {shopper.avatar ? (
-                    <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-6" />
+                    <ShopperAvatar
+                      url={shopper.avatar}
+                      name={shopper.name}
+                      className="size-6"
+                    />
                   ) : (
                     <User className={`${glyph} shrink-0`} />
                   )}
                   {!compact && (
-                    <span className="max-w-[120px] truncate whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                    <span className="max-w-[120px] truncate whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
                       {shopper.name}
                     </span>
                   )}
@@ -570,12 +588,19 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   >
                     {/* Identity header */}
                     <span className="flex items-center gap-3 border-b border-ink/10 px-5 pb-3 pt-1">
-                      <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-10 shrink-0" />
+                      <ShopperAvatar
+                        url={shopper.avatar}
+                        name={shopper.name}
+                        className="size-10 shrink-0"
+                      />
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-semibold text-ink">
                           {shopper.name}
                         </span>
-                        <span className="block truncate text-[12px] text-fog" dir="ltr">
+                        <span
+                          className="block truncate text-[12px] text-fog"
+                          dir="ltr"
+                        >
                           {shopper.email}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-fog/80">
@@ -591,16 +616,28 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     {(
                       [
                         { href: "/account", label: t("myAccount"), Icon: User },
-                        { href: "/account/orders", label: t("myOrders"), Icon: Package },
-                        { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
-                        { href: "/account/wishlist", label: tAcc("wishlistTitle"), Icon: Heart },
+                        {
+                          href: "/account/orders",
+                          label: t("myOrders"),
+                          Icon: Package,
+                        },
+                        {
+                          href: "/account/coupons",
+                          label: t("myRewards"),
+                          Icon: Ticket,
+                        },
+                        {
+                          href: "/account/wishlist",
+                          label: tAcc("wishlistTitle"),
+                          Icon: Heart,
+                        },
                       ] as const
                     ).map((l) => (
                       <Link
                         key={l.href}
                         href={l.href}
                         onClick={() => setAccountOpen(false)}
-                        className="flex items-center gap-3 px-5 py-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:bg-sand hover:text-gold"
+                        className="flex items-center gap-3 px-5 py-2.5 text-left text-[12px] font-medium uppercase tracking-widest text-espresso transition hover:bg-sand hover:text-gold"
                       >
                         <l.Icon className="size-4 shrink-0 text-gold/80" />
                         {l.label}
@@ -608,7 +645,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     ))}
                     <button
                       onClick={signOut}
-                      className="flex w-full cursor-pointer items-center gap-3 px-5 py-2.5 text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:bg-[#9c2b2e] hover:text-white"
+                      className="flex w-full cursor-pointer items-center gap-3 px-5 py-2.5 text-left text-[12px] font-medium uppercase tracking-widest text-espresso transition hover:bg-[#9c2b2e] hover:text-white"
                     >
                       <LogOut className="size-4 shrink-0" />
                       {t("signOut")}
@@ -655,7 +692,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           className="hidden overflow-hidden border-t border-ink/10 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-5">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-4">
             <span
               className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pr-12" : "gap-10 pr-8"}`}
             >
@@ -664,7 +701,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             </span>
             <span
               aria-hidden
-              className="h-[26px] w-px justify-self-center bg-gold-soft/90"
+              className="h-[26px] w-px justify-self-center bg-ink/10"
             />
             <span
               className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}
@@ -866,224 +903,251 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             to the content, not the viewport (GSAP caveat). */}
         {menuOpen &&
           createPortal(
-          <div
-            className="fixed inset-0 z-[60] flex flex-col bg-cream transition-opacity duration-300 lg:hidden"
-            style={{ opacity: menuEntered ? 1 : 0 }}
-            role="dialog"
-            aria-modal="true"
-          >
             <div
-              className="flex items-center justify-between border-b border-ink/10 px-4 py-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              style={{
-                opacity: menuEntered ? 1 : 0,
-                transform: `translateY(${menuEntered ? 0 : -12}px)`,
-              }}
+              className="fixed inset-0 z-[60] flex flex-col bg-cream transition-opacity duration-300 lg:hidden"
+              style={{ opacity: menuEntered ? 1 : 0 }}
+              role="dialog"
+              aria-modal="true"
             >
-              <Image
-                src="/logo.webp"
-                alt="Misk Al Ghazaal"
-                width={44}
-                height={44}
-                className="rounded-full object-cover transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              <div
+                className="flex items-center justify-between border-b border-ink/10 px-4 py-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                 style={{
                   opacity: menuEntered ? 1 : 0,
-                  transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
+                  transform: `translateY(${menuEntered ? 0 : -12}px)`,
                 }}
-              />
-              <button
-                onClick={closeMenu}
-                aria-label={t("closeMenu")}
-                className="cursor-pointer p-2 text-ink"
               >
-                <X className="size-5" />
-              </button>
-            </div>
-            <nav
-              className="flex-1 overflow-y-auto px-6 py-6"
-              aria-label="Mobile"
-            >
-              {[
-                <Link
-                  key="about"
-                  href={left[0].href}
-                  onClick={closeMenu}
-                  className="block py-3 font-display text-2xl text-ink"
-                >
-                  {left[0].label}
-                </Link>,
+                <Image
+                  src="/logo.webp"
+                  alt="Misk Al Ghazaal"
+                  width={44}
+                  height={44}
+                  className="rounded-full object-cover transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    opacity: menuEntered ? 1 : 0,
+                    transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
+                  }}
+                />
                 <button
-                  key="shop"
-                  onClick={() => setMobileShopOpen((v) => !v)}
-                  className="flex w-full cursor-pointer items-center justify-between py-3 font-display text-2xl text-ink"
+                  onClick={closeMenu}
+                  aria-label={t("closeMenu")}
+                  className="cursor-pointer p-2 text-ink"
                 >
-                  {left[1].label}
-                  <ChevronDown
-                    className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`}
-                  />
-                </button>,
-                ...right.map((l) => (
+                  <X className="size-5" />
+                </button>
+              </div>
+              <nav
+                className="flex-1 overflow-y-auto px-6 py-6"
+                aria-label="Mobile"
+              >
+                {[
                   <Link
-                    key={l.href}
-                    href={l.href}
+                    key="about"
+                    href={left[0].href}
                     onClick={closeMenu}
                     className="block py-3 font-display text-2xl text-ink"
                   >
-                    {l.label}
-                  </Link>
-                )),
-              ].map((row, i) => (
+                    {left[0].label}
+                  </Link>,
+                  <button
+                    key="shop"
+                    onClick={() => setMobileShopOpen((v) => !v)}
+                    className="flex w-full cursor-pointer items-center justify-between py-3 font-display text-2xl text-ink"
+                  >
+                    {left[1].label}
+                    <ChevronDown
+                      className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>,
+                  ...right.map((l) => (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      onClick={closeMenu}
+                      className="block py-3 font-display text-2xl text-ink"
+                    >
+                      {l.label}
+                    </Link>
+                  )),
+                ].map((row, i) => (
+                  <span
+                    key={i}
+                    className="block transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    style={{
+                      opacity: menuEntered ? 1 : 0,
+                      transform: `translateY(${menuEntered ? 0 : 16}px)`,
+                      transitionDelay: menuEntered
+                        ? `${120 + i * 60}ms`
+                        : "0ms",
+                    }}
+                  >
+                    {row}
+                  </span>
+                ))}
+                {mobileShopOpen && (
+                  <span className="block pb-2">
+                    {shop.map((col) => (
+                      <span key={col.heading} className="block py-2">
+                        <Link
+                          href={col.href}
+                          onClick={closeMenu}
+                          className="font-display text-lg italic text-gold"
+                        >
+                          {col.heading}
+                        </Link>
+                        {col.links.map((l) => {
+                          const Icon = l.icon ? MENU_ICONS[l.icon] : null;
+                          const cls =
+                            "flex items-center gap-2.5 py-1.5 pl-3 text-sm text-espresso";
+                          return l.external ? (
+                            <a
+                              key={l.href}
+                              href={l.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={cls}
+                            >
+                              {Icon && <Icon className="size-4 text-gold/80" />}
+                              {l.label} ↗
+                            </a>
+                          ) : (
+                            <Link
+                              key={l.href}
+                              href={l.href}
+                              onClick={closeMenu}
+                              className={cls}
+                            >
+                              {Icon && <Icon className="size-4 text-gold/80" />}
+                              {l.label}
+                            </Link>
+                          );
+                        })}
+                      </span>
+                    ))}
+                  </span>
+                )}
                 <span
-                  key={i}
-                  className="block transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className="mt-6 flex gap-2 border-t border-ink/10 pt-6 transition-all duration-500"
                   style={{
                     opacity: menuEntered ? 1 : 0,
                     transform: `translateY(${menuEntered ? 0 : 16}px)`,
-                    transitionDelay: menuEntered ? `${120 + i * 60}ms` : "0ms",
+                    transitionDelay: menuEntered ? "380ms" : "0ms",
                   }}
                 >
-                  {row}
-                </span>
-              ))}
-              {mobileShopOpen && (
-                <span className="block pb-2">
-                  {shop.map((col) => (
-                    <span key={col.heading} className="block py-2">
-                      <Link
-                        href={col.href}
-                        onClick={closeMenu}
-                        className="font-display text-lg italic text-gold"
-                      >
-                        {col.heading}
-                      </Link>
-                      {col.links.map((l) => {
-                        const Icon = l.icon ? MENU_ICONS[l.icon] : null;
-                        const cls =
-                          "flex items-center gap-2.5 py-1.5 pl-3 text-sm text-espresso";
-                        return l.external ? (
-                          <a
-                            key={l.href}
-                            href={l.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={cls}
-                          >
-                            {Icon && <Icon className="size-4 text-gold/80" />}
-                            {l.label} ↗
-                          </a>
-                        ) : (
-                          <Link
-                            key={l.href}
-                            href={l.href}
-                            onClick={closeMenu}
-                            className={cls}
-                          >
-                            {Icon && <Icon className="size-4 text-gold/80" />}
-                            {l.label}
-                          </Link>
-                        );
-                      })}
-                    </span>
+                  {(["en", "ar"] as const).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => pickLocale(l)}
+                      className={`cursor-pointer border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
+                        locale === l
+                          ? "border-ink bg-ink text-white"
+                          : "border-ink/20 text-espresso"
+                      }`}
+                    >
+                      {l === "en" ? t("english") : t("arabic")}
+                    </button>
                   ))}
                 </span>
-              )}
-              <span
-                className="mt-6 flex gap-2 border-t border-ink/10 pt-6 transition-all duration-500"
-                style={{
-                  opacity: menuEntered ? 1 : 0,
-                  transform: `translateY(${menuEntered ? 0 : 16}px)`,
-                  transitionDelay: menuEntered ? "380ms" : "0ms",
-                }}
-              >
-                {(["en", "ar"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => pickLocale(l)}
-                    className={`cursor-pointer border px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.16em] ${
-                      locale === l
-                        ? "border-ink bg-ink text-white"
-                        : "border-ink/20 text-espresso"
-                    }`}
-                  >
-                    {l === "en" ? t("english") : t("arabic")}
-                  </button>
-                ))}
-              </span>
-              <Link
-                href="/locate-us"
-                onClick={closeMenu}
-                className="link-underline mt-6 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-              >
-                <MapPin className="size-4 text-gold" />
-                {t("locateUs")}
-              </Link>
-              {shopper ? (
-                <div className="mt-6 border-t border-ink/10 pt-2">
-                  <button
-                    onClick={() => setMobileAccountOpen((v) => !v)}
-                    aria-expanded={mobileAccountOpen}
-                    className="flex w-full cursor-pointer items-center gap-3 py-3"
-                  >
-                    <ShopperAvatar url={shopper.avatar} name={shopper.name} className="size-10" />
-                    <span className="min-w-0 flex-1 text-left">
-                      <span className="block truncate text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
-                        {shopper.name}
-                      </span>
-                      <span className="block truncate text-[11px] text-fog" dir="ltr">
-                        {shopper.email}
-                      </span>
-                    </span>
-                    <ChevronDown
-                      className={`size-4 shrink-0 text-gold transition-transform duration-300 ${mobileAccountOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  <div
-                    className="grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                    style={{ gridTemplateRows: mobileAccountOpen ? "1fr" : "0fr" }}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="flex flex-col items-start gap-3 pb-2 ps-[52px]">
-                        {(
-                          [
-                            { href: "/account", label: t("myAccount"), Icon: User },
-                            { href: "/account/orders", label: t("myOrders"), Icon: Package },
-                            { href: "/account/coupons", label: t("myRewards"), Icon: Ticket },
-                            { href: "/account/wishlist", label: tAcc("wishlistTitle"), Icon: Heart },
-                          ] as const
-                        ).map((l) => (
-                          <Link
-                            key={l.href}
-                            href={l.href}
-                            onClick={closeMenu}
-                            className="link-underline flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-                          >
-                            <l.Icon className="size-4 text-gold" />
-                            {l.label}
-                          </Link>
-                        ))}
-                        <button
-                          onClick={signOut}
-                          className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e]"
+                <Link
+                  href="/locate-us"
+                  onClick={closeMenu}
+                  className="link-underline mt-6 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                >
+                  <MapPin className="size-4 text-gold" />
+                  {t("locateUs")}
+                </Link>
+                {shopper ? (
+                  <div className="mt-6 border-t border-ink/10 pt-2">
+                    <button
+                      onClick={() => setMobileAccountOpen((v) => !v)}
+                      aria-expanded={mobileAccountOpen}
+                      className="flex w-full cursor-pointer items-center gap-3 py-3"
+                    >
+                      <ShopperAvatar
+                        url={shopper.avatar}
+                        name={shopper.name}
+                        className="size-10"
+                      />
+                      <span className="min-w-0 flex-1 text-left">
+                        <span className="block truncate text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
+                          {shopper.name}
+                        </span>
+                        <span
+                          className="block truncate text-[11px] text-fog"
+                          dir="ltr"
                         >
-                          <LogOut className="size-4" />
-                          {t("signOut")}
-                        </button>
+                          {shopper.email}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={`size-4 shrink-0 text-gold transition-transform duration-300 ${mobileAccountOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    <div
+                      className="grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      style={{
+                        gridTemplateRows: mobileAccountOpen ? "1fr" : "0fr",
+                      }}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col items-start gap-3 pb-2 ps-[52px]">
+                          {(
+                            [
+                              {
+                                href: "/account",
+                                label: t("myAccount"),
+                                Icon: User,
+                              },
+                              {
+                                href: "/account/orders",
+                                label: t("myOrders"),
+                                Icon: Package,
+                              },
+                              {
+                                href: "/account/coupons",
+                                label: t("myRewards"),
+                                Icon: Ticket,
+                              },
+                              {
+                                href: "/account/wishlist",
+                                label: tAcc("wishlistTitle"),
+                                Icon: Heart,
+                              },
+                            ] as const
+                          ).map((l) => (
+                            <Link
+                              key={l.href}
+                              href={l.href}
+                              onClick={closeMenu}
+                              className="link-underline flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                            >
+                              <l.Icon className="size-4 text-gold" />
+                              {l.label}
+                            </Link>
+                          ))}
+                          <button
+                            onClick={signOut}
+                            className="flex cursor-pointer items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-[#9c2b2e]"
+                          >
+                            <LogOut className="size-4" />
+                            {t("signOut")}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <Link
-                  href="/account"
-                  onClick={closeMenu}
-                  className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-                >
-                  {t("loginSignup")}
-                </Link>
-              )}
-            </nav>
-          </div>,
-          document.body,
-        )}
+                ) : (
+                  <Link
+                    href="/account"
+                    onClick={closeMenu}
+                    className="link-underline mt-4 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
+                  >
+                    {t("loginSignup")}
+                  </Link>
+                )}
+              </nav>
+            </div>,
+            document.body,
+          )}
 
         <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
       </div>
