@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, EffectCreative, Parallax } from "swiper/modules";
@@ -18,17 +18,51 @@ import "swiper/css/effect-creative";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Total sticky runway (px).
+// 0 -> 160px: clip-path expands from framed inset to 100% fullscreen.
+// 160 -> 420px: fullscreen hold zone so even fast wheel/trackpad flicks
+// stay locked flush between the navbar bottom and 100svh with zero gap.
+const EXPAND_END_PX = 160;
+const STICKY_RUNWAY_PX = 420;
+
 export function HeroSlider({ slides }: { slides: Banner[] }) {
   const t = useTranslations("Hero");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
 
+  const sectionRef = useRef<HTMLElement>(null);
   const sliderWrapperRef = useRef<HTMLDivElement>(null);
   const swiperRef = useRef<SwiperType | null>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
 
   const [active, setActive] = useState(0);
+  // Live header height so the sticky box top is always flush with the bottom
+  // of #site-header and its bottom is always flush with 100svh.
+  const [headerH, setHeaderH] = useState(72);
 
-  // Memoize Swiper modules/config so autoplay and creative effect never tear down on re-render
+  useLayoutEffect(() => {
+    const hdr = document.getElementById("site-header");
+    if (!hdr) return;
+    const sync = () => {
+      // Once scrolled into the lock zone (>36px), desktop header settles at 72px.
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      if (isDesktop && window.scrollY > 36) {
+        setHeaderH(72);
+      } else {
+        setHeaderH(hdr.offsetHeight || 72);
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(hdr);
+    window.addEventListener("scroll", sync, { passive: true });
+    window.addEventListener("resize", sync, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, []);
+
   const modules = useMemo(() => [Autoplay, EffectCreative, Parallax], []);
   const autoplayConfig = useMemo(
     () => ({
@@ -54,44 +88,57 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     [],
   );
 
-  // 1. First scroll takes the user straight into the fullscreen banner lock
+  // First scroll expands into fullscreen and snaps cleanly into the hold zone
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          start: 0,
+          end: STICKY_RUNWAY_PX,
+          scrub: 0.3,
+          snap: {
+            snapTo: (value, self) => {
+              const dir = self?.direction ?? 0;
+              const lockProgress = EXPAND_END_PX / STICKY_RUNWAY_PX;
+              // Scrolling down from top: lock onto fullscreen plateau
+              if (dir > 0 && value < 0.85) return lockProgress;
+              // Scrolling up inside the plateau: release back to top
+              if (dir < 0 && value <= lockProgress + 0.15) return 0;
+              return value > 0.85 ? 1 : lockProgress;
+            },
+            duration: { min: 0.25, max: 0.45 },
+            delay: 0.04,
+            ease: "power2.inOut",
+          },
+        },
+      });
+
+      // Phase 1 (0 -> 160px): expand inset frame to full bleed
+      tl.fromTo(
         sliderWrapperRef.current,
-        { clipPath: "inset(22px 24px 22px 24px round 20px)" },
+        { clipPath: "inset(20px 24px 20px 24px round 18px)" },
         {
           clipPath: "inset(0px 0px 0px 0px round 0px)",
           ease: "none",
-          scrollTrigger: {
-            start: 0,
-            end: 160,
-            scrub: 0.45,
-            snap: {
-              snapTo: (value, self) => {
-                const dir = self?.direction ?? 0;
-                if (dir > 0) return 1;
-                if (dir < 0) return 0;
-                return value > 0.5 ? 1 : 0;
-              },
-              duration: 0.42,
-              delay: 0.06,
-              ease: "power2.inOut",
-            },
-          },
+          duration: EXPAND_END_PX,
         },
       );
+      // Phase 2 (160 -> 420px): hold 100% fullscreen while sticky remains pinned
+      tl.to(sliderWrapperRef.current, {
+        clipPath: "inset(0px 0px 0px 0px round 0px)",
+        ease: "none",
+        duration: STICKY_RUNWAY_PX - EXPAND_END_PX,
+      });
     }, sliderWrapperRef);
 
     return () => ctx.revert();
   }, []);
 
-  // 2. Minimalist masked text reveal synced to Swiper slide transitions
   const animateText = (swiper: SwiperType) => {
     setActive(swiper.realIndex);
 
     gsap.killTweensOf(".slide-text-el");
-    gsap.set(".slide-text-el", { opacity: 0, y: 24 });
+    gsap.set(".slide-text-el", { opacity: 0, y: 22 });
 
     const activeSlide = swiper.slides[swiper.activeIndex];
     if (activeSlide) {
@@ -100,10 +147,10 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
         gsap.to(targets, {
           y: 0,
           opacity: 1,
-          duration: 1.05,
+          duration: 1.0,
           stagger: 0.12,
           ease: "expo.out",
-          delay: 0.25,
+          delay: 0.22,
           overwrite: "auto",
         });
       }
@@ -119,13 +166,20 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Featured"
-      className="ivory-flow relative w-full"
-      style={{ height: "calc(100svh + 160px)" }}
+      className="relative w-full bg-cream"
+      style={{
+        height: `calc(100svh - ${headerH}px + ${STICKY_RUNWAY_PX}px)`,
+      }}
     >
       <div
         ref={sliderWrapperRef}
-        className="sticky top-[68px] h-[calc(100svh-68px)] w-full overflow-hidden bg-ink lg:top-[72px] lg:h-[calc(100svh-72px)]"
+        style={{
+          top: `${headerH}px`,
+          height: `calc(100svh - ${headerH}px)`,
+        }}
+        className="sticky w-full overflow-hidden bg-ink"
       >
         <Swiper
           modules={modules}
@@ -160,7 +214,6 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                 key={s.src + i}
                 className="relative h-full w-full overflow-hidden bg-ink"
               >
-                {/* Parallax wrapper so image glides with depth during creative curtain transition */}
                 <div
                   data-swiper-parallax="-18%"
                   className="absolute inset-0 h-full w-full"
@@ -173,10 +226,8 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                     priority={i === 0}
                     sizes="100vw"
                     style={s.focal ? { objectPosition: s.focal } : undefined}
-                    className={`absolute inset-0 h-full w-full max-w-none ${
-                      s.fit === "contain" ? "object-contain" : "object-cover"
-                    } transition-transform duration-[9000ms] ease-out ${
-                      isActive ? "scale-100" : "scale-[1.09]"
+                    className={`absolute inset-0 h-full w-full max-w-none object-cover transition-transform duration-[9000ms] ease-out ${
+                      isActive ? "scale-100" : "scale-[1.08]"
                     }`}
                   />
                 </div>
@@ -192,7 +243,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
                 {/* Single Line of Text + Optional Button — Dead Center OR Bottom-Left Corner */}
                 {(lineText || hasCta) && (
                   <div
-                    data-swiper-parallax="-260"
+                    data-swiper-parallax="-240"
                     className={
                       isCenter
                         ? "pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center"

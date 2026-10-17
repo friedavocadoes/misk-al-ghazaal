@@ -84,6 +84,7 @@ interface DbProductNote {
     name: string;
     name_ar: string | null;
     color: string;
+    glyph?: string | null;
     description: string | null;
     description_ar: string | null;
   } | null;
@@ -97,8 +98,11 @@ function toProductNote(r: DbProductNote): ProductNote | null {
     name: r.notes.name,
     ...(r.notes.name_ar ? { nameAr: r.notes.name_ar } : {}),
     color: r.notes.color ?? "#8a6d2f",
+    glyph: r.notes.glyph ?? "droplet",
     ...(r.notes.description ? { description: r.notes.description } : {}),
-    ...(r.notes.description_ar ? { descriptionAr: r.notes.description_ar } : {}),
+    ...(r.notes.description_ar
+      ? { descriptionAr: r.notes.description_ar }
+      : {}),
     kind: r.kind,
   };
 }
@@ -140,7 +144,9 @@ function toProduct(
         }
       : {}),
     ...(p.ritual_id ? { ritualId: p.ritual_id } : {}),
-    ...(p.notes_image_desktop ? { notesImageDesktop: p.notes_image_desktop } : {}),
+    ...(p.notes_image_desktop
+      ? { notesImageDesktop: p.notes_image_desktop }
+      : {}),
     ...(p.notes_image_mobile ? { notesImageMobile: p.notes_image_mobile } : {}),
     variants: variants.map(
       (v): Variant => ({
@@ -213,10 +219,10 @@ async function fetchProductsWithRelations(filter?: {
   if (ids.length) {
     const { data: noteRows } = await supabase
       .from("product_notes")
-      .select("product_id, kind, position, notes(id, slug, name, name_ar, color, description, description_ar)")
+      .select("product_id, kind, position, notes(*)")
       .in("product_id", ids)
       .order("position");
-    for (const r of ((noteRows as unknown as DbProductNote[]) ?? [])) {
+    for (const r of (noteRows as unknown as DbProductNote[]) ?? []) {
       const n = toProductNote(r);
       if (!n) continue;
       const arr = noteMap.get(r.product_id) ?? [];
@@ -225,31 +231,49 @@ async function fetchProductsWithRelations(filter?: {
     }
   }
 
-  const lineupMap = new Map<string, { id: string; slug: string; title: string; title_ar: string | null }>();
-  const lineupIds = [...new Set((prods as DbProduct[]).map((p) => p.lineup_id).filter(Boolean))] as string[];
+  const lineupMap = new Map<
+    string,
+    { id: string; slug: string; title: string; title_ar: string | null }
+  >();
+  const lineupIds = [
+    ...new Set((prods as DbProduct[]).map((p) => p.lineup_id).filter(Boolean)),
+  ] as string[];
   if (lineupIds.length) {
-    const { data: lineups } = await supabase.from("lineups").select("id, slug, title, title_ar").in("id", lineupIds);
-    for (const l of (lineups ?? []) as { id: string; slug: string; title: string; title_ar: string | null }[]) {
+    const { data: lineups } = await supabase
+      .from("lineups")
+      .select("id, slug, title, title_ar")
+      .in("id", lineupIds);
+    for (const l of (lineups ?? []) as {
+      id: string;
+      slug: string;
+      title: string;
+      title_ar: string | null;
+    }[]) {
       lineupMap.set(l.id, l);
     }
   }
 
-  let list = (prods as (DbProduct & { is_active?: boolean | null })[]).map((p) =>
-    toProduct(
-      p,
-      variantMap.get(p.id) ?? [],
-      slugMap.get(p.id) ?? [],
-      noteMap.get(p.id) ?? [],
-      p.lineup_id ? lineupMap.get(p.lineup_id) : undefined,
-    ),
+  let list = (prods as (DbProduct & { is_active?: boolean | null })[]).map(
+    (p) =>
+      toProduct(
+        p,
+        variantMap.get(p.id) ?? [],
+        slugMap.get(p.id) ?? [],
+        noteMap.get(p.id) ?? [],
+        p.lineup_id ? lineupMap.get(p.lineup_id) : undefined,
+      ),
   );
-  list = filter?.includeInactive ? list : list.filter((p) => p.isActive !== false);
+  list = filter?.includeInactive
+    ? list
+    : list.filter((p) => p.isActive !== false);
   if (filter?.collectionId) {
     const { data: scoped } = await supabase
       .from("product_collections")
       .select("product_id")
       .eq("collection_id", filter.collectionId);
-    const keep = new Set((scoped ?? []).map((s: { product_id: string }) => s.product_id));
+    const keep = new Set(
+      (scoped ?? []).map((s: { product_id: string }) => s.product_id),
+    );
     list = list.filter((p) => keep.has(p.id));
   }
   return list;
@@ -280,7 +304,15 @@ const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
 export async function getProductsByCollection(
   slug: string,
-  opts?: { sort?: string | null; maxPrice?: number | null; minPrice?: number | null; inStockOnly?: boolean; onSaleOnly?: boolean; minRating?: number | null; lineup?: string | null },
+  opts?: {
+    sort?: string | null;
+    maxPrice?: number | null;
+    minPrice?: number | null;
+    inStockOnly?: boolean;
+    onSaleOnly?: boolean;
+    minRating?: number | null;
+    lineup?: string | null;
+  },
 ): Promise<Product[]> {
   requireConfigured();
   let items: Product[];
@@ -340,7 +372,9 @@ export async function getCollections(): Promise<Category[]> {
   return data.map(toCategory);
 }
 
-export async function getCollectionBySlug(slug: string): Promise<Category | null> {
+export async function getCollectionBySlug(
+  slug: string,
+): Promise<Category | null> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -484,26 +518,44 @@ function applyCatalogFacets<T extends Product>(
   opts?: CatalogQuery,
 ): T[] {
   let out = items;
-  if (opts?.inStockOnly) out = out.filter((p) => p.variants.some((v) => v.stock > 0));
+  if (opts?.inStockOnly)
+    out = out.filter((p) => p.variants.some((v) => v.stock > 0));
   if (opts?.onSaleOnly)
-    out = out.filter((p) => p.compareAtPrice != null && p.compareAtPrice > p.price);
-  if (opts?.minRating != null) out = out.filter((p) => p.rating >= (opts.minRating as number));
-  if (opts?.maxPrice != null) out = out.filter((p) => p.price <= (opts.maxPrice as number));
-  if (opts?.minPrice != null) out = out.filter((p) => p.price >= (opts.minPrice as number));
+    out = out.filter(
+      (p) => p.compareAtPrice != null && p.compareAtPrice > p.price,
+    );
+  if (opts?.minRating != null)
+    out = out.filter((p) => p.rating >= (opts.minRating as number));
+  if (opts?.maxPrice != null)
+    out = out.filter((p) => p.price <= (opts.maxPrice as number));
+  if (opts?.minPrice != null)
+    out = out.filter((p) => p.price >= (opts.minPrice as number));
   if (opts?.lineup) out = out.filter((p) => p.lineupSlug === opts.lineup);
   return out;
 }
 
-function applyCatalogSort<T extends Product>(items: T[], sort?: string | null): T[] {
+function applyCatalogSort<T extends Product>(
+  items: T[],
+  sort?: string | null,
+): T[] {
   if (sort === "price-asc") return [...items].sort((a, b) => a.price - b.price);
-  if (sort === "price-desc") return [...items].sort((a, b) => b.price - a.price);
+  if (sort === "price-desc")
+    return [...items].sort((a, b) => b.price - a.price);
   if (sort === "rating") return [...items].sort((a, b) => b.rating - a.rating);
   if (sort === "discount")
-    return [...items].sort((a, b) => discountPct(b) - discountPct(a) || rankScore(a) - rankScore(b));
+    return [...items].sort(
+      (a, b) => discountPct(b) - discountPct(a) || rankScore(a) - rankScore(b),
+    );
   if (sort === "newest")
-    return [...items].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    return [...items].sort((a, b) =>
+      (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
+    );
   if (sort === "popular")
-    return [...items].sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0) || rankScore(a) - rankScore(b));
+    return [...items].sort(
+      (a, b) =>
+        (b.salesCount ?? 0) - (a.salesCount ?? 0) ||
+        rankScore(a) - rankScore(b),
+    );
   return rankProducts(items);
 }
 
@@ -512,7 +564,10 @@ function discountPct(p: Product): number {
   return (p.compareAtPrice - p.price) / p.compareAtPrice;
 }
 
-export async function searchCatalog(query: string, opts?: CatalogQuery): Promise<Product[]> {
+export async function searchCatalog(
+  query: string,
+  opts?: CatalogQuery,
+): Promise<Product[]> {
   if (!query.trim()) return [];
   requireConfigured();
   const supabase = await createClient();
@@ -528,7 +583,7 @@ export async function searchCatalog(query: string, opts?: CatalogQuery): Promise
     ? await supabase.from("variants").select("*").in("product_id", ids)
     : { data: [] };
   const vmap = new Map<string, DbVariant[]>();
-  for (const v of ((vars as DbVariant[]) ?? [])) {
+  for (const v of (vars as DbVariant[]) ?? []) {
     const arr = vmap.get(v.product_id) ?? [];
     arr.push(v);
     vmap.set(v.product_id, arr);
@@ -558,14 +613,22 @@ export async function suggestProducts(
   if (error || !data) throw error ?? new Error("suggest failed");
   const slugs = [...new Set((data as { slug: string }[]).map((r) => r.slug))];
   if (!slugs.length) return [];
-  const full = await fetchProductsWithRelations({ slugs, includeInactive: opts?.includeInactive });
+  const full = await fetchProductsWithRelations({
+    slugs,
+    includeInactive: opts?.includeInactive,
+  });
   return rankProducts(full).slice(0, Math.min(12, Math.max(1, limit)));
 }
 
-export async function getRelatedProducts(slug: string, limit = 4): Promise<Product[]> {
+export async function getRelatedProducts(
+  slug: string,
+  limit = 4,
+): Promise<Product[]> {
   const current = await getProductBySlug(slug);
   if (!current) return [];
-  const pool = await getProductsByCollection(current.categorySlugs[0] ?? "best-sellers");
+  const pool = await getProductsByCollection(
+    current.categorySlugs[0] ?? "best-sellers",
+  );
   return pool.filter((p) => p.slug !== slug).slice(0, limit);
 }
 
@@ -573,7 +636,13 @@ export async function getRelatedProducts(slug: string, limit = 4): Promise<Produ
 // Lineups / notes / rituals / coupons / reviews
 // ---------------------------------------------------------------------------
 
-function toLineup(l: { id: string; slug: string; title: string; title_ar: string | null; description: string | null }): Lineup {
+function toLineup(l: {
+  id: string;
+  slug: string;
+  title: string;
+  title_ar: string | null;
+  description: string | null;
+}): Lineup {
   return {
     id: l.id,
     slug: l.slug,
@@ -586,7 +655,10 @@ function toLineup(l: { id: string; slug: string; title: string; title_ar: string
 export async function getLineups(): Promise<Lineup[]> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("lineups").select("*").order("sort");
+  const { data, error } = await supabase
+    .from("lineups")
+    .select("*")
+    .order("sort");
   if (error || !data) throw error ?? new Error("lineups failed");
   return (data as Parameters<typeof toLineup>[0][]).map(toLineup);
 }
@@ -664,15 +736,17 @@ export async function getHomepageSections(): Promise<HomepageSection[]> {
     .eq("active", true)
     .order("sort");
   if (error || !data) return [];
-  return (data as {
-    id: string;
-    kind: HomepageSection["kind"];
-    title: string;
-    title_ar: string | null;
-    eyebrow: string | null;
-    eyebrow_ar: string | null;
-    config: HomepageSectionConfig | null;
-  }[]).map((s) => ({
+  return (
+    data as {
+      id: string;
+      kind: HomepageSection["kind"];
+      title: string;
+      title_ar: string | null;
+      eyebrow: string | null;
+      eyebrow_ar: string | null;
+      config: HomepageSectionConfig | null;
+    }[]
+  ).map((s) => ({
     id: s.id,
     kind: s.kind,
     title: s.title ?? "",
@@ -688,10 +762,15 @@ export async function getProductsBySlugs(slugs: string[]): Promise<Product[]> {
   if (!clean.length) return [];
   const list = await fetchProductsWithRelations({ slugs: clean });
   const pos = new Map(clean.map((s, i) => [s, i]));
-  return rankProducts(list).sort((a, b) => (pos.get(a.slug) ?? 0) - (pos.get(b.slug) ?? 0));
+  return rankProducts(list).sort(
+    (a, b) => (pos.get(a.slug) ?? 0) - (pos.get(b.slug) ?? 0),
+  );
 }
 
-export async function getLineupSiblings(product: Product, limit = 4): Promise<Product[]> {
+export async function getLineupSiblings(
+  product: Product,
+  limit = 4,
+): Promise<Product[]> {
   if (!product.lineupId) return [];
   requireConfigured();
   const supabase = await createClient();
@@ -733,7 +812,10 @@ function toRitual(r: {
 export async function getRituals(): Promise<Ritual[]> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("rituals").select("*").order("title");
+  const { data, error } = await supabase
+    .from("rituals")
+    .select("*")
+    .order("title");
   if (error || !data) throw error ?? new Error("rituals failed");
   return (data as Parameters<typeof toRitual>[0][]).map(toRitual);
 }
@@ -741,7 +823,11 @@ export async function getRituals(): Promise<Ritual[]> {
 export async function getRitualById(id: string): Promise<Ritual | null> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("rituals").select("*").eq("id", id).single();
+  const { data, error } = await supabase
+    .from("rituals")
+    .select("*")
+    .eq("id", id)
+    .single();
   if (error || !data) return null;
   return toRitual(data as Parameters<typeof toRitual>[0]);
 }
@@ -749,17 +835,32 @@ export async function getRitualById(id: string): Promise<Ritual | null> {
 export async function getNotes(): Promise<Note[]> {
   requireConfigured();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("notes").select("*").order("name");
+  const { data, error } = await supabase
+    .from("notes")
+    .select("*")
+    .order("name");
   if (error || !data) throw error ?? new Error("notes failed");
-  return (data ?? []).map((n: { id: string; slug: string; name: string; name_ar: string | null; color: string; description: string | null; description_ar: string | null }) => ({
-    id: n.id,
-    slug: n.slug,
-    name: n.name,
-    ...(n.name_ar ? { nameAr: n.name_ar } : {}),
-    color: n.color ?? "#8a6d2f",
-    ...(n.description ? { description: n.description } : {}),
-    ...(n.description_ar ? { descriptionAr: n.description_ar } : {}),
-  }));
+  return (data ?? []).map(
+    (n: {
+      id: string;
+      slug: string;
+      name: string;
+      name_ar: string | null;
+      color: string;
+      glyph?: string | null;
+      description: string | null;
+      description_ar: string | null;
+    }) => ({
+      id: n.id,
+      slug: n.slug,
+      name: n.name,
+      ...(n.name_ar ? { nameAr: n.name_ar } : {}),
+      color: n.color ?? "#8a6d2f",
+      glyph: n.glyph ?? "droplet",
+      ...(n.description ? { description: n.description } : {}),
+      ...(n.description_ar ? { descriptionAr: n.description_ar } : {}),
+    }),
+  );
 }
 
 function maskEmail(email: string): string {
@@ -777,7 +878,14 @@ export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
     .eq("active", true)
     .order("sort");
   if (error || !data) return [];
-  return (data as { code: string; name_en: string; name_ar: string | null; states: CountryState[] | null }[]).map((c) => ({
+  return (
+    data as {
+      code: string;
+      name_en: string;
+      name_ar: string | null;
+      states: CountryState[] | null;
+    }[]
+  ).map((c) => ({
     code: c.code,
     name: c.name_en,
     ...(c.name_ar ? { nameAr: c.name_ar } : {}),
@@ -785,28 +893,35 @@ export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
   }));
 }
 
-export async function getApprovedReviews(productId: string, limit = 20): Promise<Review[]> {
+export async function getApprovedReviews(
+  productId: string,
+  limit = 20,
+): Promise<Review[]> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, product_id, user_id, rating, title, body, approved, created_at, profiles!inner(email)")
+    .select(
+      "id, product_id, user_id, rating, title, body, approved, created_at, profiles!inner(email)",
+    )
     .eq("product_id", productId)
     .eq("approved", true)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error || !data) return [];
-  return (data as unknown as {
-    id: string;
-    product_id: string;
-    user_id: string;
-    rating: number;
-    title: string | null;
-    body: string | null;
-    approved: boolean;
-    created_at: string;
-    profiles: { email: string } | { email: string }[];
-  }[]).map((r) => ({
+  return (
+    data as unknown as {
+      id: string;
+      product_id: string;
+      user_id: string;
+      rating: number;
+      title: string | null;
+      body: string | null;
+      approved: boolean;
+      created_at: string;
+      profiles: { email: string } | { email: string }[];
+    }[]
+  ).map((r) => ({
     id: r.id,
     productId: r.product_id,
     userId: r.user_id,
@@ -815,7 +930,11 @@ export async function getApprovedReviews(productId: string, limit = 20): Promise
     ...(r.body ? { body: r.body } : {}),
     approved: r.approved,
     createdAt: r.created_at,
-    authorName: maskEmail(Array.isArray(r.profiles) ? r.profiles[0]?.email ?? "" : r.profiles?.email ?? ""),
+    authorName: maskEmail(
+      Array.isArray(r.profiles)
+        ? (r.profiles[0]?.email ?? "")
+        : (r.profiles?.email ?? ""),
+    ),
   }));
 }
 

@@ -63,6 +63,7 @@ export interface Note {
   name: string;
   nameAr?: string;
   color: string;
+  glyph?: string;
   description?: string;
   descriptionAr?: string;
 }

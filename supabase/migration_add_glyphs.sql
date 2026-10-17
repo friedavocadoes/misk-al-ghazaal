@@ -1,0 +1,1 @@
+alter table public.notes add column if not exists glyph text default 'droplet';
