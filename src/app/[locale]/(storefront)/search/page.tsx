@@ -19,7 +19,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/search">): Pr
     seo,
     {
       title: "Search the Maison — Misk Al Ghazaal",
-      description: "Search perfumes, dukhoon, bakhoor and holy oudh.",
+      description: "Search perfumes, dukhoon and bakhoor.",
     },
     locale,
   );

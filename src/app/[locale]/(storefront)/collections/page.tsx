@@ -15,7 +15,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/collections">
     seo,
     {
       title: "All Collections — Misk Al Ghazaal",
-      description: "Shop by fragrance family, ritual or edit — perfumes, dukhoon, bakhoor and holy oudh.",
+      description: "Shop by fragrance family, ritual or edit — perfumes, dukhoon and bukhoor.",
     },
     locale,
   );

@@ -44,9 +44,9 @@ export async function generateMetadata(props: PageProps<"/[locale]">): Promise<M
   return seoMetadata(
     seo,
     {
-      title: "Misk Al Ghazaal — Perfumes, Dukhoon, Bakhoor & Holy Oudh",
+      title: "Misk Al Ghazaal — Perfumes, Dukhoon & Bakhoor",
       description:
-        "Authentic Misk Al Ghazaal perfumes, dukhoon, bakhoor and holy oudh — direct from manufacturer, delivered across the UAE.",
+        "Authentic Misk Al Ghazaal perfumes, dukhoon and bakhoor — direct from manufacturer, delivered across the UAE.",
     },
     locale,
   );
