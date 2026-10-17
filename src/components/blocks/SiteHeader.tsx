@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
-import Image from "next/image";
+import { BrandCrest } from "@/components/blocks/BrandCrest";
 import gsap from "gsap";
 import {
   ArrowRight,
@@ -57,9 +57,6 @@ type LinkKey = "about" | "shop" | "manufacture" | "contact";
 
 const EASE = "expo.out";
 const FLIGHT = 0.6;
-
-// Path to your transparent logo in /public (works with both dark or gold source WebP/PNG)
-const LOGO_SRC = "/mag.webp";
 
 export function SiteHeader({ locale }: { locale: Locale }) {
   // Compact flips once past 36px, releases below 18px — early
@@ -127,179 +124,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     manufacture: null,
     contact: null,
   });
-
-  // Refs for the synchronized metallic gold & titanium particle luster engine
-  const logoLusterRef = useRef<HTMLSpanElement | null>(null);
-  const logoGleamRef = useRef<HTMLSpanElement | null>(null);
-  const logoSparkleRef = useRef<HTMLSpanElement | null>(null);
-  const logoTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  const isLogoHoveredRef = useRef(false);
-
-  // Initialize continuous GSAP metallic luster + gleam timeline once
-  useLayoutEffect(() => {
-    if (typeof window === "undefined") return;
-    const luster = logoLusterRef.current;
-    const gleam = logoGleamRef.current;
-    const sparkle = logoSparkleRef.current;
-    if (!luster || !gleam || !sparkle) return;
-
-    const ctx = gsap.context(() => {
-      gsap.set(gleam, { xPercent: -140, opacity: 0.72 });
-      gsap.set(luster, { backgroundPosition: "0% 50%" });
-      gsap.set(sparkle, {
-        backgroundPosition: "0px 0px, 0px 0px",
-        opacity: 0.55,
-      });
-
-      const tl = gsap.timeline({
-        repeat: -1,
-        defaults: { ease: "none" },
-      });
-
-      // 1. Slow shifting titanium-gold metallic body gradient
-      tl.to(
-        luster,
-        {
-          backgroundPosition: "200% 50%",
-          duration: 6.4,
-          ease: "sine.inOut",
-        },
-        0,
-      );
-
-      // 2. Micro-particle titanium shimmer drift
-      tl.to(
-        sparkle,
-        {
-          backgroundPosition: "36px -36px, -24px 24px",
-          duration: 6.4,
-          ease: "none",
-        },
-        0,
-      );
-
-      // 3. Synchronized specular light sweep with bezier-like organic pacing
-      tl.fromTo(
-        gleam,
-        { xPercent: -140 },
-        {
-          xPercent: 140,
-          duration: 3.6,
-          ease: "power2.inOut",
-        },
-        0.4,
-      );
-
-      logoTimelineRef.current = tl;
-    });
-
-    return () => {
-      ctx.revert();
-      logoTimelineRef.current = null;
-    };
-  }, []);
-
-  // Synchronize animation state with `compact` mode without abrupt jumps
-  useEffect(() => {
-    const tl = logoTimelineRef.current;
-    const gleam = logoGleamRef.current;
-    const sparkle = logoSparkleRef.current;
-    if (!tl || !gleam || !sparkle) return;
-
-    if (compact) {
-      // Smoothly decelerate to a complete halt when compact
-      gsap.to(tl, {
-        timeScale: 0,
-        duration: 0.65,
-        ease: "power3.out",
-        overwrite: "auto",
-      });
-      gsap.to([gleam, sparkle], {
-        opacity: 0,
-        duration: 0.45,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    } else {
-      // Resume seamless continuous motion in non-compact mode
-      const targetScale = isLogoHoveredRef.current ? 3.2 : 1;
-      gsap.to(tl, {
-        timeScale: targetScale,
-        duration: 0.75,
-        ease: "expo.out",
-        overwrite: "auto",
-      });
-      gsap.to(gleam, {
-        opacity: isLogoHoveredRef.current ? 1 : 0.72,
-        duration: 0.55,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-      gsap.to(sparkle, {
-        opacity: isLogoHoveredRef.current ? 0.92 : 0.55,
-        duration: 0.55,
-        ease: "power2.out",
-        overwrite: "auto",
-      });
-    }
-  }, [compact]);
-
-  // Hover handlers: accelerate the existing timeline in-sync along a bezier curve
-  const handleLogoMouseEnter = () => {
-    isLogoHoveredRef.current = true;
-    if (compact) return;
-    const tl = logoTimelineRef.current;
-    const gleam = logoGleamRef.current;
-    const sparkle = logoSparkleRef.current;
-    if (!tl || !gleam || !sparkle) return;
-
-    gsap.to(tl, {
-      timeScale: 3.2,
-      duration: 0.55,
-      ease: "expo.out",
-      overwrite: "auto",
-    });
-    gsap.to(gleam, {
-      opacity: 1,
-      duration: 0.4,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-    gsap.to(sparkle, {
-      opacity: 0.95,
-      duration: 0.4,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-  };
-
-  const handleLogoMouseLeave = () => {
-    isLogoHoveredRef.current = false;
-    if (compact) return;
-    const tl = logoTimelineRef.current;
-    const gleam = logoGleamRef.current;
-    const sparkle = logoSparkleRef.current;
-    if (!tl || !gleam || !sparkle) return;
-
-    gsap.to(tl, {
-      timeScale: 1,
-      duration: 0.85,
-      ease: "expo.out",
-      overwrite: "auto",
-    });
-    gsap.to(gleam, {
-      opacity: 0.72,
-      duration: 0.65,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-    gsap.to(sparkle, {
-      opacity: 0.55,
-      duration: 0.65,
-      ease: "power2.out",
-      overwrite: "auto",
-    });
-  };
 
   useLayoutEffect(() => {
     const applyThresholds = (bypassLock: boolean) => {
@@ -479,33 +303,23 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     accountTimer.current = setTimeout(() => setAccountOpen(false), 140);
   };
 
-  // Dropdown enter animation
+  // Stage both frames and cancel both on close/unmount; no stale entrance callbacks.
   useLayoutEffect(() => {
-    if (shopOpen) {
-      const id = requestAnimationFrame(() =>
-        requestAnimationFrame(() => setShopEntered(true)),
-      );
-      return () => {
-        cancelAnimationFrame(id);
-        setShopEntered(false);
-      };
-    }
-    setShopEntered(false);
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      setShopEntered(false);
+      if (shopOpen) second = requestAnimationFrame(() => setShopEntered(true));
+    });
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [shopOpen]);
 
-  // Mobile menu choreography: staged enter, graceful exit with
-  // delayed unmount so closing animates instead of vanishing.
   useLayoutEffect(() => {
-    if (menuOpen) {
-      const id = requestAnimationFrame(() =>
-        requestAnimationFrame(() => setMenuEntered(true)),
-      );
-      return () => {
-        cancelAnimationFrame(id);
-        setMenuEntered(false);
-      };
-    }
-    setMenuEntered(false);
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      setMenuEntered(false);
+      if (menuOpen) second = requestAnimationFrame(() => setMenuEntered(true));
+    });
+    return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [menuOpen]);
 
   const closeMenu = () => {
@@ -572,19 +386,6 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           ? right[0].label
           : right[1].label;
 
-  // Shared CSS mask properties so any transparent WebP/PNG logo renders
-  // in razor-sharp 24k metallic gold with zero background bleed.
-  const goldMaskStyle: React.CSSProperties = {
-    WebkitMaskImage: `url(${LOGO_SRC})`,
-    maskImage: `url(${LOGO_SRC})`,
-    WebkitMaskSize: "contain",
-    maskSize: "contain",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
-  };
-
   // Maison nav voice: quiet Inter small-caps (letterspaced, medium) —
   // the serif belongs to headlines, not the chrome. Stacked and inline
   // share the family; only size/weight/tracking morph in the flight.
@@ -595,12 +396,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         stackedRefs.current[key] = el;
       }}
       href={linkFor(key)}
+      aria-current={pathname === linkFor(key) ? "page" : undefined}
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? -1 : 0}
       aria-hidden={compact}
-      className="inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
+      className="maison-nav-link inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
@@ -614,12 +416,13 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         inlineRefs.current[key] = el;
       }}
       href={linkFor(key)}
+      aria-current={pathname === linkFor(key) ? "page" : undefined}
       onClick={() => setShopOpen(false)}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? 0 : -1}
       aria-hidden={!compact}
-      className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
+      className="maison-nav-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
     >
       {labelFor(key).toUpperCase()}
     </Link>
@@ -628,7 +431,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   return (
     <header
       id="site-header"
-      className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]"
+      data-compact={compact}
+      className="maison-header fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]"
     >
       {/* Background layers: soft gradient at top → light blur when compact.
           The gradient is viewport-anchored (.ivory-flow) so it continues
@@ -697,77 +501,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             href="/"
             aria-label={t("home")}
-            onMouseEnter={handleLogoMouseEnter}
-            onMouseLeave={handleLogoMouseLeave}
             className="group flex items-center justify-center justify-self-center"
           >
-            {/* Fixed-size artwork, GPU-scaled to fit the shrinking frame:
-                the pixels interpolate smoothly instead of reflowing, so the
-                crest glides 88 → 64 with no shrink-then-grow hitch. */}
-            <span
-              className={`relative flex items-center justify-center transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                compact ? "size-16" : "size-[70px]"
-              }`}
-            >
-              <span
-                className={`relative block h-[88px] w-[88px] transition-transform duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08] ${
-                  compact ? "scale-[0.76]" : "scale-100"
-                }`}
-                style={{
-                  filter: compact
-                    ? "drop-shadow(0 1px 2px rgba(122, 86, 25, 0.18))"
-                    : "drop-shadow(0 2px 10px rgba(197, 155, 39, 0.28))",
-                }}
-              >
-                {/* Accessible preload & SEO image (invisible under the GPU gold mask) */}
-                <Image
-                  src={LOGO_SRC}
-                  alt="Misk Al Ghazaal"
-                  width={176}
-                  height={176}
-                  priority
-                  className="pointer-events-none h-full w-full select-none object-contain opacity-0"
-                />
-
-                {/* Masked 24k Gold & Titanium Luster Composite */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 overflow-hidden"
-                  style={goldMaskStyle}
-                >
-                  {/* Layer 1: Continuous shifting 24k metallic gold base */}
-                  <span
-                    ref={logoLusterRef}
-                    className="absolute inset-0 will-change-[background-position]"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(125deg, #6E4D14 0%, #B68B3A 18%, #E6C775 34%, #FFF5D6 48%, #D4AF37 62%, #8C6520 82%, #D5B167 100%)",
-                      backgroundSize: "220% 220%",
-                    }}
-                  />
-
-                  {/* Layer 2: Apple Titanium-inspired micro-particle gold dust */}
-                  <span
-                    ref={logoSparkleRef}
-                    className="absolute inset-0 mix-blend-screen will-change-[background-position,opacity]"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 20% 30%, rgba(255, 250, 224, 0.85) 0.75px, transparent 1.6px), radial-gradient(circle at 75% 65%, rgba(255, 232, 163, 0.8) 0.9px, transparent 1.8px), radial-gradient(circle at 45% 80%, rgba(255, 255, 255, 0.75) 0.6px, transparent 1.4px)",
-                      backgroundSize: "18px 18px, 22px 22px, 14px 14px",
-                    }}
-                  />
-
-                  {/* Layer 3: Synchronized specular light gleam */}
-                  <span
-                    ref={logoGleamRef}
-                    className="absolute -inset-y-6 -left-1/2 w-[200%] will-change-[transform,opacity]"
-                    style={{
-                      background:
-                        "linear-gradient(112deg, transparent 36%, rgba(255, 243, 196, 0.12) 43%, rgba(255, 252, 235, 0.95) 49.5%, rgba(255, 255, 255, 1) 50%, rgba(255, 245, 200, 0.9) 50.8%, rgba(230, 195, 105, 0.15) 57%, transparent 64%)",
-                      mixBlendMode: "screen",
-                    }}
-                  />
-                </span>
+            <span className={`relative flex items-center justify-center transition-[width,height] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] ${compact ? "size-16" : "size-[70px]"}`}>
+              <span className={`block size-[88px] shrink-0 transition-transform duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] ${compact ? "scale-[0.76]" : "scale-100"}`}>
+                <BrandCrest compact={compact} />
               </span>
             </span>
           </Link>
@@ -786,7 +524,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               <MapPin className={`${glyph} shrink-0`} />
               {!compact && (
-                <span className="whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
+                <span className="maison-nav-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
                   {t("locateUs")}
                 </span>
               )}
@@ -902,7 +640,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               >
                 <User className={`${glyph} shrink-0`} />
                 {!compact && (
-                  <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  <span className="maison-nav-link whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
                     {t("loginSignup")}
                   </span>
                 )}
@@ -942,7 +680,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             </span>
             <span
               aria-hidden
-              className="h-[26px] w-px justify-self-center bg-ink/10"
+              className="h-[26px] w-px justify-self-center bg-gold/30"
             />
             <span
               className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}
@@ -963,24 +701,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <Menu className="size-5" />
           </button>
           <Link href="/" aria-label={t("home")} className="justify-self-center">
-            <span className="relative block size-[52px]" style={goldMaskStyle}>
-              <Image
-                src={LOGO_SRC}
-                alt="Misk Al Ghazaal"
-                width={96}
-                height={96}
-                priority
-                className="pointer-events-none size-full object-contain opacity-0"
-              />
-              <span
-                aria-hidden
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(130deg, #735114 0%, #D4AF37 35%, #FFF3C4 50%, #C59B27 72%, #6E4D14 100%)",
-                }}
-              />
-            </span>
+            <span className="block size-[52px]"><BrandCrest compact={false} /></span>
           </Link>
           <span className="flex items-center justify-end">
             <button
@@ -1149,8 +870,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         )}
 
         {/* Mobile menu overlay — staged enter/exit, staggered rows.
-            Portaled to body: `fixed` inside the smoothed content would pin
-            to the content, not the viewport (GSAP caveat). */}
+            Portaled to body so the overlay stays independent of header layers. */}
         {menuOpen &&
           createPortal(
             <div
@@ -1166,30 +886,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                   transform: `translateY(${menuEntered ? 0 : -12}px)`,
                 }}
               >
-                <span
-                  className="relative block size-[44px] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  style={{
-                    ...goldMaskStyle,
-                    opacity: menuEntered ? 1 : 0,
-                    transform: `scale(${menuEntered ? 1 : 0.6}) rotate(${menuEntered ? 0 : -30}deg)`,
-                  }}
-                >
-                  <Image
-                    src={LOGO_SRC}
-                    alt="Misk Al Ghazaal"
-                    width={44}
-                    height={44}
-                    className="pointer-events-none size-full object-contain opacity-0"
-                  />
-                  <span
-                    aria-hidden
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(130deg, #735114 0%, #D4AF37 35%, #FFF3C4 50%, #C59B27 72%, #6E4D14 100%)",
-                    }}
-                  />
-                </span>
+                <span className="block size-11"><BrandCrest compact /></span>
                 <button
                   onClick={closeMenu}
                   aria-label={t("closeMenu")}

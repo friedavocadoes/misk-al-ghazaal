@@ -63,6 +63,7 @@ export interface Note {
   name: string;
   nameAr?: string;
   color: string;
+  /** Transparent artwork URL in the products bucket; legacy icon keys use the default drawing. */
   glyph?: string;
   description?: string;
   descriptionAr?: string;

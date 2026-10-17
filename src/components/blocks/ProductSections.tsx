@@ -11,6 +11,7 @@ import { L } from "@/lib/site";
 import { pick, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { Product, Review } from "@/lib/types";
+import { NoteGlyph } from "@/components/ui/note-glyphs";
 import { ReviewForm } from "@/components/blocks/ReviewForm";
 
 function Stars({ value, className = "size-4" }: { value: number; className?: string }) {
@@ -33,47 +34,34 @@ export async function NotesBrief({ product, locale }: { product: Product; locale
   if (!product.notes.length) return null;
   const t = await getTranslations({ locale, namespace: "Product" });
   const order = ["top", "heart", "base"] as const;
-  const groups = order
-    .map((k) => ({ kind: k, items: product.notes.filter((n) => n.kind === k) }))
-    .filter((g) => g.items.length);
-  const ribbon = `linear-gradient(90deg, ${product.notes.map((n) => n.color).join(", ")})`;
-  const kindLabel = (k: string) =>
-    k === "top" ? t("noteTop") : k === "heart" ? t("noteHeart") : t("noteBase");
-
+  const kindLabel = (k: string) => k === "top" ? t("noteTop") : k === "heart" ? t("noteHeart") : t("noteBase");
   return (
-    <section className="mt-12 border-t border-ink/10 pt-10" aria-label={t("notesTitle")}>
-      <p className="eyebrow text-gold">{t("notesEyebrow")}</p>
-      <h2 className="mt-2.5 font-display text-3xl text-ink">{t("notesTitle")}</h2>
-      <div className="mt-6 h-1 w-full" style={{ background: ribbon }} aria-hidden />
-      <div className="mt-6 grid gap-8 sm:grid-cols-3">
-        {groups.map((g) => (
-          <div key={g.kind}>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-fog">
-              {kindLabel(g.kind)}
-            </p>
-            <ul className="mt-3 space-y-2.5">
-              {g.items.map((n) => (
-                <li key={n.id} className="group flex items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="size-3.5 shrink-0 rounded-full ring-1 ring-ink/15 ring-offset-2 ring-offset-cream transition-transform group-hover:scale-125"
-                    style={{ backgroundColor: n.color }}
-                  />
-                  <span className="font-display text-lg text-ink">
-                    {tx(n.name, n.nameAr, locale)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+    <section id="fragrance-notes" className="mt-14 scroll-mt-28 border-t border-ink/15 pt-10 md:mt-20" aria-labelledby="fragrance-notes-title">
+      <div className="text-center">
+        <p className="eyebrow text-gold">{t("notesEyebrow")}</p>
+        <h2 id="fragrance-notes-title" className="mt-3 font-display text-3xl text-ink md:text-4xl">{t("notesTitle")}</h2>
       </div>
-      <Link
-        href="#detailed-notes"
-        className="link-underline mt-6 inline-block text-[12px] font-semibold uppercase tracking-[0.2em] text-ink"
-      >
-        {t("notesExplore")}
-      </Link>
+      <div className="mt-9 grid grid-cols-3 divide-x divide-ink/15 border-y border-ink/15 rtl:divide-x-reverse">
+        {order.map((kind, index) => {
+          const items = product.notes.filter((n) => n.kind === kind);
+          return (
+            <div key={kind} className="min-w-0 px-2 py-7 text-center sm:px-5 md:py-10">
+              <span aria-hidden="true" className="font-display text-xs italic text-gold">0{index + 1}</span>
+              <h3 className="mt-3 text-[9px] font-medium uppercase tracking-[0.14em] text-espresso sm:text-[11px] sm:tracking-[0.24em]">{kindLabel(kind)}</h3>
+              <ul className="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-6 md:gap-x-6">
+                {items.map((n) => (
+                  <li key={n.id} className="pyramid-note flex w-full flex-col items-center gap-3 sm:w-20 md:w-24">
+                    <NoteGlyph glyph={n.glyph} className="size-16 sm:size-20 md:size-24" />
+                    <span className="text-[10px] leading-snug text-espresso sm:text-[11px]">{tx(n.name, n.nameAr, locale)}</span>
+                  </li>
+                ))}
+                {!items.length && <li className="py-8 text-xs text-fog" aria-label={locale === "ar" ? "غير محدد" : "Not specified"}>—</li>}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+      {(product.notesImageDesktop || product.notesImageMobile) && <div className="mt-6 text-center"><Link href="#detailed-notes" className="link-underline text-[10px] font-medium uppercase tracking-[0.16em] text-espresso">{t("notesExplore")}</Link></div>}
     </section>
   );
 }

@@ -490,3 +490,52 @@ html[lang="ar"] .eyebrow {
     display: none;
   }
 }
+
+/* Maison chrome: one burnished surface, one moving reflection. */
+.maison-header { box-shadow: 0 1px 0 rgb(138 109 47 / .07); transition: box-shadow .7s var(--ease-luxury); }
+.maison-header[data-compact="true"] { box-shadow: 0 6px 24px -20px rgb(28 25 23 / .25); }
+.maison-nav-link { position: relative; outline-offset: 7px; }
+.maison-nav-link::after { content: ""; position: absolute; inset-inline: 0; bottom: -7px; height: 1px; background: var(--color-gold); transform: scaleX(0); transform-origin: center; transition: transform .65s var(--ease-luxury); }
+.maison-nav-link[aria-current="page"]::after, .maison-nav-link:is(:hover, :focus-visible)::after { transform: scaleX(1); }
+.maison-header button { outline-offset: 4px; }
+.maison-header button:not(:disabled) { transition-timing-function: var(--ease-luxury); }
+.brand-crest, .brand-crest__lift { position: relative; display: block; width: 100%; height: 100%; }
+.brand-crest { isolation: isolate; }
+.brand-crest__lift { transition: transform 1s var(--ease-luxury); }
+.brand-crest__image { width: 100%; height: 100%; object-fit: contain; }
+.brand-crest__metal { display: none; }
+@supports (mask-image: url("/mag.webp")) or (-webkit-mask-image: url("/mag.webp")) {
+  .brand-crest__image { opacity: 0; }
+  .brand-crest__metal { display: block; position: absolute; inset: 0; overflow: hidden; background: #947132; mask: url("/mag.webp") center / contain no-repeat; -webkit-mask: url("/mag.webp") center / contain no-repeat; }
+  .brand-crest__metal::after { content: ""; position: absolute; inset: 0; opacity: .14; background: linear-gradient(135deg, #533d1b, #e0c68a 48%, #73551f); transition: opacity 1s var(--ease-luxury); }
+}
+.brand-crest__reflection { position: absolute; inset: -25% -70%; background: linear-gradient(112deg, transparent 33%, rgb(252 235 190 / .08) 42%, rgb(255 248 221 / .72) 49%, rgb(252 235 190 / .08) 56%, transparent 65%); transform: translateX(-65%); animation: crest-reflection 12s ease-in-out infinite; transition: opacity .8s ease; }
+.brand-crest[data-compact="true"] .brand-crest__reflection { animation-play-state: paused; opacity: 0; }
+.brand-crest[data-compact="true"] .brand-crest__metal::after { opacity: .06; }
+@media (hover: hover) {
+  a:is(:hover, :focus-visible) > .brand-crest .brand-crest__lift,
+  a:is(:hover, :focus-visible) .brand-crest__lift { transform: translateY(-1px) rotate(-.8deg) scale(1.025); }
+  a:is(:hover, :focus-visible) .brand-crest__metal::after { opacity: .4; }
+}
+@keyframes crest-reflection { 0%, 8% { transform: translateX(-65%); } 75%, 100% { transform: translateX(65%); } }
+/* Artwork remains on a light ground so ink drawings and original colors stay legible. */
+.atelier-note { outline-offset: -3px; }
+.atelier-note__mark { opacity: 0; transition: opacity .3s ease; }
+.atelier-note__art { transition: transform .7s var(--ease-luxury); }
+.atelier-note[data-selected="true"] { background: #e6ddcc; box-shadow: inset 0 0 0 1px #8a6d2f; }
+.atelier-note[data-selected="true"] .atelier-note__mark { opacity: 1; }
+.atelier-note:not(:disabled):is(:hover, :focus-visible) .atelier-note__art { transform: translateY(-3px); }
+.atelier-arrow { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border: 1px solid transparent; cursor: pointer; transition: border-color .3s ease; }
+.atelier-arrow:hover { border-color: rgb(28 25 23 / .25); }
+.atelier-arrow:disabled { opacity: .25; cursor: default; }
+.atelier-button { display: flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; padding: 10px 8px; font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background-color .4s ease, border-color .4s ease; }
+.atelier-result { animation: atelier-reveal .55s var(--ease-luxury) both; }
+@keyframes atelier-reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.pyramid-note > span:first-child { transition: transform .7s var(--ease-luxury); }
+.pyramid-note:hover > span:first-child { transform: translateY(-4px); }
+.glyph-upload-preview { background-color: #faf7f1; background-image: conic-gradient(#e9e1d2 25%, transparent 0 50%, #e9e1d2 0 75%, transparent 0); background-size: 16px 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .brand-crest__reflection, .atelier-result { animation: none; }
+  .brand-crest__reflection { opacity: 0; }
+  .brand-crest__lift, .brand-crest__metal::after, .maison-nav-link::after, .atelier-note__art, .pyramid-note > span:first-child { transition: none; transform: none !important; }
+}
