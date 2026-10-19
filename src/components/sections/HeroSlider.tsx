@@ -15,6 +15,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
+  const [videoTiming, setVideoTiming] = useState({ duration: 0, time: 0, rev: 0 });
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)");
@@ -30,20 +31,27 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   useEffect(() => {
     videos.current.forEach((video, index) => {
       if (!video) return;
-      if (index === active && !paused && !reduced) {
+      if (index === active) {
         if (video.ended) video.currentTime = 0;
-        void video.play().catch(() => undefined);
+        setVideoTiming((prev) => ({ duration: Number.isFinite(video.duration) ? video.duration : 0, time: video.currentTime || 0, rev: prev.rev + 1 }));
+        if (!paused && !reduced) void video.play().catch(() => undefined);
+        else video.pause();
       } else video.pause();
     });
   }, [active, paused, reduced]);
   if (!slides.length) return null;
+  const syncVideo = (video: HTMLVideoElement, current: boolean) => {
+    if (current && Number.isFinite(video.duration) && video.duration > 0) {
+      setVideoTiming((prev) => ({ duration: video.duration, time: video.currentTime, rev: prev.rev + 1 }));
+    }
+  };
   return <section className="fullscreen-hero" data-home-hero aria-label="Featured" aria-roledescription="carousel">
     {slides.map((slide, index) => {
       const current = active === index;
       const title = tx(slide.title || "", slide.titleAr, locale);
       const cta = tx(slide.cta || "", slide.ctaAr, locale);
       return <div key={slide.id || slide.src + index} className="hero-dissolve-slide" data-active={current} aria-hidden={!current} inert={!current}>
-        {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
+        {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onLoadedMetadata={(e) => syncVideo(e.currentTarget, current)} onDurationChange={(e) => syncVideo(e.currentTarget, current)} onSeeked={(e) => syncVideo(e.currentTarget, current)} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
         <div className="hero-legibility" />
         <div className={`hero-copy ${slide.align === "center" ? "hero-copy-center" : ""}`}>
           {title && <h2>{title}</h2>}
@@ -52,7 +60,10 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       </div>;
     })}
     <div className="hero-controls">
-      <div className="hero-indicators" role="group" aria-label="Slides">{slides.map((slide, index) => <button key={slide.id || index} type="button" aria-label={`${t("next")} ${index + 1} / ${slides.length}`} aria-current={index === active ? "true" : undefined} onClick={() => setActive(index)}><span>{index === active && <i key={`${active}-${paused}-${reduced}`} style={{ animationPlayState: paused || reduced ? "paused" : "running" }} />}</span></button>)}</div>
+      <div className="hero-indicators" role="group" aria-label="Slides">{slides.map((slide, index) => {
+        const activeVideo = index === active && isVideo(slide.src);
+        return <button key={slide.id || index} type="button" aria-label={`${t("next")} ${index + 1} / ${slides.length}`} aria-current={index === active ? "true" : undefined} onClick={() => setActive(index)}><span>{index === active && <i key={`${active}-${paused}-${reduced}-${activeVideo ? videoTiming.rev : 0}`} style={{ ...(activeVideo ? (videoTiming.duration > 0 ? { animationDuration: `${videoTiming.duration}s`, animationDelay: `-${videoTiming.time}s` } : { animationName: "none" }) : undefined), animationPlayState: paused || reduced ? "paused" : "running" }} />}</span></button>;
+      })}</div>
       <button className="hero-pause" type="button" aria-pressed={paused} onClick={() => setPaused(!paused)} aria-label={paused ? (locale === "ar" ? "تشغيل العرض" : "Play slideshow") : (locale === "ar" ? "إيقاف العرض" : "Pause slideshow")}>{paused ? <Play aria-hidden="true" className="size-3.5" /> : <Pause aria-hidden="true" className="size-3.5" />}</button>
     </div>
   </section>;
