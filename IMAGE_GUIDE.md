@@ -29,3 +29,7 @@ Homepage hero and lower content stream separately; individual CMS sections also 
 The branded reveal uses a small crest and CSS, waits for the first hero image decode and fonts, and releases after at most 3.5 seconds plus a fade. CSS independently releases it if hydration fails; no-JavaScript visitors see the page directly. No fake percentage, forced minimum duration, bot detection or crawler-specific content. Server-rendered text, links and structured data remain present. A visual overlay can affect perceived speed/LCP; verify real production Core Web Vitals after final artwork is uploaded.
 
 Measure cold and warm visits on the production host with mobile network/CPU throttling. Development timings are not production performance claims. Inspect LCP, INP, CLS and transferred bytes on home, collection, PDP, cart and checkout. Do not claim universal instant loading: origin latency, device speed and customer bandwidth still matter.
+
+## Automatic upload conversion
+
+All application image uploads convert to lossless WebP before Supabase Storage. Dimensions and transparency are retained; EXIF orientation is applied. Existing WebP uploads are kept without another encoding pass. Lossless conversion does not restore detail already lost in a JPEG and can produce a larger file than its source; export to the dimensions above before uploading. PDF invoices are not images and remain PDF. Existing stored sample assets are not automatically migrated.

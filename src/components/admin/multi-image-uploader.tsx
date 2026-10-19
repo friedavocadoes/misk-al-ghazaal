@@ -1,5 +1,7 @@
 "use client";
 
+import { imageAsWebp } from "@/lib/image-conversion";
+
 import { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Loader2, UploadCloud, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -44,10 +46,11 @@ export function MultiImageUploader({
       const urls: string[] = [];
       for (const file of picked.slice(0, room)) {
         if (file.size > MAX_MB * 1024 * 1024) throw new Error(`${file.name}: max ${MAX_MB}MB.`);
-        const ext = file.name.split(".").pop()?.toLowerCase() || "webp";
+        const converted = await imageAsWebp(file);
+        const ext = "webp";
         const path = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}.${ext}`;
-        const { error: upError } = await supabase.storage.from(bucket).upload(path, file, {
-          contentType: file.type,
+        const { error: upError } = await supabase.storage.from(bucket).upload(path, converted, {
+          contentType: "image/webp",
           upsert: false,
         });
         if (upError) throw upError;

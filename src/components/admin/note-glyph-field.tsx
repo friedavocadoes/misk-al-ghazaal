@@ -1,5 +1,7 @@
 "use client";
 
+import { imageAsWebp } from "@/lib/image-conversion";
+
 import { useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Loader2, Upload } from "lucide-react";
@@ -38,10 +40,11 @@ export function NoteGlyphField({ initial, noteId = "new" }: { initial?: string |
     if (file.size > 2 * 1024 * 1024) { setError("Artwork must be 2 MB or smaller."); return; }
     setBusy(true);
     try {
-      const ext = file.type.split("/")[1];
+      const converted = await imageAsWebp(file);
+      const ext = "webp";
       const path = `note-glyphs/${noteId}-${crypto.randomUUID()}.${ext}`;
       const sb = createClient();
-      const { error: failure } = await sb.storage.from("products").upload(path, file, { contentType: file.type, upsert: false });
+      const { error: failure } = await sb.storage.from("products").upload(path, converted, { contentType: "image/webp", upsert: false });
       if (failure) throw failure;
       commit(sb.storage.from("products").getPublicUrl(path).data.publicUrl);
     } catch (e) { setError(e instanceof Error ? e.message : "Upload failed. Try again."); }

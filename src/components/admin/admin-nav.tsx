@@ -26,7 +26,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/lineups", label: "Lineups" },
       { href: "/admin/notes", label: "Notes" },
       { href: "/admin/rituals", label: "Rituals" },
-      { href: "/admin/banners", label: "Banners" },
+      { href: "/admin/banners", label: "Banners + menu artwork" },
     ],
   },
   {

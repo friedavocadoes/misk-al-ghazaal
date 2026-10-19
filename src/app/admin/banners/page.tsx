@@ -1,3 +1,5 @@
+import sharp from "sharp";
+import { cleanupBannerArt } from "@/lib/banner-storage";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -19,10 +21,32 @@ async function createBanner(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  let src = String(formData.get("src") ?? "");
+  const heroId = String(formData.get("hero_id") ?? "");
+  if (heroId && formData.get("slot") === "navigation") {
+    const { data: hero, error: lookupError } = await supabase.from("banners").select("src").eq("id", heroId).eq("slot", "hero").is("deleted_at", null).single();
+    if (lookupError || !hero) throw new Error("Hero image not found.");
+    let bytes: Buffer;
+    const path = hero.src.split("/storage/v1/object/public/banners/")[1];
+    if (path) {
+      const { data, error } = await supabase.storage.from("banners").download(decodeURIComponent(path));
+      if (error || !data) throw new Error("Could not copy hero artwork.");
+      bytes = Buffer.from(await data.arrayBuffer());
+    } else if (hero.src.startsWith("/") && !hero.src.includes("..")) {
+      const { readFile } = await import("node:fs/promises");
+      const { join } = await import("node:path");
+      bytes = await readFile(join(process.cwd(), "public", hero.src));
+    } else throw new Error("Upload this hero artwork directly to create a menu banner.");
+    const output = await sharp(bytes, { limitInputPixels: 40_000_000 }).rotate().webp({ lossless: true }).toBuffer();
+    const copyPath = `navigation-${crypto.randomUUID()}.webp`;
+    const { error } = await supabase.storage.from("banners").upload(copyPath, output, { contentType: "image/webp" });
+    if (error) throw error;
+    src = supabase.storage.from("banners").getPublicUrl(copyPath).data.publicUrl;
+  }
   const { error } = await supabase.from("banners").insert({
     slot: String(formData.get("slot") ?? "hero"),
     sort: Number(formData.get("sort") ?? 0),
-    src: String(formData.get("src") ?? ""),
+    src,
     fallback: text(formData, "fallback") ?? "",
     alt: String(formData.get("alt") ?? formData.get("title") ?? "Banner"),
     title: text(formData, "title"),
@@ -35,7 +59,7 @@ async function createBanner(formData: FormData) {
     cta_ar: text(formData, "cta_ar"),
     href: text(formData, "href"),
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(error.code === "23514" ? "Enable navigation banners by applying supabase/migration_navigation_banners.sql in Supabase SQL Editor." : error.message);
   await logAdmin(supabase, s, {
     category: "banners",
     action: "create",
@@ -55,8 +79,16 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
+  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
+  if (doomed?.slot === "navigation") {
+    const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
+    if (error) throw error;
+    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback]);
+    revalidatePath("/admin/banners"); revalidateNavigation();
+    await logAdmin(supabase, s, { category: "banners", action: "delete", entity: "banner", entityId: String(formData.get("id")), summary: "Deleted menu banner and unused artwork" });
+    return;
+  }
   const { error } = await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })
@@ -116,6 +148,11 @@ export default async function BannersPage() {
           </div>
         </div>
 
+        <section id="navigation" className="mt-8 border border-ink/15 bg-white p-6">
+          <h2 className="font-display text-2xl">Shop menu banners</h2>
+          <p className="my-3 text-sm text-ink/60">Upload artwork or copy a hero image. The first two by Order appear on the right of Shop With Us and in the mobile menu. Recommended: 800 × 1000 px. Deleting a menu banner permanently removes its unused uploaded artwork.</p>
+          <BannerCreateButton create={createBanner} initialSlot="navigation" heroes={rows.filter((row) => row.slot === "hero")} />
+        </section>
         {rows.length === 0 ? (
           <p className="mt-6 border border-ink/10 bg-white p-4 text-sm">
             No banners — run <code>supabase/seed.sql</code> or add one below.

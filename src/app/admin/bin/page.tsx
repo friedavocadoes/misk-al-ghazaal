@@ -1,3 +1,4 @@
+import { cleanupBannerArt } from "@/lib/banner-storage";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -70,11 +71,9 @@ async function destroyItem(formData: FormData) {
       .select("src, fallback")
       .eq("id", String(formData.get("id")))
       .single();
-    const paths = [b?.src, b?.fallback]
-      .filter((u): u is string => typeof u === "string")
-      .map((u) => u.match(/\/storage\/v1\/object\/public\/banners\/(.+)$/)?.[1])
-      .filter((p): p is string => !!p);
-    if (paths.length) await supabase.storage.from("banners").remove(paths);
+    const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
+    if (error) throw error;
+    await cleanupBannerArt(supabase, [b?.src, b?.fallback].filter((url): url is string => typeof url === "string"));
   }
   await supabase.from(table).delete().eq("id", String(formData.get("id")));
   await logAdmin(supabase, s, {

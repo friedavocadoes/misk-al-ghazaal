@@ -1,5 +1,7 @@
 "use client";
 
+import { imageAsWebp } from "@/lib/image-conversion";
+
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -23,12 +25,13 @@ export function ImageUploader({
     try {
       if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
       if (file.size > 3 * 1024 * 1024) throw new Error("Max 3MB per image.");
-      const ext = file.name.split(".").pop()?.toLowerCase() || "webp";
+      const converted = await imageAsWebp(file);
+      const ext = "webp";
       // eslint-disable-next-line react-hooks/purity -- event handler, not render
       const path = `${prefix}-${Date.now()}.${ext}`;
       const supabase = createClient();
-      const { error: upError } = await supabase.storage.from(bucket).upload(path, file, {
-        contentType: file.type,
+      const { error: upError } = await supabase.storage.from(bucket).upload(path, converted, {
+        contentType: "image/webp",
         upsert: false,
       });
       if (upError) throw upError;

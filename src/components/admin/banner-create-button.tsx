@@ -9,14 +9,17 @@ import { toast } from "./admin-form";
 /** Top-of-page creation: full banner form + direct artboard upload in a
     modal (supports both `hero` minimalist slides and `brand` world cards). */
 export function BannerCreateButton({
-  create,
+  create, initialSlot = "hero", heroes = [],
 }: {
+  initialSlot?: "hero" | "brand" | "navigation";
+  heroes?: { id: string; title: string | null; src: string }[];
   create: (formData: FormData) => Promise<void>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [slot, setSlot] = useState<"hero" | "brand" | "navigation">("hero");
+  const [slot, setSlot] = useState<"hero" | "brand" | "navigation">(initialSlot);
+  const [heroId, setHeroId] = useState("");
   const [src, setSrc] = useState("");
   const [fallback, setFallback] = useState("");
 
@@ -29,6 +32,7 @@ export function BannerCreateButton({
       toast("Banner published", "ok");
       setOpen(false);
       setSrc("");
+      setHeroId("");
       setFallback("");
       router.refresh();
     } catch (err) {
@@ -47,7 +51,7 @@ export function BannerCreateButton({
         onClick={() => setOpen(true)}
         className="flex shrink-0 cursor-pointer items-center gap-2 bg-ink px-5 py-2.5 text-sm text-white transition hover:bg-ink/85"
       >
-        <Plus className="size-4" /> New banner
+        <Plus className="size-4" /> {initialSlot === "navigation" ? "Add menu banner" : "New banner"}
       </button>
 
       {open && (
@@ -97,6 +101,13 @@ export function BannerCreateButton({
               </label>
 
               <div className="md:col-span-2">
+                {slot === "navigation" && <label className="mb-4 block">Reuse a homepage hero image
+                  <select className={field} value={heroId} onChange={(event) => { setHeroId(event.target.value); setSrc(heroes.find((hero) => hero.id === event.target.value)?.src || ""); }}>
+                    <option value="">Upload a new image instead</option>
+                    {heroes.map((hero) => <option key={hero.id} value={hero.id}>{hero.title || "Untitled hero"}</option>)}
+                  </select>
+                  <input type="hidden" name="hero_id" value={heroId} />
+                </label>}
                 <p className="mb-1 text-sm font-medium">Artwork * — navigation: 800 × 1000 px recommended (4:5)</p>
                 {src ? (
                   <img
@@ -110,7 +121,7 @@ export function BannerCreateButton({
                   </div>
                 )}
                 <div className="mt-2">
-                  <ImageUploader bucket="banners" prefix="banner" onUploaded={setSrc} />
+                  <ImageUploader bucket="banners" prefix="banner" onUploaded={(url) => { setHeroId(""); setSrc(url); }} />
                 </div>
                 <input type="hidden" name="src" value={src} />
               </div>

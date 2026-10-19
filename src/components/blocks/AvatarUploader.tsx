@@ -1,5 +1,7 @@
 "use client";
 
+import { imageAsWebp } from "@/lib/image-conversion";
+
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
@@ -49,11 +51,12 @@ export function AvatarUploader({
     try {
       if (!file.type.startsWith("image/")) throw new Error("JPG or PNG only.");
       if (file.size > 3 * 1024 * 1024) throw new Error("Max 3MB.");
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const converted = await imageAsWebp(file);
+      const ext = "webp";
       const path = `${userId}/${Date.now()}.${ext}`;
       const sb = createBrowserClient();
-      const { error: upError } = await sb.storage.from("avatars").upload(path, file, {
-        contentType: file.type,
+      const { error: upError } = await sb.storage.from("avatars").upload(path, converted, {
+        contentType: "image/webp",
         upsert: true,
       });
       if (upError) throw upError;

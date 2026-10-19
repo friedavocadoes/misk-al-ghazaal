@@ -1,3 +1,4 @@
+import { cleanupBannerArt } from "@/lib/banner-storage";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -60,9 +61,10 @@ async function revalidateHomeAction(bannerId: string, field: "src" | "fallback",
   const supabase = await createClient();
   if (field !== "src" && field !== "fallback") throw new Error("Invalid artwork field");
   if (url && !/^(\/(?!\/)|https:\/\/)/.test(url)) throw new Error("Use a local path or HTTPS image URL");
+  const { data: previous } = await supabase.from("banners").select("src, fallback").eq("id", bannerId).single();
   const { error } = await supabase.from("banners").update({ [field]: url }).eq("id", bannerId);
   if (error) throw new Error(error.message);
-  const { data: b } = await supabase.from("banners").select("slot, title").eq("id", bannerId).single();
+  const { data: b } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", bannerId).single();
   const row = (b ?? {}) as { slot?: string; title?: string | null };
   await logAdmin(supabase, s, {
     category: "banners",
@@ -73,6 +75,7 @@ async function revalidateHomeAction(bannerId: string, field: "src" | "fallback",
     summary: `Updated banner artwork (${field})`,
     details: { banner_id: bannerId, field },
   });
+  await cleanupBannerArt(supabase, [previous?.[field]].filter((value): value is string => !!value));
   revalidatePath(`/admin/banners/${bannerId}`);
   revalidateHome();
   revalidateNavigation();
@@ -83,8 +86,15 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
+  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
+  if (doomed?.slot === "navigation") {
+    const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
+    if (error) throw error;
+    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback]);
+    await logAdmin(supabase, s, { category: "banners", action: "delete", entity: "banner", entityId: String(formData.get("id")), summary: "Deleted menu banner and unused artwork" });
+    revalidateNavigation(); revalidatePath("/admin/banners"); redirect("/admin/banners");
+  }
   const { error } = await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })

@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -138,10 +139,14 @@ async function uploadInvoice(formData: FormData) {
   if (!okType || file.size > 5 * 1024 * 1024) return;
   const supabase = await createClient();
   const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-80) || "invoice";
-  const storagePath = `${id}/${Date.now()}-${safe}`;
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  const isImage = file.type.startsWith("image/");
+  const storagePath = `${id}/${Date.now()}-${isImage ? safe.replace(/\.[^.]+$/, "") + ".webp" : safe}`;
+  const source = Buffer.from(await file.arrayBuffer());
+  const bytes = isImage && file.type !== "image/webp"
+    ? await sharp(source, { limitInputPixels: 40_000_000 }).rotate().webp({ lossless: true }).toBuffer()
+    : source;
   const { error } = await supabase.storage.from("invoices").upload(storagePath, bytes, {
-    contentType: file.type,
+    contentType: isImage ? "image/webp" : file.type,
     upsert: false,
   });
   if (error) return;

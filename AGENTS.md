@@ -178,3 +178,8 @@ This section and the corrected entries above supersede historical implementation
 - SafeImage optimizes local and Supabase images, preserving direct delivery for other external hosts. Note uploads also use responsive optimization. Keep the first hero image prioritized and other images lazy.
 - HomeArrival is a visual overlay only: decode first hero + fonts, no minimum duration, 3.5-second timeout and independent CSS release, no-JS bypass. Content/SEO remain server rendered. No bot-specific treatment or persistent loading gate.
 - getProductsByCollection/getCollections/getNavigationBanners use React request-scoped cache; no cross-request price/stock caching was added.
+
+## 11. Upload conversion and menu artwork (2026-10-19)
+
+- Admin → Catalog → Banners + menu artwork has a dedicated Shop menu banners panel. Add menu banner supports new uploads or hero selection (independent stored WebP copy). Navigation deletion is permanent and removes unreferenced Storage artwork; hero/brand deletion still uses the bin. Shared banner URLs are checked before removal, including bin rows and homepage config. Apply migration_navigation_banners.sql if navigation slot CHECK is not installed.
+- All five Storage upload paths now convert images to WebP before Storage: shared image uploader, multi-product uploader, glyph uploader, shopper avatar and invoice image action. Browser flows call imageAsWebp → authenticated /api/images/convert using Sharp lossless, preserving dimensions/alpha and orientation; existing valid WebP bytes are kept. PDF invoices remain PDF. No reprocessing of existing sample files. Lossless WebP may be larger than a lossy source; no claim of recovering detail lost in source JPEGs.
