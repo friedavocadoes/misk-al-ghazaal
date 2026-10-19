@@ -151,7 +151,7 @@ export default async function BannersPage() {
         <section id="navigation" className="mt-8 border border-ink/15 bg-white p-6">
           <h2 className="font-display text-2xl">Shop menu banners</h2>
           <p className="my-3 text-sm text-ink/60">Upload artwork or copy a hero image. The first two by Order appear on the right of Shop With Us and in the mobile menu. Recommended: 800 × 1000 px. Deleting a menu banner permanently removes its unused uploaded artwork.</p>
-          <BannerCreateButton create={createBanner} initialSlot="navigation" heroes={rows.filter((row) => row.slot === "hero")} />
+          <BannerCreateButton create={createBanner} initialSlot="navigation" heroes={rows.filter((row) => row.slot === "hero" && !/\.mp4$/i.test(row.src))} />
         </section>
         {rows.length === 0 ? (
           <p className="mt-6 border border-ink/10 bg-white p-4 text-sm">
@@ -162,7 +162,7 @@ export default async function BannersPage() {
             {rows.map((b) => (
               <article key={b.id} className="admin-card border border-ink/10 bg-white">
                 {/* plain img: admin preview, skip next/image optimization */}
-                {b.src && (
+                {/\.mp4$/i.test(b.src) ? <video src={b.src} muted controls preload="metadata" className="aspect-video w-full object-cover" /> : b.src && (
                   <img
                     src={b.src}
                     alt={b.title ?? ""}

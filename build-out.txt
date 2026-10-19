@@ -1,0 +1,115 @@
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env
+⚠ Warning: Next.js ignored package-lock.json in C:\Users\g because it is outside the current Git repository (C:\Users\g\Downloads\gazaal).
+ To use this directory, set `turbopack.root` in your Next.js config.
+
+✓ Running next.config.ts took 4.6s
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.3s
+  Running TypeScript ...
+  Finished TypeScript in 18.9s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/242) ...
+  Generating static pages using 11 workers (60/242) 
+  Generating static pages using 11 workers (120/242) 
+  Generating static pages using 11 workers (181/242) 
+Failed to build /[locale]/(storefront)/blog/[slug]/page: /ar/blog/how-to-apply-bakhoor-at-home (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/blog/page: /en/blog (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/gazaal-my-wish-edp-100ml (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/sugar-wood (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/white-mood-eau-de-parfum-100ml-unisex (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/gazaal-chancellor-edp-100ml (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /ar/product/noorjes-luxury-le-don-ea-de-parfum-100ml (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+  Generating static pages using 11 workers (219/242) 
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/white-mood-eau-de-parfum-100ml-unisex (attempt 2 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/m05 (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /ar/product/al-aqeedha-from-misk-al-ghazal-best-bakhoor (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+Failed to build /[locale]/(storefront)/product/[slug]/page: /en/product/mubakhar-misk-al-khaleej (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+  Generating static pages using 11 workers (240/242) 
+✓ Generating static pages using 11 workers (242/242) in 3.2min
+Failed to build /[locale]/(storefront)/product/[slug]/page: /ar/product/originales-ambrato (attempt 1 of 3) because it took more than 60 seconds. Retrying again shortly.
+  Generating static pages using 11 workers (252/242) 
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /_not-found
+├ ƒ /[locale]
+├ ƒ /[locale]/[slug]
+├ ƒ /[locale]/account
+├ ƒ /[locale]/account/coupons
+├ ƒ /[locale]/account/forgot
+├ ƒ /[locale]/account/login
+├ ƒ /[locale]/account/notifications
+├ ƒ /[locale]/account/orders
+├ ƒ /[locale]/account/orders/[id]
+├ ƒ /[locale]/account/password
+├ ƒ /[locale]/account/register
+├ ƒ /[locale]/account/reset
+├ ƒ /[locale]/account/settings
+├ ƒ /[locale]/account/wishlist
+├ ƒ /[locale]/blog
+├ ƒ /[locale]/blog/[slug]
+├ ƒ /[locale]/cart
+├ ƒ /[locale]/checkout
+├ ƒ /[locale]/collection/[slug]
+├ ƒ /[locale]/collections
+├ ƒ /[locale]/collections/[slug]
+├ ƒ /[locale]/locate-us
+├ ƒ /[locale]/pages/[slug]
+├ ƒ /[locale]/private-label
+├ ƒ /[locale]/product/[slug]
+├ ƒ /[locale]/search
+├ ƒ /admin
+├ ƒ /admin/banners
+├ ƒ /admin/banners/[id]
+├ ƒ /admin/bin
+├ ƒ /admin/countries
+├ ƒ /admin/coupons
+├ ƒ /admin/coupons/[id]
+├ ƒ /admin/emails/hello
+├ ƒ /admin/homepage
+├ ƒ /admin/homepage/[id]
+├ ƒ /admin/lineups
+├ ○ /admin/login
+├ ƒ /admin/logs
+├ ƒ /admin/logs/[id]
+├ ƒ /admin/notes
+├ ƒ /admin/orders
+├ ƒ /admin/orders/[id]
+├ ƒ /admin/products
+├ ƒ /admin/products/[id]
+├ ƒ /admin/products/new
+├ ƒ /admin/promo
+├ ƒ /admin/promo/[id]
+├ ƒ /admin/referrals
+├ ƒ /admin/reviews
+├ ƒ /admin/rituals
+├ ƒ /admin/rituals/[id]
+├ ƒ /admin/seo
+├ ƒ /admin/seo/edit
+├ ƒ /admin/users
+├ ƒ /api/account/profile
+├ ƒ /api/admin/edit-target
+├ ƒ /api/admin/log
+├ ƒ /api/auth/ensure
+├ ƒ /api/catalog
+├ ƒ /api/checkout
+├ ƒ /api/countries
+├ ƒ /api/coupons
+├ ƒ /api/images/convert
+├ ƒ /api/order-issue
+├ ƒ /api/orders/[id]/invoice
+├ ƒ /api/products
+├ ƒ /api/quote
+├ ƒ /api/reviews
+├ ƒ /api/search/suggest
+├ ƒ /auth/callback
+└ ○ /robots.txt
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

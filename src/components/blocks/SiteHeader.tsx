@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import { BrandCrest } from "@/components/blocks/BrandCrest";
 import gsap from "gsap";
+import { hasTransparentHeader } from "@/lib/header-style";
 import type { Banner } from "@/lib/types";
 import { NavigationCampaigns } from "./NavigationCampaigns";
 import {
@@ -51,6 +52,8 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
   const tAcc = useTranslations("Account");
   const router = useRouter();
   const pathname = usePathname();
+  const [headerHovered, setHeaderHovered] = useState(false);
+  const transparentPage = hasTransparentHeader(pathname);
   const [compact, setCompact] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const suggestRef = useRef<SearchSuggestHandle>(null);
@@ -71,13 +74,13 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
     const content = document.getElementById("page-content");
     if (!header || !content) return;
     const sync = () => {
-      content.style.paddingTop = `${header.offsetHeight}px`;
+      content.style.paddingTop = transparentPage ? "0px" : `${header.offsetHeight}px`;
     };
     sync();
     const ro = new ResizeObserver(sync);
     ro.observe(header);
     return () => ro.disconnect();
-  }, []);
+  }, [transparentPage]);
   const [shopEntered, setShopEntered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuEntered, setMenuEntered] = useState(false);
@@ -426,7 +429,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
       className="maison-nav-link maison-stacked-link inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
     >
       {labelFor(key)}
-      {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
+      {key === "shop" && <ChevronDown className="size-3 shrink-0 text-current" />}
     </Link>
   );
 
@@ -456,6 +459,12 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
     <header
       id="site-header"
       data-compact={compact}
+      data-transparent-page={transparentPage}
+      data-overlay={transparentPage && !compact && !headerHovered && !shopOpen && !searchOpen && !accountOpen && !langOpen}
+      onMouseEnter={() => setHeaderHovered(true)}
+      onMouseLeave={() => setHeaderHovered(false)}
+      onFocusCapture={() => setHeaderHovered(true)}
+      onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHeaderHovered(false); }}
       className="maison-header fixed inset-x-0 top-0 z-50 border-b border-ink/10 [overflow-anchor:none]"
     >
       {/* Background layers: soft gradient at top → light blur when compact.

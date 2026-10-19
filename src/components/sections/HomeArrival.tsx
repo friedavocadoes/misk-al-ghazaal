@@ -12,8 +12,13 @@ export function HomeArrival() {
     const reveal = () => { if (!disposed) overlay.dataset.ready = "true"; };
     const hero = document.querySelector<HTMLImageElement>('[data-home-hero] img');
     const imageReady = hero ? hero.decode().catch(() => undefined) : Promise.resolve();
+    const video = document.querySelector<HTMLVideoElement>("[data-home-hero] video");
+    const videoReady = video && video.readyState < 2 ? new Promise<void>((resolve) => {
+      video.addEventListener("loadeddata", () => resolve(), { once: true });
+      video.addEventListener("error", () => resolve(), { once: true });
+    }) : Promise.resolve();
     const logo = overlay.querySelector("img");
-    Promise.all([imageReady, document.fonts.ready, logo?.decode().catch(() => undefined)]).then(reveal);
+    Promise.all([imageReady, videoReady, document.fonts.ready, logo?.decode().catch(() => undefined)]).then(reveal);
     const timeout = window.setTimeout(reveal, 3500);
     return () => { disposed = true; window.clearTimeout(timeout); };
   }, []);
