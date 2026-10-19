@@ -545,7 +545,7 @@ html[lang="ar"] .eyebrow {
 .maison-header > span { display: none; }
 .maison-masthead { padding-inline: clamp(24px, 4vw, 72px); }
 .maison-signature { gap: 18px; }
-.maison-wordmark { display: flex; flex-direction: column; align-items: center; overflow: hidden; width: 265px; opacity: 1; transition: width .6s var(--ease-luxury), opacity .35s, transform .6s var(--ease-luxury); }
+.maison-wordmark { display: flex; flex-direction: column; align-items: center; overflow: hidden; width: 275px; opacity: 1; transition: width .6s var(--ease-luxury), opacity .35s, transform .6s var(--ease-luxury); }
 .maison-wordmark > span { flex-shrink: 0; font-family: var(--font-display); font-size: 32px; letter-spacing: -.025em; white-space: nowrap; }
 .maison-wordmark small { font-size: 9px; letter-spacing: .32em; color: #bd9847; }
 .maison-header[data-compact="true"] .maison-wordmark { width: 0; max-height: 64px; opacity: 0; transform: translateY(-8px); }
@@ -560,7 +560,7 @@ html[lang="ar"] .eyebrow {
 .maison-shop-link:hover { color: #8a6d2f; transform: translateX(3px); }
 .maison-mobile-bar { min-height: 72px; }
 @media (min-width:1024px) and (max-width:1279px) {
- .maison-wordmark { width: 220px; }
+ .maison-wordmark { width: 240px; }
  .maison-wordmark > span { font-size: 27px; }
  .maison-masthead { padding-inline: 24px; }
  .maison-masthead > div > span:has(.maison-inline-link) { gap: 16px; padding-inline: 12px; }

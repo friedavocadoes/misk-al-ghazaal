@@ -541,7 +541,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                 <BrandCrest compact={compact} />
               </span>
             </span>
-            <span className="maison-wordmark" aria-hidden="true"><span>Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PERFUMES"}</small></span>
+            <span className="maison-wordmark" aria-hidden="true"><span>MISK AL GHAZAAL</span><small>{locale === "ar" ? "دار العطور" : "PERFUMES"}</small></span>
           </Link>
 
           <div className="maison-utilities flex items-center justify-end">
