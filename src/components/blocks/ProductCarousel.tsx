@@ -111,12 +111,12 @@ export async function ProductTabs({
         align="center"
       />
       <Tabs defaultValue={tabs[0]?.value} className="mt-4">
-        <TabsList className="mx-auto flex w-fit justify-center border-b border-ink/10 bg-transparent p-0">
+        <TabsList className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-x-2 gap-y-0 border-b border-ink/10 bg-transparent p-0">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.24em] data-[state=active]:border-b-2 data-[state=active]:border-gold data-[state=active]:text-ink"
+              className="px-3 py-3 text-[10px] sm:px-6 sm:text-[11px] font-semibold uppercase tracking-[0.24em] data-[state=active]:border-b-2 data-[state=active]:border-gold data-[state=active]:text-ink"
             >
               {tab.label}
             </TabsTrigger>

@@ -570,3 +570,35 @@ html[lang="ar"] .eyebrow {
 }
 
 html[lang="ar"] .maison-stacked-link { font-family: var(--font-arabic), sans-serif; }
+
+/* Mobile maison: a quiet lockup and an inset, paper-like navigation drawer. */
+@media (max-width: 1023px) {
+ .maison-mobile-bar { grid-template-columns: 44px minmax(0,1fr) 80px; padding-inline: 12px; min-height: 76px; }
+ .mobile-brand-lockup { display:flex; align-items:center; gap:8px; min-width:0; }
+ .mobile-brand-lockup > span:first-child { flex-shrink:0; }
+ .mobile-brand-name { display:flex; flex-direction:column; gap:5px; }
+ .mobile-brand-name > span { font-size:16px; white-space:nowrap; letter-spacing:-.04em; }
+ .mobile-brand-name small { font-size:7px; letter-spacing:.26em; color:var(--color-gold); }
+ .mobile-menu-lines { display:flex; flex-direction:column; justify-content:center; gap:6px; width:22px; height:24px; }
+ .mobile-menu-lines span { height:1px; width:22px; background:currentColor; transition:width .3s; }
+ .mobile-menu-lines span:last-child { width:15px; }
+ .mobile-menu-toggle:hover .mobile-menu-lines span:last-child { width:22px; }
+ .mobile-navigation-panel { width:min(420px, calc(100% - 24px)); box-shadow:16px 0 60px rgb(28 25 23 / .15); transform:translateX(-103%); transition:transform .5s var(--ease-luxury); padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+ .mobile-navigation-panel[data-entered="true"] { transform:translateX(0); }
+ html[dir="rtl"] .mobile-navigation-panel:not([data-entered="true"]) { transform:translateX(103%); }
+ .mobile-navigation-row { display:flex; align-items:center; gap:15px; }
+ .mobile-navigation-row > a, .mobile-navigation-row > button { flex:1; min-width:0; border:0; font-size:27px; padding-block:20px; }
+ .mobile-navigation-row { border-bottom:1px solid rgb(138 109 47 / .18); }
+ .mobile-navigation-index { font-size:8px; letter-spacing:.1em; color:#8a6d2f; }
+ .mobile-shop-groups > span { border-bottom:1px solid rgb(138 109 47 / .1); }
+ .mobile-shop-groups > span:last-child { border-bottom:0; }
+ .mobile-shop-groups > span > a:first-child { display:block; margin-bottom:6px; font-size:20px; font-style:normal; }
+ .mobile-shop-groups > span > a:not(:first-child) { padding-block:8px; padding-inline-start:0; font-size:12px; }
+}
+@media (max-width:359px) {
+ .maison-mobile-bar { padding-inline:8px; grid-template-columns:36px minmax(0,1fr) 72px; }
+ .mobile-brand-name > span { font-size:13px; }
+ .mobile-brand-lockup { gap:5px; }
+ .mobile-brand-lockup > span:first-child { width:36px; height:36px; }
+}
+@media (prefers-reduced-motion:reduce) { .mobile-navigation-panel, .mobile-navigation-backdrop { transition:none; } }

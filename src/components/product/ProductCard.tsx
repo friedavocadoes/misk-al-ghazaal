@@ -249,7 +249,7 @@ export function ProductCard({
       <div className="pt-4 text-center">
         {/* Olfactory Notes or Lineup Micro-Caption */}
         {previewNotes.length > 0 ? (
-          <div className="mb-1.5 flex items-center justify-center gap-2 text-[10px] tracking-[0.14em] text-fog">
+          <div className="mb-1.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[10px] tracking-[0.14em] text-fog">
             {previewNotes.map((n) => (
               <span key={n.id} className="inline-flex items-center gap-1">
                 <span

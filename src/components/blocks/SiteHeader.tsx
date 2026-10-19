@@ -11,22 +11,15 @@ import {
   ArrowRight,
   ArrowUpRight,
   ChevronDown,
-  Crown,
-  Flame,
   Globe,
   Heart,
   LogOut,
   MapPin,
-  Mars,
-  Menu,
   Package,
   Search,
   ShoppingBag,
-  Sparkles,
-  Star,
   Ticket,
   User,
-  Venus,
   X,
 } from "lucide-react";
 import { CartDrawer } from "./CartDrawer";
@@ -38,22 +31,11 @@ import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
-import type { ShopMenuIcon } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import {
   SearchSuggest,
   type SearchSuggestHandle,
 } from "@/components/search/SearchSuggest";
-
-const MENU_ICONS: Record<ShopMenuIcon, typeof Star> = {
-  mars: Mars,
-  venus: Venus,
-  flame: Flame,
-  sparkles: Sparkles,
-  star: Star,
-  crown: Crown,
-  arrow: ArrowUpRight,
-};
 
 type LinkKey = "about" | "shop" | "manufacture" | "contact";
 
@@ -739,12 +721,14 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
           <button
             onClick={() => setMenuOpen(true)}
             aria-label={t("openMenu")}
-            className="cursor-pointer justify-self-start p-2 text-ink"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            className="mobile-menu-toggle cursor-pointer justify-self-start p-2 text-ink"
           >
-            <Menu className="size-5" />
+            <span aria-hidden className="mobile-menu-lines"><span /><span /></span>
           </button>
-          <Link href="/" aria-label={t("home")} className="justify-self-center">
-            <span className="flex items-center gap-2"><span className="block size-10"><BrandCrest compact={compact} /></span><span className="font-display text-[15px] leading-tight">Misk Al<br />Ghazaal</span></span>
+          <Link href="/" aria-label={t("home")} className="mobile-brand-lockup justify-self-center">
+            <span className="block size-11"><BrandCrest compact={compact} /></span><span className="mobile-brand-name"><span className="font-display">Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PARFUMS"}</small></span>
           </Link>
           <span className="flex items-center justify-end">
             <button
@@ -864,9 +848,12 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             Portaled to body so the overlay stays independent of header layers. */}
         {menuOpen &&
           createPortal(
+            <>
+            <div className="mobile-navigation-backdrop fixed inset-0 z-[59] bg-ink/35 backdrop-blur-[3px] transition-opacity duration-300 lg:hidden" style={{ opacity: menuEntered ? 1 : 0 }} onClick={closeMenu} aria-hidden="true" />
             <div
-              className="fixed inset-0 z-[60] flex flex-col bg-cream transition-opacity duration-300 lg:hidden"
-              style={{ opacity: menuEntered ? 1 : 0 }}
+              id="mobile-navigation"
+              className="mobile-navigation-panel fixed inset-y-0 start-0 z-[60] flex flex-col bg-cream lg:hidden"
+              data-entered={menuEntered}
               role="dialog"
               aria-modal="true"
               aria-label={t("openMenu")}
@@ -879,7 +866,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                   transform: `translateY(${menuEntered ? 0 : -12}px)`,
                 }}
               >
-                <span className="block size-11"><BrandCrest compact /></span>
+                <Link href="/" onClick={closeMenu} className="flex items-center gap-3"><span className="block size-12"><BrandCrest compact /></span><span className="font-display text-lg">Misk Al Ghazaal<span className="mt-1 block font-sans text-[8px] tracking-[.28em] text-gold">{locale === "ar" ? "دار العطور" : "PARFUMS"}</span></span></Link>
                 <button
                   onClick={closeMenu}
                   aria-label={t("closeMenu")}
@@ -889,7 +876,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                 </button>
               </div>
               <nav
-                className="flex-1 overflow-y-auto px-6 py-6"
+                className="mobile-navigation-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-8 pt-5"
                 aria-label="Mobile"
               >
                 {[
@@ -934,9 +921,9 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                         : "0ms",
                     }}
                   >
-                    {row}
+                    <span className="mobile-navigation-row"><span aria-hidden className="mobile-navigation-index">0{i + 1}</span>{row}</span>
                 {i === 1 && mobileShopOpen && (
-                  <span className="mt-5 grid grid-cols-2 gap-5 border-b border-ink/10 pb-6">
+                  <span className="mobile-shop-groups mt-2 grid grid-cols-1 gap-3 border-b border-ink/10 pb-6 ps-8">
                     {shop.map((col) => (
                       <span key={col.heading} className="block py-2">
                         <Link
@@ -947,7 +934,6 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                           {col.heading}
                         </Link>
                         {col.links.map((l) => {
-                          const Icon = l.icon ? MENU_ICONS[l.icon] : null;
                           const cls =
                             "flex items-center gap-2.5 py-1.5 ps-3 text-sm text-espresso";
                           return l.external ? (
@@ -958,7 +944,6 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                               rel="noreferrer"
                               className={cls}
                             >
-                              {Icon && <Icon className="size-4 text-gold/80" />}
                               {l.label} ↗
                             </a>
                           ) : (
@@ -968,7 +953,6 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                               onClick={closeMenu}
                               className={cls}
                             >
-                              {Icon && <Icon className="size-4 text-gold/80" />}
                               {l.label}
                             </Link>
                           );
@@ -1100,7 +1084,8 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                   </Link>
                 )}
               </nav>
-            </div>,
+            </div>
+            </>,
             document.body,
           )}
 
