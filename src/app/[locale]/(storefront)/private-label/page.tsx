@@ -72,7 +72,7 @@ export default async function PrivateLabelPage(
     <div>
       <SeoJsonLd blocks={customJsonLd(seo)} />
       {/* Hero */}
-      <section className="relative overflow-hidden bg-ink text-white">
+      <section className="relative overflow-hidden bg-ink text-white flex">
         <span className="absolute inset-0">
           <Image
             src="/banners/hero-private-label.jpg"
@@ -84,29 +84,29 @@ export default async function PrivateLabelPage(
           />
         </span>
         <span className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
-        <div className="relative mx-auto max-w-7xl px-5 py-24 md:px-8 md:py-32">
-          <p className="eyebrow flex items-center gap-3 text-gold-soft">
-            <span className="inline-block h-px w-10 bg-gold-soft" />
+        <div className="relative mx-auto px-5 py-40 md:px-8 md:py-60 text-center">
+          <p className="eyebrow gap-3 text-gold-soft ">
+            {/* <span className="inline-block h-px w-10 bg-gold-soft" /> */}
             Private Label & Contract Manufacturing
           </p>
           <h1 className="mt-5 max-w-3xl font-display text-5xl leading-[1.04] md:text-7xl">
             {tx(seo?.h1 ?? "", seo?.h1Ar, locale) || "Your scent, crafted at origin."}
           </h1>
-          <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-white/80">
+          <p className="mt-6 mx-auto max-w-xl text-[15px] leading-relaxed text-white/80">
             Misk Al Ghazaal is a working perfume manufactory — the same house
             behind our maison line produces white-label attars, bakhoor and
             eau de parfum for boutiques, hotels and retailers who need it.
           </p>
-          <div className="mt-9 flex flex-wrap items-center gap-7">
+          <div className="mt-9 flex flex-wrap items-center gap-7 mx-auto">
             <Link
               href="/pages/contact?topic=meeting"
-              className="bg-white px-8 py-3.5 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold-wash"
+              className="bg-white px-8 py-3.5 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-gold-wash mx-auto"
             >
               Request a Meeting
             </Link>
             <Link
               href="/collection/best-sellers"
-              className="link-underline text-[12px] font-semibold uppercase tracking-[0.2em] text-white/85"
+              className="link-underline text-[12px] font-semibold uppercase tracking-[0.2em] text-white/85 mx-auto"
             >
               Browse the Maison Line
             </Link>

@@ -150,7 +150,7 @@ export default async function BannersPage() {
 
         <section id="navigation" className="mt-8 border border-ink/15 bg-white p-6">
           <h2 className="font-display text-2xl">Shop menu banners</h2>
-          <p className="my-3 text-sm text-ink/60">Upload artwork or copy a hero image. The first two by Order appear on the right of Shop With Us and in the mobile menu. Recommended: 800 × 1000 px. Deleting a menu banner permanently removes its unused uploaded artwork.</p>
+          <p className="my-3 text-sm text-ink/60">Upload artwork or copy a hero image. The first two by Order appear on the right of Our Collections and in the mobile menu. Recommended: 800 × 1000 px. Deleting a menu banner permanently removes its unused uploaded artwork.</p>
           <BannerCreateButton create={createBanner} initialSlot="navigation" heroes={rows.filter((row) => row.slot === "hero" && !/\.mp4$/i.test(row.src))} />
         </section>
         {rows.length === 0 ? (

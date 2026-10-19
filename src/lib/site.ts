@@ -154,9 +154,9 @@ export interface ShopMenuColumn {
 
 export function getNavLeft(locale: Locale): NavLink[] {
   return [
-    { label: pick(L("About Us", "من نحن"), locale), href: "/pages/about" },
+    { label: pick(L("About", "من نحن"), locale), href: "/pages/about" },
     {
-      label: pick(L("Shop With Us", "تسوّق معنا"), locale),
+      label: pick(L("Our Collections", "تسوّق معنا"), locale),
       href: "/collection/all",
     },
   ];
@@ -169,7 +169,7 @@ export function getNavRight(locale: Locale): NavLink[] {
       href: "/private-label",
     },
     {
-      label: pick(L("Get In Touch", "تواصل معنا"), locale),
+      label: pick(L("Connect", "تواصل معنا"), locale),
       href: "/pages/contact",
     },
   ];
