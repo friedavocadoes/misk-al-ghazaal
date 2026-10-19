@@ -190,7 +190,8 @@ export default async function BannerDetail(props: {
             <BannerImageField
               bannerId={b.id}
               field="src"
-              label="Image (src)"
+              label="Image / video (src)"
+              allowVideo={isHero}
               initial={b.src ?? ""}
               revalidate={revalidateHomeAction}
             />

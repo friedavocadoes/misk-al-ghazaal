@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, X } from "lucide-react";
+import { HeroVideoUploader } from "./hero-video-uploader";
 import { ImageUploader } from "./image-uploader";
 import { toast } from "./admin-form";
 
@@ -17,6 +18,7 @@ export function BannerCreateButton({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [slot, setSlot] = useState<"hero" | "brand" | "navigation">(initialSlot);
   const [heroId, setHeroId] = useState("");
@@ -25,7 +27,7 @@ export function BannerCreateButton({
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (busy || !src) return;
+    if (busy || mediaBusy || !src) return;
     setBusy(true);
     try {
       await create(new FormData(e.currentTarget));
@@ -109,7 +111,7 @@ export function BannerCreateButton({
                   <input type="hidden" name="hero_id" value={heroId} />
                 </label>}
                 <p className="mb-1 text-sm font-medium">Artwork * — navigation: 800 × 1000 px recommended (4:5)</p>
-                {src ? (
+                {/\.mp4$/i.test(src) ? <video src={src} poster={fallback} controls muted className="aspect-video w-full" /> : src ? (
                   <img
                     src={src}
                     alt=""
@@ -123,6 +125,7 @@ export function BannerCreateButton({
                 <div className="mt-2">
                   <ImageUploader bucket="banners" prefix="banner" onUploaded={(url) => { setHeroId(""); setSrc(url); }} />
                 </div>
+                {slot === "hero" && <HeroVideoUploader onBusyChange={setMediaBusy} onUploaded={(video, poster) => { setSrc(video); setFallback(poster); }} />}
                 <input type="hidden" name="src" value={src} />
               </div>
 
@@ -248,7 +251,7 @@ export function BannerCreateButton({
 
               <button
                 type="submit"
-                disabled={busy || !src}
+                disabled={busy || mediaBusy || !src}
                 className="flex cursor-pointer items-center justify-center gap-2 bg-ink px-4 py-2.5 text-white transition hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50 md:col-span-2"
               >
                 {busy && <Loader2 className="size-4 animate-spin" />}

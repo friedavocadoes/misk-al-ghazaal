@@ -4,6 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["ffmpeg-static"],
+  outputFileTracingIncludes: { "/api/admin/hero-video": ["./node_modules/ffmpeg-static/**/*"] },
   images: {
     // Supabase Storage public URLs (product + banner uploads).
     // Local /products/* + /banners/* keep working with zero config.

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Inter, Noto_Sans_Arabic, Playfair_Display } from "next/font/google";
+import { Inter, Noto_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import "swiper/css";
-import "swiper/css/effect-creative";
 import "leaflet/dist/leaflet.css";
 import "../globals.css";
 
@@ -19,12 +18,6 @@ const body = Inter({
 const arabic = Noto_Sans_Arabic({
   variable: "--font-arabic",
   subsets: ["arabic"],
-  display: "swap",
-});
-
-const display = Playfair_Display({
-  variable: "--font-display",
-  subsets: ["latin"],
   display: "swap",
 });
 
@@ -56,7 +49,7 @@ export default async function LocaleLayout(
     <html
       lang={locale}
       dir={locale === "ar" ? "rtl" : "ltr"}
-      className={`${body.variable} ${display.variable} ${arabic.variable} h-full`}
+      className={`${body.variable} ${arabic.variable} h-full`}
     >
       <body className="flex min-h-full flex-col bg-cream font-[family-name:var(--font-body)] text-ink">
         <NextIntlClientProvider locale={locale} messages={messages}>

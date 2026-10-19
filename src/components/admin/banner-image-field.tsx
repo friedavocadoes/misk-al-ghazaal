@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "./admin-form";
+import { HeroVideoUploader } from "./hero-video-uploader";
 import { ImageUploader } from "./image-uploader";
 
 // Storage uploads publish through an authorized, audited server action.
@@ -11,7 +12,9 @@ export function BannerImageField({
   label,
   initial,
   revalidate,
+  allowVideo = false,
 }: {
+  allowVideo?: boolean;
   bannerId: string;
   field: "src" | "fallback";
   label: string;
@@ -41,7 +44,7 @@ export function BannerImageField({
   return (
     <div>
       <p className="text-sm font-medium">{label}</p>
-      {url && (
+      {/\.mp4$/i.test(url) ? <video src={url} controls muted className="mt-2 aspect-video w-full" /> : url && (
         <img
           src={url}
           alt=""
@@ -74,6 +77,11 @@ export function BannerImageField({
           onUploaded={(u) => void save(u)}
         />
       </div>
+      {allowVideo && <HeroVideoUploader onUploaded={async (video, poster) => {
+        await revalidate(bannerId, "fallback", poster);
+        await revalidate(bannerId, "src", video);
+        setUrl(video); setDraft(video); setSaved(true);
+      }} />}
       {saved && <p className="mt-1 text-xs text-ink/60">Saved.</p>}
     </div>
   );

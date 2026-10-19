@@ -33,3 +33,9 @@ Measure cold and warm visits on the production host with mobile network/CPU thro
 ## Automatic upload conversion
 
 All application image uploads convert to lossless WebP before Supabase Storage. Dimensions and transparency are retained; EXIF orientation is applied. Existing WebP uploads are kept without another encoding pass. Lossless conversion does not restore detail already lost in a JPEG and can produce a larger file than its source; export to the dimensions above before uploading. PDF invoices are not images and remain PDF. Existing stored sample assets are not automatically migrated.
+
+## Fullscreen hero video
+
+Admin → Banners → New banner → hero → Upload hero video (also available in existing hero artwork editor). Keep videos short and silent, preferably composed for both desktop and mobile center crops. Processing accepts up to30MB and keeps the first20seconds, caps at1920×1080/30fps without upscaling, outputs H.264 MP4 CRF18 with faststart and a WebP poster. Quality is visually high, not mathematically lossless; file size depends on scene complexity. A separate mobile crop is not implemented.
+
+Apply supabase/migration_hero_video.sql before publishing MP4. Host must allow ffmpeg-static Node execution, temporary disk and120second processing. Request-body limits apply before application code (for example, small serverless request limits can reject a30MB video); deploy processing on a suitable Node host if needed. No claim of authenticated upload verification without staff credentials.
