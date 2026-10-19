@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { autoDeleteAt, purgeExpiredBin, type BinTable } from "@/lib/trash";
-import { revalidateHome, touchProduct } from "@/lib/revalidate";
+import { revalidateNavigation, revalidateHome, touchProduct } from "@/lib/revalidate";
 import { logAdmin } from "@/lib/audit";
 
 const TABS: { key: BinTable; label: string; superOnly?: boolean }[] = [
@@ -42,7 +42,7 @@ async function restoreItem(formData: FormData) {
   });
   revalidatePath("/admin/bin");
   // Restored rows are live again — refresh their storefront surfaces too.
-  if (table === "banners") revalidateHome();
+  if (table === "banners") { revalidateHome(); revalidateNavigation(); }
   if (table === "products") await touchProduct(supabase, String(formData.get("id")));
 }
 
@@ -87,7 +87,7 @@ async function destroyItem(formData: FormData) {
     details: { table, id: String(formData.get("id")), snapshot: doomed ?? null },
   });
   revalidatePath("/admin/bin");
-  if (table === "banners") revalidateHome();
+  if (table === "banners") { revalidateHome(); revalidateNavigation(); }
 }
 
 function BinButtons({ table, id }: { table: BinTable; id: string }) {

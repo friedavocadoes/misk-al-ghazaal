@@ -4,6 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { RouteProgress } from "@/components/blocks/RouteProgress";
+import { getNavigationBanners } from "@/lib/store";
 import { SiteHeader } from "@/components/blocks/SiteHeader";
 import { SiteFooter } from "@/components/blocks/SiteFooter";
 import { AdminEditBar } from "@/components/blocks/AdminEditBar";
@@ -15,7 +16,7 @@ export default async function StorefrontLayout(
   const locale = toLocale(raw);
   setRequestLocale(locale);
   // Staff-only edit bar (null without a session — shoppers never see it).
-  const session = await getAdminSession();
+  const [session, campaigns] = await Promise.all([getAdminSession(), getNavigationBanners()]);
   const editable = session?.role === "super_admin";
   return (
     <CartProvider>
@@ -26,7 +27,7 @@ export default async function StorefrontLayout(
             (synced pre-paint + RO inside SiteHeader) so geometry matches
             in-flow layout exactly, morph included. */}
         <RouteProgress />
-        <SiteHeader locale={locale} />
+        <SiteHeader locale={locale} campaigns={campaigns} />
         <div id="page-content">
           {editable && <AdminEditBar />}
           <main className="min-h-[60vh]">{props.children}</main>

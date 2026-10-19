@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import { BrandCrest } from "@/components/blocks/BrandCrest";
 import gsap from "gsap";
+import type { Banner } from "@/lib/types";
+import { NavigationCampaigns } from "./NavigationCampaigns";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -58,7 +60,7 @@ type LinkKey = "about" | "shop" | "manufacture" | "contact";
 const EASE = "expo.out";
 const FLIGHT = 0.6;
 
-export function SiteHeader({ locale }: { locale: Locale }) {
+export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaigns?: Banner[] }) {
   // Compact flips once past 36px, releases below 18px — early
   // engagement so chrome and hero morph as one; hysteresis + cooldown
   // below mean no half-states and no oscillation.
@@ -167,6 +169,11 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(min-width: 1024px)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      Object.values(stackedRefs.current).forEach((el) => { if (el) el.style.opacity = compact ? "0" : "1"; });
+      Object.values(inlineRefs.current).forEach((el) => { if (el) el.style.opacity = compact ? "1" : "0"; });
+      return;
+    }
     const keys: LinkKey[] = ["about", "shop", "manufacture", "contact"];
     const ctx = gsap.context(() => {
       for (const key of keys) {
@@ -232,6 +239,35 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     });
     return () => ctx.revert();
   }, [compact]);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShopOpen(false); setMenuOpen(false); setAccountOpen(false); setLangOpen(false);
+    };
+    const onResize = () => setShopOpen(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("resize", onResize); };
+  }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = document.querySelector<HTMLElement>("[data-mobile-navigation]");
+    panel?.querySelector<HTMLElement>("button, a")?.focus();
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== "Tab" || !panel) return;
+      const items = Array.from(panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex="0"]'));
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", trap);
+    return () => { document.body.style.overflow = overflow; document.removeEventListener("keydown", trap); previous?.focus(); };
+  }, [menuOpen]);
 
   // Search panel niceties: Escape closes it.
   useEffect(() => {
@@ -347,7 +383,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         Math.max(r.left + r.width / 2, 340),
         window.innerWidth - 340,
       );
-      setAnchor({ x: cx, y: r.bottom + 10 });
+      setAnchor({ x: cx, y: document.getElementById("site-header")!.getBoundingClientRect().bottom });
     }
     setShopOpen(true);
   };
@@ -397,14 +433,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       }}
       href={linkFor(key)}
       aria-current={pathname === linkFor(key) ? "page" : undefined}
-      onClick={() => setShopOpen(false)}
+      onClick={(event) => { if (key === "shop") { event.preventDefault(); if (shopOpen) setShopOpen(false); else openShop(); } }}
+      aria-expanded={key === "shop" ? shopOpen : undefined}
+      aria-controls={key === "shop" ? "shop-navigation" : undefined}
+      onKeyDown={(event) => { if (key === "shop" && event.key === "ArrowDown") { event.preventDefault(); openShop(); requestAnimationFrame(() => document.querySelector<HTMLElement>("#shop-navigation a")?.focus()); } }}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? -1 : 0}
       aria-hidden={compact}
-      className="maison-nav-link inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
+      className="maison-nav-link maison-stacked-link inline-flex items-center gap-1.5 text-[13px] uppercase tracking-[0.22em] text-ink antialiased transition-colors hover:text-gold"
     >
-      {labelFor(key).toUpperCase()}
+      {labelFor(key)}
       {key === "shop" && <ChevronDown className="size-3.5 text-gold" />}
     </Link>
   );
@@ -417,14 +456,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       }}
       href={linkFor(key)}
       aria-current={pathname === linkFor(key) ? "page" : undefined}
-      onClick={() => setShopOpen(false)}
+      onClick={(event) => { if (key === "shop") { event.preventDefault(); if (shopOpen) setShopOpen(false); else openShop(); } }}
+      aria-expanded={key === "shop" ? shopOpen : undefined}
+      aria-controls={key === "shop" ? "shop-navigation" : undefined}
+      onKeyDown={(event) => { if (key === "shop" && event.key === "ArrowDown") { event.preventDefault(); openShop(); requestAnimationFrame(() => document.querySelector<HTMLElement>("#shop-navigation a")?.focus()); } }}
       onMouseEnter={() => key === "shop" && openShop()}
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? 0 : -1}
       aria-hidden={!compact}
-      className="maison-nav-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
+      className="maison-nav-link maison-inline-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
     >
-      {labelFor(key).toUpperCase()}
+      {labelFor(key)}
     </Link>
   );
 
@@ -451,8 +493,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       <div className="relative">
         {/* Main crest row — slimmer now that the wordmark sits in the page, not the bar */}
         <div
-          className="mx-auto hidden max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
-          style={{ height: compact ? 72 : 90 }}
+          className="maison-masthead mx-auto hidden max-w-[1600px] grid-cols-[1fr_auto_1fr] items-center px-6 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid"
+          style={{ height: compact ? 72 : 112 }}
         >
           <div className="flex items-center">
             <span className="relative flex h-9 items-center">
@@ -491,7 +533,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               <Search className={glyph} />
             </button>
             <span
-              className={`flex items-center ${locale === "ar" ? "gap-7 pl-9" : "gap-6 pl-7"}`}
+              className={`flex items-center ${locale === "ar" ? "gap-7 ps-9" : "gap-6 ps-7"}`}
             >
               {inlineLink("about")}
               {inlineLink("shop")}
@@ -501,18 +543,19 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           <Link
             href="/"
             aria-label={t("home")}
-            className="group flex items-center justify-center justify-self-center"
+            className="maison-signature group flex items-center justify-center justify-self-center"
           >
-            <span className={`relative flex items-center justify-center transition-[width,height] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] ${compact ? "size-16" : "size-[70px]"}`}>
+            <span className={`maison-signature-crest relative flex items-center justify-center transition-[width,height] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] ${compact ? "size-16" : "size-[70px]"}`}>
               <span className={`block size-[88px] shrink-0 transition-transform duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] ${compact ? "scale-[0.76]" : "scale-100"}`}>
                 <BrandCrest compact={compact} />
               </span>
             </span>
+            <span className="maison-wordmark" aria-hidden="true"><span>Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PARFUMS · عطور"}</small></span>
           </Link>
 
-          <div className="flex items-center justify-end">
+          <div className="maison-utilities flex items-center justify-end">
             <span
-              className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pr-9" : "gap-6 pr-7"}`}
+              className={`flex items-center justify-end ${locale === "ar" ? "gap-7 pe-9" : "gap-6 pe-7"}`}
             >
               {inlineLink("manufacture")}
               {inlineLink("contact")}
@@ -524,7 +567,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             >
               <MapPin className={`${glyph} shrink-0`} />
               {!compact && (
-                <span className="maison-nav-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
+                <span className="maison-nav-link maison-inline-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em]">
                   {t("locateUs")}
                 </span>
               )}
@@ -640,7 +683,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               >
                 <User className={`${glyph} shrink-0`} />
                 {!compact && (
-                  <span className="maison-nav-link whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
+                  <span className="maison-nav-link maison-inline-link whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em]">
                     {t("loginSignup")}
                   </span>
                 )}
@@ -668,22 +711,22 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         {/* Stacked nav — grid halves keep the divider exactly under the crest */}
         <nav
           aria-label="Primary"
-          className="hidden overflow-hidden border-t border-ink/10 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
+          className="maison-navigation hidden overflow-hidden border-t border-ink/10 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
           <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-4">
             <span
-              className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pr-12" : "gap-10 pr-8"}`}
+              className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pe-12" : "gap-10 pe-8"}`}
             >
               {stackedLink("about")}
               {stackedLink("shop")}
             </span>
             <span
               aria-hidden
-              className="h-[26px] w-px justify-self-center bg-gold/30"
+              className="size-1 rotate-45 justify-self-center bg-gold/60"
             />
             <span
-              className={`flex items-center justify-start ${locale === "ar" ? "gap-14 pl-12" : "gap-10 pl-8"}`}
+              className={`flex items-center justify-start ${locale === "ar" ? "gap-14 ps-12" : "gap-10 ps-8"}`}
             >
               {stackedLink("manufacture")}
               {stackedLink("contact")}
@@ -692,7 +735,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
         </nav>
 
         {/* Mobile bar */}
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 lg:hidden">
+        <div className="maison-mobile-bar grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 lg:hidden">
           <button
             onClick={() => setMenuOpen(true)}
             aria-label={t("openMenu")}
@@ -701,7 +744,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             <Menu className="size-5" />
           </button>
           <Link href="/" aria-label={t("home")} className="justify-self-center">
-            <span className="block size-[52px]"><BrandCrest compact={false} /></span>
+            <span className="flex items-center gap-2"><span className="block size-10"><BrandCrest compact={compact} /></span><span className="font-display text-[15px] leading-tight">Misk Al<br />Ghazaal</span></span>
           </Link>
           <span className="flex items-center justify-end">
             <button
@@ -788,85 +831,33 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </div>
         )}
 
-        {/* Floating shop dropdown — measured from the trigger, never clips */}
         {shopOpen && anchor && (
-          <div
-            onMouseEnter={cancelClose}
-            onMouseLeave={scheduleClose}
-            className="fixed z-[70] max-h-[calc(100svh-120px)] w-[640px] max-w-[92vw] overflow-y-auto border border-ink/10 bg-[linear-gradient(180deg,rgba(255,253,249,0.94)_0%,rgba(250,247,241,0.92)_60%,rgba(242,236,221,0.9)_100%)] p-8 pt-7 shadow-[0_40px_80px_-28px_rgba(28,25,23,0.45)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{
-              left: anchor.x,
-              top: anchor.y,
-              opacity: shopEntered ? 1 : 0,
-              transform: `translateX(-50%) translateY(${shopEntered ? 0 : 14}px) scale(${shopEntered ? 1 : 0.97})`,
-            }}
-          >
-            <span
-              aria-hidden
-              className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-gold-soft to-transparent"
-            />
-            <p className="eyebrow mb-6 text-center text-gold">
-              {tShop("title")}
-            </p>
-            <div className="grid grid-cols-3 gap-8">
-              {shop.map((col, ci) => (
-                <div
-                  key={col.heading}
-                  className="transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  style={{
-                    opacity: shopEntered ? 1 : 0,
-                    transform: `translateY(${shopEntered ? 0 : 10}px)`,
-                    transitionDelay: shopEntered ? `${80 + ci * 70}ms` : "0ms",
-                  }}
-                >
-                  <Link
-                    href={col.href}
-                    onClick={() => setShopOpen(false)}
-                    className="font-display text-lg text-ink transition hover:text-gold"
-                  >
-                    {col.heading}
-                  </Link>
-                  <span className="mt-2.5 block h-px w-9 bg-gold-soft" />
-                  <ul className="mt-3.5 space-y-2.5">
-                    {col.links.map((l) => {
-                      const Icon = l.icon ? MENU_ICONS[l.icon] : null;
-                      const inner = (
-                        <>
-                          {Icon && (
-                            <Icon className="size-3.5 shrink-0 text-gold/80 transition group-hover:text-gold" />
-                          )}
-                          {l.label}
-                          {l.external && <ArrowUpRight className="size-3.5" />}
-                        </>
-                      );
-                      return l.external ? (
-                        <li key={l.href}>
-                          <a
-                            href={l.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="group inline-flex items-center gap-2 text-[13px] text-espresso transition hover:text-gold"
-                          >
-                            {inner}
-                          </a>
-                        </li>
-                      ) : (
-                        <li key={l.href}>
-                          <Link
-                            href={l.href}
-                            onClick={() => setShopOpen(false)}
-                            className="group inline-flex items-center gap-2 text-[13px] text-espresso transition hover:text-gold"
-                          >
-                            {inner}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
+          <>
+            <button aria-label={t("closeMenu")} tabIndex={-1} onClick={() => setShopOpen(false)} className="fixed inset-x-0 bottom-0 bg-ink/20 backdrop-blur-[2px]" style={{ top: anchor.y }} />
+            <div id="shop-navigation" onMouseEnter={cancelClose} onMouseLeave={scheduleClose}
+              onKeyDown={(event) => { if (event.key === "Escape") { setShopOpen(false); (compact ? inlineRefs.current.shop : stackedRefs.current.shop)?.focus(); } }}
+              className="maison-shop-panel fixed inset-x-0 z-[70] overflow-y-auto bg-[#f8f5ef]"
+              style={{ top: anchor.y, maxHeight: `calc(100svh - ${anchor.y}px)`, opacity: shopEntered ? 1 : 0, transform: `translateY(${shopEntered ? 0 : -8}px)` }}>
+              <div className="mx-auto max-w-[1500px] px-10 py-10 xl:px-16">
+                <div className="mb-8 flex items-center justify-between border-b border-ink/15 pb-5">
+                  <Link href={linkFor("shop")} onClick={() => setShopOpen(false)} className="group flex items-center gap-5 font-display text-3xl">{tShop("title")}<ArrowUpRight className="size-5 text-gold transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" /></Link>
+                  <button onClick={() => setShopOpen(false)} aria-label={t("closeMenu")} className="cursor-pointer p-2"><X className="size-5" /></button>
                 </div>
-              ))}
+                <div className={campaigns.length ? "grid grid-cols-[1.25fr_1fr] gap-12" : "grid grid-cols-1"}>
+                  <div className="grid grid-cols-3 gap-8">
+                    {shop.map((col, index) => (
+                      <div key={col.heading} className="maison-shop-column" style={{ transitionDelay: `${index * 60}ms` }}>
+                        <span aria-hidden className="mb-3 block text-[10px] tracking-[.2em] text-gold">0{index + 1}</span>
+                        <Link href={col.href} onClick={() => setShopOpen(false)} className="font-display text-2xl hover:text-gold">{col.heading}</Link>
+                        <ul className="mt-5 space-y-3">{col.links.map((item) => <li key={item.href}>{item.external ? <a href={item.href} target="_blank" rel="noreferrer" className="maison-shop-link">{item.label}<ArrowUpRight className="size-3" /></a> : <Link href={item.href} onClick={() => setShopOpen(false)} className="maison-shop-link">{item.label}</Link>}</li>)}</ul>
+                      </div>
+                    ))}
+                  </div>
+                  <NavigationCampaigns banners={campaigns} locale={locale} onNavigate={() => setShopOpen(false)} />
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Mobile menu overlay — staged enter/exit, staggered rows.
@@ -878,6 +869,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
               style={{ opacity: menuEntered ? 1 : 0 }}
               role="dialog"
               aria-modal="true"
+              aria-label={t("openMenu")}
+              data-mobile-navigation
             >
               <div
                 className="flex items-center justify-between border-b border-ink/10 px-4 py-3 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -904,14 +897,15 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     key="about"
                     href={left[0].href}
                     onClick={closeMenu}
-                    className="block py-3 font-display text-2xl text-ink"
+                    className="block border-b border-ink/10 py-4 font-display text-3xl text-ink"
                   >
                     {left[0].label}
                   </Link>,
                   <button
                     key="shop"
                     onClick={() => setMobileShopOpen((v) => !v)}
-                    className="flex w-full cursor-pointer items-center justify-between py-3 font-display text-2xl text-ink"
+                    aria-expanded={mobileShopOpen}
+                    className="flex w-full cursor-pointer items-center justify-between border-b border-ink/10 py-4 font-display text-3xl text-ink"
                   >
                     {left[1].label}
                     <ChevronDown
@@ -923,7 +917,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                       key={l.href}
                       href={l.href}
                       onClick={closeMenu}
-                      className="block py-3 font-display text-2xl text-ink"
+                      className="block border-b border-ink/10 py-4 font-display text-3xl text-ink"
                     >
                       {l.label}
                     </Link>
@@ -941,10 +935,8 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     }}
                   >
                     {row}
-                  </span>
-                ))}
-                {mobileShopOpen && (
-                  <span className="block pb-2">
+                {i === 1 && mobileShopOpen && (
+                  <span className="mt-5 grid grid-cols-2 gap-5 border-b border-ink/10 pb-6">
                     {shop.map((col) => (
                       <span key={col.heading} className="block py-2">
                         <Link
@@ -957,7 +949,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                         {col.links.map((l) => {
                           const Icon = l.icon ? MENU_ICONS[l.icon] : null;
                           const cls =
-                            "flex items-center gap-2.5 py-1.5 pl-3 text-sm text-espresso";
+                            "flex items-center gap-2.5 py-1.5 ps-3 text-sm text-espresso";
                           return l.external ? (
                             <a
                               key={l.href}
@@ -985,6 +977,9 @@ export function SiteHeader({ locale }: { locale: Locale }) {
                     ))}
                   </span>
                 )}
+                  </span>
+                ))}
+                <div className="mt-6"><NavigationCampaigns banners={campaigns} locale={locale} onNavigate={closeMenu} /></div>
                 <span
                   className="mt-6 flex gap-2 border-t border-ink/10 pt-6 transition-all duration-500"
                   style={{

@@ -16,7 +16,7 @@ export function BannerCreateButton({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [slot, setSlot] = useState<"hero" | "brand">("hero");
+  const [slot, setSlot] = useState<"hero" | "brand" | "navigation">("hero");
   const [src, setSrc] = useState("");
   const [fallback, setFallback] = useState("");
 
@@ -26,7 +26,7 @@ export function BannerCreateButton({
     setBusy(true);
     try {
       await create(new FormData(e.currentTarget));
-      toast("Banner live — homepage updates on refresh", "ok");
+      toast("Banner published", "ok");
       setOpen(false);
       setSrc("");
       setFallback("");
@@ -84,9 +84,10 @@ export function BannerCreateButton({
                   name="slot"
                   className={field}
                   value={slot}
-                  onChange={(e) => setSlot(e.target.value as "hero" | "brand")}
+                  onChange={(e) => setSlot(e.target.value as "hero" | "brand" | "navigation")}
                 >
                   <option value="hero">hero (homepage fullscreen slider)</option>
+                  <option value="navigation">navigation (shop menu campaign)</option>
                   <option value="brand">brand (Worlds of Misk Al Ghazaal card)</option>
                 </select>
               </label>
@@ -96,7 +97,7 @@ export function BannerCreateButton({
               </label>
 
               <div className="md:col-span-2">
-                <p className="mb-1 text-sm font-medium">Artwork *</p>
+                <p className="mb-1 text-sm font-medium">Artwork * — navigation: 800 × 1000 px recommended (4:5)</p>
                 {src ? (
                   <img
                     src={src}
@@ -195,11 +196,11 @@ export function BannerCreateButton({
                     />
                   </label>
                   <label className="block">
-                    World Title (EN)
+                    Campaign / World Title (EN)
                     <input name="title" placeholder="Misk Al Ghazaal" className={field} />
                   </label>
                   <label className="block">
-                    World Title (AR)
+                    Campaign / World Title (AR)
                     <input name="title_ar" placeholder="مسك الغزال" className={field} />
                   </label>
                   <label className="block md:col-span-2">

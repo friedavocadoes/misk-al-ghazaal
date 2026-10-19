@@ -431,7 +431,7 @@ function toBanner(b: {
   };
 }
 
-async function getBannersBySlot(slot: "hero" | "brand"): Promise<Banner[]> {
+async function getBannersBySlot(slot: "hero" | "brand" | "navigation"): Promise<Banner[]> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -439,7 +439,7 @@ async function getBannersBySlot(slot: "hero" | "brand"): Promise<Banner[]> {
     .select("*")
     .eq("slot", slot)
     .is("deleted_at", null)
-    .order("sort");
+    .order("sort").order("id");
   if (error || !data) throw error ?? new Error("banners failed");
   return (data as Parameters<typeof toBanner>[0][]).map(toBanner);
 }
@@ -995,4 +995,9 @@ export function toCouponRow(c: {
     ...(c.usage_limit != null ? { usageLimit: c.usage_limit } : {}),
     usedCount: c.used_count ?? 0,
   };
+}
+
+/** Only the first two published navigation campaigns are displayed. */
+export async function getNavigationBanners(): Promise<Banner[]> {
+  return (await getBannersBySlot("navigation")).filter((banner) => banner.src).slice(0, 2);
 }

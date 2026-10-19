@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
-import { revalidateHome } from "@/lib/revalidate";
+import { revalidateNavigation, revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { BannerImageField } from "@/components/admin/banner-image-field";
@@ -18,7 +18,7 @@ async function saveBanner(formData: FormData) {
     const v = String(formData.get(k) ?? "").trim();
     return v || null;
   };
-  await supabase
+  const { error } = await supabase
     .from("banners")
     .update({
       slot: String(formData.get("slot") ?? "hero"),
@@ -37,6 +37,7 @@ async function saveBanner(formData: FormData) {
       focal: text("focal"),
     })
     .eq("id", String(formData.get("id")));
+  if (error) throw new Error(error.message);
   await logAdmin(supabase, s, {
     category: "banners",
     action: "update",
@@ -49,13 +50,18 @@ async function saveBanner(formData: FormData) {
   revalidatePath("/admin/banners");
   revalidatePath(`/admin/banners/${String(formData.get("id"))}`);
   revalidateHome();
+  revalidateNavigation();
 }
 
-async function revalidateHomeAction(bannerId: string, field: string) {
+async function revalidateHomeAction(bannerId: string, field: "src" | "fallback", url: string) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
+  if (field !== "src" && field !== "fallback") throw new Error("Invalid artwork field");
+  if (url && !/^(\/(?!\/)|https:\/\/)/.test(url)) throw new Error("Use a local path or HTTPS image URL");
+  const { error } = await supabase.from("banners").update({ [field]: url }).eq("id", bannerId);
+  if (error) throw new Error(error.message);
   const { data: b } = await supabase.from("banners").select("slot, title").eq("id", bannerId).single();
   const row = (b ?? {}) as { slot?: string; title?: string | null };
   await logAdmin(supabase, s, {
@@ -69,6 +75,7 @@ async function revalidateHomeAction(bannerId: string, field: string) {
   });
   revalidatePath(`/admin/banners/${bannerId}`);
   revalidateHome();
+  revalidateNavigation();
 }
 
 async function moveToBin(formData: FormData) {
@@ -78,10 +85,11 @@ async function moveToBin(formData: FormData) {
   const supabase = await createClient();
   const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
-  await supabase
+  const { error } = await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
+  if (error) throw new Error(error.message);
   await logAdmin(supabase, s, {
     category: "banners",
     action: "delete",
@@ -93,6 +101,7 @@ async function moveToBin(formData: FormData) {
   });
   revalidatePath("/admin/banners");
   revalidateHome();
+  revalidateNavigation();
   redirect("/admin/banners");
 }
 
@@ -200,6 +209,7 @@ export default async function BannerDetail(props: {
                   className="mt-1 w-full border border-ink/20 bg-white px-3 py-2"
                 >
                   <option value="hero">hero (fullscreen slider)</option>
+                  <option value="navigation">navigation (shop menu)</option>
                   <option value="brand">brand (Worlds card)</option>
                 </select>
               </label>

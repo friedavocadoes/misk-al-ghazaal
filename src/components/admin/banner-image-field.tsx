@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "./admin-form";
 import { ImageUploader } from "./image-uploader";
 
-// Edits one image column (src/fallback) of a banner directly (super_admin
-// RLS on the browser client). Shows the live preview so you know what
-// you're changing.
+// Storage uploads publish through an authorized, audited server action.
 export function BannerImageField({
   bannerId,
   field,
@@ -18,7 +16,7 @@ export function BannerImageField({
   field: "src" | "fallback";
   label: string;
   initial: string;
-  revalidate?: (bannerId: string, field: string) => Promise<void>;
+  revalidate: (bannerId: string, field: "src" | "fallback", url: string) => Promise<void>;
 }) {
   const [url, setUrl] = useState(initial);
   const [draft, setDraft] = useState(initial);
@@ -28,15 +26,16 @@ export function BannerImageField({
   async function save(next: string) {
     setSaving(true);
     setSaved(false);
-    const supabase = createClient();
-    await supabase.from("banners").update({ [field]: next }).eq("id", bannerId);
-    setUrl(next);
-    setDraft(next);
-    // Browser-client write: refresh the homepage explicitly (the action
-    // also records the audit row for this artwork change).
-    if (revalidate) await revalidate(bannerId, field);
-    setSaving(false);
-    setSaved(true);
+    try {
+      await revalidate(bannerId, field, next);
+      setUrl(next);
+      setDraft(next);
+      setSaved(true);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Artwork save failed", "bad");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

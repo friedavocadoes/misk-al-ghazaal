@@ -73,3 +73,8 @@ export function productsBucketPath(url: string): string | null {
     ?.trim();
   return path ? path : null;
 }
+
+/** Header content appears on every storefront route. */
+export function revalidateNavigation() {
+  for (const path of ["/", "/en", "/ar"]) revalidatePath(path, "layout");
+}

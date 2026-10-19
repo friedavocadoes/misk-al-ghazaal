@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
-import { revalidateHome } from "@/lib/revalidate";
+import { revalidateNavigation, revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { ActionButton } from "@/components/admin/admin-form";
 import { BannerCreateButton } from "@/components/admin/banner-create-button";
@@ -47,6 +47,7 @@ async function createBanner(formData: FormData) {
   revalidatePath("/admin/banners");
   // Storefront now, no rebuild: both homepage locales re-render on refresh.
   revalidateHome();
+  revalidateNavigation();
 }
 
 async function moveToBin(formData: FormData) {
@@ -56,10 +57,11 @@ async function moveToBin(formData: FormData) {
   const supabase = await createClient();
   const { data: doomed } = await supabase.from("banners").select("slot, title").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
-  await supabase
+  const { error } = await supabase
     .from("banners")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", String(formData.get("id")));
+  if (error) throw new Error(error.message);
   await logAdmin(supabase, s, {
     category: "banners",
     action: "delete",
@@ -71,6 +73,7 @@ async function moveToBin(formData: FormData) {
   });
   revalidatePath("/admin/banners");
   revalidateHome();
+  revalidateNavigation();
 }
 
 export default async function BannersPage() {
@@ -96,9 +99,9 @@ export default async function BannersPage() {
         <div className="flex items-center justify-between border-b border-ink/10 pb-6">
           <div>
             <p className="eyebrow">Banners</p>
-            <h1 className="font-display text-3xl">Hero + brand</h1>
+            <h1 className="font-display text-3xl">Hero, brand + navigation</h1>
             <p className="mt-1 text-sm text-ink/60">
-              slot `hero` → homepage slider · `brand` → shop-by-brand split.
+              Navigation campaigns: the first two by Order appear in the desktop shop menu and mobile drawer. Use 4:5 artwork (800 × 1000 px); leave this slot empty for a text-only menu.
               Changes go live on page refresh — no rebuild.
             </p>
           </div>
