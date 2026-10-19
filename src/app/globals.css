@@ -602,3 +602,16 @@ html[lang="ar"] .maison-stacked-link { font-family: var(--font-arabic), sans-ser
  .mobile-brand-lockup > span:first-child { width:36px; height:36px; }
 }
 @media (prefers-reduced-motion:reduce) { .mobile-navigation-panel, .mobile-navigation-backdrop { transition:none; } }
+
+/* A bounded reveal: CSS also releases it if hydration is delayed or fails. */
+.home-arrival { position:fixed; inset:0; z-index:90; display:grid; place-items:center; background:#f8f5ef; pointer-events:none; animation:arrival-release .6s ease 3.5s forwards; transition:opacity .55s ease, visibility .55s; }
+.home-arrival[data-ready="true"] { opacity:0; visibility:hidden; }
+.home-hero-pending { min-height:80svh; display:grid; place-items:center; background:#f8f5ef; }
+.arrival-mark { display:flex; align-items:center; flex-direction:column; color:#332e26; }
+.arrival-mark img { width:80px; height:80px; object-fit:contain; margin-bottom:22px; }
+.arrival-mark > span { font-family:var(--font-display); font-size:28px; letter-spacing:-.025em; }
+.arrival-mark small { margin-top:10px; color:#8a6d2f; font-size:8px; letter-spacing:.38em; }
+.arrival-mark i { margin-top:30px; width:76px; height:1px; background:#8a6d2f; transform-origin:center; animation:arrival-breathe 1.6s ease-in-out infinite; }
+@keyframes arrival-breathe { 0%,100% { transform:scaleX(.3); opacity:.3; } 50% { transform:scaleX(1); opacity:.8; } }
+@keyframes arrival-release { to { opacity:0; visibility:hidden; } }
+@media(prefers-reduced-motion:reduce) { .arrival-mark i { animation:none; } .home-arrival { transition:none; } }

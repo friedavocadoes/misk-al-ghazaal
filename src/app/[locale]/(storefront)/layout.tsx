@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { toLocale } from "@/lib/i18n";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -31,7 +32,7 @@ export default async function StorefrontLayout(
         <div id="page-content">
           {editable && <AdminEditBar />}
           <main className="min-h-[60vh]">{props.children}</main>
-          <SiteFooter locale={locale} />
+          <Suspense fallback={<div className="h-80 bg-sand/60" />}><SiteFooter locale={locale} /></Suspense>
         </div>
       </WishlistProvider>
     </CartProvider>

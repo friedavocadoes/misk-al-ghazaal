@@ -170,3 +170,11 @@ This section and the corrected entries above supersede historical implementation
 - Storefront layout loads navigation banners server-side. Banner create/edit/artwork/bin/restore invalidate all localized layouts through `revalidateNavigation`. Artwork metadata now saves through an authorized server action with checked DB errors and audit logging, rather than a browser-table write followed by separate invalidation. Storage uploads still use the existing banners bucket.
 
 - Mobile follow-up (2026-10-19): mobile header uses a single-line wordmark with Parfums subtitle and a two-stroke menu toggle. Navigation is a start-anchored drawer (420px maximum, 24px backdrop reveal), numbered rows, grouped shop links, safe-area padding, body scroll lock and focus containment. The homepage white strip was horizontal overflow from the product tab list and unwrapped ProductCard note captions; both now wrap within their containers. Do not hide page overflow to mask these layout errors.
+
+## 10. Loading and launch media (2026-10-19)
+
+- All existing content is sample/placeholder material pending launch. Source export dimensions and weight budgets live in IMAGE_GUIDE.md.
+- HomeHero streams separately from HomeContent; CMS sections and SiteFooter have Suspense boundaries. Do not rejoin all homepage data into a hero-blocking Promise.all.
+- SafeImage optimizes local and Supabase images, preserving direct delivery for other external hosts. Note uploads also use responsive optimization. Keep the first hero image prioritized and other images lazy.
+- HomeArrival is a visual overlay only: decode first hero + fonts, no minimum duration, 3.5-second timeout and independent CSS release, no-JS bypass. Content/SEO remain server rendered. No bot-specific treatment or persistent loading gate.
+- getProductsByCollection/getCollections/getNavigationBanners use React request-scoped cache; no cross-request price/stock caching was added.

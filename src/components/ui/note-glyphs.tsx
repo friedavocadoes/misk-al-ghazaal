@@ -17,7 +17,7 @@ export function NoteGlyph({ glyph, className = "size-16", style }: {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
     <span className={`relative inline-block shrink-0 ${className}`} style={style} aria-hidden="true">
-      <Image src={failedSrc === src ? DEFAULT_NOTE_GLYPH : src} alt="" fill sizes="(max-width: 640px) 80px, 112px" unoptimized className="object-contain" onError={() => setFailedSrc(src)} />
+      <Image src={failedSrc === src ? DEFAULT_NOTE_GLYPH : src} alt="" fill sizes="(max-width: 640px) 80px, 112px" className="object-contain" onError={() => setFailedSrc(src)} />
     </span>
   );
 }

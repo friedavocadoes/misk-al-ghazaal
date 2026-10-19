@@ -1,3 +1,4 @@
+import { cache } from "react";
 // ---------------------------------------------------------------------------
 // Database-backed data-access layer (Supabase is the ONLY source of truth).
 //
@@ -168,7 +169,9 @@ function toProduct(
   };
 }
 
-async function fetchProductsWithRelations(filter?: {
+const fetchProductsWithRelations = cache(fetchProductsWithRelationsUncached);
+
+async function fetchProductsWithRelationsUncached(filter?: {
   slugs?: string[];
   collectionId?: string;
   includeInactive?: boolean;
@@ -302,7 +305,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
-export async function getProductsByCollection(
+export const getProductsByCollection = cache(async function getProductsByCollection(
   slug: string,
   opts?: {
     sort?: string | null;
@@ -338,7 +341,7 @@ export async function getProductsByCollection(
   }
   items = applyCatalogFacets(items, opts);
   return applyCatalogSort(items, opts?.sort);
-}
+});
 
 function toCategory(c: {
   id: string;
@@ -360,7 +363,7 @@ function toCategory(c: {
   };
 }
 
-export async function getCollections(): Promise<Category[]> {
+export const getCollections = cache(async function getCollections(): Promise<Category[]> {
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -370,7 +373,7 @@ export async function getCollections(): Promise<Category[]> {
     .order("sort");
   if (error || !data) throw error ?? new Error("collections failed");
   return data.map(toCategory);
-}
+});
 
 export async function getCollectionBySlug(
   slug: string,
@@ -998,6 +1001,6 @@ export function toCouponRow(c: {
 }
 
 /** Only the first two published navigation campaigns are displayed. */
-export async function getNavigationBanners(): Promise<Banner[]> {
+export const getNavigationBanners = cache(async function getNavigationBanners(): Promise<Banner[]> {
   return (await getBannersBySlot("navigation")).filter((banner) => banner.src).slice(0, 2);
-}
+});

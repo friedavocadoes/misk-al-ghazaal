@@ -8,18 +8,16 @@ interface SafeImageProps extends Omit<ImageProps, "src"> {
   fallback: string;
 }
 
-/** next/image with a local fallback (used for /banners/* until you add the files).
- *  `unoptimized` keeps missing banner files as quiet browser 404s instead
- *  of tripping Next's image-optimization pipeline with server errors. */
+/** Responsive, optimized images with an optional fallback. */
 export function SafeImage({ src, fallback, alt, ...props }: SafeImageProps) {
   const [current, setCurrent] = useState(src);
   return (
     <Image
       src={current}
       alt={alt}
-      unoptimized
+      unoptimized={current.startsWith("http") && !/^https:\/\/[^/]+\.supabase\.co\//.test(current)}
       onError={() => {
-        if (current !== fallback) setCurrent(fallback);
+        if (fallback && current !== fallback) setCurrent(fallback);
       }}
       {...props}
     />

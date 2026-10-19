@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { HomeArrival } from "@/components/sections/HomeArrival";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
@@ -226,8 +228,27 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
   const { locale: raw } = await props.params;
   const locale = toLocale(raw);
   setRequestLocale(locale);
+  return <>
+    <Suspense fallback={<div className="home-hero-pending"><ArrivalMark /></div>}>
+      <HomeHero />
+    </Suspense>
+    <Suspense fallback={<div className="mx-auto h-64 max-w-7xl animate-pulse bg-sand/40" />}>
+      <HomeContent locale={locale} />
+    </Suspense>
+  </>;
+}
+
+function ArrivalMark() {
+  return <div className="arrival-mark"><img src="/mag.webp" width="80" height="80" alt="Misk Al Ghazaal" /><span>Misk Al Ghazaal</span><small>PARFUMS</small><i /></div>;
+}
+
+async function HomeHero() {
+  const slides = await getHeroSlides();
+  return <><HomeArrival /><HeroSlider slides={slides} /></>;
+}
+
+async function HomeContent({ locale }: { locale: Locale }) {
   const [
-    slides,
     sections,
     brands,
     collections,
@@ -238,7 +259,6 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     featured,
     articles,
   ] = await Promise.all([
-    getHeroSlides(),
     getHomepageSections(),
     getBrandBanners(),
     getCollections(),
@@ -270,7 +290,6 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
     const trending = featured.filter((p) => p.featured);
     return (
       <>
-        <HeroSlider slides={slides} />
         <HomeSeo locale={locale} />
         <OlfactoryShowcase products={allProducts} notes={notes} />
         <ProductCarousel
@@ -329,14 +348,13 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
 
   return (
     <>
-      <HeroSlider slides={slides} />
       <HomeSeo locale={locale} />
       {/* Render OlfactoryShowcase automatically if not yet added as a dedicated homepage_sections row */}
       {!hasExplicitAlchemist && (
         <OlfactoryShowcase products={allProducts} notes={notes} />
       )}
       {sections.map((s) => (
-        <Section key={s.id} s={s} locale={locale} ctx={ctx} />
+        <Suspense key={s.id} fallback={<div className="h-64 animate-pulse bg-sand/30" />}><Section s={s} locale={locale} ctx={ctx} /></Suspense>
       ))}
     </>
   );

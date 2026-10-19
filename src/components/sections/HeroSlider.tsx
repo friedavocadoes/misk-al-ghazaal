@@ -168,6 +168,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     <section
       ref={sectionRef}
       aria-label="Featured"
+      data-home-hero
       className="relative w-full bg-cream"
       style={{
         height: `calc(100svh - ${headerH}px + ${STICKY_RUNWAY_PX}px)`,
