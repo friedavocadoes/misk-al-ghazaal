@@ -154,6 +154,7 @@ export function BannerCreateButton({
                     Text Position on Banner
                     <select name="eyebrow" defaultValue="bottom-left" className={field}>
                       <option value="bottom-left">Bottom-Left Corner</option>
+<option value="bottom-center">Bottom Centre</option>
                       <option value="center">Dead Center</option>
                     </select>
                   </label>

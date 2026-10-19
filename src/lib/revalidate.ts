@@ -25,6 +25,8 @@ export function revalidatePagePaths(path: string) {
 }
 
 export function revalidateHome() {
+  revalidatePagePaths("/find-your-scent");
+  revalidateNavigation();
   for (const p of ["/", "/en", "/ar"]) revalidatePath(p, "page");
 }
 

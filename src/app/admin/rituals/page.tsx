@@ -1,3 +1,4 @@
+import { revalidateNavigation } from "@/lib/revalidate";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -29,6 +30,7 @@ async function createRitual(formData: FormData) {
     details: { title },
   });
   revalidatePath("/admin/rituals");
+  revalidateNavigation();
 }
 
 export default async function RitualsPage() {

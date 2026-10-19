@@ -1,3 +1,4 @@
+import { revalidateNavigation } from "@/lib/revalidate";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -33,7 +34,7 @@ async function saveRitual(formData: FormData) {
     details: { title: String(formData.get("title")) },
   });
   revalidatePath(`/admin/rituals/${String(formData.get("id"))}`);
-  revalidatePath("/", "layout");
+  revalidateNavigation();
 }
 
 export default async function RitualDetail(props: { params: Promise<{ id: string }> }) {

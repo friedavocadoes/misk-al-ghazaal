@@ -45,6 +45,7 @@ export async function GET(req: Request) {
     minRating: num("rating"),
     lineup: sp.get("lineup"),
     ritual: sp.get("ritual"),
+    note: sp.get("note"),
   };
   const offset = Math.max(0, num("offset") ?? 0);
   const limit = Math.min(24, Math.max(1, num("limit") ?? 12));

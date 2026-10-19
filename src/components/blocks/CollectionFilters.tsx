@@ -83,7 +83,7 @@ export function CollectionFilters({
     (sale ? 1 : 0) +
     (max < ceiling ? 1 : 0) +
     (sort !== "featured" ? 1 : 0) +
-    (lineup ? 1 : 0) + (ritual ? 1 : 0);
+    (lineup ? 1 : 0) + (ritual ? 1 : 0) + (params.get("note") ? 1 : 0);
 
   const dirty =
     avail !== (params.get("avail") === "in") ||

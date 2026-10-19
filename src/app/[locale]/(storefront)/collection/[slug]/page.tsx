@@ -6,7 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { CatalogInfinite } from "@/components/blocks/CatalogInfinite";
-import { getCollectionBySlug, getCollections, getLineups, getRituals, getProductsByCollection } from "@/lib/store";
+import { getCollectionBySlug, getCollections, getLineups, getRituals, getNotes, getProductsByCollection } from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
 import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
@@ -76,6 +76,7 @@ export default async function CollectionPage(
     inStockOnly: searchParams?.avail === "in",
     onSaleOnly: searchParams?.sale === "1",
     minRating: num(searchParams?.rating),
+    note: typeof searchParams?.note === "string" ? searchParams.note : null,
     ritual: typeof searchParams?.ritual === "string" ? searchParams.ritual : null,
     lineup: typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
   };
@@ -84,7 +85,8 @@ export default async function CollectionPage(
   const floor = Math.min(...prices, 0);
   const ceiling = Math.max(...prices, 200);
 
-  const title = isAll
+  const activeNote = opts.note ? (await getNotes()).find(n => n.slug === opts.note) : undefined;
+  const title = activeNote ? (locale === "ar" ? `عطور ${tx(activeNote.name, activeNote.nameAr, locale)}` : `${activeNote.name} perfumes`) : isAll
     ? locale === "ar" ? "تسوّق الكل" : "Shop All"
     : tx(category!.title, category!.titleAr, locale);
   const desc = isAll
@@ -101,6 +103,7 @@ export default async function CollectionPage(
     o: searchParams?.sort ?? "",
     l: searchParams?.lineup ?? "",
     r: searchParams?.ritual ?? "",
+    n: searchParams?.note ?? "",
   });
 
   return (
@@ -143,7 +146,7 @@ export default async function CollectionPage(
           basePath={`/collection/${raw}`}
           floor={floor}
           ceiling={ceiling}
-          context={isAll ? undefined : { label: title, clearHref: "/collection/all" }}
+          context={activeNote || !isAll ? { label: title, clearHref: "/collection/all" } : undefined}
           collections={collections.map((c) => ({ slug: c.slug, title: c.title, ...(c.titleAr ? { titleAr: c.titleAr } : {}) }))}
           lineups={lineups.map((l) => ({ slug: l.slug, title: l.title, ...(l.titleAr ? { titleAr: l.titleAr } : {}) }))}
           rituals={rituals.map((entry) => ({ slug: entry.id, title: entry.title, titleAr: entry.titleAr }))}

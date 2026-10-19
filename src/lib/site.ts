@@ -154,24 +154,16 @@ export interface ShopMenuColumn {
 
 export function getNavLeft(locale: Locale): NavLink[] {
   return [
-    { label: pick(L("About", "من نحن"), locale), href: "/pages/about" },
-    {
-      label: pick(L("Our Collections", "تسوّق معنا"), locale),
-      href: "/collection/all",
-    },
+    { label: pick(L("Our Collections", "مجموعاتنا"), locale), href: "/collection/all" },
+    { label: pick(L("Find Your Scent", "اكتشف عطرك"), locale), href: "/find-your-scent" },
+    { label: pick(L("Gifts", "الهدايا"), locale), href: "/gifts" },
   ];
 }
-
 export function getNavRight(locale: Locale): NavLink[] {
   return [
-    {
-      label: pick(L("Private Label", "العلامة الخاصة"), locale),
-      href: "/private-label",
-    },
-    {
-      label: pick(L("Connect", "تواصل معنا"), locale),
-      href: "/pages/contact",
-    },
+    { label: pick(L("Private Label", "العلامة الخاصة"), locale), href: "/private-label" },
+    { label: pick(L("Connect", "تواصل معنا"), locale), href: "/pages/contact" },
+    { label: pick(L("About", "من نحن"), locale), href: "/pages/about" },
   ];
 }
 

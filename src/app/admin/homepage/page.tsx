@@ -25,7 +25,7 @@ const KINDS = [
 ] as const;
 
 const KIND_LABELS: Record<(typeof KINDS)[number], string> = {
-  scent_alchemist: "scent alchemist (The Art of High Perfumery)",
+  scent_alchemist: "scent alchemist (moved to /find-your-scent)",
   products_carousel: "products carousel",
   product_tabs: "product tabs (Trending)",
   collections_grid: "collections grid (Shop by Ritual)",
@@ -208,7 +208,7 @@ export default async function HomepageAdmin() {
         <AdminForm action={createSection} success="Section created" className="mt-8 flex flex-wrap items-end gap-3 border border-ink/10 bg-white p-5 text-sm">
           <label className="block">Kind
             <select name="kind" className="mt-1 border border-ink/20 bg-white px-3 py-2" defaultValue="products_carousel">
-              {KINDS.map((k) => (
+              {KINDS.filter(k => k !== "scent_alchemist").map((k) => (
                 <option key={k} value={k}>{KIND_LABELS[k] ?? k}</option>
               ))}
             </select>

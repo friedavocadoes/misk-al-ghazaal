@@ -4,7 +4,6 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { HeroSlider } from "@/components/sections/HeroSlider";
-import { OlfactoryShowcase } from "@/components/sections/OlfactoryShowcase";
 import { BannerSplit } from "@/components/sections/BannerSplit";
 import { StoryBlock } from "@/components/sections/StoryBlock";
 import { DualFeature } from "@/components/sections/DualFeature";
@@ -27,8 +26,6 @@ import {
   getCollections,
   getHeroSlides,
   getHomepageSections,
-  getNotes,
-  getProducts,
   getProductsByCollection,
   getProductsBySlugs,
   type HomepageSection,
@@ -71,8 +68,6 @@ async function Section({ s, locale, ctx }: {
   ctx: {
     collections: Awaited<ReturnType<typeof getCollections>>;
     brands: Awaited<ReturnType<typeof getBrandBanners>>;
-    allProducts: Awaited<ReturnType<typeof getProducts>>;
-    notes: Awaited<ReturnType<typeof getNotes>>;
     bestSellers: Awaited<ReturnType<typeof getProductsByCollection>>;
     newArrivals: Awaited<ReturnType<typeof getProductsByCollection>>;
     featured: Awaited<ReturnType<typeof getProductsByCollection>>;
@@ -89,23 +84,7 @@ async function Section({ s, locale, ctx }: {
   };
 
   switch (s.kind) {
-    case "scent_alchemist": {
-      const cfg = s.config ?? {};
-      const pool =
-        cfg.mode === "manual" && cfg.slugs?.length
-          ? await getProductsBySlugs(cfg.slugs)
-          : ctx.allProducts;
-      return (
-        <OlfactoryShowcase
-          products={pool}
-          notes={ctx.notes}
-          eyebrow={t(s.eyebrow, s.eyebrowAr)}
-          title={t(s.title, s.titleAr)}
-          prompt={t(cfg.prompt, cfg.promptAr)}
-          configuredNoteSlugs={cfg.noteSlugs}
-        />
-      );
-    }
+    case "scent_alchemist": return null; // Dedicated /find-your-scent experience.
     case "products_carousel": {
       const products = await carouselProducts(s);
       if (!products.length) return null;
@@ -252,8 +231,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     sections,
     brands,
     collections,
-    allProducts,
-    notes,
     bestSellers,
     newArrivals,
     featured,
@@ -262,8 +239,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     getHomepageSections(),
     getBrandBanners(),
     getCollections(),
-    getProducts(),
-    getNotes(),
     getProductsByCollection("best-sellers"),
     getProductsByCollection("new-arrivals"),
     getProductsByCollection("best-sellers"),
@@ -273,17 +248,11 @@ async function HomeContent({ locale }: { locale: Locale }) {
   const ctx = {
     collections,
     brands,
-    allProducts,
-    notes,
     bestSellers,
     newArrivals,
     featured,
     articles,
   };
-  const hasExplicitAlchemist = sections.some(
-    (s) => s.kind === "scent_alchemist",
-  );
-
   if (!sections.length) {
     const ts = await getTranslations({ locale, namespace: "Sections" });
     const tc = await getTranslations({ locale, namespace: "Common" });
@@ -291,7 +260,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     return (
       <>
         <HomeSeo locale={locale} />
-        <OlfactoryShowcase products={allProducts} notes={notes} />
         <ProductCarousel
           eyebrow={ts("bestEyebrow")}
           title={ts("bestTitle")}
@@ -349,10 +317,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
   return (
     <>
       <HomeSeo locale={locale} />
-      {/* Render OlfactoryShowcase automatically if not yet added as a dedicated homepage_sections row */}
-      {!hasExplicitAlchemist && (
-        <OlfactoryShowcase products={allProducts} notes={notes} />
-      )}
       {sections.map((s) => (
         <Suspense key={s.id} fallback={<div className="h-64 animate-pulse bg-sand/30" />}><Section s={s} locale={locale} ctx={ctx} /></Suspense>
       ))}

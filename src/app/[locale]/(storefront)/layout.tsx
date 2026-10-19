@@ -1,3 +1,4 @@
+import { getNavigationMenu } from "@/lib/navigation-menu";
 import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { toLocale } from "@/lib/i18n";
@@ -17,7 +18,7 @@ export default async function StorefrontLayout(
   const locale = toLocale(raw);
   setRequestLocale(locale);
   // Staff-only edit bar (null without a session — shoppers never see it).
-  const [session, campaigns] = await Promise.all([getAdminSession(), getNavigationBanners()]);
+  const [session, campaigns, shopMenu] = await Promise.all([getAdminSession(), getNavigationBanners(), getNavigationMenu(locale)]);
   const editable = session?.role === "super_admin";
   return (
     <CartProvider>
@@ -28,7 +29,7 @@ export default async function StorefrontLayout(
             (synced pre-paint + RO inside SiteHeader) so geometry matches
             in-flow layout exactly, morph included. */}
         <RouteProgress />
-        <SiteHeader locale={locale} campaigns={campaigns} />
+        <SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />
         <div id="page-content">
           {editable && <AdminEditBar />}
           <main className="min-h-[60vh]">{props.children}</main>

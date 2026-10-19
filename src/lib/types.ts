@@ -168,7 +168,7 @@ export interface DeliveryAnswer {
   lng: number | null;
 }
 
-export type BannerTextAlign = "bottom-left" | "center";
+export type BannerTextAlign = "bottom-left" | "center" | "bottom-center";
 
 /** Homepage / collection hero banner & brand world card.
  *  `src` is the image URL (Supabase Storage or `/banners/*`);

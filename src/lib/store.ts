@@ -316,6 +316,7 @@ export const getProductsByCollection = cache(async function getProductsByCollect
     minRating?: number | null;
     lineup?: string | null;
   ritual?: string | null;
+  note?: string | null;
   },
 ): Promise<Product[]> {
   requireConfigured();
@@ -413,7 +414,7 @@ function toBanner(b: {
   // so no SQL schema migration is required on existing `banners` tables.
   const rawAlign = (b.eyebrow ?? "").trim().toLowerCase();
   const align: BannerTextAlign =
-    rawAlign === "center" ? "center" : "bottom-left";
+    rawAlign === "center" || rawAlign === "bottom-center" ? rawAlign : "bottom-left";
 
   return {
     ...(b.id ? { id: b.id } : {}),
@@ -516,6 +517,7 @@ export interface CatalogQuery {
   minRating?: number | null;
   lineup?: string | null;
   ritual?: string | null;
+  note?: string | null;
 }
 
 function applyCatalogFacets<T extends Product>(
@@ -537,6 +539,7 @@ function applyCatalogFacets<T extends Product>(
     out = out.filter((p) => p.price >= (opts.minPrice as number));
   if (opts?.lineup) out = out.filter((p) => p.lineupSlug === opts.lineup);
   if (opts?.ritual) out = out.filter((p) => p.ritualId === opts.ritual);
+  if (opts?.note) out = out.filter((p) => p.notes.some((n) => n.slug === opts.note));
   return out;
 }
 
@@ -1006,4 +1009,19 @@ export function toCouponRow(c: {
 /** Only the first two published navigation campaigns are displayed. */
 export const getNavigationBanners = cache(async function getNavigationBanners(): Promise<Banner[]> {
   return (await getBannersBySlot("navigation")).filter((banner) => banner.src).slice(0, 2);
+});
+
+/** Lightweight popularity signal for navigation; never hydrate the whole catalog in chrome. */
+export const getNoteUsage = cache(async (): Promise<Map<string, number>> => {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("product_notes").select("note_id, product_id, products!inner(id)").is("products.deleted_at", null).eq("products.is_active", true).limit(10000);
+  const counts = new Map<string, number>();
+  if (error) return counts; // Alphabetical note ordering remains usable before product-active migration.
+  const seen = new Set<string>();
+  for (const row of data ?? []) {
+    const key = `${row.product_id}:${row.note_id}`;
+    if (seen.has(key)) continue;
+    seen.add(key); counts.set(row.note_id, (counts.get(row.note_id) ?? 0) + 1);
+  }
+  return counts;
 });

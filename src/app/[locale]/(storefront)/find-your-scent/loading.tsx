@@ -1,0 +1,1 @@
+export default function Loading() { return <div className="min-h-screen bg-[#eeebe5] px-6 pt-72 text-center"><p className="text-xs uppercase tracking-[.3em]">Misk Al Ghazaal</p><div className="mx-auto mt-12 h-80 max-w-3xl animate-pulse rounded-3xl bg-white/50" /></div>; }

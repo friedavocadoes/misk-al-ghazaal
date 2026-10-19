@@ -53,7 +53,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       return <div key={slide.id || slide.src + index} className="hero-dissolve-slide" data-active={current} aria-hidden={!current} inert={!current}>
         {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onLoadedMetadata={(e) => syncVideo(e.currentTarget, current)} onDurationChange={(e) => syncVideo(e.currentTarget, current)} onSeeked={(e) => syncVideo(e.currentTarget, current)} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
         <div className="hero-legibility" />
-        <div className={`hero-copy ${slide.align === "center" ? "hero-copy-center" : ""}`}>
+        <div className={`hero-copy ${slide.align === "center" ? "hero-copy-center" : slide.align === "bottom-center" ? "hero-copy-bottom-center" : ""}`}>
           {title && <h2>{title}</h2>}
           {cta && slide.href && <Link href={slide.href} className="hero-action">{cta}</Link>}
         </div>

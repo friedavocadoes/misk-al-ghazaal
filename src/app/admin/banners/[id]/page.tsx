@@ -160,8 +160,8 @@ export default async function BannerDetail(props: {
 
   const isHero = b.slot === "hero";
   const heroAlign =
-    String(b.eyebrow ?? "").trim().toLowerCase() === "center"
-      ? "center"
+    ["center", "bottom-center"].includes(String(b.eyebrow ?? "").trim().toLowerCase())
+      ? String(b.eyebrow).trim().toLowerCase()
       : "bottom-left";
 
   return (
@@ -256,6 +256,7 @@ export default async function BannerDetail(props: {
                   className="mt-1 w-full border border-ink/20 bg-white px-3 py-2"
                 >
                   <option value="bottom-left">Bottom-Left Corner</option>
+<option value="bottom-center">Bottom Centre</option>
                   <option value="center">Dead Center</option>
                 </select>
                 <span className="mt-1 block text-xs text-ink/55">

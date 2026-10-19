@@ -31,19 +31,19 @@ import { avatarOf, displayNameOf, providerOf } from "@/lib/shopper-identity";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
-import { getNavLeft, getNavRight, getShopMenu } from "@/lib/site";
+import { getNavLeft, getNavRight, getShopMenu, type ShopMenuColumn } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import {
   SearchSuggest,
   type SearchSuggestHandle,
 } from "@/components/search/SearchSuggest";
 
-type LinkKey = "about" | "shop" | "manufacture" | "contact";
+type LinkKey = "about" | "shop" | "scent" | "gifts" | "manufacture" | "contact";
 
 const EASE = "expo.out";
 const FLIGHT = 0.6;
 
-export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaigns?: Banner[] }) {
+export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Locale; campaigns?: Banner[]; shopMenu?: ShopMenuColumn[] }) {
   // Compact flips once past 36px, releases below 18px — early
   // engagement so chrome and hero morph as one; hysteresis + cooldown
   // below mean no half-states and no oscillation.
@@ -101,12 +101,16 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stackedRefs = useRef<Record<LinkKey, HTMLElement | null>>({
     about: null,
+    scent: null,
+    gifts: null,
     shop: null,
     manufacture: null,
     contact: null,
   });
   const inlineRefs = useRef<Record<LinkKey, HTMLElement | null>>({
     about: null,
+    scent: null,
+    gifts: null,
     shop: null,
     manufacture: null,
     contact: null,
@@ -159,7 +163,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
       Object.values(inlineRefs.current).forEach((el) => { if (el) el.style.opacity = compact ? "1" : "0"; });
       return;
     }
-    const keys: LinkKey[] = ["about", "shop", "manufacture", "contact"];
+    const keys: LinkKey[] = ["shop", "scent", "gifts", "manufacture", "contact", "about"];
     const ctx = gsap.context(() => {
       for (const key of keys) {
         const stacked = stackedRefs.current[key];
@@ -380,7 +384,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
 
   const left = getNavLeft(locale);
   const right = getNavRight(locale);
-  const shop = getShopMenu(locale);
+  const shop = shopMenu ?? getShopMenu(locale);
   const { count: bagCount } = useCart();
 
   // Icon glyphs scale on the GPU (transform) inside fixed-size hit areas,
@@ -390,22 +394,9 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
     compact ? "scale-[0.75]" : "scale-100"
   }`;
 
-  const linkFor = (key: LinkKey): string =>
-    key === "about"
-      ? left[0].href
-      : key === "shop"
-        ? left[1].href
-        : key === "manufacture"
-          ? right[0].href
-          : right[1].href;
-  const labelFor = (key: LinkKey): string =>
-    key === "about"
-      ? left[0].label
-      : key === "shop"
-        ? left[1].label
-        : key === "manufacture"
-          ? right[0].label
-          : right[1].label;
+  const navByKey = { shop: left[0], scent: left[1], gifts: left[2], manufacture: right[0], contact: right[1], about: right[2] };
+  const linkFor = (key: LinkKey) => navByKey[key].href;
+  const labelFor = (key: LinkKey) => navByKey[key].label;
 
   // Maison nav voice: quiet Inter small-caps (letterspaced, medium) —
   // the serif belongs to headlines, not the chrome. Stacked and inline
@@ -449,9 +440,10 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
       onMouseLeave={() => key === "shop" && scheduleClose()}
       tabIndex={compact ? 0 : -1}
       aria-hidden={!compact}
-      className="maison-nav-link maison-inline-link whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
+      className="maison-nav-link maison-inline-link inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.12em] text-ink antialiased opacity-0 transition-colors hover:text-gold"
     >
       {labelFor(key)}
+      {key === "shop" && <ChevronDown className="size-3 shrink-0 text-current" />}
     </Link>
   );
 
@@ -526,8 +518,9 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             <span
               className={`flex items-center ${locale === "ar" ? "gap-7 ps-9" : "gap-6 ps-7"}`}
             >
-              {inlineLink("about")}
               {inlineLink("shop")}
+              {inlineLink("scent")}
+              {inlineLink("gifts")}
             </span>
           </div>
 
@@ -550,6 +543,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             >
               {inlineLink("manufacture")}
               {inlineLink("contact")}
+              {inlineLink("about")}
             </span>
             <Link
               href="/locate-us"
@@ -709,8 +703,9 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             <span
               className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pe-12" : "gap-10 pe-8"}`}
             >
-              {stackedLink("about")}
               {stackedLink("shop")}
+              {stackedLink("scent")}
+              {stackedLink("gifts")}
             </span>
             <span
               aria-hidden
@@ -721,6 +716,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             >
               {stackedLink("manufacture")}
               {stackedLink("contact")}
+              {stackedLink("about")}
             </span>
           </div>
         </nav>
@@ -840,7 +836,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                   <div className="grid grid-cols-3 gap-8">
                     {shop.map((col, index) => (
                       <div key={col.heading} className="maison-shop-column" style={{ transitionDelay: `${index * 60}ms` }}>
-                        <span aria-hidden className="mb-3 block text-[10px] tracking-[.2em] text-gold">0{index + 1}</span>
+
                         <Link href={col.href} onClick={() => setShopOpen(false)} className="font-display text-2xl hover:text-gold">{col.heading}</Link>
                         <ul className="mt-5 space-y-3">{col.links.map((item) => <li key={item.href}>{item.external ? <a href={item.href} target="_blank" rel="noreferrer" className="maison-shop-link">{item.label}<ArrowUpRight className="size-3" /></a> : <Link href={item.href} onClick={() => setShopOpen(false)} className="maison-shop-link">{item.label}</Link>}</li>)}</ul>
                       </div>
@@ -889,35 +885,8 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                 aria-label="Mobile"
               >
                 {[
-                  <Link
-                    key="about"
-                    href={left[0].href}
-                    onClick={closeMenu}
-                    className="block border-b border-ink/10 py-4 font-display text-3xl text-ink"
-                  >
-                    {left[0].label}
-                  </Link>,
-                  <button
-                    key="shop"
-                    onClick={() => setMobileShopOpen((v) => !v)}
-                    aria-expanded={mobileShopOpen}
-                    className="flex w-full cursor-pointer items-center justify-between border-b border-ink/10 py-4 font-display text-3xl text-ink"
-                  >
-                    {left[1].label}
-                    <ChevronDown
-                      className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>,
-                  ...right.map((l) => (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      onClick={closeMenu}
-                      className="block border-b border-ink/10 py-4 font-display text-3xl text-ink"
-                    >
-                      {l.label}
-                    </Link>
-                  )),
+                  <button key="shop" onClick={() => setMobileShopOpen((v) => !v)} aria-expanded={mobileShopOpen} className="flex w-full cursor-pointer items-center justify-between border-b border-ink/10 py-4 text-2xl text-ink">{left[0].label}<ChevronDown className={`size-5 transition ${mobileShopOpen ? "rotate-180" : ""}`} /></button>,
+                  ...[...left.slice(1), ...right].map((l) => <Link key={l.href} href={l.href} onClick={closeMenu} className="block border-b border-ink/10 py-4 text-2xl text-ink">{l.label}</Link>),
                 ].map((row, i) => (
                   <span
                     key={i}
@@ -930,8 +899,8 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                         : "0ms",
                     }}
                   >
-                    <span className="mobile-navigation-row"><span aria-hidden className="mobile-navigation-index">0{i + 1}</span>{row}</span>
-                {i === 1 && mobileShopOpen && (
+                    <span className="mobile-navigation-row">{row}</span>
+                {i === 0 && mobileShopOpen && (
                   <span className="mobile-shop-groups mt-2 grid grid-cols-1 gap-3 border-b border-ink/10 pb-6 ps-8">
                     {shop.map((col) => (
                       <span key={col.heading} className="block py-2">

@@ -1,3 +1,4 @@
+import { revalidateNavigation } from "@/lib/revalidate";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -31,7 +32,7 @@ async function createLineup(formData: FormData) {
     details: { slug, title },
   });
   revalidatePath("/admin/lineups");
-  revalidatePath("/", "layout");
+  revalidateNavigation();
 }
 
 async function saveLineup(formData: FormData) {
@@ -57,7 +58,7 @@ async function saveLineup(formData: FormData) {
     details: { title: String(formData.get("title")), sort: Number(formData.get("sort") || 0) },
   });
   revalidatePath("/admin/lineups");
-  revalidatePath("/", "layout");
+  revalidateNavigation();
 }
 
 async function deleteLineup(formData: FormData) {
@@ -78,7 +79,7 @@ async function deleteLineup(formData: FormData) {
     details: { id: String(formData.get("id")), snapshot: doomed ?? null },
   });
   revalidatePath("/admin/lineups");
-  revalidatePath("/", "layout");
+  revalidateNavigation();
 }
 
 export default async function LineupsPage() {
