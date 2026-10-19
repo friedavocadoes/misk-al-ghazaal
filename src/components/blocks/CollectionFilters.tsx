@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -36,6 +36,7 @@ export function CollectionFilters({
   context,
   collections,
   lineups,
+  rituals = [],
   activeLineup,
 }: {
   basePath: string;
@@ -44,9 +45,11 @@ export function CollectionFilters({
   context?: { label: string; clearHref: string };
   collections: ShopOption[];
   lineups: ShopOption[];
+  rituals?: ShopOption[];
   activeLineup?: string;
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const params = useSearchParams();
   const t = useTranslations("Filters");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
@@ -60,56 +63,45 @@ export function CollectionFilters({
 
   const [avail, setAvail] = useState(params.get("avail") === "in");
   const [sale, setSale] = useState(params.get("sale") === "1");
-  const [max, setMax] = useState(num("max") ?? ceiling);
+  const [max, setMax] = useState(Math.min(ceiling, Math.max(floor, num("max") ?? ceiling)));
   const [sort, setSort] = useState(params.get("sort") ?? "featured");
   const [lineup, setLineup] = useState(activeLineup ?? "");
-  const [shopOpen, setShopOpen] = useState(false);
+
+  const [shopGroup, setShopGroup] = useState<"collections" | "lineups" | "rituals">("collections");
+  const [shopSearch, setShopSearch] = useState("");
+  const [ritual, setRitual] = useState(params.get("ritual") || "");
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [openSections, setOpenSections] = useState({
     shop: true,
     avail: true,
     price: true,
     sort: true,
   });
-  const shopRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (shopRef.current && !shopRef.current.contains(e.target as Node))
-        setShopOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShopOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, []);
 
   const activeCount =
     (avail ? 1 : 0) +
     (sale ? 1 : 0) +
     (max < ceiling ? 1 : 0) +
     (sort !== "featured" ? 1 : 0) +
-    (lineup ? 1 : 0);
+    (lineup ? 1 : 0) + (ritual ? 1 : 0);
 
   const dirty =
     avail !== (params.get("avail") === "in") ||
     sale !== (params.get("sale") === "1") ||
     max !== (num("max") ?? ceiling) ||
     sort !== (params.get("sort") ?? "featured") ||
-    lineup !== (activeLineup ?? "");
+    lineup !== (activeLineup ?? "") || ritual !== (params.get("ritual") || "");
 
   const pushParams = (o: {
     lineupValue: string;
+    ritualValue?: string;
     availValue: boolean;
     saleValue: boolean;
     maxValue: number;
     sortValue: string;
   }) => {
     const next = new URLSearchParams(params.toString());
+    if (o.ritualValue ?? ritual) next.set("ritual", o.ritualValue ?? ritual); else next.delete("ritual");
     next.delete("page");
     next.delete("min");
     if (o.availValue) next.set("avail", "in");
@@ -122,7 +114,7 @@ export function CollectionFilters({
     else next.delete("lineup");
     if (o.sortValue !== "featured") next.set("sort", o.sortValue);
     else next.delete("sort");
-    router.push(`${basePath}${next.toString() ? `?${next}` : ""}`);
+    startTransition(() => router.push(`${basePath}${next.toString() ? `?${next}` : ""}`, { scroll: false }));
   };
 
   const staged = () => ({
@@ -134,7 +126,6 @@ export function CollectionFilters({
   });
 
   const apply = () => {
-    setShopOpen(false);
     pushParams(staged());
   };
 
@@ -142,13 +133,11 @@ export function CollectionFilters({
   const flipAvail = () => {
     const v = !avail;
     setAvail(v);
-    setShopOpen(false);
     pushParams({ ...staged(), availValue: v });
   };
   const flipSale = () => {
     const v = !sale;
     setSale(v);
-    setShopOpen(false);
     pushParams({ ...staged(), saleValue: v });
   };
 
@@ -156,7 +145,6 @@ export function CollectionFilters({
   // option visibly does something the moment it is picked.
   const applyLineup = (slug: string) => {
     setLineup(slug);
-    setShopOpen(false);
     pushParams({ ...staged(), lineupValue: slug });
   };
 
@@ -198,7 +186,7 @@ export function CollectionFilters({
         {badge && (
           <span
             key={badge}
-            className="animate-[heart-pop_0.35s_ease-out] bg-gold px-1.5 py-px text-[9px] font-bold tracking-normal text-white"
+            className="animate-[heart-pop_0.35s_ease-out] bg-gold px-1.5 py-px text-[9px] font-bold tracking-normal text-ink"
           >
             {badge}
           </span>
@@ -238,8 +226,12 @@ export function CollectionFilters({
 
   return (
     <aside
-      className="h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-white p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto"
+      data-mobile-open={mobileOpen}
+      aria-busy={pending}
+      className="collection-refine h-fit animate-[filter-in_0.5s_cubic-bezier(0.22,1,0.36,1)] border border-ink/10 bg-[#f0ebe2] p-6 lg:sticky lg:top-24 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto"
     >
+      <button type="button" className="collection-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-expanded={mobileOpen}><SlidersHorizontal className="size-4" />{t("refine")}{activeCount > 0 && ` · ${activeCount}`}<ChevronDown className="ms-auto size-4" /></button>
+      <div className="collection-refine-body">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-ink">
           <SlidersHorizontal className="size-3.5 text-gold" />
@@ -297,96 +289,31 @@ export function CollectionFilters({
         </Link>
       )}
 
+      {ritual && <button type="button" className="mt-2 flex w-full items-center justify-between gap-2 border border-gold/30 px-3 py-3 text-start text-sm" onClick={() => { setRitual(""); pushParams({ ...staged(), ritualValue: "" }); }}>
+        {tx(rituals.find((entry) => entry.slug === ritual)?.title || ritual, rituals.find((entry) => entry.slug === ritual)?.titleAr, locale)}<X className="size-4 shrink-0" />
+      </button>}
       {/* Shop by — one dropdown, two atmospheres: collections jump pages,
           lineups commit instantly (staged facets ride along). */}
       <div className="mt-5 animate-[filter-in_0.5s_0.1s_cubic-bezier(0.22,1,0.36,1)_backwards] border-t border-ink/10 pt-5">
-        {sectionHead("shop", t("shopBy"), lineup ? "1" : undefined)}
+        {sectionHead("shop", t("shopBy"), lineup || ritual ? String(Number(!!lineup) + Number(!!ritual)) : undefined)}
         {sectionBody(
           "shop",
-          <div ref={shopRef} className="relative">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShopOpen((v) => !v)}
-              aria-expanded={shopOpen}
-              className="h-11 w-full justify-between px-3 text-sm font-medium normal-case tracking-normal"
-            >
-              <span className="truncate">
-                {lineup ? lineupName(lineup) : t("all")}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "size-4 shrink-0 text-gold transition-transform duration-300",
-                  shopOpen && "rotate-180",
-                )}
-              />
-            </Button>
-            {shopOpen && (
-              <div className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-72 animate-[account-in_0.25s_cubic-bezier(0.22,1,0.36,1)] overflow-y-auto border border-ink/10 bg-white shadow-[0_24px_48px_-20px_rgba(28,25,23,0.4)]">
-                <p className="border-b border-ink/10 px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-fog">
-                  {t("collections")}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => applyLineup("")}
-                  className="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm text-espresso transition hover:bg-cream hover:text-ink"
-                >
-                  {t("all")}
-                  {!lineup && <Check className="size-3.5 text-gold" />}
-                </button>
-                {collections.map((c) => (
-                  <Link
-                    key={c.slug}
-                    href={`/collection/${c.slug}`}
-                    onClick={() => setShopOpen(false)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-espresso transition hover:translate-x-0.5 hover:bg-cream hover:text-ink rtl:hover:-translate-x-0.5"
-                  >
-                    <span className="truncate">
-                      {tx(c.title, c.titleAr, locale)}
-                    </span>
-                  </Link>
-                ))}
-                {lineups.length > 0 && (
-                  <>
-                    <p className="border-b border-ink/10 border-t px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-fog">
-                      {t("lineups")}
-                    </p>
-                    {lineups.map((l) => (
-                      <button
-                        key={l.slug}
-                        type="button"
-                        onClick={() =>
-                          applyLineup(lineup === l.slug ? "" : l.slug)
-                        }
-                        className={cn(
-                          "flex w-full cursor-pointer items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-cream",
-                          lineup === l.slug
-                            ? "font-medium text-ink"
-                            : "text-espresso hover:text-ink",
-                        )}
-                      >
-                        <span className="flex items-center gap-2 truncate">
-                          <span
-                            className={cn(
-                              "size-1.5 shrink-0 rounded-full transition-all duration-300",
-                              lineup === l.slug
-                                ? "scale-125 bg-gold"
-                                : "bg-ink/20",
-                            )}
-                          />
-                          <span className="truncate">
-                            {tx(l.title, l.titleAr, locale)}
-                          </span>
-                        </span>
-                        {lineup === l.slug && (
-                          <Check className="size-3.5 shrink-0 text-gold" />
-                        )}
-                      </button>
-                    ))}
-                  </>
-                )}
+          <div className="collection-discovery">
+              <div className="discovery-tabs" aria-label={t("shopBy")}>
+                {(["collections", "lineups", "rituals"] as const).map((group) => <button key={group} type="button" aria-pressed={shopGroup === group} onClick={() => { setShopGroup(group); setShopSearch(""); }}>{group === "rituals" ? (locale === "ar" ? "الطقوس" : "Rituals") : t(group)}</button>)}
               </div>
-            )}
+              <input aria-label={locale === "ar" ? "ابحث" : "Find a collection, lineup or ritual"} placeholder={locale === "ar" ? "ابحث…" : "Find your edit…"} value={shopSearch} onChange={(event) => setShopSearch(event.target.value)} className="my-3 w-full border-b border-ink/15 bg-transparent py-2 text-sm outline-none focus:border-gold" />
+              <div className="discovery-options">
+                {shopGroup === "collections" && <Link href="/collection/all" className="discovery-option">{t("all")}<span>↗</span></Link>}
+                {(shopGroup === "collections" ? collections : shopGroup === "lineups" ? lineups : rituals).filter((entry) => tx(entry.title, entry.titleAr, locale).toLowerCase().includes(shopSearch.toLowerCase())).map((entry) => shopGroup === "collections" ?
+                  <Link key={entry.slug} className="discovery-option" href={`/collection/${entry.slug}`}>{tx(entry.title, entry.titleAr, locale)}<span>↗</span></Link> :
+                  <button key={entry.slug} type="button" className="discovery-option" aria-pressed={(shopGroup === "lineups" ? lineup : ritual) === entry.slug} onClick={() => {
+                    if (shopGroup === "lineups") applyLineup(lineup === entry.slug ? "" : entry.slug);
+                    else { const value = ritual === entry.slug ? "" : entry.slug; setRitual(value); pushParams({ ...staged(), ritualValue: value }); }
+                  }}>{tx(entry.title, entry.titleAr, locale)}{(shopGroup === "lineups" ? lineup : ritual) === entry.slug && <Check className="size-3.5" />}</button>
+                )}
+                {!(shopGroup === "collections" ? collections : shopGroup === "lineups" ? lineups : rituals).filter((entry) => tx(entry.title, entry.titleAr, locale).toLowerCase().includes(shopSearch.toLowerCase())).length && <p className="py-4 text-xs text-fog">{locale === "ar" ? "لا توجد خيارات" : "No edits available here yet."}</p>}
+              </div>
           </div>,
         )}
       </div>
@@ -451,7 +378,7 @@ export function CollectionFilters({
                 type="range"
                 min={floor}
                 max={ceiling}
-                step={10}
+                step={1}
                 value={max}
                 onChange={(e) => setMax(Number(e.target.value))}
                 aria-label={t("maxPrice")}
@@ -475,16 +402,12 @@ export function CollectionFilters({
         {sectionHead("sort", t("sort"), sort !== "featured" ? "•" : undefined)}
         {sectionBody(
           "sort",
-          <div role="radiogroup" aria-label={t("sort")} className="space-y-0.5">
+          <div role="radiogroup" aria-label={t("sort")} className="refine-sort-grid">
             {sortOptions.map((o) => {
               const on = sort === o.v;
               return (
-                <button
+                <label
                   key={o.v}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => setSort(o.v)}
                   className={cn(
                     "group flex w-full cursor-pointer items-center gap-2.5 px-2 py-2 text-left text-sm transition-all duration-300",
                     on
@@ -500,8 +423,9 @@ export function CollectionFilters({
                         : "bg-ink/20 group-hover:bg-gold/60",
                     )}
                   />
+                  <input className="sr-only" type="radio" name={`sort-${basePath}`} value={o.v} checked={on} onChange={() => setSort(o.v)} />
                   {o.label}
-                </button>
+                </label>
               );
             })}
           </div>,
@@ -510,7 +434,7 @@ export function CollectionFilters({
 
       <Button
         onClick={apply}
-        disabled={!dirty}
+        disabled={!dirty || pending}
         className={cn(
           "relative mt-6 h-12 w-full overflow-hidden text-[12px] tracking-[0.2em]",
           dirty &&
@@ -518,11 +442,12 @@ export function CollectionFilters({
         )}
       >
         <span className="relative z-10">
-          {t("apply")}
+          {pending ? (locale === "ar" ? "جارٍ التحديث…" : "Updating…") : t("apply")}
           {activeCount > 0 ? ` · ${activeCount}` : ""}
         </span>
         {dirty && <span aria-hidden className="apply-shine" />}
       </Button>
+      </div>
     </aside>
   );
 }

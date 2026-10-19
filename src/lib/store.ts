@@ -315,6 +315,7 @@ export const getProductsByCollection = cache(async function getProductsByCollect
     onSaleOnly?: boolean;
     minRating?: number | null;
     lineup?: string | null;
+  ritual?: string | null;
   },
 ): Promise<Product[]> {
   requireConfigured();
@@ -514,6 +515,7 @@ export interface CatalogQuery {
   onSaleOnly?: boolean;
   minRating?: number | null;
   lineup?: string | null;
+  ritual?: string | null;
 }
 
 function applyCatalogFacets<T extends Product>(
@@ -534,6 +536,7 @@ function applyCatalogFacets<T extends Product>(
   if (opts?.minPrice != null)
     out = out.filter((p) => p.price >= (opts.minPrice as number));
   if (opts?.lineup) out = out.filter((p) => p.lineupSlug === opts.lineup);
+  if (opts?.ritual) out = out.filter((p) => p.ritualId === opts.ritual);
   return out;
 }
 

@@ -4,7 +4,7 @@ import type { Product } from "@/lib/types";
 
 function toCard(p: Product) {
   return {
-    id: p.slug,
+    id: p.id,
     slug: p.slug,
     title: p.title,
     ...(p.titleAr ? { titleAr: p.titleAr } : {}),
@@ -16,8 +16,12 @@ function toCard(p: Product) {
     tags: [],
     rating: p.rating,
     reviewCount: p.reviewCount,
-    variants: p.variants.map((v) => ({ id: v.id })),
-    notes: [],
+    variants: p.variants,
+    notes: p.notes,
+    isNew: p.isNew,
+    isBestSeller: p.isBestSeller,
+    lineupTitle: p.lineupTitle,
+    lineupTitleAr: p.lineupTitleAr,
   };
 }
 
@@ -40,6 +44,7 @@ export async function GET(req: Request) {
     onSaleOnly: sp.get("sale") === "1",
     minRating: num("rating"),
     lineup: sp.get("lineup"),
+    ritual: sp.get("ritual"),
   };
   const offset = Math.max(0, num("offset") ?? 0);
   const limit = Math.min(24, Math.max(1, num("limit") ?? 12));
