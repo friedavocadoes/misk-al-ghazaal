@@ -23,15 +23,17 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
     return () => query.removeEventListener("change", update);
   }, []);
   useEffect(() => {
-    if (paused || reduced || slides.length < 2) return;
+    if (paused || reduced || slides.length < 2 || isVideo(slides[active]?.src || "")) return;
     const timer = setInterval(() => { if (!document.hidden) setActive((i) => (i + 1) % slides.length); }, 6200);
     return () => clearInterval(timer);
-  }, [paused, reduced, slides.length, active]);
+  }, [paused, reduced, slides, active]);
   useEffect(() => {
     videos.current.forEach((video, index) => {
       if (!video) return;
-      if (index === active && !paused && !reduced) void video.play().catch(() => undefined);
-      else video.pause();
+      if (index === active && !paused && !reduced) {
+        if (video.ended) video.currentTime = 0;
+        void video.play().catch(() => undefined);
+      } else video.pause();
     });
   }, [active, paused, reduced]);
   if (!slides.length) return null;
@@ -41,7 +43,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       const title = tx(slide.title || "", slide.titleAr, locale);
       const cta = tx(slide.cta || "", slide.ctaAr, locale);
       return <div key={slide.id || slide.src + index} className="hero-dissolve-slide" data-active={current} aria-hidden={!current} inert={!current}>
-        {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
+        {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
         <div className="hero-legibility" />
         <div className={`hero-copy ${slide.align === "center" ? "hero-copy-center" : ""}`}>
           {title && <h2>{title}</h2>}
