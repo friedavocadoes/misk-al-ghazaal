@@ -532,7 +532,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                 <BrandCrest compact={compact} />
               </span>
             </span>
-            <span className="maison-wordmark" aria-hidden="true"><span>Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PARFUMS · عطور"}</small></span>
+            <span className="maison-wordmark" aria-hidden="true"><span>Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PERFUMES"}</small></span>
           </Link>
 
           <div className="maison-utilities flex items-center justify-end">
@@ -728,7 +728,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
             <span aria-hidden className="mobile-menu-lines"><span /><span /></span>
           </button>
           <Link href="/" aria-label={t("home")} className="mobile-brand-lockup justify-self-center">
-            <span className="block size-11"><BrandCrest compact={compact} /></span><span className="mobile-brand-name"><span className="font-display">Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PARFUMS"}</small></span>
+            <span className="block size-11"><BrandCrest compact={compact} /></span><span className="mobile-brand-name"><span className="font-display">Misk Al Ghazaal</span><small>{locale === "ar" ? "دار العطور" : "PERFUMES"}</small></span>
           </Link>
           <span className="flex items-center justify-end">
             <button
@@ -866,7 +866,7 @@ export function SiteHeader({ locale, campaigns = [] }: { locale: Locale; campaig
                   transform: `translateY(${menuEntered ? 0 : -12}px)`,
                 }}
               >
-                <Link href="/" onClick={closeMenu} className="flex items-center gap-3"><span className="block size-12"><BrandCrest compact /></span><span className="font-display text-lg">Misk Al Ghazaal<span className="mt-1 block font-sans text-[8px] tracking-[.28em] text-gold">{locale === "ar" ? "دار العطور" : "PARFUMS"}</span></span></Link>
+                <Link href="/" onClick={closeMenu} className="flex items-center gap-3"><span className="block size-12"><BrandCrest compact /></span><span className="font-display text-lg">Misk Al Ghazaal<span className="mt-1 block font-sans text-[8px] tracking-[.28em] text-gold">{locale === "ar" ? "دار العطور" : "PERFUMES"}</span></span></Link>
                 <button
                   onClick={closeMenu}
                   aria-label={t("closeMenu")}

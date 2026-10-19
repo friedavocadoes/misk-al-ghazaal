@@ -239,7 +239,7 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
 }
 
 function ArrivalMark() {
-  return <div className="arrival-mark"><img src="/mag.webp" width="80" height="80" alt="Misk Al Ghazaal" /><span>Misk Al Ghazaal</span><small>PARFUMS</small><i /></div>;
+  return <div className="arrival-mark"><img src="/mag.webp" width="80" height="80" alt="Misk Al Ghazaal" /><span>Misk Al Ghazaal</span><small>PERFUMESS</small><i /></div>;
 }
 
 async function HomeHero() {
