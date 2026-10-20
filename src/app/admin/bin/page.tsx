@@ -68,12 +68,12 @@ async function destroyItem(formData: FormData) {
   if (table === "banners") {
     const { data: b } = await supabase
       .from("banners")
-      .select("src, fallback")
+      .select("src, fallback, mobile_src, mobile_fallback")
       .eq("id", String(formData.get("id")))
       .single();
     const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
     if (error) throw error;
-    await cleanupBannerArt(supabase, [b?.src, b?.fallback].filter((url): url is string => typeof url === "string"));
+    await cleanupBannerArt(supabase, [b?.src, b?.fallback, b?.mobile_src, b?.mobile_fallback].filter((url): url is string => typeof url === "string"));
   }
   await supabase.from(table).delete().eq("id", String(formData.get("id")));
   await logAdmin(supabase, s, {

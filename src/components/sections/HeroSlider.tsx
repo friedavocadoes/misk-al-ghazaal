@@ -9,7 +9,10 @@ import { tx } from "@/lib/i18n";
 import type { Banner } from "@/lib/types";
 
 const isVideo = (src: string) => /\.mp4(?:[?#]|$)/i.test(src);
-export function HeroSlider({ slides }: { slides: Banner[] }) {
+export function HeroSlider({ slides: originalSlides }: { slides: Banner[] }) {
+  const [mobile,setMobile]=useState<boolean|null>(null);
+  useEffect(()=>{const q=matchMedia("(max-width: 767px)");const update=()=>setMobile(q.matches);update();q.addEventListener("change",update);return()=>q.removeEventListener("change",update);},[]);
+  const slides=originalSlides.map(s=>s.mobileSrc ? {...s,src:mobile===null?"":mobile?s.mobileSrc:s.src,fallback:mobile===null?"":mobile?s.mobileFallback||"":s.fallback}:s);
   const locale = useLocale() === "ar" ? "ar" : "en";
   const t = useTranslations("Hero");
   const [active, setActive] = useState(0);
@@ -38,7 +41,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
         else video.pause();
       } else video.pause();
     });
-  }, [active, paused, reduced]);
+  }, [active, paused, reduced, mobile]);
   if (!slides.length) return null;
   const syncVideo = (video: HTMLVideoElement, current: boolean) => {
     if (current && Number.isFinite(video.duration) && video.duration > 0) {
@@ -51,7 +54,7 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       const title = tx(slide.title || "", slide.titleAr, locale);
       const cta = tx(slide.cta || "", slide.ctaAr, locale);
       return <div key={slide.id || slide.src + index} className="hero-dissolve-slide" data-active={current} aria-hidden={!current} inert={!current}>
-        {isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onLoadedMetadata={(e) => syncVideo(e.currentTarget, current)} onDurationChange={(e) => syncVideo(e.currentTarget, current)} onSeeked={(e) => syncVideo(e.currentTarget, current)} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
+        {!slide.src ? null : isVideo(slide.src) ? <video ref={(node) => { videos.current[index] = node; }} className="hero-film" src={index === 0 || current ? slide.src : undefined} poster={slide.fallback || undefined} muted playsInline loop={slides.length < 2} onLoadedMetadata={(e) => syncVideo(e.currentTarget, current)} onDurationChange={(e) => syncVideo(e.currentTarget, current)} onSeeked={(e) => syncVideo(e.currentTarget, current)} onEnded={() => { if (current && !paused && !reduced && slides.length > 1) setActive((i) => (i + 1) % slides.length); }} preload={index === 0 ? "auto" : "none"} aria-label={slide.alt} /> : <div className="hero-image-drift"><SafeImage src={slide.src} fallback={slide.fallback} alt={slide.alt} fill priority={index === 0} sizes="100vw" className="object-cover" style={{ objectPosition: slide.focal || "center" }} /></div>}
         <div className="hero-legibility" />
         <div className={`hero-copy ${slide.align === "center" ? "hero-copy-center" : slide.align === "bottom-center" ? "hero-copy-bottom-center" : ""}`}>
           {title && <h2>{title}</h2>}

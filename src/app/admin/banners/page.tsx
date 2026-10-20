@@ -47,6 +47,8 @@ async function createBanner(formData: FormData) {
     slot: String(formData.get("slot") ?? "hero"),
     sort: Number(formData.get("sort") ?? 0),
     src,
+    mobile_src: formData.get("separate_mobile")==="on" ? String(formData.get("mobile_src")||"") : "",
+    mobile_fallback: formData.get("separate_mobile")==="on" ? String(formData.get("mobile_fallback")||"") : "",
     fallback: text(formData, "fallback") ?? "",
     alt: String(formData.get("alt") ?? formData.get("title") ?? "Banner"),
     title: text(formData, "title"),
@@ -79,12 +81,12 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", String(formData.get("id"))).single();
+  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback, mobile_src, mobile_fallback").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
   if (doomed?.slot === "navigation") {
     const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
     if (error) throw error;
-    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback]);
+    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback, doomed.mobile_src, doomed.mobile_fallback]);
     revalidatePath("/admin/banners"); revalidateNavigation();
     await logAdmin(supabase, s, { category: "banners", action: "delete", entity: "banner", entityId: String(formData.get("id")), summary: "Deleted menu banner and unused artwork" });
     return;
@@ -108,7 +110,8 @@ async function moveToBin(formData: FormData) {
   revalidateNavigation();
 }
 
-export default async function BannersPage() {
+export default async function BannersPage({searchParams}:{searchParams:Promise<{q?:string;slot?:string}>}) {
+ const filters=await searchParams;
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   if (session.role !== "super_admin") redirect("/admin/orders");
@@ -148,7 +151,7 @@ export default async function BannersPage() {
           </div>
         </div>
 
-        <section id="navigation" className="mt-8 border border-ink/15 bg-white p-6">
+        <form className="my-6 flex flex-wrap gap-3"><input name="q" defaultValue={filters.q} placeholder="Search banners…" className="min-w-0 flex-1 border p-3"/><select name="slot" defaultValue={filters.slot||""} className="border p-3"><option value="">All banner types</option><option value="hero">Homepage hero</option><option value="brand">Brand cards</option><option value="navigation">Navigation campaigns</option></select><button className="bg-ink px-5 text-white">Filter</button></form><section id="navigation" className="mt-8 border border-ink/15 bg-white p-6">
           <h2 className="font-display text-2xl">Shop menu banners</h2>
           <p className="my-3 text-sm text-ink/60">Upload artwork or copy a hero image. The first two by Order appear on the right of Our Collections and in the mobile menu. Recommended: 800 × 1000 px. Deleting a menu banner permanently removes its unused uploaded artwork.</p>
           <BannerCreateButton create={createBanner} initialSlot="navigation" heroes={rows.filter((row) => row.slot === "hero" && !/\.mp4$/i.test(row.src))} />
@@ -159,7 +162,7 @@ export default async function BannersPage() {
           </p>
         ) : (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {rows.map((b) => (
+            {rows.filter(b=>(!filters.slot||b.slot===filters.slot)&&(!filters.q||`${b.title||""} ${b.href||""} ${b.slot}`.toLowerCase().includes(filters.q.toLowerCase()))).map((b) => (
               <article key={b.id} className="admin-card border border-ink/10 bg-white">
                 {/* plain img: admin preview, skip next/image optimization */}
                 {/\.mp4$/i.test(b.src) ? <video src={b.src} muted controls preload="metadata" className="aspect-video w-full object-cover" /> : b.src && (

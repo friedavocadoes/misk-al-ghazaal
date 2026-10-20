@@ -7,7 +7,7 @@ import type { Banner } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { pick, tx } from "@/lib/i18n";
 import { WORLDS_SECTION_DEFAULTS } from "@/lib/site";
-import { SafeImage } from "@/components/ui/safe-image";
+import { DeviceBannerImage } from "@/components/blocks/DeviceBannerImage";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
@@ -90,8 +90,8 @@ export function BannerSplit({
               href={b.href ?? "/collections"}
               className="group relative block aspect-[4/5] overflow-hidden border border-ink/10 bg-ink"
             >
-              <SafeImage
-                src={b.src}
+              <DeviceBannerImage
+                src={b.src} mobileSrc={b.mobileSrc} mobileFallback={b.mobileFallback}
                 fallback={fallbackSrc}
                 alt={b.alt}
                 fill

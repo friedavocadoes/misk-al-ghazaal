@@ -54,7 +54,7 @@ export function ImageUploader({
   return (
     <div>
       <label className="inline-block cursor-pointer border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50">
-        {busy ? "Uploading…" : `Upload to ${bucket}`}
+        {busy ? "Uploading…" : `Drop image here or upload to ${bucket}`}
         <input
           type="file"
           accept="image/*"

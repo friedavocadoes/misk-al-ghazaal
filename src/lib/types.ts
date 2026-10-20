@@ -180,6 +180,8 @@ export type BannerTextAlign = "bottom-left" | "center" | "bottom-center";
  *  single line of text + optional button sits (stored in `eyebrow` on hero rows
  *  for zero-migration compatibility with existing `banners` schema). */
 export interface Banner {
+  mobileSrc?: string;
+  mobileFallback?: string;
   id?: string;
   src: string;
   fallback: string;

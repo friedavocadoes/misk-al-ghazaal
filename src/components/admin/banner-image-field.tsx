@@ -16,10 +16,10 @@ export function BannerImageField({
 }: {
   allowVideo?: boolean;
   bannerId: string;
-  field: "src" | "fallback";
+  field: "src" | "fallback" | "mobile_src" | "mobile_fallback";
   label: string;
   initial: string;
-  revalidate: (bannerId: string, field: "src" | "fallback", url: string) => Promise<void>;
+  revalidate: (bannerId: string, field: "src" | "fallback" | "mobile_src" | "mobile_fallback", url: string) => Promise<void>;
 }) {
   const [url, setUrl] = useState(initial);
   const [draft, setDraft] = useState(initial);
@@ -78,8 +78,8 @@ export function BannerImageField({
         />
       </div>
       {allowVideo && <HeroVideoUploader onUploaded={async (video, poster) => {
-        await revalidate(bannerId, "fallback", poster);
-        await revalidate(bannerId, "src", video);
+        await revalidate(bannerId, field === "mobile_src" ? "mobile_fallback" : "fallback", poster);
+        await revalidate(bannerId, field, video);
         setUrl(video); setDraft(video); setSaved(true);
       }} />}
       {saved && <p className="mt-1 text-xs text-ink/60">Saved.</p>}

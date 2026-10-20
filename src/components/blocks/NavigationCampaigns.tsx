@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "@/i18n/navigation";
-import { SafeImage } from "@/components/ui/safe-image";
+import { DeviceBannerImage } from "@/components/blocks/DeviceBannerImage";
 import { ArrowUpRight } from "lucide-react";
 import type { Banner } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
@@ -22,8 +22,8 @@ export function NavigationCampaigns({ banners, locale, onNavigate }: {
         const content = (
           <>
             <span className="relative block aspect-[4/5] overflow-hidden bg-sand">
-              <SafeImage
-                src={banner.src}
+              <DeviceBannerImage
+                src={banner.src} mobileSrc={banner.mobileSrc} mobileFallback={banner.mobileFallback}
                 fallback={banner.fallback || banner.src}
                 alt={banner.alt}
                 fill

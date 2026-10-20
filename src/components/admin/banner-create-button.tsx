@@ -23,6 +23,8 @@ export function BannerCreateButton({
   const [slot, setSlot] = useState<"hero" | "brand" | "navigation">(initialSlot);
   const [heroId, setHeroId] = useState("");
   const [src, setSrc] = useState("");
+  const [separateMobile,setSeparateMobile]=useState(false);
+ const [mobileSrc,setMobileSrc]=useState("");const [mobilePoster,setMobilePoster]=useState("");
   const [fallback, setFallback] = useState("");
 
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -146,6 +148,9 @@ export function BannerCreateButton({
                   onUploaded={setFallback}
                 />
                 <input type="hidden" name="fallback" value={fallback} />
+                <label className="my-4 block"><input type="checkbox" name="separate_mobile" checked={separateMobile} onChange={e=>setSeparateMobile(e.target.checked)}/> Separate mobile artwork</label>
+                <input type="hidden" name="mobile_src" value={mobileSrc}/><input type="hidden" name="mobile_fallback" value={mobilePoster}/>
+                {separateMobile&&<div className="border p-4"><p>Mobile image or video</p><ImageUploader bucket="banners" prefix="mobile" onBusyChange={setMediaBusy} onUploaded={setMobileSrc}/><HeroVideoUploader onBusyChange={setMediaBusy} onUploaded={(src,poster)=>{setMobileSrc(src);setMobilePoster(poster);}}/>{mobileSrc&&<p className="break-all text-xs">{mobileSrc}</p>}</div>}
               </div>
 
               {slot === "hero" ? (

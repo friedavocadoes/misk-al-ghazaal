@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -60,6 +60,7 @@ const GROUPS: NavGroup[] = [
 ];
 
 export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
+  const [query,setQuery]=useState("");
   const pathname = usePathname();
   const drawer = useRef<HTMLDialogElement>(null);
   const groups =
@@ -90,7 +91,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           ];
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-ink/10 bg-cream/95 px-5 py-4 backdrop-blur">
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 border-b border-ink/10 bg-cream/95 px-5 py-4 backdrop-blur">
         <button
           type="button"
           onClick={() => drawer.current?.showModal()}
@@ -101,7 +102,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
         </button>
         <Link
           href={role === "content_editor" ? "/admin/blogs" : "/admin"}
-          className="text-sm tracking-widest"
+          className="hidden text-sm tracking-widest lg:block"
         >
           MISK AL GHAZAAL
         </Link>
@@ -109,7 +110,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           <Link href="/" className="hidden text-xs sm:block">
             View store ↗
           </Link>
-          <SignOutButton />
+          <span className="min-w-0 max-w-40 text-xs"><span className="block truncate" title={email}>{email}</span><span className="text-fog">{role.replaceAll("_"," ")}</span></span><SignOutButton />
         </div>
       </header>
       <dialog
@@ -133,8 +134,8 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
             <X size={19} />
           </button>
         </div>
-        <nav className="space-y-7 p-5">
-          {groups.map((g) => (
+        <div className="px-5 pt-5"><input aria-label="Search workspace" placeholder="Search workspace…" value={query} onChange={e=>setQuery(e.target.value)} className="w-full rounded-lg border border-ink/20 bg-white p-3 text-sm"/></div><nav className="space-y-7 p-5">
+          {groups.map(g=>({...g,items:g.items.filter(i=>`${g.label} ${i.label}`.toLowerCase().includes(query.toLowerCase()))})).filter(g=>g.items.length).map((g) => (
             <section key={g.label}>
               <h2 className="mb-2 text-[10px] uppercase tracking-widest text-fog">
                 {g.label}

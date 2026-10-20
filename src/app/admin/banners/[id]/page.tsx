@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidateNavigation, revalidateHome } from "@/lib/revalidate";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
+import { MobileBannerField } from "@/components/admin/mobile-banner-field";
 import { BannerImageField } from "@/components/admin/banner-image-field";
 import { logAdmin } from "@/lib/audit";
 
@@ -54,17 +55,17 @@ async function saveBanner(formData: FormData) {
   revalidateNavigation();
 }
 
-async function revalidateHomeAction(bannerId: string, field: "src" | "fallback", url: string) {
+async function revalidateHomeAction(bannerId: string, field: "src" | "fallback" | "mobile_src" | "mobile_fallback", url: string) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  if (field !== "src" && field !== "fallback") throw new Error("Invalid artwork field");
+  if (!["src","fallback","mobile_src","mobile_fallback"].includes(field)) throw new Error("Invalid artwork field");
   if (url && !/^(\/(?!\/)|https:\/\/)/.test(url)) throw new Error("Use a local path or HTTPS image URL");
-  const { data: previous } = await supabase.from("banners").select("src, fallback").eq("id", bannerId).single();
+  const { data: previous } = await supabase.from("banners").select("src, fallback, mobile_src, mobile_fallback").eq("id", bannerId).single();
   const { error } = await supabase.from("banners").update({ [field]: url }).eq("id", bannerId);
   if (error) throw new Error(error.message);
-  const { data: b } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", bannerId).single();
+  const { data: b } = await supabase.from("banners").select("slot, title, src, fallback, mobile_src, mobile_fallback").eq("id", bannerId).single();
   const row = (b ?? {}) as { slot?: string; title?: string | null };
   await logAdmin(supabase, s, {
     category: "banners",
@@ -86,12 +87,12 @@ async function moveToBin(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback").eq("id", String(formData.get("id"))).single();
+  const { data: doomed } = await supabase.from("banners").select("slot, title, src, fallback, mobile_src, mobile_fallback").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slot?: string; title?: string | null };
   if (doomed?.slot === "navigation") {
     const { error } = await supabase.from("banners").delete().eq("id", String(formData.get("id")));
     if (error) throw error;
-    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback]);
+    await cleanupBannerArt(supabase, [doomed.src, doomed.fallback, doomed.mobile_src, doomed.mobile_fallback]);
     await logAdmin(supabase, s, { category: "banners", action: "delete", entity: "banner", entityId: String(formData.get("id")), summary: "Deleted menu banner and unused artwork" });
     revalidateNavigation(); revalidatePath("/admin/banners"); redirect("/admin/banners");
   }
@@ -204,6 +205,7 @@ export default async function BannerDetail(props: {
             />
           </section>
 
+          <MobileBannerField id={b.id} src={b.mobile_src||""} poster={b.mobile_fallback||""} save={revalidateHomeAction}/>
           <AdminForm
             action={saveBanner}
             success="Banner saved"

@@ -1,3 +1,4 @@
+import {AdminDropUpload} from "@/components/admin/admin-drop-upload";
 import type { ReactNode } from "react";
 import "../globals.css";
 import "./admin.css";
@@ -20,7 +21,7 @@ export default function AdminRootLayout({
     <html lang="en">
       <body className="min-h-screen bg-cream font-[family-name:var(--font-sans)] text-ink antialiased">
         <div className="admin">{children}</div>
-        <Toaster />
+        <AdminDropUpload/><Toaster />
       </body>
     </html>
   );

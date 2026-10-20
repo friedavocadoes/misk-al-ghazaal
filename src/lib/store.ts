@@ -395,6 +395,7 @@ export async function getCollectionBySlug(
 }
 
 function toBanner(b: {
+  mobile_src?: string; mobile_fallback?: string;
   id?: string;
   slot?: string;
   src: string;
@@ -421,6 +422,7 @@ function toBanner(b: {
   return {
     ...(b.id ? { id: b.id } : {}),
     src: b.src,
+    mobileSrc: b.mobile_src || undefined, mobileFallback: b.mobile_fallback || undefined,
     fallback: b.fallback || b.src,
     alt: b.alt,
     ...(b.eyebrow ? { eyebrow: b.eyebrow } : {}),

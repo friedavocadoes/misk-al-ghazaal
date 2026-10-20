@@ -4,7 +4,7 @@ export function HeroVideoUploader({ onUploaded, onBusyChange }: { onBusyChange?:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return <div className="mt-4 border-t border-ink/10 pt-4 text-sm">
-    <label className="inline-block cursor-pointer border border-ink/20 px-4 py-2">{busy ? "Optimizing video… keep this page open" : "Upload hero video"}
+    <label className="inline-block cursor-pointer border border-ink/20 px-4 py-2">{busy ? "Optimizing video… keep this page open" : "Drop video here or upload"}
       <input type="file" accept="video/*" disabled={busy} className="hidden" onChange={async (event) => {
         const file = event.target.files?.[0]; event.target.value = "";
         if (!file) return;

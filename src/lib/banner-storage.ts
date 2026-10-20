@@ -3,12 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** Remove only unreferenced banner artwork, including references kept in the bin. */
 export async function cleanupBannerArt(db: SupabaseClient, urls: string[]) {
   for (const url of new Set(urls.filter(Boolean))) {
-    const [primary, fallback] = await Promise.all([
+    const [primary, fallback, mobile, poster] = await Promise.all([
       db.from("banners").select("id", { count: "exact", head: true }).eq("src", url),
       db.from("banners").select("id", { count: "exact", head: true }).eq("fallback", url),
+      db.from("banners").select("id", { count: "exact", head: true }).eq("mobile_src", url),
+      db.from("banners").select("id", { count: "exact", head: true }).eq("mobile_fallback", url),
     ]);
-    if (primary.error || fallback.error) throw primary.error || fallback.error;
-    if (primary.count || fallback.count) continue;
+    if (primary.error || fallback.error || mobile.error || poster.error) throw primary.error || fallback.error || mobile.error || poster.error;
+    if (primary.count || fallback.count || mobile.count || poster.count) continue;
     const { data: users, error: readError } = await db.from("homepage_sections").select("config");
     if (readError) throw readError;
     if (JSON.stringify(users).includes(url)) continue;
