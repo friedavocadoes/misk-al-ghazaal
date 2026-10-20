@@ -87,6 +87,7 @@ export default async function AccountPage(
         <ShopperSignOut />
       </div>
 
+      <Link href="/account/ratings" className="mt-8 block border border-gold/25 bg-white p-5 text-sm">{locale === "ar" ? "تقييماتي ومراجعاتي" : "My ratings & reviews"} →</Link>
       {/* Profile — maison member card */}
       <section className="relative mt-10 overflow-hidden border border-gold/30 bg-white">
         <span

@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Loader2, Ticket, X } from "lucide-react";
-import type { Coupon, Quote } from "@/lib/types";
+import type { Coupon } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { celebrate } from "@/lib/confetti";
 import { CouponInfo, couponBlurb } from "./CouponTicket";
@@ -22,13 +22,12 @@ function readStoredCoupon(): string {
     preview (priced by /api/quote, so the number is always exact).
     Applied codes ride to checkout via localStorage. */
 export function PdpOffers({
-  slug,
-  variantId,
+  price,
   coupons,
   locale,
 }: {
   slug: string;
-  variantId?: string;
+  price: number;
   coupons: Coupon[];
   locale: Locale;
 }) {
@@ -45,49 +44,29 @@ export function PdpOffers({
   );
   const [session, setSession] = useState<string | null>(null);
   const applied = session ?? stored;
-  const [saving, setSaving] = useState<number | null>(null);
+  const coupon = coupons.find(c => c.code === applied);
+  const saving = coupon && price >= coupon.minSubtotal ? Math.min(price,coupon.maxDiscount ?? Infinity,coupon.kind === "percent" ? Math.round(price*coupon.amount/100) : coupon.kind === "fixed" ? coupon.amount : 0) : null;
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
 
   if (!coupons.length) return null;
 
-  const reasonText = (err: string): string => {
-    if (err === "coupon:min") return t("offerMin");
-    if (err === "coupon:login") return t("offerLogin");
-    if (err === "coupon:used") return t("offerUsed");
-    if (err === "coupon:personal") return t("offerPersonal");
-    if (err === "coupon:repeat") return t("offerRepeat");
-    if (err === "coupon:expired") return t("offerExpired");
-    if (err === "coupon:exhausted") return t("offerExhausted");
-    return t("offerBad");
-  };
-
   const apply = async (code: string, el?: HTMLElement | null) => {
     setBusy(code);
     setError("");
     try {
-      const r = await fetch("/api/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lines: [{ slug, variantId, qty: 1 }],
-          couponCode: code,
-        }),
-      });
-      const j = (await r.json().catch(() => null)) as { quote?: Quote; error?: string } | null;
-      if (r.ok && j?.quote) {
+      const coupon=coupons.find(c=>c.code===code);
+      if(!coupon || price < coupon.minSubtotal) { setError(t("offerMin")); return; }
+      {
         setSession(code);
-        setSaving(j.quote.discount > 0 ? j.quote.discount : null);
+
         try {
           localStorage.setItem(LS_KEY, code);
         } catch {
           /* ignore */
         }
         celebrate(el ?? undefined);
-      } else {
-        setError(reasonText(typeof j?.error === "string" ? j.error : ""));
-        setShakeKey((k) => k + 1);
       }
     } catch {
       setError(t("offerBad"));
@@ -99,7 +78,7 @@ export function PdpOffers({
 
   const remove = () => {
     setSession("");
-    setSaving(null);
+
     setError("");
     try {
       localStorage.removeItem(LS_KEY);
@@ -111,7 +90,7 @@ export function PdpOffers({
   return (
     <div className="mt-4 border border-gold/40 bg-gold-wash/40 p-4">
       <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
-        <Ticket className="size-3.5" /> {t("offersTitle")}
+        <Ticket className="size-3.5" /> {locale === "ar" ? "اكتشف توفيرك" : "Preview your savings"}
       </p>
       <ul className="mt-3 space-y-2">
         {coupons.slice(0, 3).map((c) => {
@@ -155,13 +134,14 @@ export function PdpOffers({
                   onClick={(e) => void apply(c.code, e.currentTarget)}
                   className="shrink-0 cursor-pointer border border-ink bg-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-gold-soft hover:text-ink disabled:opacity-50"
                 >
-                  {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : t("applyOffer")}
+                  {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : (locale === "ar" ? "عرض التوفير" : "See savings")}
                 </button>
               )}
             </li>
           );
         })}
       </ul>
+      {applied && <p className="mt-3 text-xs text-espresso">{locale === "ar" ? "سجّل الدخول لاسترداد العرض عند الدفع. يخضع للشروط." : "Savings preview. Sign in to redeem at checkout; eligibility and terms apply."}</p>}
       {error && (
         <p key={shakeKey} className="coupon-shake mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9c2b2e]">
           {error}

@@ -409,7 +409,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
       }}
       href={linkFor(key)}
       aria-current={pathname === linkFor(key) ? "page" : undefined}
-      onClick={(event) => { if (key === "shop") { event.preventDefault(); if (shopOpen) setShopOpen(false); else openShop(); } }}
+      onClick={() => setShopOpen(false)}
       aria-expanded={key === "shop" ? shopOpen : undefined}
       aria-controls={key === "shop" ? "shop-navigation" : undefined}
       onKeyDown={(event) => { if (key === "shop" && event.key === "ArrowDown") { event.preventDefault(); openShop(); requestAnimationFrame(() => document.querySelector<HTMLElement>("#shop-navigation a")?.focus()); } }}
@@ -432,7 +432,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
       }}
       href={linkFor(key)}
       aria-current={pathname === linkFor(key) ? "page" : undefined}
-      onClick={(event) => { if (key === "shop") { event.preventDefault(); if (shopOpen) setShopOpen(false); else openShop(); } }}
+      onClick={() => setShopOpen(false)}
       aria-expanded={key === "shop" ? shopOpen : undefined}
       aria-controls={key === "shop" ? "shop-navigation" : undefined}
       onKeyDown={(event) => { if (key === "shop" && event.key === "ArrowDown") { event.preventDefault(); openShop(); requestAnimationFrame(() => document.querySelector<HTMLElement>("#shop-navigation a")?.focus()); } }}
@@ -627,6 +627,11 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
                           href: "/account/orders",
                           label: t("myOrders"),
                           Icon: Package,
+                        },
+                        {
+                          href: "/account/ratings",
+                          label: locale === "ar" ? "تقييماتي ومراجعاتي" : "My ratings & reviews",
+                          Icon: Ticket,
                         },
                         {
                           href: "/account/coupons",
@@ -1020,7 +1025,12 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
                                 Icon: Package,
                               },
                               {
-                                href: "/account/coupons",
+                                href: "/account/ratings",
+                          label: locale === "ar" ? "تقييماتي ومراجعاتي" : "My ratings & reviews",
+                          Icon: Ticket,
+                        },
+                        {
+                          href: "/account/coupons",
                                 label: t("myRewards"),
                                 Icon: Ticket,
                               },

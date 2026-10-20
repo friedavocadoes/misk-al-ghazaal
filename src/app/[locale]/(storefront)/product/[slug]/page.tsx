@@ -71,9 +71,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   // Real review aggregates (approved only) — fetched once, shared by the
   // buy-box line and the reviews section. Never seeded numbers.
   const approvedReviews = await getApprovedReviews(product.id, 500);
-  const liveRating = approvedReviews.length
-    ? approvedReviews.reduce((s, r) => s + r.rating, 0) / approvedReviews.length
-    : 0;
+  const liveRating = product.rating;
   const catTitle = collection
     ? tx(collection.title, collection.titleAr, locale)
     : product.categorySlugs[0]?.replace(/-/g, " ");
@@ -82,7 +80,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
     <>
       <SeoJsonLd
         blocks={productJsonLd(
-          { ...product, rating: liveRating, reviewCount: approvedReviews.length },
+          { ...product, rating: liveRating, reviewCount: product.reviewCount },
           seo,
           locale,
           origin,
@@ -116,7 +114,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
             locale={locale}
             categoryName={catTitle}
             rating={liveRating}
-            reviewCount={approvedReviews.length}
+            reviewCount={product.reviewCount}
             coupons={coupons}
             heading={tx(seo?.h1 ?? "", seo?.h1Ar, locale) || undefined}
           />

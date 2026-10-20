@@ -173,70 +173,14 @@ export async function ReviewsSection({
   const t = await getTranslations({ locale, namespace: "Product" });
   const reviews = provided ?? (await getApprovedReviews(product.id, 200));
   const count = reviews.length;
-  const avg = count ? reviews.reduce((s, r) => s + r.rating, 0) / count : 0;
-  const dist = [5, 4, 3, 2, 1].map((s) => ({
-    stars: s,
-    count: reviews.filter((r) => r.rating === s).length,
-  }));
   return (
     <section id="reviews" className="mt-12 scroll-mt-24 border-t border-ink/10 pt-10" aria-label={t("reviewsTitle")}>
       <p className="eyebrow text-gold">{t("reviewsEyebrow")}</p>
       <h2 className="mt-2.5 font-display text-3xl text-ink">{t("reviewsTitle")}</h2>
 
-      {count === 0 ? (
-        /* No approved reviews yet: honest empty state, never seeded numbers. */
-        <div className="mt-6 grid gap-8 lg:grid-cols-2">
-          <p className="border border-dashed border-ink/20 p-8 text-center font-display text-xl text-ink">
-            {t("reviewsEmpty")}
-          </p>
-          <ReviewForm productId={product.id} productSlug={product.slug} locale={locale} />
-        </div>
-      ) : (
-      <div className="mt-6 grid gap-10 lg:grid-cols-[280px_1fr]">
-        <div className="lg:border-e lg:border-ink/10 lg:pe-10">
-          <p className="font-display text-6xl text-ink">{avg.toFixed(1)}</p>
-          <div className="mt-2">
-            <Stars value={avg} />
-          </div>
-          <p className="mt-2 text-sm text-fog">
-            {count} {t("reviews")}
-          </p>
-          <div className="mt-5 space-y-1.5">
-            {dist.map((d) => (
-              <div key={d.stars} className="flex items-center gap-2 text-[12px] text-fog">
-                <span className="w-3">{d.stars}</span>
-                <Star className="size-3 fill-gold/60 text-gold/60" />
-                <span className="h-[3px] flex-1 overflow-hidden rounded-full bg-ink/10">
-                  <span
-                    className="block h-full bg-gold"
-                    style={{ width: `${count ? (d.count / count) * 100 : 0}%` }}
-                  />
-                </span>
-                <span className="w-6 text-end">{d.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <ul className="divide-y divide-ink/10 border-y border-ink/10">
-            {reviews.slice(0, 6).map((r) => (
-              <li key={r.id} className="py-6">
-                <div className="flex items-center justify-between gap-4">
-                  <Stars value={r.rating} className="size-3.5" />
-                  <span className="text-[12px] text-fog">{r.authorName}</span>
-                </div>
-                {r.title && <p className="mt-2 font-medium text-ink">{r.title}</p>}
-                {r.body && <p className="mt-1 text-sm leading-relaxed text-espresso">{r.body}</p>}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8">
-            <ReviewForm productId={product.id} productSlug={product.slug} locale={locale} />
-          </div>
-        </div>
-      </div>
-      )}
+      <div className="mt-8"><ReviewForm productId={product.id} productSlug={product.slug} locale={locale} /></div>
+      {product.reviewCount > 0 && <p className="mt-8 text-center text-sm text-fog">{product.rating.toFixed(1)} / 5 · {product.reviewCount} {locale === "ar" ? "تقييمات" : "ratings"}</p>}
+      {count > 0 && <ul className="review-gallery mt-10">{reviews.map(r => <li key={r.id}><div className="flex items-center justify-between gap-3"><Stars value={r.rating} /><span className="text-xs text-fog">{r.authorName}</span></div>{r.title && <h3 className="mt-5 text-lg">{r.title}</h3>}<p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-espresso">{r.body}</p></li>)}</ul>}
     </section>
   );
 }

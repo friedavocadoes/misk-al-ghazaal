@@ -1,4 +1,5 @@
 "use client";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -152,8 +153,13 @@ export function ProductInfo({
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
-  const buyNow = () => {
+  const [couponLogin,setCouponLogin]=useState(false);
+  const buyNow = async () => {
     add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
+    if(localStorage.getItem("misk-coupon")){
+      const {data:{user}}=await createBrowserClient().auth.getUser();
+      if(!user){setCouponLogin(true);return;}
+    }
     router.push("/checkout");
   };
 
@@ -261,8 +267,9 @@ export function ProductInfo({
       <Button variant="outline" size="lg" className="mt-2 w-full" onClick={buyNow}>
         {t("buyNow")}
       </Button>
+      {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}
       {!!coupons?.length && (
-        <PdpOffers slug={product.slug} variantId={variant?.id} coupons={coupons} locale={locale} />
+        <PdpOffers slug={product.slug} price={variant?.price ?? product.price} coupons={coupons} locale={locale} />
       )}
 
       {layout === "miskalgazaal" ? (

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 // ---------------------------------------------------------------------------
 // Shopper profile bootstrap: every authenticated user gets a profiles row
 // with a unique referral code (their earning identity). Called from the
@@ -47,7 +48,7 @@ export async function ensureProfile(
         referred_by: referrerId,
         promo_opt_in: promoOptIn ?? true,
       });
-      if (!error) return { created: true };
+      if (!error) { await claimBrowserRatings(admin,userId); return { created: true }; }
       // Collision on referral_code (or a racing insert) — retry, then
       // fall back to updating the row the trigger may have created.
       const { data: retry } = await admin.from("profiles").select("id").eq("id", userId).single();
@@ -75,6 +76,7 @@ export async function ensureProfile(
   if (Object.keys(patch).length) {
     await admin.from("profiles").update(patch).eq("id", userId);
   }
+  await claimBrowserRatings(admin,userId);
   return { created: false };
 }
 
@@ -101,4 +103,9 @@ export async function claimGuestOrders(
   } catch {
     /* claiming must never block login */
   }
+}
+
+async function claimBrowserRatings(admin:SupabaseClient,userId:string){
+ const guest=(await cookies()).get("misk-rating-browser")?.value;
+ if(guest && /^[0-9a-f-]{36}$/i.test(guest))await admin.rpc("claim_browser_ratings",{gid:guest,uid:userId});
 }

@@ -74,6 +74,7 @@ export async function POST(req: Request) {
       /* no session — guest checkout */
     }
     const ownerId = sessionUserId;
+    if(body.coupon_code && !ownerId)throw new Error("coupon:login");
     // Delivery zone guard: the country must be active in the admin list
     // (the map already enforces this; the server has the final word).
     const countryCode = (body.country_code ?? "").trim().toUpperCase();
