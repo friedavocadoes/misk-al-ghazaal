@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowUpRight, CalendarDays, Download, Truck } from "lucide-r
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
-import { OrderIssueBox } from "@/components/blocks/OrderIssueBox";
 import { CopyCode } from "@/components/ui/copy-code";
 import { requireShopper } from "@/lib/shopper";
 import { toLocale } from "@/lib/i18n";
@@ -133,7 +132,6 @@ export default async function AccountOrdersPage(props: {
                   </Link>
                 </span>
               </div>
-              <OrderIssueBox orderId={o.id} orderNo={o.order_no} status={o.status} />
             </li>
           ))}
         </ul>

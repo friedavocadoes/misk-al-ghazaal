@@ -742,7 +742,7 @@ export default async function ProductDetail(props: {
               <p className="mt-2 mb-5 text-sm text-ink/60">Optional per-product wording. Leave blank for defaults. Edit the story above; composition in Fragrance notes; artwork below; ritual content in Catalog → Rituals.</p>
               <AdminForm action={savePageContent} className="grid gap-4 md:grid-cols-2">
                 <input type="hidden" name="id" value={id} />
-                {[["story", "The story"], ["composition", "The composition"], ["reviews", "Worn & loved"], ["recommendations", "You may also adore"]].flatMap(([key, label]) => ["", "_ar"].map(suffix => (
+                {[["story", "The story"], ["composition", "The composition"], ["reviews", "Reviews"], ["recommendations", "You may also adore"]].flatMap(([key, label]) => ["", "_ar"].map(suffix => (
                   <label key={key + suffix} className="text-sm">{label}{suffix ? " — Arabic" : ""}
                     <input name={key + suffix} maxLength={100} dir={suffix ? "rtl" : undefined} defaultValue={p.pdp_content?.[key + suffix] ?? ""} placeholder={suffix ? "Default Arabic heading" : label} className="mt-1 w-full border border-ink/20 px-3 py-2" />
                   </label>

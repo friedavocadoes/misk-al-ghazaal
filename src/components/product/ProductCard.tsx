@@ -85,17 +85,17 @@ export function ProductCard({
     <span className="absolute left-3.5 top-3.5 z-20 flex flex-col items-start gap-1.5">
       {onSale && (
         <span className="border border-[#9c2b2e]/25 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-[#9c2b2e] backdrop-blur-sm">
-          {locale === "ar" ? "عرض" : "Privilege"}
+          {locale === "ar" ? "عرض" : "Sale"}
         </span>
       )}
       {product.isNew && (
         <span className="border border-gold/35 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-gold backdrop-blur-sm">
-          {locale === "ar" ? "جديد" : "Nouveau"}
+          {locale === "ar" ? "جديد" : "New"}
         </span>
       )}
       {!product.isNew && product.isBestSeller && (
         <span className="border border-ink/15 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-ink backdrop-blur-sm">
-          {locale === "ar" ? "أيقونة" : "Icon"}
+          {locale === "ar" ? "أيقونة" : "Best Seller"}
         </span>
       )}
     </span>
