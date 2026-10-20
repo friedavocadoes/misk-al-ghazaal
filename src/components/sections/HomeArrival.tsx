@@ -28,7 +28,7 @@ export function HomeArrival() {
         {/* Small identity artwork, shared with the header and browser cache. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/mag.webp" width="80" height="80" alt="" />
-        <span>Misk Al Ghazaal</span><small>PARFUMS</small><i />
+        <span>Misk Al Ghazaal</span><small>PERFUMES</small><i />
       </div>
     </div>
     <noscript><style>{`.home-arrival{display:none!important}`}</style></noscript>

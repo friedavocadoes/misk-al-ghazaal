@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { Star } from "lucide-react";
+import { BadgeCheck, Star } from "lucide-react";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import {
   getApprovedReviews,
@@ -12,7 +12,12 @@ import { pick, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { Product, Review } from "@/lib/types";
 import { NoteGlyph } from "@/components/ui/note-glyphs";
+import { SafeImage } from "@/components/ui/safe-image";
 import { ReviewForm } from "@/components/blocks/ReviewForm";
+
+export function productHeading(product: Product, key: string, locale: Locale, fallback: string) {
+  return (locale === "ar" ? product.pdpContent?.[`${key}_ar`] : undefined) || product.pdpContent?.[key] || fallback;
+}
 
 function Stars({ value, className = "size-4" }: { value: number; className?: string }) {
   return (
@@ -36,17 +41,15 @@ export async function NotesBrief({ product, locale }: { product: Product; locale
   const order = ["top", "heart", "base"] as const;
   const kindLabel = (k: string) => k === "top" ? t("noteTop") : k === "heart" ? t("noteHeart") : t("noteBase");
   return (
-    <section id="fragrance-notes" className="mt-14 scroll-mt-28 border-t border-ink/15 pt-10 md:mt-20" aria-labelledby="fragrance-notes-title">
+    <section id="fragrance-notes" className="pdp-section pdp-composition scroll-mt-28" aria-labelledby="fragrance-notes-title">
       <div className="text-center">
-        <p className="eyebrow text-gold">{t("notesEyebrow")}</p>
-        <h2 id="fragrance-notes-title" className="mt-3 font-display text-3xl text-ink md:text-4xl">{t("notesTitle")}</h2>
+        <h2 id="fragrance-notes-title" className="pdp-heading">{productHeading(product, "composition", locale, t("notesTitle"))}</h2>
       </div>
-      <div className="mt-9 grid grid-cols-3 divide-x divide-ink/15 border-y border-ink/15 rtl:divide-x-reverse">
-        {order.map((kind, index) => {
+      <div className="mt-10 grid grid-cols-3 divide-x divide-ink/10 rtl:divide-x-reverse">
+        {order.map((kind) => {
           const items = product.notes.filter((n) => n.kind === kind);
           return (
             <div key={kind} className="min-w-0 px-2 py-7 text-center sm:px-5 md:py-10">
-              <span aria-hidden="true" className="font-display text-xs italic text-gold">0{index + 1}</span>
               <h3 className="mt-3 text-[9px] font-medium uppercase tracking-[0.14em] text-espresso sm:text-[11px] sm:tracking-[0.24em]">{kindLabel(kind)}</h3>
               <ul className="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-6 md:gap-x-6">
                 {items.map((n) => (
@@ -73,12 +76,12 @@ export async function AboutShort({ product, locale }: { product: Product; locale
   const t = await getTranslations({ locale, namespace: "Product" });
   const text =
     tx(product.shortDesc ?? "", product.shortDescAr, locale) ||
-    product.descriptionHtml.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 220);
+    tx(product.descriptionHtml, product.descriptionAr, locale).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   if (!text) return null;
   return (
-    <section className="mt-12 border-t border-ink/10 pt-10">
-      <p className="eyebrow text-gold">{t("aboutEyebrow")}</p>
-      <p className="mt-4 max-w-3xl font-display text-2xl leading-snug text-ink md:text-[1.75rem]">
+    <section id="fragrance-story" className="pdp-section pdp-story text-center">
+      <h2 className="pdp-heading">{productHeading(product, "story", locale, t("aboutEyebrow"))}</h2>
+      <p className="mx-auto mt-7 max-w-2xl whitespace-pre-line text-[15px] font-light leading-[1.95] text-espresso md:text-lg">
         {text}
       </p>
     </section>
@@ -92,17 +95,15 @@ export async function RitualSection({ product, locale }: { product: Product; loc
   if (!product.ritualId) return null;
   const ritual = await getRitualById(product.ritualId);
   if (!ritual) return null;
-  const t = await getTranslations({ locale, namespace: "Product" });
   const body = tx(ritual.bodyHtml, ritual.bodyAr, locale);
   const isVideoFile = ritual.videoUrl && /\.(mp4|webm|mov)(\?|$)/i.test(ritual.videoUrl);
   return (
-    <section className="mt-12 border-t border-ink/10 pt-10" aria-label={tx(ritual.title, ritual.titleAr, locale)}>
-      <p className="eyebrow text-gold">{t("ritualEyebrow")}</p>
-      <h2 className="mt-2.5 font-display text-3xl text-ink">
+    <section className="pdp-section pdp-ritual" aria-label={tx(ritual.title, ritual.titleAr, locale)}>
+      <h2 className="pdp-heading text-center">
         {tx(ritual.title, ritual.titleAr, locale)}
       </h2>
-      <div className="mt-6 grid items-start gap-8 lg:grid-cols-2">
-        <div className="relative overflow-hidden border border-ink/10 bg-sand">
+      <div className={`mt-10 grid items-center gap-8 lg:gap-14 ${ritual.videoUrl || ritual.image ? "lg:grid-cols-2" : "mx-auto max-w-2xl text-center"}`}>
+        {(ritual.videoUrl || ritual.image) && <div className="relative overflow-hidden rounded-sm bg-sand">
           {ritual.videoUrl && !isVideoFile ? (
             <iframe
               title={tx(ritual.title, ritual.titleAr, locale)}
@@ -115,10 +116,9 @@ export async function RitualSection({ product, locale }: { product: Product; loc
           ) : ritual.videoUrl ? (
             <video src={ritual.videoUrl} controls playsInline preload="metadata" className="aspect-video w-full object-cover" />
           ) : ritual.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={ritual.image} alt={tx(ritual.title, ritual.titleAr, locale)} className="aspect-[4/3] w-full object-cover" loading="lazy" />
+            <SafeImage src={ritual.image} fallback="" alt={tx(ritual.title, ritual.titleAr, locale)} width={960} height={720} sizes="(min-width:1024px) 560px, 100vw" className="aspect-[4/3] w-full object-cover" />
           ) : null}
-        </div>
+        </div>}
         <div
           className="prose max-w-none text-[15px] leading-relaxed text-espresso"
           dangerouslySetInnerHTML={{ __html: body }}
@@ -135,7 +135,7 @@ export function DetailedNotes({ product, locale }: { product: Product; locale: L
   if (!product.notesImageDesktop && !product.notesImageMobile) return null;
   const alt = pick(L("Fragrance notes", "النوتات العطرية"), locale);
   return (
-    <section id="detailed-notes" className="mt-12 scroll-mt-24 border-t border-ink/10 pt-10">
+    <section id="detailed-notes" className="pdp-artwork scroll-mt-24">
       {product.notesImageDesktop && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -174,13 +174,27 @@ export async function ReviewsSection({
   const reviews = provided ?? (await getApprovedReviews(product.id, 200));
   const count = reviews.length;
   return (
-    <section id="reviews" className="mt-12 scroll-mt-24 border-t border-ink/10 pt-10" aria-label={t("reviewsTitle")}>
-      <p className="eyebrow text-gold">{t("reviewsEyebrow")}</p>
-      <h2 className="mt-2.5 font-display text-3xl text-ink">{t("reviewsTitle")}</h2>
-
-      <div className="mt-8"><ReviewForm productId={product.id} productSlug={product.slug} locale={locale} /></div>
-      {product.reviewCount > 0 && <p className="mt-8 text-center text-sm text-fog">{product.rating.toFixed(1)} / 5 · {product.reviewCount} {locale === "ar" ? "تقييمات" : "ratings"}</p>}
-      {count > 0 && <ul className="review-gallery mt-10">{reviews.map(r => <li key={r.id}><div className="flex items-center justify-between gap-3"><Stars value={r.rating} /><span className="text-xs text-fog">{r.authorName}</span></div>{r.title && <h3 className="mt-5 text-lg">{r.title}</h3>}<p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-espresso">{r.body}</p></li>)}</ul>}
+    <section id="reviews" className="pdp-section pdp-reviews scroll-mt-24" aria-label={t("reviewsTitle")}>
+      <div className="text-center">
+        <h2 className="pdp-heading">{productHeading(product, "reviews", locale, t("reviewsTitle"))}</h2>
+        {product.reviewCount > 0 && <p className="mt-4 text-sm text-fog">{product.rating.toFixed(1)} / 5 · {product.reviewCount} {locale === "ar" ? "تقييمات" : "ratings"}</p>}
+      </div>
+      {count > 0 && <ul className="pdp-review-grid mt-10">{reviews.map(r => <li key={r.id} className="pdp-review-card">
+        <div className="flex items-center gap-3">
+          <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sand text-sm text-espresso">
+            {r.authorAvatar ? <SafeImage src={r.authorAvatar} fallback="/logo.webp" alt="" fill sizes="44px" className="object-cover" /> : (r.authorName?.charAt(0) || <span aria-hidden="true">✧</span>)}
+          </div>
+          <div className="min-w-0">
+            <h3 className="break-words text-sm font-medium">{r.authorName || (locale === "ar" ? "عميل" : "Customer")}</h3>
+            <time dateTime={r.createdAt} className="mt-1 block text-[11px] text-fog">{new Intl.DateTimeFormat(locale, {month:"short", year:"numeric"}).format(new Date(r.createdAt))}</time>
+          </div>
+        </div>
+        <div className="mt-5" role="img" aria-label={`${r.rating} / 5`}><Stars value={r.rating} className="size-3.5" /></div>
+        {r.title && <h4 className="mt-4 text-base font-medium">{r.title}</h4>}
+        {r.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-espresso">{r.body}</p>}
+        {r.purchasedAt && <p className="mt-6 flex items-center gap-2 border-t border-ink/10 pt-4 text-[10px] text-fog"><BadgeCheck className="size-4 shrink-0 text-gold" /><span>{locale === "ar" ? "شراء موثّق" : "Verified purchase"} · {new Intl.DateTimeFormat(locale, {day:"numeric", month:"short", year:"numeric"}).format(new Date(r.purchasedAt))}</span></p>}
+      </li>)}</ul>}
+      <div className="mx-auto mt-10 max-w-2xl"><ReviewForm productId={product.id} productSlug={product.slug} locale={locale} /></div>
     </section>
   );
 }
@@ -193,7 +207,6 @@ export async function LineupRow({ product, locale }: { product: Product; locale:
   return (
     <div className="mt-4">
       <ProductCarousel
-        eyebrow={t("lineupEyebrow")}
         title={tx(product.lineupTitle ?? "", product.lineupTitleAr, locale) || t("lineupTitle")}
         products={siblings}
         viewAllHref={`/collection/${product.categorySlugs[0] ?? "best-sellers"}`}

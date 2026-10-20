@@ -23,6 +23,7 @@ export interface Product {
   /** Short "about this perfume" blurb for the PDP About block. */
   shortDesc?: string;
   shortDescAr?: string;
+  pdpContent?: Record<string, string>;
   price: number; // base AED price (first variant price)
   compareAtPrice?: number;
   images: string[];
@@ -141,6 +142,8 @@ export interface Review {
   approved: boolean;
   createdAt: string;
   authorName?: string;
+  authorAvatar?: string;
+  purchasedAt?: string;
 }
 
 export interface CountryState {

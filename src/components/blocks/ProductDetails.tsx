@@ -166,7 +166,7 @@ export function ProductInfo({
   return (
     <div>
       <p className="eyebrow text-gold">{catName}</p>
-      <h1 className="mt-3 font-display text-4xl leading-tight text-ink md:text-[2.75rem]">
+      <h1 className="mt-3 font-display text-3xl font-light leading-tight tracking-[-0.035em] text-ink md:text-[2.75rem]">
         {heading ?? title}
       </h1>
       <p className="mt-3 flex items-center gap-2 text-[13px] text-fog">
@@ -198,7 +198,10 @@ export function ProductInfo({
         className="mt-5"
       />
 
-      <NotesStrip product={product} locale={locale} />
+      {!!product.notes.length && <Link href="#fragrance-notes" className="pdp-note-preview mt-6 flex items-center justify-between gap-4 border-y border-ink/10 py-4 text-xs text-espresso">
+        <span className="leading-6">{product.notes.slice(0, 3).map(n => tx(n.name, n.nameAr, locale)).join(" · ")}</span>
+        <span aria-hidden="true" className="text-lg">↗</span>
+      </Link>}
 
       {product.variants.length > 1 && (
         <div className="mt-7">

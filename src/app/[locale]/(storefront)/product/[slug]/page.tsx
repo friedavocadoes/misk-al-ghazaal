@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
@@ -7,9 +8,9 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { PromoStrip } from "@/components/blocks/PromoStrip";
 import {
   ProductInfo,
-  ProductTabsAccordion,
 } from "@/components/blocks/ProductDetails";
 import {
+  productHeading,
   AboutShort,
   DetailedNotes,
   LineupRow,
@@ -21,7 +22,6 @@ import { ShareButtons } from "@/components/blocks/ShareButtons";
 import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import {
   getCollectionBySlug,
-  getApprovedReviews,
   getProductBySlug,
   getProducts,
   getPublicCoupons,
@@ -63,14 +63,10 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = await getRelatedProducts(slug, 4);
-  const collection = await getCollectionBySlug(product.categorySlugs[0]);
-  const coupons = await getPublicCoupons();
-  const seo = await getPageSeo("product", slug);
+  const [collection,coupons,seo] = await Promise.all([
+    getCollectionBySlug(product.categorySlugs[0]),getPublicCoupons(),getPageSeo("product",slug),
+  ]);
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
-  // Real review aggregates (approved only) — fetched once, shared by the
-  // buy-box line and the reviews section. Never seeded numbers.
-  const approvedReviews = await getApprovedReviews(product.id, 500);
   const liveRating = product.rating;
   const catTitle = collection
     ? tx(collection.title, collection.titleAr, locale)
@@ -87,12 +83,12 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
         )}
       />
       <PromoStrip locale={locale} />
-      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
-      <nav aria-label="Breadcrumb" className="mb-8 text-[11px] uppercase tracking-[0.18em] text-fog">
+      <div className="pdp-page mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-10">
+      <nav aria-label="Breadcrumb" className="mb-7 flex flex-wrap items-center gap-y-2 text-[10px] uppercase tracking-[0.12em] text-fog">
         <Link href="/" className="hover:text-gold">{t("home")}</Link>
         <span className="mx-2">/</span>
         <Link
-          href={`/collection/${product.categorySlugs[0]}`}
+          href={`/collection/${product.categorySlugs[0] ?? "all"}`}
           className="hover:text-gold"
         >
           {catTitle}
@@ -100,14 +96,14 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
         <span className="mx-2">/</span>
         <span className="text-ink">{product.title}</span>
       </nav>
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+      <div className="pdp-overview grid items-start gap-8 lg:grid-cols-[1.08fr_1fr] lg:gap-16">
         {/* min-w-0 on both tracks: Embla's flex row must never force the
             grid wider than the viewport (the mobile right-bleed bug). */}
-        <div className="relative min-w-0">
+        <div className="relative min-w-0 lg:sticky lg:top-28">
           <ProductGallery images={product.images} title={product.title} />
           <ShareButtons title={product.title} label={tp("share")} copiedLabel={tp("shareCopied")} />
         </div>
-        <div className="min-w-0">
+        <div className="pdp-buybox min-w-0">
           <ProductInfo
             product={product}
             layout={product.template === "miskalgazaal" ? "miskalgazaal" : "standard"}
@@ -122,13 +118,19 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
       </div>
       <AboutShort product={product} locale={locale} />
       <NotesBrief product={product} locale={locale} />
-      <RitualSection product={product} locale={locale} />
       <DetailedNotes product={product} locale={locale} />
-      <ProductTabsAccordion product={product} locale={locale} />
-      <LineupRow product={product} locale={locale} />
-      <ReviewsSection product={product} locale={locale} reviews={approvedReviews} />
-      <ProductCarousel title={ts("alsoAdore")} products={related} />
+      <Suspense fallback={null}><RitualSection product={product} locale={locale} /></Suspense>
+      <Suspense fallback={<div className="mt-12 h-64 animate-pulse bg-sand/40" />}><ReviewsSection product={product} locale={locale} /></Suspense>
+      <Suspense fallback={null}><LineupRow product={product} locale={locale} /></Suspense>
+      <Suspense fallback={null}><RelatedProducts slug={slug} lineupId={product.lineupId} title={productHeading(product, "recommendations", locale, ts("alsoAdore"))} /></Suspense>
       </div>
     </>
   );
+}
+
+async function RelatedProducts({slug, title, lineupId}: {slug: string; title: string; lineupId?: string}) {
+  const related = await getRelatedProducts(slug, 12);
+  const products = related.filter(p => !lineupId || p.lineupId !== lineupId).slice(0, 4);
+  if (!products.length) return null;
+  return <ProductCarousel title={title} products={products} />;
 }

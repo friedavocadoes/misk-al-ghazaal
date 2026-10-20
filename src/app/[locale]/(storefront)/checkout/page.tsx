@@ -152,9 +152,7 @@ export default function CheckoutPage() {
     try {
       const saved = localStorage.getItem("misk-coupon")?.trim().toUpperCase();
       if (saved) {
-        setCoupon(saved);
-        setAppliedCoupon(saved);
-        setCouponState("checking");
+        queueMicrotask(()=>{setCoupon(saved);setAppliedCoupon(saved);setCouponState("checking");});
       }
     } catch {
       /* private mode — no handoff */
@@ -178,43 +176,25 @@ export default function CheckoutPage() {
     [lines, email, appliedCoupon, appliedReferral, userId],
   );
 
-  // Live re-price (debounced): the server always has the final word.
-  // Checking states ride the round-trip so every Apply gets feedback.
+  const [quoteAttempt,setQuoteAttempt]=useState(0);
+  // Cancel stale quotes and always settle checking, including failed/repeated requests.
   useEffect(() => {
-    const id = setTimeout(() => {
-      fetch("/api/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-        .then(async (r) => ({ ok: r.ok, j: await r.json().catch(() => null) as { quote?: Quote; error?: string } | null }))
-        .then(({ ok, j }) => {
-          if (ok && j?.quote) {
-            setQuote(j.quote);
-            setCouponState(appliedCoupon ? "ok" : "idle");
-            setReferralState(appliedReferral ? "ok" : "idle");
-            setCouponError("");
-            setReferralError("");
-          } else {
-            const err = typeof j?.error === "string" ? j.error : "";
-            if (appliedCoupon && (!err || err.startsWith("coupon"))) {
-              setCouponState(err === "coupon:min" ? "min" : "bad");
-              setCouponError(err);
-            } else if (appliedReferral && (!err || err.startsWith("referral"))) {
-              setReferralState("bad");
-              setReferralError(err);
-            }
-          }
-        })
-        .catch(() => {
-          if (appliedCoupon) setCouponState("idle");
-          if (appliedReferral) setReferralState("idle");
-        });
-    }, 450);
-    return () => clearTimeout(id);
-  }, [payload, lines.length, appliedCoupon, appliedReferral]);
+    const controller=new AbortController();let cancelled=false;
+    const id=setTimeout(async()=>{
+      const timeout=setTimeout(()=>controller.abort(),12000);
+      try{
+        const r=await fetch("/api/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal});
+        const j=await r.json().catch(()=>null);if(cancelled)return;
+        if(r.ok && j?.quote){setQuote(j.quote);setCouponState(appliedCoupon?"ok":"idle");setReferralState(appliedReferral?"ok":"idle");setCouponError("");setReferralError("");}
+        else {setQuote(null);const err=typeof j?.error==="string"?j.error:"network";setCouponState(appliedCoupon?(err==="coupon:min"?"min":"bad"):"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError(appliedCoupon?err:"");setReferralError(appliedReferral?err:"");}
+      }catch{if(!cancelled){setQuote(null);setCouponState(appliedCoupon?"bad":"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError("network");setReferralError("network");}}
+      finally{clearTimeout(timeout);}
+    },appliedCoupon||appliedReferral?0:180);
+    return()=>{cancelled=true;clearTimeout(id);controller.abort();};
+  },[payload,appliedCoupon,appliedReferral,quoteAttempt]);
 
   const applyCoupon = () => {
+    setQuoteAttempt(n=>n+1);
     const clean = coupon.trim().toUpperCase();
     // Empty apply = clear: a deleted code must never block checkout.
     setAppliedCoupon(clean);
@@ -222,6 +202,7 @@ export default function CheckoutPage() {
     if (!clean) setCouponError("");
   };
   const quickApply = (code: string) => {
+    setQuoteAttempt(n=>n+1);
     setCoupon(code);
     setAppliedCoupon(code);
     setCouponState("checking");
@@ -243,6 +224,7 @@ export default function CheckoutPage() {
     setReferralState("idle");
   };
   const applyReferral = () => {
+    setQuoteAttempt(n=>n+1);
     const clean = referral.trim().toUpperCase();
     setAppliedReferral(clean);
     setReferralState(clean ? "checking" : "idle");

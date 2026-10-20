@@ -22,6 +22,23 @@ import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admi
 import { parseSchemaJson } from "@/lib/seo";
 import { logAdmin } from "@/lib/audit";
 
+async function savePageContent(formData: FormData) {
+  "use server";
+  const session = await getAdminSession();
+  if (!session || session.role !== "super_admin") redirect("/admin/login");
+  const id = String(formData.get("id"));
+  const content: Record<string, string> = {};
+  for (const key of ["story", "composition", "reviews", "recommendations"]) {
+    for (const suffix of ["", "_ar"]) content[key + suffix] = String(formData.get(key + suffix) || "").trim().slice(0, 100);
+  }
+  const db = await createClient();
+  const { error } = await db.from("products").update({ pdp_content: content }).eq("id", id);
+  if (error) throw new Error("Could not save page headings. Apply migration_product_page_content.sql if this field is not installed.");
+  await touchProduct(db, id);
+  revalidatePath(`/admin/products/${id}`);
+  await logAdmin(db, session, {category:"products", action:"update", entity:"product", entityId:id, summary:"Updated product page headings", details:content});
+}
+
 async function saveProduct(formData: FormData) {
   "use server";
   const s = await getAdminSession();
@@ -626,7 +643,7 @@ export default async function ProductDetail(props: {
                   </span>
                 </label>
                 <label className="block md:col-span-2">
-                  Short about (PDP About block)
+                  Fragrance story (centred below product)
                   <textarea
                     name="short_desc"
                     rows={2}
@@ -635,7 +652,7 @@ export default async function ProductDetail(props: {
                   />
                 </label>
                 <label className="block md:col-span-2">
-                  Short about AR
+                  Fragrance story — Arabic
                   <textarea
                     name="short_desc_ar"
                     rows={2}
@@ -720,6 +737,20 @@ export default async function ProductDetail(props: {
             </section>
 
             {/* 02 — Gallery */}
+            <section className={sectionCls}>
+              <h2 className="text-lg font-medium">Storefront page headings</h2>
+              <p className="mt-2 mb-5 text-sm text-ink/60">Optional per-product wording. Leave blank for defaults. Edit the story above; composition in Fragrance notes; artwork below; ritual content in Catalog → Rituals.</p>
+              <AdminForm action={savePageContent} className="grid gap-4 md:grid-cols-2">
+                <input type="hidden" name="id" value={id} />
+                {[["story", "The story"], ["composition", "The composition"], ["reviews", "Worn & loved"], ["recommendations", "You may also adore"]].flatMap(([key, label]) => ["", "_ar"].map(suffix => (
+                  <label key={key + suffix} className="text-sm">{label}{suffix ? " — Arabic" : ""}
+                    <input name={key + suffix} maxLength={100} dir={suffix ? "rtl" : undefined} defaultValue={p.pdp_content?.[key + suffix] ?? ""} placeholder={suffix ? "Default Arabic heading" : label} className="mt-1 w-full border border-ink/20 px-3 py-2" />
+                  </label>
+                )))}
+                <SaveButton>Save page headings</SaveButton>
+              </AdminForm>
+            </section>
+
             <section id="gallery" className={sectionCls}>
               {sectionHead(
                 "02",

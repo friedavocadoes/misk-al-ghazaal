@@ -34,14 +34,18 @@ export function ProductGallery({
   useEffect(() => {
     if (!mainApi) return;
     mainApi.on("select", onSelect);
-    onSelect();
+    mainApi.on("reInit", onSelect);
+    return () => {
+      mainApi.off("select", onSelect);
+      mainApi.off("reInit", onSelect);
+    };
   }, [mainApi, onSelect]);
 
   const scrollTo = (i: number) => mainApi?.scrollTo(i);
 
   return (
-    <div>
-      <div className="relative overflow-hidden border border-ink/10 bg-sand">
+    <div className="product-gallery">
+      <div className="relative overflow-hidden rounded-sm bg-sand">
         <div ref={mainRef} className="overflow-hidden">
           <div className="flex">
             {images.map((src, i) => (
@@ -50,7 +54,7 @@ export function ProductGallery({
                   src={src}
                   alt={i === 0 ? title : `${title} — view ${i + 1}`}
                   fill
-                  sizes="(min-width:1024px) 50vw, 100vw"
+                  sizes="(min-width:1280px) 600px, (min-width:1024px) 50vw, 100vw"
                   priority={i === 0}
                   className="object-cover"
                 />
@@ -63,23 +67,23 @@ export function ProductGallery({
             <button
               onClick={() => mainApi?.scrollPrev()}
               aria-label="Previous image"
-              className="absolute left-3 top-1/2 -translate-y-1/2 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
+              className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full border border-ink/10 bg-white/90 p-2.5 text-ink shadow-sm transition hover:border-ink/40 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              <ChevronLeft className="size-5" />
+              <ChevronLeft className="size-4" strokeWidth={1.25} />
             </button>
             <button
               onClick={() => mainApi?.scrollNext()}
               aria-label="Next image"
-              className="absolute right-3 top-1/2 -translate-y-1/2 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-ink/10 bg-white/90 p-2.5 text-ink shadow-sm transition hover:border-ink/40 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              <ChevronRight className="size-5" />
+              <ChevronRight className="size-4" strokeWidth={1.25} />
             </button>
           </>
         )}
         <button
           onClick={() => setZoom(true)}
           aria-label="View fullscreen"
-          className="absolute bottom-3 right-3 border border-ink/10 bg-white p-2 text-ink shadow-sm transition hover:border-ink"
+          className="absolute bottom-3 right-3 rounded-full border border-ink/10 bg-white/90 p-2.5 text-ink shadow-sm transition hover:border-ink/40 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <Expand className="size-4" />
         </button>
@@ -94,8 +98,8 @@ export function ProductGallery({
                 onClick={() => scrollTo(i)}
                 aria-label={`View image ${i + 1}`}
                 className={cn(
-                  "relative size-20 shrink-0 overflow-hidden border-2",
-                  i === selected ? "border-gold" : "border-transparent"
+                  "relative size-16 shrink-0 overflow-hidden rounded-sm border p-1 transition-opacity sm:size-20",
+                  i === selected ? "border-gold" : "border-transparent opacity-60 hover:opacity-100"
                 )}
               >
                 <Image

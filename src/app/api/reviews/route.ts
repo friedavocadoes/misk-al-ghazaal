@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { randomUUID } from "node:crypto";
@@ -33,7 +34,7 @@ export async function POST(req:Request){
  if(!product)return NextResponse.json({error:"Product unavailable"},{status:404});
  let q=admin.from("product_ratings").select("id,user_id").eq("product_id",pid);q=user?q.eq("user_id",user.id):q.eq("browser_id",guest);
  const {data:existing}=await q.limit(1).maybeSingle();
- if(!user && existing?.user_id)return NextResponse.json({error:"Sign in to edit this rating"},{status:409});
+
  // A second submission edits one vote, never adds another.
  const result=existing ? await admin.from("product_ratings").update({rating}).eq("id",existing.id):await admin.from("product_ratings").insert({product_id:pid,rating,...(user?{user_id:user.id,browser_id:guest}:{guest_id:guest,browser_id:guest})});
  if(result.error)throw result.error;
@@ -42,7 +43,7 @@ export async function POST(req:Request){
  if(!user)return NextResponse.json({error:"Sign in to write a review"},{status:401});
  const {error}=await admin.from("reviews").upsert({product_id:pid,user_id:user.id,rating,title,body:text,approved:false},{onConflict:"product_id,user_id"});if(error)throw error;
  }
- await touchProduct(admin,pid);
+ after(async()=>{await touchProduct(admin,pid);});
  return NextResponse.json({ok:true});
  }catch{return NextResponse.json({error:"Unable to save. Please try again."},{status:503});}
 }

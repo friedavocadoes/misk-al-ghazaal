@@ -82,12 +82,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(KEY, JSON.stringify(lines));
     } catch {
       /* storage full/blocked — cart still works in memory */
     }
-  }, [lines]);
+  }, [lines, hydrated]);
 
   // Session tracking (login/logout anywhere refreshes the sync target).
   useEffect(() => {

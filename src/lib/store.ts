@@ -45,6 +45,7 @@ interface DbProduct {
   title_ar: string | null;
   description_html: string;
   description_ar: string | null;
+  pdp_content?: Record<string, string> | null;
   short_desc: string | null;
   short_desc_ar: string | null;
   price: number;
@@ -121,6 +122,7 @@ function toProduct(
     title: p.title,
     ...(p.title_ar ? { titleAr: p.title_ar } : {}),
     descriptionHtml: p.description_html,
+    pdpContent: p.pdp_content ?? {},
     ...(p.description_ar ? { descriptionAr: p.description_ar } : {}),
     ...(p.short_desc ? { shortDesc: p.short_desc } : {}),
     ...(p.short_desc_ar ? { shortDescAr: p.short_desc_ar } : {}),
@@ -298,10 +300,10 @@ export async function getProducts(): Promise<Product[]> {
   return rankProducts(await fetchProductsWithRelations());
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export const getProductBySlug = cache(async function getProductBySlug(slug: string): Promise<Product | null> {
   const list = await fetchProductsWithRelations({ slugs: [slug] });
   return list[0] ?? null;
-}
+});
 
 const FLAG_COLLECTIONS = new Set(["best-sellers", "new-arrivals"]);
 
@@ -872,12 +874,6 @@ export async function getNotes(): Promise<Note[]> {
   );
 }
 
-function maskEmail(email: string): string {
-  const [local] = email.split("@");
-  if (!local) return "Guest";
-  return local.length <= 2 ? `${local}···` : `${local.slice(0, 2)}···`;
-}
-
 export async function getDeliveryCountries(): Promise<DeliveryCountry[]> {
   requireConfigured();
   const supabase = await createClient();
@@ -907,44 +903,8 @@ export async function getApprovedReviews(
   limit = 20,
 ): Promise<Review[]> {
   requireConfigured();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select(
-      "id, product_id, user_id, rating, title, body, approved, created_at, profiles!inner(email)",
-    )
-    .eq("product_id", productId)
-    .eq("approved", true)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-  if (error || !data) return [];
-  return (
-    data as unknown as {
-      id: string;
-      product_id: string;
-      user_id: string;
-      rating: number;
-      title: string | null;
-      body: string | null;
-      approved: boolean;
-      created_at: string;
-      profiles: { email: string } | { email: string }[];
-    }[]
-  ).map((r) => ({
-    id: r.id,
-    productId: r.product_id,
-    userId: r.user_id,
-    rating: r.rating,
-    ...(r.title ? { title: r.title } : {}),
-    ...(r.body ? { body: r.body } : {}),
-    approved: r.approved,
-    createdAt: r.created_at,
-    authorName: maskEmail(
-      Array.isArray(r.profiles)
-        ? (r.profiles[0]?.email ?? "")
-        : (r.profiles?.email ?? ""),
-    ),
-  }));
+  const { readApprovedReviews } = await import("./product-reviews");
+  return readApprovedReviews(productId, limit);
 }
 
 export async function getPublicCoupons(): Promise<Coupon[]> {
