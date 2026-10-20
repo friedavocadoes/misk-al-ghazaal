@@ -35,6 +35,7 @@ export default async function AccountOrdersPage(props: {
   const { data: orders } = await supabase
     .from("orders")
     .select("id, order_no, total, subtotal, discount, shipping, status, created_at, tracking_no, tracking_url, expected_delivery_date, order_items(title, qty, unit_price)")
+    .is("deleted_at", null)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(50);

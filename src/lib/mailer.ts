@@ -61,7 +61,7 @@ function shell(
   body: string,
 ): { html: string; text: string } {
   const text = `${title}\n${preheader}\n\n${body.replace(/<[^>]*>/g, "")}`;
-  const html = `<!doctype html><html><body style="margin:0;background:#faf7f1;font-family:Georgia,serif;color:#1c1917">
+  const html = `<!doctype html><html><body style="margin:0;background:#faf7f1;font-family:Arial,Helvetica,sans-serif;color:#1c1917">
 <div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#8a6d2f;margin:0">Misk Al Ghazaal</p>
 <h1 style="font-size:28px;font-weight:400;margin:12px 0 4px">${title}</h1>
@@ -141,12 +141,32 @@ export function orderLinesHtml(
 <p style="font-size:20px">Total AED ${total.toFixed(2)} — cash on delivery.</p>`;
 }
 
+/** Table-based status graphic remains legible when email clients block images. */
+export function orderStatusGraphic(status: string): string {
+ const stages = ["new", "confirmed", "packed", "out_for_delivery", "delivered"];
+ const labels = ["Received", "Confirmed", "Packed", "On its way", "Delivered"];
+ const index = stages.indexOf(status);
+ const messages: Record<string,string> = {
+  new: "Our team will review your order. We’ll send an update once it is confirmed.",
+  confirmed: "Your order is confirmed. We’re getting your selection ready.",
+  packed: "Your selection is packed with care and ready for dispatch.",
+  out_for_delivery: "Your parcel is on its way. Watch for delivery updates below.",
+  delivered: "Your order has arrived. We hope you enjoy every note.",
+  cancelled: "This order has been cancelled. Contact our team if you need help.",
+  returned: "Your order is marked as returned. Contact our team for assistance.",
+ };
+ const terminal = status === "cancelled" || status === "returned";
+ const cells = stages.map((stage,i)=>`<td width="20%" align="center" style="padding:10px 2px;vertical-align:top"><div style="width:26px;height:26px;line-height:26px;margin:0 auto 8px;border-radius:50%;background:${!terminal&&i<=index?"#8a6d2f":"#e9e1d2"};color:${!terminal&&i<=index?"#ffffff":"#766c5e"};font-size:12px">${!terminal&&i<index?"&#10003;":i+1}</div><span style="font-size:10px;color:#605749">${labels[i]}</span></td>`).join("");
+ return `<div style="padding:20px;background:${terminal?"#f5e8e3":"#efe9dc"};border-radius:12px;margin:20px 0"><p style="margin:0 0 12px;font-size:16px;font-weight:600">${terminal?(status==="cancelled"?"Order cancelled":"Order returned"):labels[Math.max(index,0)]}</p>${terminal?"":`<table role="presentation" style="width:100%;border-collapse:collapse"><tr>${cells}</tr></table>`}<p style="margin:12px 0 0;font-size:13px;line-height:1.7">${messages[status]||"Your order status has been updated."}</p></div>`;
+}
+
 /** Full order-page email: header, items, totals, delivery + pin, tracking,
     factory contact — mirrors what the shopper sees in /account/orders. */
 export function buildOrderEmail(opts: {
   orderNo: string;
   date: string;
   statusLabel: string;
+  status?: string;
   customerName: string;
   lines: {
     title: string;
@@ -167,6 +187,7 @@ export function buildOrderEmail(opts: {
   couponCode?: string;
 }): { subject: string; title: string; preheader: string; bodyHtml: string } {
   const o = opts;
+  const status = o.status ?? (o.statusLabel === "received" || o.statusLabel === "Waiting for confirmation" ? "new" : o.statusLabel.toLowerCase().replaceAll(" ", "_"));
   const itemRows = o.lines
     .map((l) => {
       const img = l.image
@@ -194,6 +215,8 @@ export function buildOrderEmail(opts: {
     preheader: `${o.orderNo} · ${o.date} · cash on delivery`,
     bodyHtml: `<p>Dear ${o.customerName},</p>
 <p>Your order <strong>${o.orderNo}</strong> (${o.date}) is now <strong>${o.statusLabel}</strong>.</p>
+${orderStatusGraphic(status)}
+<h2 style="font-size:16px;font-weight:500;margin:24px 0 10px">Your selection</h2>
 <table style="width:100%;border-collapse:collapse">${itemRows}</table>
 <p>Subtotal AED ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −AED ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `AED ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>
 <p style="font-size:20px">Total AED ${o.total.toFixed(2)} — cash on delivery.</p>

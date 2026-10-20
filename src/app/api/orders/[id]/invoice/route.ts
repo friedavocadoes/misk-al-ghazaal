@@ -33,7 +33,7 @@ export async function GET(
 
   const admin = await createAdminClient();
   let orderQuery = admin.from("orders").select("*").eq("id", id);
-  if (!staff && user) orderQuery = orderQuery.eq("user_id", user.id);
+  if (!staff && user) orderQuery = orderQuery.eq("user_id", user.id).is("deleted_at", null);
   const { data: order } = await orderQuery.single();
   if (!order) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const o = order as {

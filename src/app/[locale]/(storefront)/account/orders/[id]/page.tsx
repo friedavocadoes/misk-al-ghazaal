@@ -37,6 +37,7 @@ export default async function AccountOrderDetail(props: {
   const { data: order } = await supabase
     .from("orders")
     .select("*")
+    .is("deleted_at", null)
     .eq("id", id)
     .eq("user_id", user.id)
     .single();

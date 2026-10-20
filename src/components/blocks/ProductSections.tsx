@@ -11,6 +11,7 @@ import { L } from "@/lib/site";
 import { pick, tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
 import type { Product, Review } from "@/lib/types";
+import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { NoteGlyph } from "@/components/ui/note-glyphs";
 import { SafeImage } from "@/components/ui/safe-image";
 import { ReviewForm } from "@/components/blocks/ReviewForm";
@@ -54,8 +55,7 @@ export async function NotesBrief({ product, locale }: { product: Product; locale
               <ul className="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-6 md:gap-x-6">
                 {items.map((n) => (
                   <li key={n.id} className="pyramid-note flex w-full flex-col items-center gap-3 sm:w-20 md:w-24">
-                    <NoteGlyph glyph={n.glyph} className="size-16 sm:size-20 md:size-24" />
-                    <span className="text-[10px] leading-snug text-espresso sm:text-[11px]">{tx(n.name, n.nameAr, locale)}</span>
+                    <NoteTooltip note={n} locale={locale} className="composition-note-trigger"><NoteGlyph glyph={n.glyph} className="size-16 sm:size-20 md:size-24" /><span className="text-[10px] leading-snug text-espresso sm:text-[11px]">{tx(n.name, n.nameAr, locale)}</span></NoteTooltip>
                   </li>
                 ))}
                 {!items.length && <li className="py-8 text-xs text-fog" aria-label={locale === "ar" ? "غير محدد" : "Not specified"}>—</li>}

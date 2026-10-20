@@ -20,6 +20,7 @@ export async function GET() {
     supabase
       .from("orders")
       .select("customer_name, phone, email, address, city, emirate, country_code, state_name, postcode, address_label, delivery_lat, delivery_lng")
+      .is("deleted_at", null)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)

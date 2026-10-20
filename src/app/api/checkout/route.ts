@@ -292,6 +292,7 @@ export async function POST(req: Request) {
         orderNo: (order as { order_no: string }).order_no,
         date: new Date().toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }),
         statusLabel: "received",
+        status: "new",
         customerName: name,
         lines: priced.map((l) => ({
           title: l.title,
@@ -322,6 +323,7 @@ export async function POST(req: Request) {
       total: quote.total,
       shipping: quote.shipping,
       discount: quote.discount,
+      items: priced.map(l => ({ title: l.title, qty: l.qty, unit: l.unit, slug: l.slug })),
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";

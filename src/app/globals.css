@@ -902,3 +902,24 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
 .pdp-assurances svg { color:#9a8255; grid-row:span 2; margin-top:1px; }
 .pdp-assurances > div > p:first-of-type { font-size:9px; font-weight:500; letter-spacing:.08em; line-height:1.6; }
 .pdp-assurances > div > p:last-child { font-size:10px; line-height:1.5; }
+.note-tooltip-card { filter:drop-shadow(0 16px 25px #332b2522); }
+.note-tooltip-inner { padding:20px; border-radius:14px; border:1px solid #b4a17c55; background:linear-gradient(140deg,#fffdf8,#f3eee3); }
+.composition-note-trigger { display:flex; flex-direction:column; align-items:center; gap:12px; cursor:pointer; border-radius:12px; padding:8px; transition:background .25s; }
+.composition-note-trigger:hover { background:#ece4d866; }
+.composition-note-trigger:focus-visible,.brief-note-trigger:focus-visible { outline:2px solid #aa915c; outline-offset:4px; }
+.brief-note-lines { border-top:1px solid #ad9a7525; padding-top:14px; }
+.brief-note-lines > div { display:flex; align-items:baseline; gap:12px; margin-bottom:9px; }
+.brief-note-tier { width:35px; flex-shrink:0; font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:#8c7e69; }
+.brief-note-group { display:flex; flex:1; min-width:0; flex-wrap:wrap; gap:8px 14px; }
+.brief-note-trigger { display:inline-flex; flex-direction:column; gap:6px; cursor:pointer; font-size:11px; color:#5f5549; min-width:52px; text-align:start; }
+.brief-note-color { display:block; height:3px; width:100%; border-radius:5px; transition:transform .3s; }
+.brief-note-trigger:hover .brief-note-color { transform:scaleY(2); }
+.order-received-intro { text-align:center; }
+.order-received-seal { display:flex; width:72px; height:72px; border-radius:50%; align-items:center; justify-content:center; margin:auto; color:#8c713c; background:radial-gradient(circle,#fffdf7,#e9dec6); box-shadow:0 0 0 8px #e8dfcc40; }
+.order-received-grid { display:grid; gap:20px; align-items:start; }
+.order-received-bag,.order-received-next { padding:clamp(20px,3vw,32px); border:1px solid #af9c772e; border-radius:18px; background:#fffdf9; }
+.order-received-next { background:linear-gradient(130deg,#eee6d5,#f8f5ef); }
+.order-next-icon { display:flex; flex-shrink:0; width:36px; height:36px; align-items:center; justify-content:center; border-radius:50%; background:#fff9; color:#998f80; }
+.order-next-icon.is-current { color:#856a33; background:#e5d5b4; }
+@media(min-width:768px) { .order-received-grid { grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); } }
+.note-tooltip-inner { max-height:min(420px,65svh); overflow-y:auto; }

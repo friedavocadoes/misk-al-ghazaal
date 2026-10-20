@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { getSiteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -57,7 +58,10 @@ async function updateOrder(formData: FormData) {
       .select("total, subtotal, discount, shipping, address, city, emirate, country_code, state_name, postcode, address_label, delivery_lat, delivery_lng, coupon_code, created_at")
       .eq("id", id)
       .single();
-    const { data: itemRows } = await supabase.from("order_items").select("title, qty, unit_price").eq("order_id", id);
+    const { data: itemRows } = await supabase.from("order_items").select("title, qty, unit_price, product_slug").eq("order_id", id);
+    const slugs = (itemRows ?? []).map(l => l.product_slug);
+    const { data: faces } = slugs.length ? await supabase.from("products").select("slug, images").in("slug", slugs) : { data: [] };
+    const images = new Map((faces ?? []).map(p => [p.slug, p.images?.[0] as string | undefined]));
     const f = (full ?? {}) as {
       total?: number; subtotal?: number; discount?: number; shipping?: number;
       address?: string; city?: string; emirate?: string; country_code?: string;
@@ -69,13 +73,16 @@ async function updateOrder(formData: FormData) {
       orderNo: cur.order_no ?? "",
       date: f.created_at ? new Date(f.created_at).toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }) : "",
       statusLabel: statusLabel(toStatus),
+      status: toStatus,
       customerName: cur.customer_name ?? "client",
-      lines: ((itemRows as { title: string; qty: number; unit_price: number }[] | null) ?? []).map((l) => ({
+      lines: ((itemRows as { title: string; qty: number; unit_price: number; product_slug: string }[] | null) ?? []).map((l) => ({
         title: l.title,
         qty: l.qty,
         unit: Number(l.unit_price),
+        image: images.get(l.product_slug),
+        href: `/product/${l.product_slug}`,
       })),
-      origin: "",
+      origin: getSiteUrl(),
       subtotal: Number(f.subtotal ?? 0),
       discount: Number(f.discount ?? 0),
       shipping: Number(f.shipping ?? 0),

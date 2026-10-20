@@ -16,6 +16,7 @@ import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { DIAL_CODES, combinePhone, splitPhone, DEFAULT_DIAL } from "@/lib/dial-codes";
 import type { Locale } from "@/i18n/routing";
 import type { Coupon, DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
+import { OrderReceived, type ReceivedOrder } from "@/components/blocks/OrderReceived";
 import { cn } from "@/lib/utils";
 
 const inputCls =
@@ -73,7 +74,7 @@ export default function CheckoutPage() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
-  const [done, setDone] = useState<{ orderNo: string; total: number } | null>(null);
+  const [done, setDone] = useState<ReceivedOrder | null>(null);
 
   useEffect(() => {
     createBrowserClient()
@@ -336,7 +337,7 @@ export default function CheckoutPage() {
     const j = await res.json().catch(() => null);
     setPlacing(false);
     if (res.ok && j?.order_no) {
-      setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0) });
+      setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? ""})) });
       try {
         localStorage.removeItem("misk-coupon");
       } catch {
@@ -349,21 +350,7 @@ export default function CheckoutPage() {
   };
 
   if (done) {
-    return (
-      <div className="mx-auto max-w-xl px-5 py-16 text-center md:py-24">
-        <span className="mx-auto flex size-14 items-center justify-center bg-ink text-white">
-          <Check className="size-6" />
-        </span>
-        <h1 className="mt-6 font-display text-4xl text-ink">{t("successTitle")}</h1>
-        <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-espresso">{t("successText")}</p>
-        <p className="mt-5 text-[12px] font-semibold uppercase tracking-[0.22em] text-gold">
-          {t("reference")} · {done.orderNo} · {formatAED(done.total)}
-        </p>
-        <Button asChild className="mt-8">
-          <Link href="/collection/best-sellers">{t("keepShopping")}</Link>
-        </Button>
-      </div>
-    );
+    return <OrderReceived order={done} locale={locale} loggedIn={!!userId} />;
   }
 
   if (!lines.length) {
