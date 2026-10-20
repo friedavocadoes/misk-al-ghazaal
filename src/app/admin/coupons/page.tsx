@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DeleteCoupon } from "@/components/admin/delete-coupon";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -258,6 +259,7 @@ export default async function CouponsPage() {
                   {c.active ? "Active" : "Off"}
                 </span>
               </Link>
+              <DeleteCoupon id={c.id} code={c.code} />
             </li>
           ))}
         </ul>

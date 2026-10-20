@@ -49,12 +49,12 @@ function validLines(arr: unknown): CartLine[] {
     .slice(0, 50);
 }
 
-/** Union merge (server ∪ local): quantities add, capped — both devices converge. */
+/** Both snapshots may describe the same items. Reconciliation must be idempotent. */
 function mergeLines(a: CartLine[], b: CartLine[]): CartLine[] {
   const out: CartLine[] = [...a];
   for (const l of b) {
     const i = out.findIndex((x) => same(x, l.productSlug, l.variantId));
-    if (i >= 0) out[i] = { ...out[i], qty: Math.min(20, out[i].qty + l.qty) };
+    if (i >= 0) out[i] = { ...out[i], qty: Math.min(20, Math.max(out[i].qty, l.qty)) };
     else if (out.length < 50) out.push(l);
   }
   return out;
@@ -66,8 +66,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // callbacks is fine; only synchronous effect bodies are banned).
   const [lines, setLines] = useState<CartLine[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const pulledFor = useRef<string | null>(null);
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+  const [readyUser, setReadyUser] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -90,53 +90,57 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [lines, hydrated]);
 
-  // Session tracking (login/logout anywhere refreshes the sync target).
+  // Auth bootstrap must not overwrite a newer login/logout event.
   useEffect(() => {
+    let live = true;
+    let changed = false;
     const sb = createBrowserClient();
-    sb.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
-    const { data: sub } = sb.auth.onAuthStateChange((_event, session) =>
-      setUserId(session?.user?.id ?? null),
-    );
-    return () => sub.subscription.unsubscribe();
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+      changed = true;
+      if (live) setUserId(session?.user?.id ?? null);
+    });
+    sb.auth.getUser().then(({ data }) => {
+      if (live && !changed) setUserId(data.user?.id ?? null);
+    }).catch(() => { if (live && !changed) setUserId(null); });
+    return () => { live = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  // Pull once per login: union server cart with this device, converge.
-  // Account switch (A → B without a reload) resets to B's world: the
-  // local bag belonged to A and must never ride into B's account.
-  // Guest → login keeps the union (anonymous bag adoption is intended).
   const prevUser = useRef<string | null>(null);
   useEffect(() => {
-    if (!hydrated) return;
-    if (!userId) {
-      prevUser.current = null;
-      return;
-    }
-    if (prevUser.current && prevUser.current !== userId) {
-      // A different account on the same device: the local bag belonged
-      // to the previous account — start empty, then converge with the
-      // new account's server cart below.
-      pulledFor.current = null;
-      setLines([]);
-    }
+    if (!hydrated || userId === undefined) return;
+    let live = true;
+    const previous = prevUser.current;
     prevUser.current = userId;
-    if (pulledFor.current === userId) return;
-    pulledFor.current = userId;
-    (async () => {
+    void (async () => {
+      setReadyUser(null);
+      if (!userId) {
+        if (previous) {
+          setLines([]);
+          try { localStorage.removeItem("misk-coupon"); } catch { /* blocked storage */ }
+        }
+        return;
+      }
+      const switching = !!previous && previous !== userId;
+      if (switching) setLines([]);
       try {
         const sb = createBrowserClient();
-        const { data } = await sb.from("profiles").select("cart").eq("id", userId).single();
+        const { data, error } = await sb.from("profiles").select("cart").eq("id", userId).single();
+        if (!live || error) return;
         const server = validLines((data as { cart?: unknown } | null)?.cart);
-        if (prevUser.current === userId) setLines((prev) => mergeLines(prev, server));
+        setLines(prev => mergeLines(switching ? [] : prev, server));
+        // Only a completed successful pull enables profile writes.
+        setReadyUser(userId);
       } catch {
-        /* offline/RLS — local bag keeps working */
+        /* Keep local shopping available; never overwrite an unread server cart. */
       }
     })();
+    return () => { live = false; };
   }, [hydrated, userId]);
 
   // Push (debounced): every settled change lands on the profile, so any
   // device logged into the same account shows the same bag.
   useEffect(() => {
-    if (!hydrated || !userId || pulledFor.current !== userId) return;
+    if (!hydrated || !userId || readyUser !== userId) return;
     const id = setTimeout(() => {
       createBrowserClient()
         .from("profiles")
@@ -148,7 +152,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
     }, 1000);
     return () => clearTimeout(id);
-  }, [lines, hydrated, userId]);
+  }, [lines, hydrated, userId, readyUser]);
 
   const add = useCallback((line: CartLine) => {
     setLines((prev) => {

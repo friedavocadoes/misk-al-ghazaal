@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DeleteCoupon } from "@/components/admin/delete-coupon";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -115,6 +116,7 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
           </div>
           <SaveButton className="md:col-span-2">Save coupon</SaveButton>
         </AdminForm>
+        <DeleteCoupon id={id} code={c.code} />
       </div>
     </>
   );
