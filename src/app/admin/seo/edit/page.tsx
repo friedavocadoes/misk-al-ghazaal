@@ -24,8 +24,8 @@ const TYPES = Object.keys(SEO_TYPE_LABELS) as SeoPageType[];
 
 async function saveSeoRow(formData: FormData) {
   "use server";
-  const s = await getAdminSession();
-  if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const s = await getAdminSession(true);
+  if (!s || !["super_admin", "content_editor"].includes(s.role)) redirect("/admin/login");
   const type = String(formData.get("page_type"));
   const slug = String(formData.get("slug") ?? "");
   if (!(TYPES as string[]).includes(type)) throw new Error("Bad page type.");
@@ -91,9 +91,9 @@ async function saveSeoRow(formData: FormData) {
 export default async function SeoEditPage(props: {
   searchParams: Promise<{ type?: string; slug?: string }>;
 }) {
-  const session = await getAdminSession();
+  const session = await getAdminSession(true);
   if (!session) redirect("/admin/login");
-  if (session.role !== "super_admin") redirect("/admin/orders");
+  if (!["super_admin", "content_editor"].includes(session.role)) redirect("/admin/orders");
   const sp = await props.searchParams;
   const type = (sp.type ?? "") as SeoPageType;
   const slug = sp.slug ?? "";

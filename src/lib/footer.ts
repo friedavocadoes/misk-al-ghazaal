@@ -46,7 +46,7 @@ export async function getFooterColumns(locale: Locale): Promise<FooterColumn[]> 
           label: pick(L("Private Label", "العلامة الخاصة"), locale),
           href: "/private-label",
         },
-        { label: pick(L("Journal", "المدونة"), locale), href: "/blog" },
+        { label: pick(L("Blogs", "المدونة"), locale), href: "/posts" },
         {
           label: pick(L("Wholesale", "الجملة"), locale),
           href: "/pages/wholesale",

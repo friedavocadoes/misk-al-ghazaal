@@ -19,7 +19,7 @@ function requireConfigured() {
 
 export type SeoPageType =
   | "product" | "collection" | "collections" | "home" | "info"
-  | "blog" | "article" | "search" | "private-label" | "locate-us";
+  | "find-your-scent" | "gifts" | "blog" | "article" | "search" | "private-label" | "locate-us";
 
 export interface PageSeo {
   h1?: string;
@@ -102,7 +102,9 @@ export function seoPathFor(type: SeoPageType, slug = ""): string {
     case "collections": return "/collections";
     case "home": return "/";
     case "info": return `/pages/${slug}`;
-    case "blog": return "/blog";
+    case "find-your-scent": return "/find-your-scent";
+    case "gifts": return "/gifts";
+    case "blog": return "/posts";
     case "article": return `/blog/${slug}`;
     case "search": return "/search";
     case "private-label": return "/private-label";
@@ -116,7 +118,9 @@ export const SEO_TYPE_LABELS: Record<SeoPageType, string> = {
   collections: "Collections index",
   home: "Homepage",
   info: "Info page",
-  blog: "Journal index",
+  "find-your-scent": "Find your scent",
+  gifts: "Gifts",
+  blog: "Blogs index",
   article: "Journal article",
   search: "Search",
   "private-label": "Private label",

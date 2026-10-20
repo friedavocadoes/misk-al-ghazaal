@@ -923,3 +923,6 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
 .order-next-icon.is-current { color:#856a33; background:#e5d5b4; }
 @media(min-width:768px) { .order-received-grid { grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); } }
 .note-tooltip-inner { max-height:min(420px,65svh); overflow-y:auto; }
+.blog-prose { font-size:16px; line-height:1.9; color:#514b42; overflow-wrap:anywhere; }
+.blog-prose h2,.blog-prose h3,.blog-prose h4 { scroll-margin-top:110px; color:#29251f; font-weight:400; line-height:1.35; margin:2em 0 .7em; }
+.blog-prose h2 { font-size:1.8em; }.blog-prose h3 { font-size:1.4em; }.blog-prose p { margin:1em 0; }.blog-prose ul,.blog-prose ol { padding-inline-start:1.5em; margin:1em 0; }.blog-prose ul { list-style:disc; }.blog-prose ol { list-style:decimal; }.blog-prose a { color:#8a6d2f; text-decoration:underline; }.blog-prose img { max-width:100%; height:auto; margin:2em 0; }.blog-prose blockquote { border-inline-start:2px solid #b49a67; padding-inline-start:1.5em; font-style:italic; }.blog-prose table { border-collapse:collapse; width:100%; display:block; overflow-x:auto; }.blog-prose td,.blog-prose th { border:1px solid #ddd3c1; padding:10px; min-width:80px; }.blog-prose pre { overflow:auto; padding:16px; background:#eee9df; }

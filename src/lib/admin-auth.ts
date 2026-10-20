@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/keys";
 
-export type AdminRole = "super_admin" | "orders";
+export type AdminRole = "super_admin" | "orders" | "content_editor";
 
 export interface AdminSession {
   userId: string;
@@ -11,7 +11,7 @@ export interface AdminSession {
 
 // Server-only. Returns null when not logged in OR when Supabase env is
 // missing (so `next build` without .env still passes — admin shows setup hint).
-export async function getAdminSession(): Promise<AdminSession | null> {
+export async function getAdminSession(allowContentEditor = false): Promise<AdminSession | null> {
   if (!isSupabaseConfigured()) {
     return null;
   }
@@ -26,7 +26,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     .eq("id", user.id)
     .single();
   const role = (profile?.role as AdminRole) ?? null;
-  if (role !== "super_admin" && role !== "orders") return null;
+  if (role !== "super_admin" && role !== "orders" && !(allowContentEditor && role === "content_editor")) return null;
   return { userId: user.id, email: user.email, role };
 }
 

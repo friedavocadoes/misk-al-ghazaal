@@ -34,7 +34,7 @@ export default function AdminLogin() {
         ? await supabase.from("profiles").select("role").eq("id", user.id).single()
         : { data: null };
       const role = (profile as { role?: string } | null)?.role;
-      if (role !== "super_admin" && role !== "orders") {
+      if (role !== "super_admin" && role !== "orders" && role !== "content_editor") {
         await supabase.auth.signOut();
         setError("This door is for maison staff — your shopper account lives at /account.");
         return;
@@ -48,7 +48,7 @@ export default function AdminLogin() {
       } catch {
         /* audit must never block login */
       }
-      router.replace("/admin");
+      router.replace(role === "content_editor" ? "/admin/blogs" : "/admin");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

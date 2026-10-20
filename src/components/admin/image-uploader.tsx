@@ -11,16 +11,19 @@ export function ImageUploader({
   bucket,
   prefix,
   onUploaded,
+  onBusyChange,
 }: {
-  bucket: "products" | "banners" | "promo";
+  bucket: "products" | "banners" | "promo" | "blogs";
   prefix: string;
   onUploaded: (url: string) => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function pick(file: File) {
     setBusy(true);
+    onBusyChange?.(true);
     setError(null);
     try {
       if (!file.type.startsWith("image/")) throw new Error("Pick an image file.");
@@ -42,6 +45,7 @@ export function ImageUploader({
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
 

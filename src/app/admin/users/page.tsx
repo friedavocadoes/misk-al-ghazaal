@@ -16,7 +16,7 @@ async function setRole(formData: FormData) {
   const id = String(formData.get("id"));
   const role = String(formData.get("role"));
   if (id === s.userId) throw new Error("You cannot demote yourself");
-  if (role !== "super_admin" && role !== "orders" && role !== "customer") throw new Error("Bad role");
+  if (role !== "super_admin" && role !== "orders" && role !== "customer" && role !== "content_editor") throw new Error("Bad role");
   // Service client: profiles UPDATE policy is self-only, so staff edits go
   // through the secret key here (server action, never shipped to browsers).
   const admin = await createAdminClient();
@@ -106,7 +106,7 @@ export default async function UsersPage(props: {
                   <input type="hidden" name="id" value={u.id} />
                   <select name="role" defaultValue={u.role} className="border border-ink/20 bg-white px-2 py-1.5 text-sm">
                     <option value="customer">customer</option>
-                    <option value="orders">orders</option>
+                    <option value="content_editor">Blogs & SEO editor</option><option value="orders">orders</option>
                     <option value="super_admin">super_admin</option>
                   </select>
                   <SaveButton>Apply</SaveButton>

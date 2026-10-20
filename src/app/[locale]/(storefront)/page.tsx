@@ -15,13 +15,11 @@ import {
   SectionHeading,
 } from "@/components/blocks/ProductCarousel";
 import {
-  BlogCardGrid,
   InstagramFeed,
   ParallaxCTA,
   Testimonials,
 } from "@/components/blocks/ContentBlocks";
 import {
-  getArticles,
   getBrandBanners,
   getCollections,
   getHeroSlides,
@@ -71,7 +69,6 @@ async function Section({ s, locale, ctx }: {
     bestSellers: Awaited<ReturnType<typeof getProductsByCollection>>;
     newArrivals: Awaited<ReturnType<typeof getProductsByCollection>>;
     featured: Awaited<ReturnType<typeof getProductsByCollection>>;
-    articles: Awaited<ReturnType<typeof getArticles>>;
   };
 }) {
   const t = (v?: string, ar?: string) => tx(v || "", ar, locale);
@@ -163,20 +160,7 @@ async function Section({ s, locale, ctx }: {
           title={t(s.title, s.titleAr) || ts("testiTitle")}
         />
       );
-    case "blog_grid": {
-      const articles = ctx.articles.slice(0, s.config?.limit ?? 3);
-      if (!articles.length) return null;
-      return (
-        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
-          <SectionHeading
-            eyebrow={t(s.eyebrow, s.eyebrowAr)}
-            title={t(s.title, s.titleAr)}
-            link={{ label: tc("viewAll"), href: "/blog" }}
-          />
-          <BlogCardGrid articles={articles} />
-        </section>
-      );
-    }
+    case "blog_grid": return null; // Blog discovery is footer-only.
     case "instagram":
       return (
         <InstagramFeed
@@ -234,7 +218,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     bestSellers,
     newArrivals,
     featured,
-    articles,
   ] = await Promise.all([
     getHomepageSections(),
     getBrandBanners(),
@@ -242,7 +225,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     getProductsByCollection("best-sellers"),
     getProductsByCollection("new-arrivals"),
     getProductsByCollection("best-sellers"),
-    getArticles(),
   ]);
 
   const ctx = {
@@ -251,7 +233,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
     bestSellers,
     newArrivals,
     featured,
-    articles,
   };
   if (!sections.length) {
     const ts = await getTranslations({ locale, namespace: "Sections" });
@@ -301,14 +282,6 @@ async function HomeContent({ locale }: { locale: Locale }) {
           eyebrow={ts("testiEyebrow")}
           title={ts("testiTitle")}
         />
-        <section className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-22">
-          <SectionHeading
-            eyebrow={ts("journalEyebrow")}
-            title={ts("journalTitle")}
-            link={{ label: tc("viewAll"), href: "/blog" }}
-          />
-          <BlogCardGrid articles={articles.slice(0, 3)} />
-        </section>
         <InstagramFeed eyebrow={ts("instaEyebrow")} title={ts("instaTitle")} />
       </>
     );

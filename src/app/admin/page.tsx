@@ -40,8 +40,9 @@ const CARDS: {
 ];
 
 export default async function AdminHome() {
-  const session = await getAdminSession();
+  const session = await getAdminSession(true);
   if (!session) redirect("/admin/login");
+  if (session?.role === "content_editor") redirect("/admin/blogs");
   const supabase = await createClient();
 
   const [newOrders, products, pendingReviews, activeCoupons, referrals] = await Promise.all([

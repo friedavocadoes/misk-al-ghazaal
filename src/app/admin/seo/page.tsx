@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { getArticles, getCollections } from "@/lib/store";
+import { getCollections } from "@/lib/store";
 import { PAGES } from "@/app/[locale]/(storefront)/pages/[slug]/page";
 import { SEO_TYPE_LABELS, seoPathFor, type SeoPageType } from "@/lib/seo";
 
@@ -16,16 +16,17 @@ interface Row {
 /** Every crawlable surface gets an (optional) SEO row — products live in
     the product editor (§07), everything else edits here. */
 export default async function SeoHub() {
-  const session = await getAdminSession();
+  const session = await getAdminSession(true);
   if (!session) redirect("/admin/login");
-  if (session.role !== "super_admin") redirect("/admin/orders");
+  if (!["super_admin", "content_editor"].includes(session.role)) redirect("/admin/orders");
   const supabase = await createClient();
-  const [collections, articles] = await Promise.all([getCollections(), getArticles()]);
+  const collections = await getCollections();
   const { data: rows } = await supabase.from("page_seo").select("page_type, slug");
   const filled = new Set(
     (((rows as { page_type: string; slug: string }[] | null) ?? []).map((r) => `${r.page_type}:${r.slug}`)),
   );
 
+  const { data: products = [] } = await supabase.from("products").select("slug,title").order("title");
   const groups: { title: string; rows: Row[] }[] = [
     {
       title: "Storefront",
@@ -35,7 +36,9 @@ export default async function SeoHub() {
         { type: "search", slug: "", label: "Search" },
         { type: "private-label", slug: "", label: "Private label" },
         { type: "locate-us", slug: "", label: "Locate us" },
-        { type: "blog", slug: "", label: "Journal index" },
+        { type: "blog", slug: "", label: "Blogs index" },
+        { type: "find-your-scent", slug: "", label: "Find your scent" },
+        { type: "gifts", slug: "", label: "Gifts" },
       ],
     },
     {
@@ -46,11 +49,10 @@ export default async function SeoHub() {
       title: "Info pages",
       rows: Object.entries(PAGES).map(([slug, p]) => ({ type: "info" as SeoPageType, slug, label: p.title })),
     },
-    {
-      title: "Journal articles",
-      rows: articles.map((a) => ({ type: "article" as SeoPageType, slug: a.slug, label: a.title })),
-    },
+
   ];
+
+  groups.push({title:"Product SEO",rows:(products || []).map(p=>({type:"product" as SeoPageType,slug:p.slug,label:p.title}))});
 
   const pill = (type: SeoPageType, slug: string) =>
     filled.has(`${type}:${slug}`) ? (
@@ -72,14 +74,8 @@ export default async function SeoHub() {
         <p className="mt-2 max-w-2xl text-sm text-ink/60">
           Invisible crawler layer per page — H1, meta, canonical, robots, social
           cards, JSON-LD. Empty rows fall back to page content automatically.
-          Products are edited inside their product page (§07 SEO).
+          Product metadata can be edited below without access to catalog settings.
         </p>
-        <Link
-          href="/admin/products"
-          className="mt-4 inline-block border border-ink/20 bg-white px-4 py-2 text-sm transition hover:border-ink/50"
-        >
-          Edit product SEO →
-        </Link>
         {groups.map((g) => (
           <section key={g.title} className="mt-8">
             <h2 className="font-display text-xl">{g.title}</h2>

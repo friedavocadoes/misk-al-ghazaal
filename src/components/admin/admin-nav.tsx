@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/lib/admin-auth";
 import { SignOutButton } from "./sign-out-button";
@@ -19,6 +19,13 @@ interface NavGroup {
 }
 
 const GROUPS: NavGroup[] = [
+  {
+    label: "Content & discoverability",
+    items: [
+      { href: "/admin/blogs", label: "Blogs" },
+      { href: "/admin/seo", label: "SEO for pages & products" },
+    ],
+  },
   {
     label: "Catalog",
     items: [
@@ -41,7 +48,6 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/reviews", label: "Reviews" },
       { href: "/admin/countries", label: "Countries" },
       { href: "/admin/homepage", label: "Homepage" },
-      { href: "/admin/seo", label: "Page SEO" },
     ],
   },
   {
@@ -55,95 +61,109 @@ const GROUPS: NavGroup[] = [
 
 export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState<string | null>(null);
-  const close = () => setOpen(null);
-  const superOnly = role === "super_admin";
-  const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-
-  const linkCls = (isActive: boolean) =>
-    cn(
-      "whitespace-nowrap px-3 py-2 text-sm transition",
-      isActive ? "bg-ink text-white" : "text-ink/60 hover:bg-ink/5 hover:text-ink",
-    );
-
+  const drawer = useRef<HTMLDialogElement>(null);
+  const groups =
+    role === "super_admin"
+      ? [
+          {
+            label: "Operations",
+            items: [
+              { href: "/admin", label: "Overview" },
+              { href: "/admin/orders", label: "Orders" },
+              { href: "/admin/bin", label: "Recycle bin" },
+              { href: "/admin/logs", label: "Audit log" },
+            ],
+          },
+          ...GROUPS,
+        ]
+      : role === "content_editor"
+        ? GROUPS.filter((g) => g.label === "Content & discoverability")
+        : [
+            {
+              label: "Operations",
+              items: [
+                { href: "/admin/orders", label: "Orders" },
+                { href: "/admin/bin", label: "Recycle bin" },
+                { href: "/admin/logs", label: "Audit log" },
+              ],
+            },
+          ];
   return (
-    <div className="sticky top-0 z-40 border-b border-ink/10 bg-cream/95 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-6 py-3">
-        <Link href="/admin" className="mr-2 shrink-0">
-          <span className="block font-display text-lg leading-none tracking-[0.08em]">
-            MISK AL GHAZAAL
-          </span>
-          <span className="mt-0.5 block text-[10px] uppercase tracking-[0.22em] text-ink/50">
-            Admin · {role === "super_admin" ? "Super admin" : "Orders"}
-          </span>
-        </Link>
-        <nav className="flex flex-1 items-center gap-1">
-          <Link href="/admin/orders" aria-current={active("/admin/orders") ? "page" : undefined} className={linkCls(active("/admin/orders"))}>
-            Orders
-          </Link>
-          {superOnly &&
-            GROUPS.map((g) => {
-              const groupActive = g.items.some((i) => active(i.href));
-              return (
-                <div
-                  key={g.label}
-                  className="relative"
-                  onMouseEnter={() => setOpen(g.label)}
-                  onMouseLeave={() => setOpen(null)}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpen((o) => (o === g.label ? null : g.label))}
-                    aria-expanded={open === g.label}
-                    className={cn(linkCls(groupActive), "flex items-center gap-1")}
-                  >
-                    {g.label}
-                    <ChevronDown className={cn("size-3.5 transition-transform", open === g.label && "rotate-180")} />
-                  </button>
-                  <div
-                    className={cn(
-                      "absolute left-0 top-full z-50 min-w-44 border border-ink/10 bg-white py-1 shadow-[0_24px_48px_-20px_rgba(28,25,23,0.4)] transition-all duration-200",
-                      open === g.label ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1 opacity-0",
-                    )}
-                  >
-                    {g.items.map((i) => (
-                      <Link
-                        key={i.href}
-                        href={i.href}
-                        onClick={close}
-                        aria-current={active(i.href) ? "page" : undefined}
-                        className={cn(
-                          "block px-4 py-2 text-sm transition hover:bg-sand",
-                          active(i.href) ? "text-gold" : "text-espresso",
-                        )}
-                      >
-                        {i.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          <Link href="/admin/bin" aria-current={active("/admin/bin") ? "page" : undefined} className={linkCls(active("/admin/bin"))}>
-            Bin
-          </Link>
-          <Link href="/admin/logs" aria-current={active("/admin/logs") ? "page" : undefined} className={linkCls(active("/admin/logs"))}>
-            Logs
-          </Link>
-        </nav>
-        <span className="hidden shrink-0 text-xs text-ink/50 md:block">{email}</span>
-        <Link
-          href="/"
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0 text-xs text-ink/50 underline-offset-4 transition hover:text-ink hover:underline"
+    <>
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-4 border-b border-ink/10 bg-cream/95 px-5 py-4 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => drawer.current?.showModal()}
+          className="flex items-center gap-3 rounded-lg border border-ink/15 px-4 py-2 text-sm"
         >
-          View store
+          <Menu size={17} />
+          Workspace
+        </button>
+        <Link
+          href={role === "content_editor" ? "/admin/blogs" : "/admin"}
+          className="text-sm tracking-widest"
+        >
+          MISK AL GHAZAAL
         </Link>
-        <span className="shrink-0">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="hidden text-xs sm:block">
+            View store ↗
+          </Link>
           <SignOutButton />
-        </span>
-      </div>
-    </div>
+        </div>
+      </header>
+      <dialog
+        ref={drawer}
+        className="fixed inset-y-0 start-0 m-0 h-dvh max-h-none w-80 max-w-[90vw] border-e border-ink/10 bg-cream p-0 text-ink backdrop:bg-black/35"
+        onClick={(e) => {
+          if (e.target === drawer.current) {
+            const r = e.currentTarget.getBoundingClientRect();
+            if (e.clientX < r.left || e.clientX > r.right)
+              drawer.current?.close();
+          }
+        }}
+      >
+        <div className="flex items-center justify-between border-b border-ink/10 p-5">
+          <span className="text-lg">Workspace</span>
+          <button
+            aria-label="Close navigation"
+            onClick={() => drawer.current?.close()}
+            className="p-2"
+          >
+            <X size={19} />
+          </button>
+        </div>
+        <nav className="space-y-7 p-5">
+          {groups.map((g) => (
+            <section key={g.label}>
+              <h2 className="mb-2 text-[10px] uppercase tracking-widest text-fog">
+                {g.label}
+              </h2>
+              {g.items.map((i) => (
+                <Link
+                  key={i.href}
+                  href={i.href}
+                  onClick={() => drawer.current?.close()}
+                  className={cn(
+                    "my-1 block rounded-lg px-3 py-2.5 text-sm",
+                    pathname === i.href ||
+                      (pathname.startsWith(i.href + "/") && i.href !== "/admin")
+                      ? "bg-ink text-white"
+                      : "hover:bg-sand",
+                  )}
+                >
+                  {i.label}
+                </Link>
+              ))}
+            </section>
+          ))}
+        </nav>
+        <p className="break-all border-t border-ink/10 p-5 text-xs text-fog">
+          {email}
+          <br />
+          {role.replaceAll("_", " ")}
+        </p>
+      </dialog>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/site-url";
 import { Inter, Noto_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
@@ -22,6 +23,7 @@ const arabic = Noto_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl() || "http://localhost:3000"),
   title: "Misk Al Ghazaal — Perfumes, Dukhoon & Bakhoor",
   description:
     "Authentic Misk Al Ghazaal perfumes, dukhoon and bakhoor — direct from manufacturer, delivered across the UAE.",
