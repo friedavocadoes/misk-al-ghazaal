@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
-import { Check, Loader2, Ticket, X } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import type { Coupon } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { celebrate } from "@/lib/confetti";
@@ -88,9 +88,9 @@ export function PdpOffers({
   };
 
   return (
-    <div className="mt-4 border border-gold/40 bg-gold-wash/40 p-4">
-      <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
-        <Ticket className="size-3.5" /> {locale === "ar" ? "اكتشف توفيرك" : "Preview your savings"}
+    <div className="pdp-offers mt-5">
+      <p className="offer-heading">
+        <Sparkles className="size-3.5" /> {locale === "ar" ? "هدية صغيرة لك" : "A little extra, for you"}
       </p>
       <ul className="mt-3 space-y-2">
         {coupons.slice(0, 3).map((c) => {
@@ -99,8 +99,9 @@ export function PdpOffers({
           return (
             <li
               key={c.id}
-              className="flex items-center gap-2 border border-dashed border-gold/60 bg-cream px-3 py-2"
+              className="offer-pass" data-selected={isApplied}
             >
+              <span className="offer-value" aria-hidden="true">{c.kind === "percent" ? <>{c.amount}<small>%</small></> : c.kind === "fixed" ? <><small>AED</small>{c.amount}</> : <Sparkles size={24} />}</span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
                   <span className="truncate font-mono text-[13px] font-bold tracking-[0.1em] text-ink">
@@ -108,7 +109,7 @@ export function PdpOffers({
                   </span>
                   <CouponInfo coupon={c} locale={locale} />
                 </span>
-                <span className="block truncate text-[11px] text-espresso">
+                <span className="mt-1 block text-[11px] leading-relaxed text-espresso">
                   {couponBlurb(c, locale, t)}
                 </span>
               </span>
@@ -132,15 +133,16 @@ export function PdpOffers({
                   type="button"
                   disabled={!!busy}
                   onClick={(e) => void apply(c.code, e.currentTarget)}
-                  className="shrink-0 cursor-pointer border border-ink bg-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-gold-soft hover:text-ink disabled:opacity-50"
+                  className="offer-reveal"
                 >
-                  {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : (locale === "ar" ? "عرض التوفير" : "See savings")}
+                  {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : <><span>{locale === "ar" ? "اكتشف" : "Reveal"}</span><ArrowUpRight size={15} /></>}
                 </button>
               )}
             </li>
           );
         })}
       </ul>
+      {coupon && saving != null && saving > 0 && <div className="offer-result" role="status"><span>{locale === "ar" ? "السعر المتوقع مع العرض" : "Your price with this offer"}</span><strong>AED {(price - saving).toFixed(2)}</strong></div>}
       {applied && <p className="mt-3 text-xs text-espresso">{locale === "ar" ? "سجّل الدخول لاسترداد العرض عند الدفع. يخضع للشروط." : "Savings preview. Sign in to redeem at checkout; eligibility and terms apply."}</p>}
       {error && (
         <p key={shakeKey} className="coupon-shake mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9c2b2e]">

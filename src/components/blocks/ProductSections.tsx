@@ -175,11 +175,13 @@ export async function ReviewsSection({
   const count = reviews.length;
   return (
     <section id="reviews" className="pdp-section pdp-reviews scroll-mt-24" aria-label={t("reviewsTitle")}>
-      <div className="text-center">
+      <div className="review-section-heading">
         <h2 className="pdp-heading">{productHeading(product, "reviews", locale, t("reviewsTitle"))}</h2>
         {product.reviewCount > 0 && <p className="mt-4 text-sm text-fog">{product.rating.toFixed(1)} / 5 · {product.reviewCount} {locale === "ar" ? "تقييمات" : "ratings"}</p>}
       </div>
-      {count > 0 && <ul className="pdp-review-grid mt-10">{reviews.map(r => <li key={r.id} className="pdp-review-card">
+      <div className={`review-workspace ${count ? "has-reviews" : ""}`}>
+      <div className="review-composer"><ReviewForm productId={product.id} productSlug={product.slug} locale={locale} /></div>
+      {count > 0 && <ul className="pdp-review-grid">{reviews.map(r => <li key={r.id} className="pdp-review-card">
         <div className="flex items-center gap-3">
           <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sand text-sm text-espresso">
             {r.authorAvatar ? <SafeImage src={r.authorAvatar} fallback="/logo.webp" alt="" fill sizes="44px" className="object-cover" /> : (r.authorName?.charAt(0) || <span aria-hidden="true">✧</span>)}
@@ -194,7 +196,7 @@ export async function ReviewsSection({
         {r.body && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-espresso">{r.body}</p>}
         {r.purchasedAt && <p className="mt-6 flex items-center gap-2 border-t border-ink/10 pt-4 text-[10px] text-fog"><BadgeCheck className="size-4 shrink-0 text-gold" /><span>{locale === "ar" ? "شراء موثّق" : "Verified purchase"} · {new Intl.DateTimeFormat(locale, {day:"numeric", month:"short", year:"numeric"}).format(new Date(r.purchasedAt))}</span></p>}
       </li>)}</ul>}
-      <div className="mx-auto mt-10 max-w-2xl"><ReviewForm productId={product.id} productSlug={product.slug} locale={locale} /></div>
+      </div>
     </section>
   );
 }

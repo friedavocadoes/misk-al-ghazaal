@@ -4,7 +4,7 @@ import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
-import { Check, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { ArrowUpRight, Check, Minus, Plus, ShoppingBag, Star } from "lucide-react";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { WishHeart } from "@/components/product/WishHeart";
 import { flyToBag } from "@/lib/fly-to-bag";
@@ -19,6 +19,8 @@ import { PdpOffers } from "./PdpOffers";
 import type { Coupon } from "@/lib/types";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+
+import { NoteDiscovery } from "@/components/product/NoteDiscovery";
 
 export { ProductGallery };
 
@@ -198,17 +200,14 @@ export function ProductInfo({
         className="mt-5"
       />
 
-      {!!product.notes.length && <Link href="#fragrance-notes" className="pdp-note-preview mt-6 flex items-center justify-between gap-4 border-y border-ink/10 py-4 text-xs text-espresso">
-        <span className="leading-6">{product.notes.slice(0, 3).map(n => tx(n.name, n.nameAr, locale)).join(" · ")}</span>
-        <span aria-hidden="true" className="text-lg">↗</span>
-      </Link>}
+      <NoteDiscovery notes={product.notes} locale={locale} />
 
       {product.variants.length > 1 && (
         <div className="mt-7">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
             {t("size")} — <span className="text-ink">{variant?.title}</span>
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="pdp-size-options mt-3 flex flex-wrap gap-2">
             {product.variants.map((v) => (
               <button
                 key={v.id}
@@ -228,8 +227,8 @@ export function ProductInfo({
         </div>
       )}
 
-      <div className="mt-7 flex items-stretch gap-2">
-        <span className="flex items-center border border-ink/20 bg-white">
+      <div className="pdp-purchase-actions mt-5">
+        <span className="pdp-quantity flex items-center">
           <button
             className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -250,7 +249,7 @@ export function ProductInfo({
             <Plus className="size-4" />
           </button>
         </span>
-        <Button className="h-[52px] flex-1" size="lg" onClick={addToBag}>
+        <Button className="pdp-add-button h-[52px] flex-1" size="lg" onClick={addToBag}>
           {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}{" "}
           {added ? t("added") : t("addToBag")}
         </Button>
@@ -259,7 +258,7 @@ export function ProductInfo({
           onToggle={onWish}
           label={t("wishlist")}
           className={cn(
-            "flex w-[52px] items-center justify-center border transition",
+            "pdp-wishlist flex w-[52px] items-center justify-center border transition",
             wished
               ? "border-[#9c2b2e]"
               : "border-ink/20 hover:border-ink",
@@ -267,8 +266,8 @@ export function ProductInfo({
           heartClassName="size-4"
         />
       </div>
-      <Button variant="outline" size="lg" className="mt-2 w-full" onClick={buyNow}>
-        {t("buyNow")}
+      <Button variant="outline" size="lg" className="pdp-buy-button mt-3 w-full" onClick={buyNow}>
+        {t("buyNow")} <ArrowUpRight />
       </Button>
       {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}
       {!!coupons?.length && (
@@ -296,7 +295,7 @@ export function ProductInfo({
         </div>
       ) : (
         <div className="mt-8">
-          <TrustBadges locale={locale} />
+          <TrustBadges locale={locale} editorial />
         </div>
       )}
     </div>
