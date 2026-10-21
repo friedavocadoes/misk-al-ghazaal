@@ -32,7 +32,7 @@ export function PdpOffers({
   coupons: Coupon[];
   locale: Locale;
 }) {
-  const [coupons,setCoupons]=useState(initialCoupons.filter(c=>!c.oncePerAccount));
+  const [coupons,setCoupons]=useState(initialCoupons);
   useEffect(()=>{let version=0;const refresh=()=>{const v=++version;fetch("/api/coupons",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(v===version)setCoupons(d.coupons||[]);}).catch(()=>setCoupons([]));};refresh();const {data:{subscription}}=createClient().auth.onAuthStateChange(()=>refresh());return()=>{version++;subscription.unsubscribe();};},[]);
   const t = useTranslations("Product");
   // Checkout handoff: explicit session action wins, otherwise mirror the

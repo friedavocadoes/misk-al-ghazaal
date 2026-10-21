@@ -187,21 +187,17 @@ export async function checkCoupon(
     return { ok: false, reason: "early" };
   if (c.ends_at && new Date(c.ends_at).getTime() < now)
     return { ok: false, reason: "expired" };
-  if (c.usage_limit != null && c.used_count >= c.usage_limit)
-    return { ok: false, reason: "exhausted" };
   if (c.owner_id && c.owner_id !== userId)
     return { ok: false, reason: "personal" };
   if (c.first_order_only && (await hasPriorOrder(supabase, email)))
     return { ok: false, reason: "repeat" };
-  if (c.once_per_account) {
+  const limit = c.once_per_account ? 1 : c.usage_limit;
+  if (limit != null) {
     if (!userId) return { ok: false, reason: "login" };
-    const { data: redeemed } = await supabase
-      .from("coupon_redemptions")
-      .select("id")
-      .eq("coupon_id", c.id)
-      .eq("user_id", userId)
-      .limit(1);
-    if (redeemed?.length) return { ok: false, reason: "used" };
+    const { count, error } = await supabase.from("coupon_redemptions")
+      .select("id", { count: "exact", head: true }).eq("coupon_id", c.id).eq("user_id", userId);
+    if (error) throw new Error("Could not verify coupon usage. Please try again.");
+    if ((count ?? 0) >= limit) return { ok: false, reason: "used" };
   }
   return {
     ok: true,
@@ -214,7 +210,7 @@ export async function checkCoupon(
       ...(c.max_discount != null
         ? { maxDiscount: Number(c.max_discount) }
         : {}),
-      oncePerAccount: c.once_per_account ?? false,
+      ...(limit != null ? { usageLimit: limit } : {}),
       firstOrderOnly: c.first_order_only,
       active: c.active,
       icon: c.icon ?? "tag",

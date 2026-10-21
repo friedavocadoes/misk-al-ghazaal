@@ -174,25 +174,7 @@ export async function POST(req: Request) {
         .eq("slug", slug);
     }
 
-    // Coupon usage accounting.
-    if (quote.couponCode) {
-      const { data: coupon } = await admin.from("coupons").select("id").eq("code", quote.couponCode).single();
-      if (coupon) {
-        await admin.from("coupon_redemptions").insert({
-          coupon_id: (coupon as { id: string }).id,
-          order_id: orderId,
-          user_id: ownerId,
-        });
-        await admin.rpc("increment_coupon_use", { p_coupon_id: (coupon as { id: string }).id }).then(
-          () => {},
-          async () => {
-            // RPC may not exist on older DBs — fall back to a direct bump.
-            const { data: cur } = await admin.from("coupons").select("used_count").eq("id", (coupon as { id: string }).id).single();
-            await admin.from("coupons").update({ used_count: Number((cur as { used_count: number } | null)?.used_count ?? 0) + 1 }).eq("id", (coupon as { id: string }).id);
-          },
-        );
-      }
-    }
+    // Coupon redemption is reserved atomically by the order insert trigger.
 
     // Referral reward: newcomer already saved via the quote; now mint the
     // referrer's personal single-use coupon and record the introduction.

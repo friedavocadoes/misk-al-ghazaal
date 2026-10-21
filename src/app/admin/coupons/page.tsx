@@ -13,6 +13,9 @@ async function createCoupon(formData: FormData) {
   "use server";
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
+  const rawLimit = String(formData.get("usage_limit") ?? "").trim();
+  const usageLimit = rawLimit ? Number(rawLimit) : null;
+  if (usageLimit !== null && (!Number.isSafeInteger(usageLimit) || usageLimit < 1)) throw new Error("Uses per account must be a positive whole number, or blank for unlimited.");
   const supabase = await createClient();
   const code = String(formData.get("code")).trim().toUpperCase();
   const kind = String(formData.get("kind"));
@@ -24,14 +27,12 @@ async function createCoupon(formData: FormData) {
     max_discount: formData.get("max_discount")
       ? Number(formData.get("max_discount"))
       : null,
-    once_per_account: formData.get("once_per_account") === "on",
+    once_per_account: false,
     first_order_only: formData.get("first_order_only") === "on",
     active: formData.get("active") === "on",
     starts_at: String(formData.get("starts_at") || "") || null,
     ends_at: String(formData.get("ends_at") || "") || null,
-    usage_limit: formData.get("usage_limit")
-      ? Number(formData.get("usage_limit"))
-      : null,
+    usage_limit: usageLimit,
     icon: String(formData.get("icon") || "tag"),
     gift_title: String(formData.get("gift_title") || "") || "",
     gift_title_ar: String(formData.get("gift_title_ar") || "") || null,
@@ -139,10 +140,10 @@ export default async function CouponsPage() {
             />
           </label>
           <label className="block">
-            Usage limit (blank = ∞)
+            Uses per account (blank = unlimited)
             <input
               name="usage_limit"
-              type="number"
+              type="number" min="1" step="1"
               className="mt-1 w-full border border-ink/20 px-3 py-2"
             />
           </label>
@@ -196,9 +197,7 @@ export default async function CouponsPage() {
               <input type="checkbox" name="first_order_only" /> First orders
               only
             </label>
-            <label>
-              <input type="checkbox" name="once_per_account" /> Once per account
-            </label>
+            
             <label>
               <input type="checkbox" name="active" defaultChecked /> Active
             </label>
@@ -227,7 +226,7 @@ export default async function CouponsPage() {
                   used_count: number;
                   icon: string;
                   max_discount: number | null;
-                  once_per_account: boolean;
+                  once_per_account: boolean; usage_limit: number | null;
                 }[]
               | null) ?? []
           ).map((c) => (
@@ -250,7 +249,7 @@ export default async function CouponsPage() {
                     {c.max_discount != null
                       ? `capped AED ${Number(c.max_discount)} · `
                       : ""}
-                    {c.once_per_account ? "once/account" : "multi-use"}
+                    {c.usage_limit == null ? "Unlimited per account" : `${c.usage_limit} per account`}
                   </span>
                 </span>
                 <span

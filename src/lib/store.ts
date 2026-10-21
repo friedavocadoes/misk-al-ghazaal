@@ -953,7 +953,6 @@ export function toCouponRow(c: {
     amount: Number(c.amount ?? 0),
     minSubtotal: Number(c.min_subtotal ?? 0),
     ...(c.max_discount != null ? { maxDiscount: Number(c.max_discount) } : {}),
-    oncePerAccount: c.once_per_account ?? false,
     firstOrderOnly: c.first_order_only,
     active: c.active,
     icon: c.icon ?? "tag",
@@ -963,7 +962,7 @@ export function toCouponRow(c: {
     ...(c.owner_id ? { ownerId: c.owner_id } : {}),
     ...(c.starts_at ? { startsAt: c.starts_at } : {}),
     ...(c.ends_at ? { endsAt: c.ends_at } : {}),
-    ...(c.usage_limit != null ? { usageLimit: c.usage_limit } : {}),
+    ...((c.once_per_account ? 1 : c.usage_limit) != null ? { usageLimit: c.once_per_account ? 1 : c.usage_limit! } : {}),
     usedCount: c.used_count ?? 0,
   };
 }

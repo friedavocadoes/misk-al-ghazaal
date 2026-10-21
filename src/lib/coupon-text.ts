@@ -26,7 +26,6 @@ export function describeCoupon(
     | "amount"
     | "minSubtotal"
     | "maxDiscount"
-    | "oncePerAccount"
     | "firstOrderOnly"
     | "giftTitle"
     | "giftTitleAr"
@@ -64,8 +63,6 @@ export function describeCoupon(
   }
   if (c.firstOrderOnly)
     terms.push(ar ? "للطلب الأول فقط" : "First orders only");
-  if (c.oncePerAccount)
-    terms.push(ar ? "استخدام واحد لكل حساب" : "One use per account");
   if (c.endsAt)
     terms.push(
       ar
@@ -73,7 +70,7 @@ export function describeCoupon(
         : `Valid until ${fmtDate(c.endsAt, locale)}`,
     );
   if (c.usageLimit != null)
-    terms.push(ar ? "عدد محدود" : "Limited redemptions");
+    terms.push(ar ? `${c.usageLimit} استخدام لكل حساب` : `${c.usageLimit} ${c.usageLimit === 1 ? "use" : "uses"} per account`);
   terms.push(
     ar ? "لا يجمع مع قسيمة أخرى" : "Cannot combine with another coupon",
   );

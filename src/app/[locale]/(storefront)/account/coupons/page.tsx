@@ -29,15 +29,19 @@ export default async function AccountCouponsPage(props: {
   const { supabase, user } = session;
   const { data: coupons } = await supabase
     .from("coupons")
-    .select("code, kind, amount, used_count, usage_limit, ends_at")
+    .select("id, code, kind, amount, used_count, usage_limit, ends_at")
     .eq("owner_id", user.id)
     .eq("active", true)
     .order("created_at", { ascending: false });
 
   const rows = (coupons as {
-    code: string; kind: string; amount: number; used_count: number;
+    id: string; code: string; kind: string; amount: number; used_count: number;
     usage_limit: number | null; ends_at: string | null;
   }[] | null) ?? [];
+
+  const { data: redemptions } = await supabase.from("coupon_redemptions").select("coupon_id").eq("user_id", user.id);
+  const uses = new Map<string, number>();
+  for (const row of redemptions ?? []) uses.set(row.coupon_id, (uses.get(row.coupon_id) ?? 0) + 1);
 
   const blurb = (kind: string, amount: number) =>
     kind === "percent"
@@ -66,7 +70,7 @@ export default async function AccountCouponsPage(props: {
       ) : (
         <ul className="mt-6 grid gap-3 sm:grid-cols-2">
           {rows.map((r) => {
-            const spent = r.usage_limit != null && r.used_count >= r.usage_limit;
+            const spent = r.usage_limit != null && (uses.get(r.id) ?? 0) >= r.usage_limit;
             return (
               <li key={r.code} className={`border p-5 ${spent ? "border-ink/10 bg-sand/40 opacity-60" : "border-dashed border-gold/60 bg-cream"}`}>
                 <span className="flex items-center gap-3">

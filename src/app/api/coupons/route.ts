@@ -19,8 +19,9 @@ export async function GET() {
         .select("coupon_id")
         .eq("user_id", user.id);
       if (error) throw error;
-      const used = new Set(data?.map((r) => r.coupon_id));
-      coupons = coupons.filter((c) => !c.oncePerAccount || !used.has(c.id));
+      const used = new Map<string, number>();
+      for (const row of data ?? []) used.set(row.coupon_id, (used.get(row.coupon_id) ?? 0) + 1);
+      coupons = coupons.filter(c => c.usageLimit == null || (used.get(c.id) ?? 0) < c.usageLimit);
     }
     return NextResponse.json(
       { coupons },

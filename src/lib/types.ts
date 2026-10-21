@@ -104,7 +104,6 @@ export interface Coupon {
   /** Caps the dirhams this coupon can take off (NULL = uncapped). */
   maxDiscount?: number;
   /** One redemption per shopper account (guests must log in). */
-  oncePerAccount: boolean;
   firstOrderOnly: boolean;
   active: boolean;
   icon: string;
