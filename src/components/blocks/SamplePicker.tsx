@@ -76,7 +76,7 @@ export function SamplePicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="my-5 w-full rounded-xl border border-gold/30 bg-gradient-to-br from-[#eee2c8] to-[#fffdf7] p-5 text-start shadow-sm transition hover:shadow-md"
+        className="my-5 w-full rounded-xl border border-gold/30 bg-linear-to-br from-[#eee2c8] to-[#fffdf7] hover:from-[#fffdf7] hover:to-[#eee2c8] p-5 text-start shadow-sm transition duration-400 ease-out hover:shadow-md cursor-pointer"
       >
         <span className="text-[10px] uppercase tracking-[.2em] text-gold">
           A little more to discover
