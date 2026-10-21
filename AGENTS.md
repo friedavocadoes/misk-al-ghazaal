@@ -288,3 +288,5 @@ This section and the corrected entries above supersede historical implementation
 - CouponTicket is the shared offer-pass presentation for PDP and checkout, with CouponIcon mapping admin keys and amount displayed together. /api/coupons excludes firstOrderOnly offers for authenticated accounts with any prior order (including cancelled/binned history); checkCoupon enforces the same account history rule. Guest previews remain available. PDP suppresses first-order SSR placeholders until eligibility resolves; checkout refreshes when account identity changes.
 
 - Coupon value panel: percent offers render amount + % only; fixed offers with admin icon `aed` render AED + amount only; other offers render the selected 32px icon alone. AED is available in both admin coupon forms.
+
+- Find Your Scent background uses a viewport-height sticky layer inside an absolute track bounded by the journey. Foreground and notes scroll with the document; the background releases at the journey boundary before the footer. Keep native window scrolling so SiteHeader compact/opaque thresholds work.

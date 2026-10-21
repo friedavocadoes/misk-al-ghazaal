@@ -715,7 +715,9 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
  .maison-stacked-link { font-size:10px!important; letter-spacing:.15em!important; }
 }
 .scent-journey { position:relative; isolation:isolate; min-height:100svh; overflow:clip; background:#fff; color:#292722; padding:0 24px 110px; }
-.scent-cube-field { position:absolute; z-index:-2; inset:0 0 auto; height:100%; background:#e8e4dd; }
+.scent-background-track { position:absolute; inset:0; z-index:-1; pointer-events:none; }
+.scent-background { position:sticky; top:0; height:100svh; isolation:isolate; }
+.scent-cube-field { position:absolute; z-index:-2; inset:0; background:#e8e4dd; }
 .scent-cube-fade { position:absolute; inset:0; background:linear-gradient(180deg,transparent 35%,#ffffff40 60%,#fff 100%); pointer-events:none; }
 .scent-intro { position:relative; margin:auto; padding:280px 0 64px; text-align:center; pointer-events:none; }
 .scent-intro .eyebrow { color:#746750; font-size:10px; letter-spacing:.32em; }
@@ -760,7 +762,7 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
 .scent-selected { display:flex; flex-wrap:wrap; gap:7px; margin:14px 0; }
 .scent-selected button,.scent-result-summary > span { display:flex; align-items:center; gap:8px; border:1px solid #85735a25; background:#ffffff80; border-radius:99px; padding:7px 12px; font-size:10px; }
 .scent-selected button { cursor:pointer; }
-.scent-note-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; max-height:500px; overflow-y:auto; scrollbar-width:thin; }
+.scent-note-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
 .scent-note-grid button { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:16px 8px; min-height:125px; border:1px solid #fff9; border-radius:12px; background:#ffffff45; cursor:pointer; transition:background .3s,border-color .3s,opacity .3s; }
 .scent-note-grid button:hover { background:#ffffffa0; }
 .scent-note-grid button[aria-pressed=true] { border-color:#9d8c72; background:#ffffffad; }
@@ -795,7 +797,7 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
  .scent-footnote { display:none; }
  .scent-step-actions { gap:10px; }
  .scent-next { margin-inline-start:auto; padding:15px 18px; gap:10px; }
- .scent-note-grid { grid-template-columns:repeat(3,minmax(0,1fr)); max-height:440px; }
+ .scent-note-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
  .scent-note-grid button { min-height:110px; padding:12px 5px; }
  .scent-note-glyph { width:52px; height:52px; }
  .scent-results-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:25px 12px; }

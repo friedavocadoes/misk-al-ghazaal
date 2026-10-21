@@ -40,8 +40,12 @@ export function ScentJourney({ notes, products }: { notes: Note[]; products: Pro
   function toggle(slug: string) { setSelected(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : prev.length < 3 ? [...prev,slug] : prev); }
   const audienceLabel = (value: ScentAudience) => ({ men: ar ? "للرجال" : "For him", women: ar ? "للنساء" : "For her", unisex: ar ? "للجميع" : "Unisex" })[value];
   return <div className="scent-journey" data-results={step === 2} style={glass}>
+    <div className="scent-background-track" aria-hidden="true">
+      <div className="scent-background">
     {step < 2 && <div className="scent-cube-field"><Cubes cellSize={110} topColor="#e8e4dd" leftColor="#d7d1c6" rightColor="#c8c0b4" glowColor="#b7a18b" glow={0.35} amplitude={0.45} /><div className="scent-cube-fade" /></div>}
     {step === 2 && <div className="scent-spotlight" aria-hidden="true" />}
+      </div>
+    </div>
     <header className="scent-intro">
       <p className="eyebrow">{ar ? "كيمياء العطر" : "The scent alchemist"}</p>
       <h1>{ar ? "عطر يشبهك." : "A little instinct."}<br /><span>{ar ? "اختيارك، إحساسك." : "A scent that’s yours."}</span></h1>
