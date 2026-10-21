@@ -116,7 +116,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!userId) {
         if (previous) {
           setLines([]);
-          try { localStorage.removeItem("misk-coupon"); } catch { /* blocked storage */ }
+          try { localStorage.removeItem("misk-coupon");localStorage.removeItem("misk-samples"); } catch { /* blocked storage */ }
         }
         return;
       }

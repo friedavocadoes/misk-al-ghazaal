@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       emirate?: string;
       notes?: string;
       items?: BagLine[];
+      sample_ids?: string[];
       coupon_code?: string;
       referral_code?: string;
       user_id?: string;
@@ -87,6 +88,7 @@ export async function POST(req: Request) {
         .single();
       if (!zone) throw new Error("delivery:unsupported");
     }
+    if(body.sample_ids && (!Array.isArray(body.sample_ids)||body.sample_ids.length>50||body.sample_ids.some(id=>typeof id!=="string"||! /^[0-9a-f-]{36}$/i.test(id))))throw new Error("Invalid sample selection.");
     const { priced, quote } = await quoteBag({
       lines: items,
       email: email || sessionEmail || "",
@@ -98,6 +100,7 @@ export async function POST(req: Request) {
     const { data: order, error: oErr } = await admin
       .from("orders")
       .insert({
+        ...(body.sample_ids?.length ? {sample_ids:body.sample_ids} : {}),
         order_no: "", // trigger assigns MG-0001…
         customer_name: name,
         phone,
@@ -126,6 +129,8 @@ export async function POST(req: Request) {
       .single();
     if (oErr || !order) throw oErr ?? new Error("order insert failed");
     const orderId = (order as { id: string }).id;
+    const {data:sampleRows}=body.sample_ids?.length ? await admin.from("order_items").select("title,qty,unit_price").eq("order_id",orderId).eq("product_slug","sample") : {data:[]};
+    const sampleLines=(sampleRows||[]).map(s=>({title:s.title,qty:s.qty,unit:0,slug:"sample"}));
 
     const itemRows = priced.map((l) => ({
       order_id: orderId,
@@ -294,12 +299,12 @@ export async function POST(req: Request) {
         statusLabel: "received",
         status: "new",
         customerName: name,
-        lines: priced.map((l) => ({
+        lines: [...sampleLines,...priced.map((l) => ({
           title: l.title,
           qty: l.qty,
           unit: l.unit,
           ...(faceMap.get(l.slug) ? { image: faceMap.get(l.slug) as string, href: `/product/${l.slug}` } : {}),
-        })),
+        }))],
         origin,
         subtotal: quote.subtotal,
         discount: quote.discount,
@@ -323,7 +328,7 @@ export async function POST(req: Request) {
       total: quote.total,
       shipping: quote.shipping,
       discount: quote.discount,
-      items: priced.map(l => ({ title: l.title, qty: l.qty, unit: l.unit, slug: l.slug })),
+      items: [...priced.map(l => ({ title: l.title, qty: l.qty, unit: l.unit, slug: l.slug })),...sampleLines],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";

@@ -52,11 +52,13 @@ function SheetTitle({
   ...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h2
+    <DialogPrimitive.Title
       className={cn("font-display text-xl text-ink", className)}
       {...props}
     />
   );
 }
 
-export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle };
+const SheetDescription = DialogPrimitive.Description;
+
+export { SheetDescription, Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle };

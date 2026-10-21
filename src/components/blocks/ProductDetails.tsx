@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PriceTag } from "@/components/product/PriceTag";
 import { TrustBadges } from "./TrustBadges";
+import {SamplePicker} from "./SamplePicker";
 import { PdpOffers } from "./PdpOffers";
 import type { Coupon } from "@/lib/types";
 import { useCart } from "@/lib/cart";
@@ -270,6 +271,7 @@ export function ProductInfo({
         {t("buyNow")} <ArrowUpRight />
       </Button>
       {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}
+      <SamplePicker subtotal={(variant?.price ?? product.price)*qty} product/>
       {!!coupons?.length && (
         <PdpOffers slug={product.slug} price={variant?.price ?? product.price} coupons={coupons} locale={locale} />
       )}

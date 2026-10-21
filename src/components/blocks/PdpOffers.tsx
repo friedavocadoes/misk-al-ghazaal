@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import {createClient} from "@/lib/supabase/client";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowUpRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import type { Coupon } from "@/lib/types";
@@ -23,7 +24,7 @@ function readStoredCoupon(): string {
     Applied codes ride to checkout via localStorage. */
 export function PdpOffers({
   price,
-  coupons,
+  coupons: initialCoupons,
   locale,
 }: {
   slug: string;
@@ -31,6 +32,8 @@ export function PdpOffers({
   coupons: Coupon[];
   locale: Locale;
 }) {
+  const [coupons,setCoupons]=useState(initialCoupons.filter(c=>!c.oncePerAccount));
+  useEffect(()=>{let version=0;const refresh=()=>{const v=++version;fetch("/api/coupons",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(v===version)setCoupons(d.coupons||[]);}).catch(()=>setCoupons([]));};refresh();const {data:{subscription}}=createClient().auth.onAuthStateChange(()=>refresh());return()=>{version++;subscription.unsubscribe();};},[]);
   const t = useTranslations("Product");
   // Checkout handoff: explicit session action wins, otherwise mirror the
   // stored code (cross-tab synced, SSR-safe via server snapshot).
@@ -99,7 +102,7 @@ export function PdpOffers({
           return (
             <li
               key={c.id}
-              className="offer-pass" data-selected={isApplied}
+              className="offer-pass" style={price<c.minSubtotal?{opacity:.5}:undefined} data-selected={isApplied}
             >
               <span className="offer-value" aria-hidden="true">{c.kind === "percent" ? <>{c.amount}<small>%</small></> : c.kind === "fixed" ? <><small>AED</small>{c.amount}</> : <Sparkles size={24} />}</span>
               <span className="min-w-0 flex-1">
@@ -110,7 +113,7 @@ export function PdpOffers({
                   <CouponInfo coupon={c} locale={locale} />
                 </span>
                 <span className="mt-1 block text-[11px] leading-relaxed text-espresso">
-                  {couponBlurb(c, locale, t)}
+                  {price<c.minSubtotal ? `Requires a minimum order of AED ${c.minSubtotal}` : couponBlurb(c, locale, t)}
                 </span>
               </span>
               {isApplied ? (
@@ -131,7 +134,7 @@ export function PdpOffers({
               ) : (
                 <button
                   type="button"
-                  disabled={!!busy}
+                  disabled={!!busy || price<c.minSubtotal}
                   onClick={(e) => void apply(c.code, e.currentTarget)}
                   className="offer-reveal"
                 >

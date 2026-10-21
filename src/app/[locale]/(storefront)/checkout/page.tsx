@@ -10,6 +10,8 @@ import { formatAED } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useCartMeta } from "@/lib/cart-meta";
 import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
+import {SamplePicker} from "@/components/blocks/SamplePicker";
+import {readSamples} from "@/lib/sample-tiers";
 import { CouponTicket } from "@/components/blocks/CouponTicket";
 import { celebrate } from "@/lib/confetti";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
@@ -322,6 +324,7 @@ export default function CheckoutPage() {
         emirate: finalState,
         notes,
         items: payload.lines,
+        sample_ids: readSamples(),
         coupon_code: appliedCoupon || undefined,
         referral_code: appliedReferral || undefined,
         user_id: userId ?? undefined,
@@ -337,6 +340,7 @@ export default function CheckoutPage() {
     const j = await res.json().catch(() => null);
     setPlacing(false);
     if (res.ok && j?.order_no) {
+      try { localStorage.removeItem("misk-samples");window.dispatchEvent(new Event("samples-change")); } catch { /* Storage may be disabled. */ }
       setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? ""})) });
       try {
         localStorage.removeItem("misk-coupon");
@@ -563,7 +567,7 @@ export default function CheckoutPage() {
                   {offers
                     .filter((o) => o.code !== appliedCoupon)
                     .map((o) => (
-                      <li key={o.id}>
+                      <li key={o.id} style={(quote?.subtotal||0)<o.minSubtotal?{opacity:.5}:undefined}>
                         <CouponTicket
                           coupon={o}
                           locale={locale}
@@ -571,10 +575,11 @@ export default function CheckoutPage() {
                           action={
                             <button
                               type="button"
+                              disabled={(quote?.subtotal||0)<o.minSubtotal}
                               onClick={() => quickApply(o.code)}
                               className="shrink-0 cursor-pointer border border-ink bg-ink px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-gold-soft hover:text-ink"
                             >
-                              {t("apply")}
+                              {(quote?.subtotal||0)<o.minSubtotal?`Minimum AED ${o.minSubtotal}`:t("apply")}
                             </button>
                           }
                         />
@@ -668,7 +673,7 @@ export default function CheckoutPage() {
               );
             })}
           </ul>
-          <dl className="mt-4 space-y-2.5 border-t border-ink/10 pt-4 text-sm">
+          <SamplePicker subtotal={quote?.subtotal||0}/><dl className="mt-4 space-y-2.5 border-t border-ink/10 pt-4 text-sm">
             <div className="flex justify-between">
               <dt className="text-fog">Subtotal</dt>
               <dd className="font-medium text-ink">{quote ? formatAED(quote.subtotal) : "…"}</dd>
