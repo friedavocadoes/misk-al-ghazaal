@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight, Expand } from "lucide-react";
+import { ProductLens } from "./ProductLens";
 import { cn } from "@/lib/utils";
 
 // Modern replacement for elevatezoom.js + snippets/product-thumbnail.liquid:
@@ -23,6 +24,36 @@ export function ProductGallery({
   });
   const [selected, setSelected] = useState(0);
   const [zoom, setZoom] = useState(false);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused || zoom) return;
+    const sharp = [...document.querySelectorAll<HTMLElement>("[data-lens-sharp]")];
+    const visit = (node: Element) => {
+      if (sharp.includes(node as HTMLElement)) return;
+      if (sharp.some(el => node.contains(el))) {
+        [...node.children].forEach(visit);
+      } else if (node instanceof HTMLElement && !["SCRIPT", "STYLE", "LINK"].includes(node.tagName)) {
+        node.dataset.lensDim = "";
+      }
+    };
+    visit(document.body);
+    document.body.classList.add("product-focus-active");
+    const dismiss = () => setFocused(false);
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); };
+    window.addEventListener("keydown", key);
+    window.addEventListener("blur", dismiss);
+    window.addEventListener("scroll", dismiss, { passive: true });
+    return () => {
+      document.body.classList.remove("product-focus-active");
+      window.removeEventListener("keydown", key);
+      window.removeEventListener("blur", dismiss);
+      window.removeEventListener("scroll", dismiss);
+    };
+  }, [focused, zoom]);
+  useEffect(() => () => {
+    document.querySelectorAll<HTMLElement>("[data-lens-dim]").forEach(el => delete el.dataset.lensDim);
+    document.body.classList.remove("product-focus-active");
+  }, []);
 
   const onSelect = useCallback(() => {
     if (!mainApi || !thumbApi) return;
@@ -45,19 +76,19 @@ export function ProductGallery({
 
   return (
     <div className="product-gallery">
-      <div className="relative overflow-hidden rounded-sm bg-sand">
+      <div data-lens-sharp className="gallery-focus-frame relative overflow-hidden rounded-sm bg-sand">
         <div ref={mainRef} className="overflow-hidden">
           <div className="flex">
             {images.map((src, i) => (
               <div key={src + i} className="relative aspect-square min-w-0 flex-[0_0_100%]">
-                <Image
+                <ProductLens onActive={setFocused}><Image
                   src={src}
                   alt={i === 0 ? title : `${title} — view ${i + 1}`}
                   fill
                   sizes="(min-width:1280px) 600px, (min-width:1024px) 50vw, 100vw"
                   priority={i === 0}
                   className="object-cover"
-                />
+                /></ProductLens>
               </div>
             ))}
           </div>
@@ -81,7 +112,7 @@ export function ProductGallery({
           </>
         )}
         <button
-          onClick={() => setZoom(true)}
+          onClick={() => { setFocused(false); setZoom(true); }}
           aria-label="View fullscreen"
           className="absolute bottom-3 right-3 rounded-full border border-ink/10 bg-white/90 p-2.5 text-ink shadow-sm transition hover:border-ink/40 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2"
         >

@@ -169,7 +169,7 @@ export function ProductInfo({
   return (
     <div>
       <p className="eyebrow text-gold">{catName}</p>
-      <h1 className="mt-3 font-display text-3xl font-light leading-tight tracking-[-0.035em] text-ink md:text-[2.75rem]">
+      <h1 data-lens-sharp className="mt-3 font-display text-3xl font-light leading-tight tracking-[-0.035em] text-ink md:text-[2.75rem]">
         {heading ?? title}
       </h1>
       <p className="mt-3 flex items-center gap-2 text-[13px] text-fog">
@@ -228,6 +228,8 @@ export function ProductInfo({
         </div>
       )}
 
+      <SamplePicker subtotal={(variant?.price ?? product.price)*qty} product/>
+
       <div className="pdp-purchase-actions mt-5">
         <span className="pdp-quantity flex items-center">
           <button
@@ -271,7 +273,6 @@ export function ProductInfo({
         {t("buyNow")} <ArrowUpRight />
       </Button>
       {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}
-      <SamplePicker subtotal={(variant?.price ?? product.price)*qty} product/>
       {!!coupons?.length && (
         <PdpOffers slug={product.slug} price={variant?.price ?? product.price} coupons={coupons} locale={locale} />
       )}

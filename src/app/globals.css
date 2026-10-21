@@ -926,3 +926,64 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
 .blog-prose { font-size:16px; line-height:1.9; color:#514b42; overflow-wrap:anywhere; }
 .blog-prose h2,.blog-prose h3,.blog-prose h4 { scroll-margin-top:110px; color:#29251f; font-weight:400; line-height:1.35; margin:2em 0 .7em; }
 .blog-prose h2 { font-size:1.8em; }.blog-prose h3 { font-size:1.4em; }.blog-prose p { margin:1em 0; }.blog-prose ul,.blog-prose ol { padding-inline-start:1.5em; margin:1em 0; }.blog-prose ul { list-style:disc; }.blog-prose ol { list-style:decimal; }.blog-prose a { color:#8a6d2f; text-decoration:underline; }.blog-prose img { max-width:100%; height:auto; margin:2em 0; }.blog-prose blockquote { border-inline-start:2px solid #b49a67; padding-inline-start:1.5em; font-style:italic; }.blog-prose table { border-collapse:collapse; width:100%; display:block; overflow-x:auto; }.blog-prose td,.blog-prose th { border:1px solid #ddd3c1; padding:10px; min-width:80px; }.blog-prose pre { overflow:auto; padding:16px; background:#eee9df; }
+
+/* Product viewing lens: Aceternity mask, no per-frame React updates. */
+.product-lens { position: absolute; inset: 0; --lens-x: 50%; --lens-y: 50%; }
+.product-lens-window { position: absolute; inset: 0; pointer-events: none; mask-image: radial-gradient(circle 100px at var(--lens-x) var(--lens-y), #000 98%, transparent 100%); animation: lens-reveal .35s cubic-bezier(.22,1,.36,1); }
+.product-lens-magnified { position: absolute; inset: 0; transform: scale(2); transform-origin: var(--lens-x) var(--lens-y); }
+.product-lens-hint { position: absolute; bottom: 20px; left: 20px; pointer-events: none; padding: 8px 12px; border: 1px solid #302d2712; border-radius: 30px; background: #fffdf8dd; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; opacity: 0; transition: opacity .4s; }
+.product-lens[data-active=true] .product-lens-hint { opacity: 1; }
+.gallery-focus-frame { transition: border-radius .55s cubic-bezier(.22,1,.36,1), box-shadow .55s cubic-bezier(.22,1,.36,1); }
+[data-lens-dim] { transition: filter .5s cubic-bezier(.22,1,.36,1), opacity .5s cubic-bezier(.22,1,.36,1); }
+.product-focus-active [data-lens-dim] { filter: blur(5px); opacity: .48; }
+.product-focus-active .gallery-focus-frame { border-radius: 22px; box-shadow: 0 30px 90px -20px #342a3150, 0 0 0 1px #ffffffa0; }
+.product-focus-active .pdp-overview > :first-child { z-index: 45; }
+@keyframes lens-reveal { from { opacity: 0; } to { opacity: 1; } }
+@media (hover: none) { .product-lens-hint { display: none; } }
+
+/* Discovery samples: warm glass invitation, editorial cards and saved tray. */
+.sample-invitation { margin-block: 22px; overflow: hidden; border: 1px solid #a88a5335; border-radius: 16px; background: radial-gradient(ellipse at 0 0, #e4d2bba0, transparent 65%), linear-gradient(125deg,#fffdf9,#f3efe8); box-shadow: 0 8px 28px -20px #69523950; }
+.sample-invitation-trigger { display: flex; align-items: center; gap: 15px; width: 100%; padding: 20px; text-align: start; cursor: pointer; }
+.sample-seal { display: grid; place-items: center; width: 44px; height: 50px; flex-shrink: 0; color: #8a6d2f; border: 1px solid #a88a5350; border-radius: 24px 24px 12px 12px; background: #fffdf980; box-shadow: inset 0 0 0 4px #ffffff60; transition: transform .6s cubic-bezier(.22,1,.36,1); }
+.sample-invitation-trigger:hover .sample-seal { transform: rotate(-10deg) translateY(-3px); }
+.sample-kicker { display: block; font-size: 8px; line-height: 1.6; letter-spacing: .16em; text-transform: uppercase; color: #806539; }
+.sample-invitation-trigger strong { display: block; margin-block: 5px; font-weight: 450; font-size: 17px; line-height: 1.35; letter-spacing: -.025em; }
+.sample-invitation-caption { display: block; font-size: 11px; color: #696359; }
+.sample-selection-preview { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 18px 14px; }
+.sample-mini { display: flex; align-items: center; gap: 7px; background: #ffffffaa; border: 1px solid #a88a5330; border-radius: 8px; padding: 4px 8px; font-size: 10px; cursor: pointer; }
+.sample-mini span { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sample-mini svg { color: #627661; }
+.sample-invitation-progress { height: 2px; background: #a88a5315; }
+.sample-invitation-progress > span { display: block; height: 100%; background: linear-gradient(90deg,#b49763,#d7bf95); transition: width .7s cubic-bezier(.22,1,.36,1); }
+.sample-incentive { padding: 10px 18px; color: #6b6152; font-size: 10px; line-height: 1.6; }
+.sample-drawer { background: #fcfaf6; }
+.sample-drawer-heading { padding: 30px 24px 20px; background: radial-gradient(ellipse at 0 0,#e0d2bd9c,transparent 70%),radial-gradient(ellipse at 100% 100%,#e3e7de90,transparent 70%); }
+.sample-allowance { display: flex; justify-content: space-between; gap: 12px; margin-top: 20px; font-size: 10px; color: #6c6254; }
+.sample-slot-track { margin-top: 8px; height: 3px; background: #8a6d2f15; border-radius: 4px; overflow: hidden; }
+.sample-slot-track span { display: block; height: 100%; background: #8a6d2f; transition: width .5s cubic-bezier(.22,1,.36,1); }
+.sample-categories { display: flex; gap: 7px; flex-shrink: 0; overflow-x: auto; padding: 18px 20px; }
+.sample-categories button { border: 1px solid #302d2720; border-radius: 30px; padding: 8px 14px; white-space: nowrap; font-size: 11px; cursor: pointer; transition: background .25s,color .25s; }
+.sample-categories button[aria-pressed=true] { background: #302d27; border-color: #302d27; color: #fffdf8; }
+.sample-discovery-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.sample-discovery-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid #302d2715; border-radius: 14px; background: #fffefb; transition: border-color .35s,box-shadow .35s; }
+.sample-discovery-card[data-selected=true] { border-color: #aa8a52; box-shadow: 0 8px 24px -16px #78603960; }
+.sample-artwork { position: relative; display: grid; place-items: center; aspect-ratio: 1.15; overflow: hidden; background: #f1eee8; }
+.sample-artwork img { transition: transform .8s cubic-bezier(.22,1,.36,1); }
+.sample-discovery-card:hover .sample-artwork img { transform: scale(1.07) translateY(-3px); }
+.sample-artwork-halo { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle,#fffcf6,#d9cbb950,transparent 70%); }
+.sample-picked { position: absolute; right: 10px; top: 10px; border-radius: 50%; background: #5e705f; color: white; padding: 6px; animation: lens-reveal .3s; }
+.sample-artwork-label { position: absolute; bottom: 9px; font-size: 7px; letter-spacing: .18em; text-transform: uppercase; color: #796e5e; }
+.sample-card-copy { display: flex; flex: 1; flex-direction: column; padding: 14px 12px 12px; }
+.sample-card-copy h3 { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.sample-card-copy > p { margin-top: 6px; color: #797268; font-size: 10px; line-height: 1.7; }
+.sample-note-list { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 10px 14px; }
+.sample-note { display: inline-flex; align-items: center; gap: 5px; padding-block: 4px; color: #6c6254; font-size: 9px; cursor: pointer; text-align: start; }
+.sample-note:hover { color: #29241e; }
+.sample-note i { width: 3px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.sample-add { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; min-height: 40px; width: 100%; border-top: 1px solid #302d2715; padding-top: 10px; font-size: 10px; cursor: pointer; }
+.sample-add[aria-pressed=true] { color: #52664f; }
+.sample-add:disabled { color: #8b847b; cursor: default; }
+.sample-drawer-footer { flex-shrink: 0; padding: 16px 20px max(20px,env(safe-area-inset-bottom)); border-top: 1px solid #302d2715; background: #fffdf9; box-shadow: 0 -8px 30px -22px #302d2730; }
+.sample-done { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; margin-top: 14px; border-radius: 8px; background: #302d27; color: #fffdf9; font-size: 12px; cursor: pointer; transition: background .25s; }
+.sample-done:hover { background: #514638; }
+@media (prefers-reduced-motion: reduce) { [data-lens-dim], .gallery-focus-frame, .product-lens *, .sample-invitation *, .sample-drawer * { transition: none !important; animation: none !important; } .sample-discovery-card:hover .sample-artwork img, .sample-invitation-trigger:hover .sample-seal { transform: none; } }
