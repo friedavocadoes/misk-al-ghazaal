@@ -7,7 +7,7 @@ import { ArrowUpRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import type { Coupon } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { celebrate } from "@/lib/confetti";
-import { CouponInfo, couponBlurb } from "./CouponTicket";
+import { CouponTicket } from "./CouponTicket";
 
 const LS_KEY = "misk-coupon";
 
@@ -32,7 +32,7 @@ export function PdpOffers({
   coupons: Coupon[];
   locale: Locale;
 }) {
-  const [coupons,setCoupons]=useState(initialCoupons);
+  const [coupons,setCoupons]=useState(initialCoupons.filter(c => !c.firstOrderOnly));
   useEffect(()=>{let version=0;const refresh=()=>{const v=++version;fetch("/api/coupons",{cache:"no-store"}).then(r=>r.json()).then(d=>{if(v===version)setCoupons(d.coupons||[]);}).catch(()=>setCoupons([]));};refresh();const {data:{subscription}}=createClient().auth.onAuthStateChange(()=>refresh());return()=>{version++;subscription.unsubscribe();};},[]);
   const t = useTranslations("Product");
   // Checkout handoff: explicit session action wins, otherwise mirror the
@@ -100,23 +100,9 @@ export function PdpOffers({
           const isApplied = applied === c.code;
           const isBusy = busy === c.code;
           return (
-            <li
-              key={c.id}
-              className="offer-pass" style={price<c.minSubtotal?{opacity:.5}:undefined} data-selected={isApplied}
-            >
-              <span className="offer-value" aria-hidden="true">{c.kind === "percent" ? <>{c.amount}<small>%</small></> : c.kind === "fixed" ? <><small>AED</small>{c.amount}</> : <Sparkles size={24} />}</span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5">
-                  <span className="truncate font-mono text-[13px] font-bold tracking-[0.1em] text-ink">
-                    {c.code}
-                  </span>
-                  <CouponInfo coupon={c} locale={locale} />
-                </span>
-                <span className="mt-1 block text-[11px] leading-relaxed text-espresso">
-                  {price<c.minSubtotal ? `Requires a minimum order of AED ${c.minSubtotal}` : couponBlurb(c, locale, t)}
-                </span>
-              </span>
-              {isApplied ? (
+            <li key={c.id}>
+              <CouponTicket coupon={c} locale={locale} selected={isApplied} subtotal={price} action={
+              isApplied ? (
                 <span className="flex shrink-0 items-center gap-1.5">
                   <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1e7a46]">
                     <Check className="size-3.5" />
@@ -141,6 +127,7 @@ export function PdpOffers({
                   {isBusy ? <Loader2 className="size-3.5 animate-spin" /> : <><span>{locale === "ar" ? "اكتشف" : "Reveal"}</span><ArrowUpRight size={15} /></>}
                 </button>
               )}
+              />
             </li>
           );
         })}

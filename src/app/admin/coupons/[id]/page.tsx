@@ -102,7 +102,7 @@ export default async function CouponDetail(props: { params: Promise<{ id: string
           <label className="block">Icon
             <select name="icon" defaultValue={c.icon} className="mt-1 w-full border border-ink/20 px-3 py-2">
               {COUPON_ICONS.map((i) => (
-                <option key={i} value={i}>{i}</option>
+                <option key={i} value={i}>{i === "aed" ? "AED (flat discount amount)" : i}</option>
               ))}
             </select>
           </label>

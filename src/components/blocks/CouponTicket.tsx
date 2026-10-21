@@ -82,47 +82,32 @@ export function CouponInfo({ coupon, locale, dark }: { coupon: Coupon; locale: L
   );
 }
 
-/** Perfume-house ticket: ink medallion, serif code, benefit line, action. */
-export function CouponTicket({
-  coupon,
-  locale,
-  action,
-  compact,
-}: {
-  coupon: Coupon;
-  locale: Locale;
-  action?: React.ReactNode;
-  compact?: boolean;
+/** Shared offer pass used by product previews and checkout. */
+export function CouponTicket({ coupon, locale, action, selected = false, subtotal, context = "product" }: {
+  coupon: Coupon; locale: Locale; action?: React.ReactNode; selected?: boolean;
+  subtotal?: number; context?: "product" | "cart";
 }) {
   const t = useTranslations("Product");
-  return (
-    <div
-      className={cn(
-        "relative flex items-center gap-3 border border-dashed border-gold/60 bg-cream",
-        compact ? "p-3" : "p-4",
-      )}
-    >
-      <span
-        className={cn(
-          "flex shrink-0 items-center justify-center rounded-full bg-ink text-gold-soft",
-          compact ? "size-9" : "size-11",
-        )}
-      >
-        <CouponIcon icon={coupon.icon} className={compact ? "size-4" : "size-5"} />
+  const unavailable = subtotal != null && subtotal < coupon.minSubtotal;
+  const minimum = locale === "ar"
+    ? `الحد الأدنى للطلب AED ${coupon.minSubtotal}`
+    : context === "cart" ? `Available on orders of AED ${coupon.minSubtotal} or more` : `Requires a minimum order of AED ${coupon.minSubtotal}`;
+  return <div className="offer-pass" data-selected={selected} data-unavailable={unavailable}>
+    <span className="offer-value" aria-hidden="true">
+      {coupon.kind === "percent" ? <span className="offer-amount" dir="ltr">{coupon.amount}<small>%</small></span>
+        : coupon.kind === "fixed" && coupon.icon === "aed" ? <span className="offer-amount" dir="ltr"><small>AED</small>{coupon.amount}</span>
+        : <CouponIcon icon={coupon.icon} className="offer-icon" />}
+    </span>
+    <span className="min-w-0 flex-1">
+      <span className="flex items-center gap-1.5">
+        <span className="break-all font-mono text-[13px] font-bold tracking-[0.1em] text-ink">{coupon.code}</span>
+        <CouponInfo coupon={coupon} locale={locale}/>
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className={cn("truncate font-mono font-bold tracking-[0.12em] text-ink", compact ? "text-sm" : "text-base")}>
-            {coupon.code}
-          </span>
-          <CouponInfo coupon={coupon} locale={locale} />
-        </span>
-        <span className="mt-0.5 block truncate text-[12px] text-espresso">
-          {couponBlurb(coupon, locale, t)}
-          {coupon.firstOrderOnly ? ` · ${t("couponFirst")}` : ""}
-        </span>
+      <span className="mt-1 block text-[11px] leading-relaxed text-espresso">
+        {unavailable ? minimum : couponBlurb(coupon, locale, t)}
+        {coupon.firstOrderOnly ? ` · ${t("couponFirst")}` : ""}
       </span>
-      {action}
-    </div>
-  );
+    </span>
+    {action}
+  </div>;
 }

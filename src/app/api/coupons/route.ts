@@ -19,6 +19,11 @@ export async function GET() {
         .select("coupon_id")
         .eq("user_id", user.id);
       if (error) throw error;
+      const { count: orderCount, error: orderError } = await createAdminClient()
+        .from("orders").select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if (orderError) throw orderError;
+      if ((orderCount ?? 0) > 0) coupons = coupons.filter(c => !c.firstOrderOnly);
       const used = new Map<string, number>();
       for (const row of data ?? []) used.set(row.coupon_id, (used.get(row.coupon_id) ?? 0) + 1);
       coupons = coupons.filter(c => c.usageLimit == null || (used.get(c.id) ?? 0) < c.usageLimit);

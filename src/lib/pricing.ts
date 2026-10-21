@@ -129,7 +129,13 @@ async function priceLines(
 async function hasPriorOrder(
   supabase: Awaited<ReturnType<typeof createAdminClient>>,
   email: string,
+  userId?: string,
 ): Promise<boolean> {
+  if (userId) {
+    const { count, error } = await supabase.from("orders").select("id", {count:"exact",head:true}).eq("user_id", userId);
+    if (error) throw new Error("Could not verify order history. Please try again.");
+    return (count ?? 0) > 0;
+  }
   if (!email) return false;
   const { count } = await supabase
     .from("orders")
@@ -189,7 +195,7 @@ export async function checkCoupon(
     return { ok: false, reason: "expired" };
   if (c.owner_id && c.owner_id !== userId)
     return { ok: false, reason: "personal" };
-  if (c.first_order_only && (await hasPriorOrder(supabase, email)))
+  if (c.first_order_only && (await hasPriorOrder(supabase, email, userId)))
     return { ok: false, reason: "repeat" };
   const limit = c.once_per_account ? 1 : c.usage_limit;
   if (limit != null) {

@@ -5,7 +5,7 @@ import type {CartStockIssue} from "@/lib/pricing";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
+import { ArrowUpRight, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
@@ -162,13 +162,15 @@ export default function CheckoutPage() {
     } catch {
       /* private mode — no handoff */
     }
-    fetch("/api/coupons")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (Array.isArray(j?.coupons)) setOffers(j.coupons as Coupon[]);
-      })
-      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/coupons", {cache:"no-store"}).then(r => r.ok ? r.json() : null)
+      .then(j => { if (!cancelled) setOffers(Array.isArray(j?.coupons) ? j.coupons : []); })
+      .catch(() => { if (!cancelled) setOffers([]); });
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const payload = useMemo(
     () => ({
@@ -397,8 +399,8 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <div className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_380px]">
-        <div className="grid gap-8">
+      <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid min-w-0 grid-cols-1 gap-8">
           {/* Details */}
           <section className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("contactTitle")}>
             <h2 className="font-display text-2xl text-ink">{t("contactTitle")}</h2>
@@ -504,11 +506,18 @@ export default function CheckoutPage() {
             </h2>
 
             {appliedCoupon && couponState === "ok" ? (
+              offers.find(o => o.code === appliedCoupon) ? <CouponTicket
+                coupon={offers.find(o => o.code === appliedCoupon)!} locale={locale} selected
+                action={<span className="flex shrink-0 items-center gap-1">
+                  <span className="flex items-center gap-1 text-[11px] text-[#1e7a46]"><Check className="size-3.5"/>{quote && quote.discount > 0 ? `−${formatAED(quote.discount)}` : t("couponOk")}</span>
+                  <button type="button" onClick={removeCoupon} aria-label={t("couponRemove")} className="offer-reveal"><X size={14}/></button>
+                </span>}
+              /> : (
               <div
                 key={`ok-${appliedCoupon}`}
-                className="mt-5 flex animate-[heart-pop_0.4s_cubic-bezier(0.34,1.56,0.64,1)] items-center gap-3 border border-[#1e7a46]/40 bg-[#1e7a46]/[0.07] p-4"
+                className="offer-pass mt-5" data-selected="true"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#1e7a46] text-white">
+                <span className="offer-value">
                   <Check className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -524,11 +533,12 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={removeCoupon}
                   aria-label={t("couponRemove")}
-                  className="flex shrink-0 cursor-pointer items-center gap-1.5 border border-ink/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:border-[#9c2b2e] hover:text-[#9c2b2e]"
+                  className="offer-reveal"
                 >
                   <X className="size-3.5" /> {t("couponRemove")}
                 </button>
               </div>
+              )
             ) : (
               <div key={`in-${shakeKey}`} className={cn(couponState === "bad" || couponState === "min" ? "coupon-shake" : "")}>
                 <label htmlFor="coupon-input" className="mt-5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
@@ -549,7 +559,7 @@ export default function CheckoutPage() {
                     aria-label={t("couponLabel")}
                     dir="ltr"
                     className={cn(
-                      "font-mono uppercase",
+                      "min-w-0 font-mono uppercase",
                       (couponState === "bad" || couponState === "min") && "border-[#9c2b2e]",
                     )}
                   />
@@ -573,19 +583,20 @@ export default function CheckoutPage() {
                   {offers
                     .filter((o) => o.code !== appliedCoupon)
                     .map((o) => (
-                      <li key={o.id} style={(quote?.subtotal||0)<o.minSubtotal?{opacity:.5}:undefined}>
+                      <li key={o.id}>
                         <CouponTicket
                           coupon={o}
                           locale={locale}
-                          compact
+                          subtotal={quote?.subtotal ?? 0}
+                          context="cart"
                           action={
                             <button
                               type="button"
                               disabled={(quote?.subtotal||0)<o.minSubtotal}
                               onClick={() => quickApply(o.code)}
-                              className="shrink-0 cursor-pointer border border-ink bg-ink px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-gold-soft hover:text-ink"
+                              className="offer-reveal"
                             >
-                              {(quote?.subtotal||0)<o.minSubtotal?`Minimum AED ${o.minSubtotal}`:t("apply")}
+                              {t("apply")}<ArrowUpRight size={15}/>
                             </button>
                           }
                         />
@@ -627,7 +638,7 @@ export default function CheckoutPage() {
                           type="button"
                           onClick={removeReferral}
                           aria-label={t("couponRemove")}
-                          className="flex shrink-0 cursor-pointer items-center gap-1.5 border border-ink/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-espresso transition hover:border-[#9c2b2e] hover:text-[#9c2b2e]"
+                          className="offer-reveal"
                         >
                           <X className="size-3.5" /> {t("couponRemove")}
                         </button>

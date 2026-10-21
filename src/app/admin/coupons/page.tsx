@@ -156,7 +156,7 @@ export default async function CouponsPage() {
             >
               {COUPON_ICONS.map((i) => (
                 <option key={i} value={i}>
-                  {i}
+                  {i === "aed" ? "AED (flat discount amount)" : i}
                 </option>
               ))}
             </select>

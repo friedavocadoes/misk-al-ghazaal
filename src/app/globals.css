@@ -987,3 +987,10 @@ html:has(#site-header[data-transparent-page="true"]) #page-content { padding-top
 .sample-done { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; margin-top: 14px; border-radius: 8px; background: #302d27; color: #fffdf9; font-size: 12px; cursor: pointer; transition: background .25s; }
 .sample-done:hover { background: #514638; }
 @media (prefers-reduced-motion: reduce) { [data-lens-dim], .gallery-focus-frame, .product-lens *, .sample-invitation *, .sample-drawer * { transition: none !important; animation: none !important; } .sample-discovery-card:hover .sample-artwork img, .sample-invitation-trigger:hover .sample-seal { transform: none; } }
+
+.offer-value .offer-icon { width: 32px; height: 32px; stroke-width: 1.25; flex-shrink: 0; }
+.offer-amount { display: inline-flex; align-items: baseline; justify-content: center; gap: 3px; white-space: nowrap; }
+.offer-value { flex-shrink: 0; min-height: 54px; }
+.offer-pass[data-unavailable=true] { opacity: .5; }
+.offer-reveal:disabled { cursor: not-allowed; }
+@media(max-width:420px) { .offer-pass { gap:9px; padding:10px; } .offer-value { min-width:43px; padding-inline-end:9px; font-size:21px; } .offer-reveal { padding:9px; font-size:10px; } }
