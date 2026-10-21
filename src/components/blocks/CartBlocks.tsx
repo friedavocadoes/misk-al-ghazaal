@@ -1,4 +1,6 @@
 "use client";
+import {CartStockNotice} from "./CartStockNotice";
+import type {CartStockIssue} from "@/lib/pricing";
 
 import {useEffect,useState} from "react";
 import {PdpOffers} from "./PdpOffers";
@@ -27,9 +29,9 @@ export function BagView() {
     .map((l) => ({ ...l, product: meta[l.productSlug] }))
     .filter((l) => l.product);
   const cartKey=JSON.stringify(lines);
-  const [serverQuote,setServerQuote]=useState<{key:string;total:number}|null>(null);
+  const [serverQuote,setServerQuote]=useState<{key:string;total:number;stockIssues:CartStockIssue[]}|null>(null);
   const serverSubtotal=serverQuote?.key===cartKey?serverQuote.total:null;
-  useEffect(()=>{const controller=new AbortController();if(lines.length)fetch("/api/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lines:lines.map(l=>({slug:l.productSlug,variantId:l.variantId,qty:l.qty}))}),signal:controller.signal}).then(r=>r.json()).then(d=>setServerQuote({key:cartKey,total:d.quote?.subtotal??0})).catch(()=>{});return()=>controller.abort();},[lines,cartKey]);
+  useEffect(()=>{const controller=new AbortController();if(lines.length)fetch("/api/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lines:lines.map(l=>({slug:l.productSlug,variantId:l.variantId,qty:l.qty}))}),signal:controller.signal}).then(r=>r.json()).then(d=>setServerQuote({key:cartKey,total:d.quote?.subtotal??0,stockIssues:d.stockIssues||[]})).catch(()=>{});return()=>controller.abort();},[lines,cartKey]);
   const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
   const shipping = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : FLAT_SHIPPING;
 
@@ -100,7 +102,7 @@ export function BagView() {
 
       <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24">
         <h2 className="font-display text-xl text-ink">{t("summary")}</h2>
-        <SamplePicker subtotal={serverSubtotal??0}/><PdpOffers slug="" price={serverSubtotal??0} coupons={[]} locale={locale}/><dl className="mt-5 space-y-2.5 text-sm">
+        <CartStockNotice issues={serverQuote?.key===cartKey?serverQuote.stockIssues:[]}/><SamplePicker subtotal={serverSubtotal??0}/><PdpOffers slug="" price={serverSubtotal??0} coupons={[]} locale={locale}/><dl className="mt-5 space-y-2.5 text-sm">
           <div className="flex justify-between">
             <dt className="text-fog">{t("subtotal")}</dt>
             <dd className="font-medium text-ink">{formatAED(subtotal)}</dd>

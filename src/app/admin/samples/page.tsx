@@ -1,3 +1,4 @@
+import { SampleNotesField } from "@/components/admin/sample-notes-field";
 import { logAdmin } from "@/lib/audit";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -30,16 +31,23 @@ async function save(f: FormData) {
           : {
               name: String(f.get("name")),
               description: String(f.get("description") || ""),
-              notes: String(f.get("notes") || ""),
+
               image: String(f.get("image") || ""),
               category_id: f.get("category_id") || null,
               stock: Number(f.get("stock")),
               active: f.get("active") === "on",
             };
-    const { error } = id
-      ? await db.from(kind).update(value).eq("id", id)
-      : await db.from(kind).insert(value);
+    const { data: saved, error } = id
+      ? await db.from(kind).update(value).eq("id", id).select("id").single()
+      : await db.from(kind).insert(value).select("id").single();
     if (error) throw error;
+    if (kind === "samples") {
+      const { error: notesError } = await db.rpc("set_sample_notes", {
+        sid: saved!.id,
+        nids: [...new Set(f.getAll("note_ids").map(String))],
+      });
+      if (notesError) throw notesError;
+    }
   }
   await logAdmin(db, s, {
     category: "products",
@@ -54,10 +62,12 @@ export default async function Page() {
   const s = await getAdminSession();
   if (s?.role !== "super_admin") redirect("/admin/login");
   const db = await createClient();
-  const [samples, categories, tiers] = await Promise.all([
+  const [samples, categories, tiers, library, assigned] = await Promise.all([
     db.from("samples").select("*").order("name"),
     db.from("sample_categories").select("*").order("name"),
     db.from("sample_tiers").select("*").order("min_subtotal"),
+    db.from("notes").select("id,name").order("name"),
+    db.from("sample_notes").select("sample_id,note_id"),
   ]);
   return (
     <>
@@ -70,6 +80,12 @@ export default async function Page() {
           unlocked allowance wins.
         </p>
         {samples.error && <p>Apply migration_samples.sql to enable samples.</p>}
+        {assigned.error && (
+          <p role="alert">
+            Apply migration_sample_note_library.sql to enable sample note
+            selections.
+          </p>
+        )}
         <section>
           <h2 className="mb-4 text-xl">Spending tiers</h2>
           {[
@@ -188,14 +204,12 @@ export default async function Page() {
                     className="block w-full border p-2"
                   />
                 </label>
-                <label>
-                  Brief notes
-                  <input
-                    name="notes"
-                    defaultValue={item.notes}
-                    className="block w-full border p-2"
-                  />
-                </label>
+                <SampleNotesField
+                  notes={library.data || []}
+                  selected={(assigned.data || [])
+                    .filter((n) => n.sample_id === item.id)
+                    .map((n) => n.note_id)}
+                />
                 <label>
                   Available quantity
                   <input

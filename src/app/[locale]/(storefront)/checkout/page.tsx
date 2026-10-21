@@ -1,4 +1,6 @@
 "use client";
+import {CartStockNotice} from "@/components/blocks/CartStockNotice";
+import type {CartStockIssue} from "@/lib/pricing";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
@@ -179,19 +181,23 @@ export default function CheckoutPage() {
     [lines, email, appliedCoupon, appliedReferral, userId],
   );
 
+  const [stockIssues,setStockIssues]=useState<CartStockIssue[]>([]);
+  const [quoteFailure,setQuoteFailure]=useState("");
+  const [quoteLoading,setQuoteLoading]=useState(true);
   const [quoteAttempt,setQuoteAttempt]=useState(0);
   // Cancel stale quotes and always settle checking, including failed/repeated requests.
   useEffect(() => {
     const controller=new AbortController();let cancelled=false;
+    queueMicrotask(()=>{if(!cancelled){setQuoteLoading(true);setQuoteFailure("");}});
     const id=setTimeout(async()=>{
       const timeout=setTimeout(()=>controller.abort(),12000);
       try{
         const r=await fetch("/api/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal});
         const j=await r.json().catch(()=>null);if(cancelled)return;
-        if(r.ok && j?.quote){setQuote(j.quote);setCouponState(appliedCoupon?"ok":"idle");setReferralState(appliedReferral?"ok":"idle");setCouponError("");setReferralError("");}
-        else {setQuote(null);const err=typeof j?.error==="string"?j.error:"network";setCouponState(appliedCoupon?(err==="coupon:min"?"min":"bad"):"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError(appliedCoupon?err:"");setReferralError(appliedReferral?err:"");}
-      }catch{if(!cancelled){setQuote(null);setCouponState(appliedCoupon?"bad":"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError("network");setReferralError("network");}}
-      finally{clearTimeout(timeout);}
+        if(r.ok && j?.quote){setStockIssues(j.stockIssues||[]);setQuote(j.quote);setCouponState(j.couponError?(j.couponError==="coupon:min"?"min":"bad"):appliedCoupon?"ok":"idle");setReferralState(j.referralError?"bad":appliedReferral?"ok":"idle");setCouponError(j.couponError||"");setReferralError(j.referralError||"");}
+        else {setQuote(null);setQuoteFailure(typeof j?.error==="string"?j.error:"We couldn’t calculate your total. Please retry or check the items in your bag.");const err=typeof j?.error==="string"?j.error:"network";setCouponState(appliedCoupon?(err==="coupon:min"?"min":"bad"):"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError(appliedCoupon?err:"");setReferralError(appliedReferral?err:"");}
+      }catch{if(!cancelled){setQuote(null);setQuoteFailure("We couldn’t reach pricing. Please check your connection and retry.");setCouponState(appliedCoupon?"bad":"idle");setReferralState(appliedReferral?"bad":"idle");setCouponError("network");setReferralError("network");}}
+      finally{clearTimeout(timeout);if(!cancelled)setQuoteLoading(false);}
     },appliedCoupon||appliedReferral?0:180);
     return()=>{cancelled=true;clearTimeout(id);controller.abort();};
   },[payload,appliedCoupon,appliedReferral,quoteAttempt]);
@@ -325,8 +331,8 @@ export default function CheckoutPage() {
         notes,
         items: payload.lines,
         sample_ids: readSamples(),
-        coupon_code: appliedCoupon || undefined,
-        referral_code: appliedReferral || undefined,
+        coupon_code: quote?.couponCode || undefined,
+        referral_code: quote?.referralCode || undefined,
         user_id: userId ?? undefined,
         save_phone: userId ? savePhone : undefined,
         country_code: addr ? addr.countryCode : undefined,
@@ -372,7 +378,7 @@ export default function CheckoutPage() {
 
   const hasMap = countries.length > 0;
   const phoneOk = national.replace(/\D/g, "").length >= 7;
-  const valid = name.trim() && phoneOk && (hasMap ? deliveryValid : address.trim()) && quote;
+  const valid = name.trim() && phoneOk && (hasMap ? deliveryValid : address.trim()) && quote && !quoteLoading && stockIssues.length===0;
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
@@ -700,7 +706,7 @@ export default function CheckoutPage() {
             </div>
           </dl>
           {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <Button className="mt-6 w-full" size="lg" disabled={!valid || placing} onClick={placeOrder}>
+          <CartStockNotice issues={stockIssues}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<Button className="mt-6 w-full" size="lg" disabled={!valid || placing} onClick={placeOrder}>
             {placing ? t("placing") : t("placeOrder")}
           </Button>
           <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">{t("codNote")}</p>

@@ -264,3 +264,16 @@ This section and the corrected entries above supersede historical implementation
 - SamplePicker shared drawer on PDP/cart/checkout persists unique IDs in misk-samples. Falling allowances warn and require removal; clear selections also removes unavailable/deleted IDs. Order submission validates stock and allowance atomically via an AFTER INSERT orders trigger, locks sample stock in ID order, and adds zero-price sample order_items. Any reservation failure rolls back the order insert and sample deductions. Samples are included in receipt/email/invoice/order items. No automatic sample restock on cancellations; staff manages inventory.
 - Coupon API is private/no-store, checks server session and service-client redemptions scoped to that user, removes previously redeemed once-per-account coupons. PDP/cart refresh on auth changes; minimum-spend coupons are disabled with threshold copy. Checkout eligibility is still enforced by pricing.ts.
 - Checks: node --test tests/sample-tiers.test.cjs. SQL stock/concurrency requires migration and a database-backed checkout verification before launch.
+
+
+## 23. Sample library notes and checkout quote recovery (2026-10-21)
+- Apply migration_sample_note_library.sql: sample_notes junction with notes FK, unrestricted library selections via searchable SampleNotesField, set_sample_notes RPC preserves existing relations on failed validation. Legacy free-text exact names migrate where matched. Public samples API resolves current library names; sample notes are no longer entered as text.
+- A saved rejected coupon/referral previously nullified the entire checkout quote and left totals blank. /api/quote now returns real base totals with separate couponError/referralError, stripping only rejected offers and recalculating. Stock/product failures still return errors. Checkout displays exclusions, submits only accepted quote codes, disables ordering while recalculating and exposes retry for actual pricing/network failures.
+- Regression checks: node --test tests/quote-recovery.test.cjs; live local guest cart with saved invalid code recovered subtotal189 and visible exclusion warning. No order was placed during verification.
+
+
+## 24. Stock-blocked cart quote (2026-10-21)
+- Read-only inspection reproduced saved cart failures caused by zero stock for Dukhoon Misk Al Ghazaal. Retry alone could not fix an inventory constraint.
+- quoteBag previewStock mode returns authoritative price totals plus stockIssues (requested/available/slug/variant). Only /api/quote enables preview mode. Checkout POST keeps strict stock enforcement. Variant ownership and aggregate per-variant quantities are checked; database lookup errors are propagated instead of disguised as unknown products.
+- CartStockNotice on cart/checkout exposes removal and quantity reduction. Checkout stays disabled until stock issues are resolved, then re-quotes on cart changes. Genuine quote errors now show their returned message. No stock quantities were changed to make an order pass.
+- Tests: node --test tests/stock-quote.test.cjs tests/quote-recovery.test.cjs. Browser verified real sold-out variant yields HTTP200 preview with warning and removal action. No orders created.
