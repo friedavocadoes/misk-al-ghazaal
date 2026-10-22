@@ -55,11 +55,11 @@ async function priceLines(
   );
   const {data: variants, error:variantError}=await supabase.from("variants").select("*").in("product_id",[...bySlug.values()].map(p=>p.id));
   if(variantError)throw variantError;
-  type StockVariant={id:string;product_id:string;title:string;price:number;stock:number;is_active?:boolean;name_override?:string|null};
+  type StockVariant={id:string;product_id:string;title:string;price:number;stock:number|null;is_active?:boolean;name_override?:string|null};
   const allVariants=(variants??[]) as StockVariant[];
   const byVariant=new Map(allVariants.map(v=>[v.id,v]));
   // Canonicalize legacy cart lines without an option so they cannot bypass stock checks.
-  const normalized=lines.map(l=>({...l,variantId:l.variantId ?? allVariants.filter(v=>v.product_id===bySlug.get(l.slug)?.id && v.is_active!==false).sort((a,b)=>Number(b.stock>0)-Number(a.stock>0)||a.price-b.price||a.id.localeCompare(b.id))[0]?.id}));
+  const normalized=lines.map(l=>({...l,variantId:l.variantId ?? allVariants.filter(v=>v.product_id===bySlug.get(l.slug)?.id && v.is_active!==false).sort((a,b)=>Number(b.stock==null||b.stock>0)-Number(a.stock==null||a.stock>0)||a.price-b.price||a.id.localeCompare(b.id))[0]?.id}));
   const priced: PricedLine[] = [];
   let subtotal = 0;
   for (const l of normalized) {
@@ -67,35 +67,23 @@ async function priceLines(
     if (!p) throw new Error(`Unknown product: ${l.slug}`);
     let unit = Number(p.price);
     let title = p.title;
-    if(!l.variantId)throw new Error(`Out of stock: ${p.title}`);
+    let available=p.out_of_stock || p.is_active===false ? 0 : Infinity;
     if (l.variantId) {
       const v = byVariant.get(l.variantId);
       if (!v) throw new Error(`Unknown variant: ${l.variantId}`);
-      if (v.product_id !== p.id)
-        throw new Error(
-          `This option no longer belongs to ${p.title}. Please select it again from the product page.`,
-        );
-      const requested = normalized
-        .filter((x) => x.slug === l.slug && x.variantId === l.variantId)
-        .reduce((n, x) => n + x.qty, 0);
-      const available=p.out_of_stock || p.is_active===false || v.is_active===false ? 0 : v.stock;
-      if (available < requested) {
-        if (!previewStock) throw new Error(`Out of stock: ${p.title}`);
-        if (
-          !stockIssues.some(
-            (x) => x.slug === l.slug && x.variantId === l.variantId,
-          )
-        )
-          stockIssues.push({
-            slug: l.slug,
-            variantId: l.variantId,
-            title: p.title,
-            requested,
-            available: Math.max(0, available),
-          });
-      }
-      unit = Number(v.price);
-      title = `${v.name_override || p.title} — ${v.title}`;
+      if (v.product_id !== p.id) throw new Error(`This option no longer belongs to ${p.title}. Please select it again from the product page.`);
+      if(v.is_active===false)available=0;
+      else available=Math.min(available,v.stock??Infinity);
+      unit=Number(v.price);
+      title=`${v.name_override || p.title} — ${v.title}`;
+    } else if(allVariants.some(v=>v.product_id===p.id)) {
+      // No active options left is different from a product with no optional variants.
+      available=0;
+    }
+    const requested=normalized.filter(x=>x.slug===l.slug && x.variantId===l.variantId).reduce((n,x)=>n+x.qty,0);
+    if(available<requested){
+      if(!previewStock)throw new Error(`Out of stock: ${p.title}`);
+      if(!stockIssues.some(x=>x.slug===l.slug && x.variantId===l.variantId))stockIssues.push({slug:l.slug,variantId:l.variantId,title:p.title,requested,available:Math.max(0,available)});
     }
     priced.push({ ...l, unit, title });
     subtotal += unit * l.qty;

@@ -23,8 +23,8 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
 
   const concentration=String(formData.get("concentration")||"");
   const capacity=formData.get("capacity_ml")?Number(formData.get("capacity_ml")):null;
-  const vPrice=Number(formData.get("v_price")||price),stock=Number(formData.get("v_stock")||0);
-  if((concentration&&!CONCENTRATIONS.some(c=>c===concentration)) || (concentration&&!capacity) || (capacity!==null && (!Number.isFinite(capacity)||capacity<=0)) || !Number.isFinite(vPrice)||vPrice<=0||!Number.isSafeInteger(stock)||stock<0)return {ok:false,error:"Check concentration, capacity, price and stock."};
+  const vPrice=Number(formData.get("v_price")||price),stock=String(formData.get("v_stock")??"").trim()===""?null:Number(formData.get("v_stock"));
+  if((concentration&&!CONCENTRATIONS.some(c=>c===concentration)) || (concentration&&!capacity) || (capacity!==null && (!Number.isFinite(capacity)||capacity<=0)) || !Number.isFinite(vPrice)||vPrice<=0||(stock!==null && (!Number.isSafeInteger(stock)||stock<0)))return {ok:false,error:"Check concentration, capacity, price and stock."};
   const { data: existing } = await supabase.from("products").select("id").eq("slug", slug).single();
   if (existing) return { ok: false, error: "That slug is already taken." };
 

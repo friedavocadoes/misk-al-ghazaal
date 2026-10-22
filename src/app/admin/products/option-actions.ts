@@ -29,11 +29,11 @@ export async function saveProductVariant(form:FormData) {
   const id=String(form.get("variant_id")||"");
   const concentration=String(form.get("concentration")||"");
   const capacity=form.get("capacity_ml")?Number(form.get("capacity_ml")):null;
-  const price=Number(form.get("v_price")); const stock=Number(form.get("v_stock"));
+  const price=Number(form.get("v_price")); const stock=String(form.get("v_stock")??"").trim()===""?null:Number(form.get("v_stock"));
   if(concentration && !CONCENTRATIONS.some(c=>c===concentration))throw new Error("Choose a valid concentration.");
   if(capacity!==null && (!Number.isFinite(capacity)||capacity<=0||capacity>100000))throw new Error("Capacity must be greater than zero.");
   if(concentration && !capacity)throw new Error("Add the capacity in ml for this concentration.");
-  if(!Number.isFinite(price)||price<=0||!Number.isSafeInteger(stock)||stock<0)throw new Error("Enter a positive price and a whole stock count of zero or more.");
+  if(!Number.isFinite(price)||price<=0||(stock!==null && (!Number.isSafeInteger(stock)||stock<0)))throw new Error("Enter a positive price and a whole stock count of zero or more.");
   const {data:product,error:productError}=await db.from("products").select("id").eq("id",productId).is("deleted_at",null).single();
   if(productError||!product)throw new Error("Product no longer available.");
   const {data:existing,error:readError}=await db.from("variants").select("*").eq("product_id",productId);

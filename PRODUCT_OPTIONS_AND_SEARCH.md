@@ -6,8 +6,9 @@ Run these in Supabase SQL Editor, in order, before deploying this update:
 
 1. `supabase/migration_product_options.sql`
 2. `supabase/migration_demand_ranking.sql`
+3. `supabase/migration_optional_stock.sql` (allows blank/unlimited stock)
 
-The ranking migration requires the existing analytics and audit-log migrations. Both new migrations are repeatable and preserve product/variant IDs, orders, inventory and existing manual bestseller tags. No SQL has been executed against the live database as part of this update. The initial ranking refresh runs when its migration is installed.
+The ranking migration requires the existing analytics and audit-log migrations. All three migrations are repeatable and preserve product/variant IDs, orders, inventory and existing manual bestseller tags. No SQL has been executed against the live database as part of this update. The initial ranking refresh runs when its migration is installed.
 
 `npm install` installs the new `minisearch` dependency. No hosted search account, API key or external service is needed.
 
@@ -15,7 +16,7 @@ The ranking migration requires the existing analytics and audit-log migrations. 
 
 Admin → Products shows an **Out of stock** shortcut only when there are unavailable products. The status filter and row badges use both the manual override and the sum of active option availability. Pausing a product remains a separate visibility control.
 
-In a product editor, **Variants + stock → Mark product out of stock** stops sales without erasing inventory. **Use inventory counts** releases that override; a product stays unavailable if all its active options have zero stock. Storefront cards, search suggestions, the product picker, purchase buttons, catalog availability filters and Product structured data follow the same rules. The pricing API also enforces them for saved carts, direct requests and archived options. Successful checkout invalidates product/listing/search caches after stock changes.
+In a product editor, **Variants + stock → Mark product out of stock** stops sales without erasing inventory. **Use inventory counts** releases that override; a product stays unavailable if all its active options have zero stock. Blank stock is unlimited (`NULL` in SQL), while explicit zero means sold out. Products without variants use their base price and unlimited stock unless manually marked out of stock. Existing numeric counts are preserved; clear the field to stop tracking an option. Storefront cards, search suggestions, the product picker, purchase buttons, catalog availability filters and Product structured data follow the same rules. The pricing API also enforces them for saved carts, direct requests and archived options. Successful checkout invalidates product/listing/search caches after stock changes.
 
 ## Variants
 
@@ -31,7 +32,7 @@ Selecting EDT exposes only its 100 ml size. Changing an option updates the produ
 
 The five concentrations are Eau Fraîche, Eau de Cologne, Eau de Toilette, Eau de Parfum and Extrait de Parfum. For incense or other products, leave concentration and ml empty and use a custom label such as `100 g`. Migration recognizes explicit ml/concentration labels only; it never converts grams to ml or guesses a strength. Existing labels and IDs remain intact.
 
-Choose **Own images** for the variant uploader, which uses the existing drag/drop WebP conversion. Empty custom galleries are rejected. Removed images are deleted only after checking references in product/variant galleries, notes and artwork, including archived/binned products. Shared galleries use the product gallery directly. The starting price follows the lowest active option; edit prices on the option cards.
+Choose **Own images** for the variant uploader, which uses the existing drag/drop WebP conversion. Empty custom galleries are rejected. Removed images are deleted only after checking references in product/variant galleries, notes and artwork, including archived/binned products. Shared galleries use the product gallery directly. The starting price follows the lowest active option; edit prices on the option cards. Products without options can edit their base price in Details. Unlimited stock is never decremented and never renders a remaining-stock counter.
 
 **Archive option** removes it from new purchases but retains its ID, gallery and order history. Keep at least one active option. Expand **Archived options**, edit and save to restore one. A customer holding an archived option in a saved cart sees a stock warning rather than receiving a different option.
 

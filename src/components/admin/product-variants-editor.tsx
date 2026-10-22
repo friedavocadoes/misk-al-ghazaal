@@ -7,7 +7,7 @@ import { MultiImageUploader } from "./multi-image-uploader";
 import { CONCENTRATIONS } from "@/lib/product-options";
 import { saveProductVariant, archiveProductVariant } from "@/app/admin/products/option-actions";
 
-export interface EditableVariant {id:string;title:string;price:number;stock:number;sku?:string|null;concentration?:string|null;capacity_ml?:number|null;name_override?:string|null;images?:string[];use_product_images?:boolean;is_active?:boolean}
+export interface EditableVariant {id:string;title:string;price:number;stock:number|null;sku?:string|null;concentration?:string|null;capacity_ml?:number|null;name_override?:string|null;images?:string[];use_product_images?:boolean;is_active?:boolean}
 const input="mt-1.5 w-full border border-ink/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-gold";
 function VariantForm({productId,variant,price}:{productId:string;variant?:EditableVariant;price:number}) {
   const [shared,setShared]=useState(variant?.use_product_images!==false);
@@ -16,12 +16,12 @@ function VariantForm({productId,variant,price}:{productId:string;variant?:Editab
   const imageField=useRef<HTMLInputElement>(null);
   return <AdminForm action={saveProductVariant} success={variant?"Option saved":"Option added"} className="space-y-5 border border-ink/10 bg-white p-5 sm:p-6">
     <input type="hidden" name="product_id" value={productId}/><input type="hidden" name="variant_id" value={variant?.id??""}/>
-    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium">{variant?.title??"New option"}</p>{variant && <span className={variant.stock>0?"text-xs text-ink/50":"text-xs text-red-700"}>{variant.stock>0?`${variant.stock} in stock`:"Out of stock"}</span>}</div>
+    <div className="flex items-center justify-between gap-3"><p className="text-sm font-medium">{variant?.title??"New option"}</p>{variant && <span className={(variant.stock==null||variant.stock>0)?"text-xs text-ink/50":"text-xs text-red-700"}>{(variant.stock==null||variant.stock>0)?(variant.stock==null?"Unlimited stock":`${variant.stock} in stock`):"Out of stock"}</span>}</div>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="text-xs text-ink/65">Concentration<select name="concentration" value={concentration} onChange={e=>setConcentration(e.target.value)} className={input}><option value="">No concentration / other product</option>{CONCENTRATIONS.map(c=><option key={c}>{c}</option>)}</select></label>
       <label className="text-xs text-ink/65">Capacity (ml)<input name="capacity_ml" type="number" min="0.1" step="0.1" required={!!concentration} defaultValue={variant?.capacity_ml??""} placeholder="e.g. 100" className={input}/></label>
       <label className="text-xs text-ink/65">Price (AED)<input name="v_price" type="number" min="0.01" step="0.01" required defaultValue={variant?.price??price} className={input}/></label>
-      <label className="text-xs text-ink/65">Available stock<input name="v_stock" type="number" min="0" step="1" required defaultValue={variant?.stock??0} className={input}/></label>
+      <label className="text-xs text-ink/65">Available stock (blank = unlimited)<input name="v_stock" type="number" min="0" step="1" placeholder="Unlimited" defaultValue={variant?.stock??""} className={input}/></label>
       <label className="text-xs text-ink/65">Product name override (optional)<input name="name_override" defaultValue={variant?.name_override??""} placeholder="Uses the product name" className={input}/></label>
       <label className="text-xs text-ink/65">SKU (optional)<input name="v_sku" defaultValue={variant?.sku??""} className={input}/></label>
       <label className="text-xs text-ink/65 sm:col-span-2">Custom option label (for incense, grams or legacy options)<input name="custom_label" defaultValue={variant?.title??""} placeholder="e.g. 100 g — used when concentration and ml are empty" className={input}/></label>

@@ -62,7 +62,7 @@ create table if not exists public.variants (
   product_id uuid not null references public.products (id) on delete cascade,
   title text not null,
   price numeric(10,2) not null,
-  stock int not null default 0,
+  stock int default null,
   sku text,
   created_at timestamptz not null default now()
 );
@@ -198,6 +198,8 @@ declare cur int;
 begin
   select stock into cur from public.variants where id = p_variant_id for update;
   if not found then raise exception 'variant % not found', p_variant_id; end if;
+  if p_qty is null or p_qty <= 0 then raise exception 'invalid stock quantity'; end if;
+  if cur is null then return; end if;
   if cur < p_qty then raise exception 'insufficient stock for %', p_variant_id; end if;
   update public.variants set stock = stock - p_qty where id = p_variant_id;
 end $$;

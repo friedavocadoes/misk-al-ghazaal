@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
-function pricing(stock = 0, productExtra={}, variantExtra={}) {
+function pricing(stock = 0, productExtra={}, variantExtra={},noVariants=false) {
   const exports = {};
   const db = {
     from: (table) => {
@@ -17,7 +17,7 @@ function pricing(stock = 0, productExtra={}, variantExtra={}) {
             data:
               table === "products"
                 ? [{ id: "p", slug: "oud", title: "Oud", price: 100,...productExtra }]
-                : [
+                : noVariants ? [] : [
                     {
                       id: "v",
                       product_id: "p",
@@ -74,6 +74,7 @@ test("in-stock order has no stock issues", async () => {
 });
 
 test("manual out-of-stock and archived options cannot be ordered despite positive inventory",async()=>{
+ await assert.rejects(pricing(null,{}, {is_active:false}).quoteBag({lines:[{slug:"oud",qty:1}]}),/Out of stock/);
  for(const engine of [pricing(10,{out_of_stock:true}),pricing(10,{}, {is_active:false})]){
   const preview=await engine.quoteBag({lines,previewStock:true});assert.equal(preview.stockIssues[0].available,0);
   await assert.rejects(engine.quoteBag({lines}),/Out of stock/);
@@ -83,4 +84,20 @@ test("legacy lines without variant IDs still validate stock and resolve a real o
  const input={lines:[{slug:"oud",qty:1}]};
  await assert.rejects(pricing(0).quoteBag(input),/Out of stock/);
  const result=await pricing(5).quoteBag(input);assert.equal(result.priced[0].variantId,"v");
+});
+
+test("unlimited stock quotes successfully without serializing infinite numbers",async()=>{
+ const result=await pricing(null).quoteBag({lines:[{...lines[0],qty:20}]});
+ assert.equal(result.stockIssues.length,0);assert.equal(result.quote.subtotal,2000);
+ assert.ok(!JSON.stringify(result).includes('Infinity'));
+ await assert.rejects(pricing(null,{out_of_stock:true}).quoteBag({lines}),/Out of stock/);
+});
+test("base products without optional variants are unlimited unless manually stopped",async()=>{
+ const input={lines:[{slug:'oud',qty:2}]};
+ const result=await pricing(0,{}, {},true).quoteBag(input);
+ assert.equal(result.quote.subtotal,200);assert.equal(result.stockIssues.length,0);
+ const stopped=pricing(0,{out_of_stock:true},{},true);
+ await assert.rejects(stopped.quoteBag(input),/Out of stock/);
+ const preview=await stopped.quoteBag({...input,previewStock:true});assert.equal(preview.stockIssues[0].available,0);
+ await assert.rejects(pricing(0,{}, {},true).quoteBag({lines}),/Unknown variant/);
 });

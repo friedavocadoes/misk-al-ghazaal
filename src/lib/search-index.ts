@@ -1,3 +1,4 @@
+import { productAvailable } from "./product-options";
 import MiniSearch from "minisearch";
 import type { Product } from "./types";
 
@@ -26,7 +27,7 @@ export function searchDocument(p: Product): SearchDocument {
   return { id:p.id, slug:p.slug, title:p.title, titleAr:p.titleAr, image:p.images[0], price:p.price,
     compareAtPrice:p.compareAtPrice, lineupTitle:p.lineupTitle, lineupTitleAr:p.lineupTitleAr,
     rating:p.rating, reviewCount:p.reviewCount, isNew:p.isNew, isBestSeller:p.isBestSeller,
-    isActive:p.isActive, outOfStock:p.outOfStock || !p.variants.some(v=>v.stock>0), variantCount:p.variants.length,
+    isActive:p.isActive, outOfStock:!productAvailable(p), variantCount:p.variants.length,
     firstVariant:p.variants[0]?.title, topNotes:p.notes.filter(n=>n.kind==="top").slice(0,2).map(n=>({name:n.name,nameAr:n.nameAr})),
     keywords:[p.slug,p.lineupTitle,p.lineupTitleAr,...p.categorySlugs,...p.notes.flatMap(n=>[n.name,n.nameAr]),...p.variants.map(v=>v.title)].filter(Boolean).join(" ") };
 }

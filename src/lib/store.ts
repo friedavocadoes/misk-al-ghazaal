@@ -84,7 +84,7 @@ interface DbVariant {
   product_id: string;
   title: string;
   price: number;
-  stock: number;
+  stock: number | null;
   sku: string | null;
 }
 
@@ -179,7 +179,7 @@ function toProduct(
     ...(p.is_best_seller ? { isBestSeller: true } : {}),
     template: p.template ?? "standard",
     isActive: p.is_active ?? true,
-    outOfStock: p.out_of_stock ?? false, demandScore: Number(p.demand_score ?? 0), autoBestSeller: p.auto_best_seller ?? false,
+    outOfStock: !!p.out_of_stock || (variants.length>0 && variants.every(v=>v.is_active===false)), demandScore: Number(p.demand_score ?? 0), autoBestSeller: p.auto_best_seller ?? false,
     sortRank: p.sort ?? 0,
     salesCount: p.sales_count ?? 0,
     ...(p.created_at ? { createdAt: p.created_at } : {}),

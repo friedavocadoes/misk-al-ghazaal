@@ -6,7 +6,7 @@ export interface Variant {
   id: string;
   title: string; // e.g. "12ml", "50ml", "100g"
   price: number; // AED
-  stock: number;
+  stock: number | null;
   sku?: string;
   concentration?: string;
   capacityMl?: number;

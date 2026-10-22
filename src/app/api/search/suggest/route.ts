@@ -1,3 +1,4 @@
+import { productAvailable } from "@/lib/product-options";
 import { NextResponse } from "next/server";
 import { suggestProducts } from "@/lib/store";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
           ...(p.compareAtPrice != null ? { compareAtPrice: p.compareAtPrice } : {}),
           ...(p.lineupTitle ? { lineupTitle: p.lineupTitle } : {}),
           ...(p.lineupTitleAr ? { lineupTitleAr: p.lineupTitleAr } : {}),
-          outOfStock:p.outOfStock || !p.variants.some(v=>v.stock>0),
+          outOfStock:!productAvailable(p),
           rating: p.rating,
           reviewCount: p.reviewCount,
           ...(p.isNew ? { isNew: true } : {}),

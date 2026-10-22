@@ -1,4 +1,5 @@
 "use client";
+import { productAvailable, defaultVariant } from "@/lib/product-options";
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
@@ -59,7 +60,8 @@ export function OlfactoryShowcase({ products, notes = [], eyebrow, title, prompt
   const currentIndex = Math.min(resultIndex, Math.max(0, results.length - 1));
   const entry = results[currentIndex];
   const product = entry?.product;
-  const variant = product?.outOfStock ? undefined : product?.variants.find((v) => v.stock > 0);
+  const variant = product ? defaultVariant(product) : undefined;
+  const available = product ? productAvailable(product) : false;
   const chosen = selected.map((slug) => library.find((n) => n.slug.toLowerCase() === slug)).filter((n): n is Note => !!n);
 
   function toggle(slug: string) {
@@ -133,14 +135,14 @@ export function OlfactoryShowcase({ products, notes = [], eyebrow, title, prompt
               </div>
               <p className="mt-2 min-h-5 text-[11px] leading-relaxed text-fog">{product.notes.slice(0, 3).map((n) => tx(n.name, n.nameAr, locale)).join(" · ")}</p>
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <button type="button" disabled={!variant} className="atelier-button border border-ink/25 text-ink hover:border-ink disabled:cursor-default disabled:opacity-40" onClick={() => { if (!variant) return; add({ productSlug: product.slug, variantId: variant.id, qty: 1 }); router.push("/checkout"); }}>{t("buy")}<ArrowRight className="size-3.5 rtl:rotate-180" /></button>
-                <button type="button" disabled={!variant} className="atelier-button bg-ink text-cream hover:bg-espresso disabled:cursor-default disabled:opacity-40" onClick={(e) => {
-                  if (!variant) return;
-                  add({ productSlug: product.slug, variantId: variant.id, qty: 1 });
+                <button type="button" disabled={!available} className="atelier-button border border-ink/25 text-ink hover:border-ink disabled:cursor-default disabled:opacity-40" onClick={() => { if (!available) return; add({ productSlug: product.slug, variantId: variant?.id, qty: 1 }); router.push("/checkout"); }}>{t("buy")}<ArrowRight className="size-3.5 rtl:rotate-180" /></button>
+                <button type="button" disabled={!available} className="atelier-button bg-ink text-cream hover:bg-espresso disabled:cursor-default disabled:opacity-40" onClick={(e) => {
+                  if (!available) return;
+                  add({ productSlug: product.slug, variantId: variant?.id, qty: 1 });
                   if (product.images[0]) flyToBag(e.currentTarget, product.images[0]);
                   setAdded(product.slug);
                   setTimeout(() => setAdded(null), 1600);
-                }}>{added === product.slug ? <Check className="size-3.5" /> : <ShoppingBag className="size-3.5" />}{!variant ? t("soldOut") : added === product.slug ? t("added") : t("add")}</button>
+                }}>{added === product.slug ? <Check className="size-3.5" /> : <ShoppingBag className="size-3.5" />}{!available ? t("soldOut") : added === product.slug ? t("added") : t("add")}</button>
               </div>
             </div> : <div className="flex aspect-square flex-col items-center justify-center border border-ink/10 px-8 text-center">
               <NoteGlyph className="mb-6 size-24" />

@@ -101,14 +101,14 @@ export default async function ProductsPage(props: {
     out_of_stock?: boolean;
     demand_score?: number;
     auto_best_seller?: boolean;
-    variants?: {stock:number;is_active?:boolean}[];
+    variants?: {stock:number|null;is_active?:boolean}[];
   };
   let rows = ((prods as Row[] | null) ?? []).map((p) => ({
     ...p,
     images: p.images ?? [],
     is_active: p.is_active ?? true,
   }));
-  const outOfStock=(p:Row)=>p.out_of_stock || !(p.variants??[]).some(v=>v.is_active!==false && v.stock>0);
+  const outOfStock=(p:Row)=>p.out_of_stock || ((p.variants??[]).length>0 && !(p.variants??[]).some(v=>v.is_active!==false && (v.stock==null || v.stock>0)));
   const outOfStockCount=rows.filter(outOfStock).length;
   // Console default: maison rank (manual weight → sales lift → newest).
   rows = [...rows].sort(

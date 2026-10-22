@@ -573,10 +573,10 @@ export default async function ProductDetail(props: {
                   />
                 </label>
                 <label className="block">
-                  Starting price AED · edit under variants
+                  Price AED · option prices are managed under variants
                   <input
                     name="price"
-                    readOnly
+                    readOnly={!!variants?.some(v=>v.is_active!==false)}
                     type="number"
                     step="0.01"
                     defaultValue={p.price}

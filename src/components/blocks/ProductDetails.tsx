@@ -140,7 +140,7 @@ export function ProductInfo({
   const {variant,select:setVariantId}=useProductVariant(product);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const stock = product.outOfStock ? 0 : (variant?.stock ?? 0);
+  const stock = product.outOfStock ? 0 : (variant?.stock ?? Infinity);
   const maxQty = Math.max(1, Math.min(stock, 20));
   // Always clamped at the point of use — no settle effects needed.
   const safeQty = Math.min(Math.max(1, qty), maxQty);
@@ -264,7 +264,7 @@ export function ProductInfo({
             Maison Misk Al Ghazaal · {product.categorySlugs[0]} · SKU{" "}
             {variant?.sku ?? product.slug}
           </p>
-          <div className="mt-4">
+          {Number.isFinite(stock) && <div className="mt-4">
             <div className="flex justify-between text-[11px] font-semibold uppercase tracking-[0.16em]">
               <span className="text-[#9c2b2e]">{stock>0?t("sellingFast"):(locale==="ar"?"نفد المخزون":"Out of stock")}</span>
               <span className="text-fog">{stock} {t("left")}</span>
@@ -275,7 +275,7 @@ export function ProductInfo({
                 style={{ width: `${Math.min(100, stock * 4)}%` }}
               />
             </div>
-          </div>
+          </div>}
         </div>
       ) : (
         <div className="mt-8">

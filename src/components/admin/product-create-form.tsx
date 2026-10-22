@@ -199,12 +199,12 @@ export function ProductCreateForm({
               />
             </label>
             <label className="block">
-              Stock
+              Stock (blank = unlimited)
               <input
                 name="v_stock"
                 type="number"
                 min={0}
-                defaultValue={25}
+                placeholder="Unlimited"
                 className={field}
               />
             </label>
