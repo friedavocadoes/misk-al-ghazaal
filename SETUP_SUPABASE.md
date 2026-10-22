@@ -178,3 +178,7 @@ low stock) — no Mixpanel/GA required at this volume.
 ### Illustrated fragrance notes
 
 The notes editor at `/admin/notes` accepts transparent PNG, WebP or AVIF drawings (2 MB maximum) through the existing public `products` bucket and super-admin Storage policies. Upload, preview, then **Save note** to publish. Files live under `note-glyphs/`; original transparency and colors are retained. No additional schema is required beyond `supabase/migration_add_glyphs.sql` (`notes.glyph` text column). Old icon keys, empty values and failed image loads use the local `/notes/essence.svg` default. Assign the note to a product's top, heart or base tier in the product editor; this drives both the homepage matches and the product composition display.
+
+### First-party analytics
+
+Run `supabase/migration_analytics.sql`, then open Admin → Analytics. See [ANALYTICS_SETUP.md](ANALYTICS_SETUP.md) for dashboard access, cookie/event behavior, verified purchase tracking, customer Excel CSV exports, metric definitions and verification.

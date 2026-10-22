@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { recordPurchase } from "@/lib/analytics/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
@@ -129,6 +130,7 @@ export async function POST(req: Request) {
       .single();
     if (oErr || !order) throw oErr ?? new Error("order insert failed");
     const orderId = (order as { id: string }).id;
+    after(() => recordPurchase(req,orderId,quote.total,priced.map(l=>({product_id:l.slug,product_name:l.title,price:l.unit,quantity:l.qty})),ownerId));
     const {data:sampleRows}=body.sample_ids?.length ? await admin.from("order_items").select("title,qty,unit_price").eq("order_id",orderId).eq("product_slug","sample") : {data:[]};
     const sampleLines=(sampleRows||[]).map(s=>({title:s.title,qty:s.qty,unit:0,slug:"sample"}));
 

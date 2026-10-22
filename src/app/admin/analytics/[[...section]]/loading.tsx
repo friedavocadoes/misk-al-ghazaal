@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="mx-auto max-w-7xl p-6" role="status"><div className="h-12 w-64 animate-pulse rounded bg-sand"/><div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">{Array.from({length:5},(_,i)=><div key={i} className="h-32 animate-pulse rounded-xl bg-sand"/>)}</div><span className="sr-only">Loading analytics</span></div>;}

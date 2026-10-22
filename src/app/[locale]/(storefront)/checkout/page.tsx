@@ -1,4 +1,5 @@
 "use client";
+import { markPurchase } from "@/lib/analytics/client";
 import {CartStockNotice} from "@/components/blocks/CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
 
@@ -310,6 +311,7 @@ export default function CheckoutPage() {
   };
 
   const placeOrder = async () => {
+    window.dispatchEvent(new Event("analytics-checkout-attempt"));
     setPlacing(true);
     setOrderError("");
     // Structured delivery wins; legacy manual fields are the fallback
@@ -355,6 +357,7 @@ export default function CheckoutPage() {
       } catch {
         /* ignore */
       }
+      markPurchase(j.order_no);
       clear();
     } else {
       setOrderError(friendlyError(j?.error));

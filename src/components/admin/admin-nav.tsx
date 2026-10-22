@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/lib/admin-auth";
+import { LiveAnalytics } from "./analytics/LiveAnalytics";
 import { SignOutButton } from "./sign-out-button";
 
 interface NavItem {
@@ -19,6 +20,14 @@ interface NavGroup {
 }
 
 const GROUPS: NavGroup[] = [
+  {label:"Analytics",items:[
+    {href:"/admin/analytics",label:"Overview & conversion"},
+    {href:"/admin/analytics/traffic",label:"Traffic & bot detection"},
+    {href:"/admin/analytics/products",label:"Product interest"},
+    {href:"/admin/analytics/acquisition",label:"Sources & campaigns"},
+    {href:"/admin/analytics/feedback",label:"Why no buy?"},
+    {href:"/admin/analytics/customers",label:"Customer data & export"},
+  ]},
   {
     label: "Content & discoverability",
     items: [
@@ -79,7 +88,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           ...GROUPS,
         ]
       : role === "content_editor"
-        ? GROUPS.filter((g) => g.label === "Content & discoverability")
+        ? GROUPS.filter((g) => g.label === "Content & discoverability" || g.label === "Analytics").map(g=>({...g,items:g.items.filter(i=>i.href!=="/admin/analytics/customers")}))
         : [
             {
               label: "Operations",
@@ -114,6 +123,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
           <span className="min-w-0 max-w-40 text-xs"><span className="block truncate" title={email}>{email}</span><span className="text-fog">{role.replaceAll("_"," ")}</span></span><SignOutButton />
         </div>
       </header>
+      {(role === "super_admin" || role === "content_editor") && <LiveAnalytics/>}
       <dialog
         ref={drawer}
         className="fixed inset-y-0 start-0 m-0 h-dvh max-h-none w-80 max-w-[90vw] border-e border-ink/10 bg-cream p-0 text-ink backdrop:bg-black/35"

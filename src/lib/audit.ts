@@ -10,6 +10,7 @@ import type { AdminSession } from "./admin-auth";
 // ---------------------------------------------------------------------------
 
 export const AUDIT_CATEGORIES = [
+  "analytics",
   "products",
   "orders",
   "banners",

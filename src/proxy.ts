@@ -1,3 +1,4 @@
+import { analyticsCookies } from "./lib/analytics/proxy";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import createMiddleware from "next-intl/middleware";
@@ -36,7 +37,7 @@ export default async function proxy(req: NextRequest) {
   // Merge refreshed Supabase cookies onto the response we return.
   const supabaseRes = await updateSession(req);
   for (const c of supabaseRes.cookies.getAll()) intlRes.cookies.set(c);
-  return intlRes;
+  return analyticsCookies(req, intlRes);
 }
 
 export const config = {

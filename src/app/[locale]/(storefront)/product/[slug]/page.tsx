@@ -1,3 +1,4 @@
+import { ProductView } from "@/components/analytics/ProductView";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -83,7 +84,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
         )}
       />
       <PromoStrip locale={locale} />
-      <div className="pdp-page mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-10">
+      <ProductView slug={product.slug} title={product.title} price={product.price}/><div className="pdp-page mx-auto max-w-7xl px-5 py-6 md:px-8 md:py-10">
       <nav aria-label="Breadcrumb" className="mb-7 flex flex-wrap items-center gap-y-2 text-[10px] uppercase tracking-[0.12em] text-fog">
         <Link href="/" className="hover:text-gold">{t("home")}</Link>
         <span className="mx-2">/</span>

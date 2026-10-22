@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
-    .select("slug,title,title_ar,price,images")
+    .select("slug,title,title_ar,price,images,variants(id,price)")
     .is("deleted_at", null)
     .in("slug", slugs);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

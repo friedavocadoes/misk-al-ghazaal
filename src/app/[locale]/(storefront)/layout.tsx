@@ -1,3 +1,4 @@
+import { CartAbandonmentSurvey } from "@/components/analytics/CartAbandonmentSurvey";
 import {ReviewInvitation} from "@/components/blocks/ReviewInvitation";
 import { StorefrontToasts } from "@/components/blocks/StorefrontToasts";
 import { getNavigationMenu } from "@/lib/navigation-menu";
@@ -30,7 +31,7 @@ export default async function StorefrontLayout(
             `#page-content` reserves the header's live height as padding-top
             (synced pre-paint + RO inside SiteHeader) so geometry matches
             in-flow layout exactly, morph included. */}
-        <StorefrontToasts /><ReviewInvitation/>
+        <CartAbandonmentSurvey/><StorefrontToasts /><ReviewInvitation/>
         <RouteProgress />
         <SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />
         <div id="page-content">
