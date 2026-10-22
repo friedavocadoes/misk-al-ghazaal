@@ -10,6 +10,7 @@ const KEY = "misk-cart-v1";
 export type CartLine = CartItem;
 
 interface CartCtx {
+  hydrated: boolean;
   lines: CartLine[];
   count: number;
   add: (line: CartLine) => void;
@@ -69,7 +70,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const analyticsLines = useRef<CartLine[]>([]);
   useEffect(() => { analyticsLines.current = lines; }, [lines]);
-  const cartSignal = (empty: boolean) => { try { window.dispatchEvent(new CustomEvent("analytics-cart-change",{detail:{empty}})); } catch {} };
+  const cartSignal = (empty: boolean, type = "remove", slug?:string) => { try { window.dispatchEvent(new CustomEvent("analytics-cart-change",{detail:{empty,type,slug}})); } catch {} };
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [readyUser, setReadyUser] = useState<string | null>(null);
 
@@ -161,7 +162,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const add = useCallback((line: CartLine) => {
     const before=analyticsLines.current.find(l=>same(l,line.productSlug,line.variantId))?.qty ?? 0;
     const delta=Math.min(20,before+line.qty)-before;
-    if (delta>0 && (before>0 || analyticsLines.current.length<50)) trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});
+    if (delta>0 && (before>0 || analyticsLines.current.length<50)) {cartSignal(false,"add",line.productSlug);trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});}
     setLines((prev) => {
       const i = prev.findIndex((l) => same(l, line.productSlug, line.variantId));
       if (i >= 0) {
@@ -175,7 +176,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const remove = useCallback((slug: string, variantId?: string) => {
     const old=analyticsLines.current.find(l=>same(l,slug,variantId));
-    if(old){trackEvent("remove_from_cart",{product_id:slug,quantity:old.qty,variant_id:variantId});cartSignal(analyticsLines.current.length===1);}
+    if(old){trackEvent("remove_from_cart",{product_id:slug,quantity:old.qty,variant_id:variantId});cartSignal(analyticsLines.current.length===1,"remove",slug);}
     setLines((prev) => prev.filter((l) => !same(l, slug, variantId)));
   }, []);
 
@@ -183,7 +184,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const old=analyticsLines.current.find(l=>same(l,slug,variantId));
     const delta=Math.min(20,Math.max(0,qty))-(old?.qty ?? 0);
     if(old && delta) trackEvent(delta>0?"add_to_cart":"remove_from_cart",{product_id:slug,quantity:Math.abs(delta),variant_id:variantId});
-    if(old && qty<=0)cartSignal(analyticsLines.current.length===1);
+    if(old && qty<=0)cartSignal(analyticsLines.current.length===1,"remove",slug);
     setLines((prev) =>
       qty <= 0
         ? prev.filter((l) => !same(l, slug, variantId))
@@ -203,8 +204,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const count = useMemo(() => lines.reduce((n, l) => n + l.qty, 0), [lines]);
   const value = useMemo(
-    () => ({ lines, count, add, remove, setQty, clear }),
-    [lines, count, add, remove, setQty, clear],
+    () => ({ lines, count, add, remove, setQty, clear, hydrated }),
+    [lines, count, add, remove, setQty, clear, hydrated],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

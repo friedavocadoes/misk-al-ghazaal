@@ -1,10 +1,10 @@
-export const EVENT_TYPES = ["page_view", "product_view", "add_to_cart", "remove_from_cart", "checkout_started", "purchase"] as const;
+export const EVENT_TYPES = ["page_view", "product_view", "add_to_cart", "remove_from_cart", "checkout_started", "purchase", "survey_opportunity", "survey_shown", "survey_dismissed"] as const;
 export type AnalyticsEventType = typeof EVENT_TYPES[number];
 export type Attribution = Partial<Record<"source" | "medium" | "campaign" | "content" | "term" | "ref" | "landing_page" | "referrer", string>>;
 export interface AnalyticsItem { product_id: string; product_name: string; price: number; quantity: number }
 export interface EventInput {
   product_id?: string; product_name?: string; product_price?: number; quantity?: number;
-  order_id?: string; revenue?: number; items?: AnalyticsItem[]; variant_id?: string;
+  order_id?: string; revenue?: number; items?: AnalyticsItem[]; variant_id?: string; survey_type?:string; trigger?:string;
 }
 export const uuid = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 export function botReason(ua: string): string | null {

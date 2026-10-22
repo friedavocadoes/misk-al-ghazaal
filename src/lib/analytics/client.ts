@@ -4,6 +4,8 @@ import { attributionCookie, attributionFromUrl, uuid, type AnalyticsEventType, t
 let lastRoute = "";
 let recentEvent = "";
 let recentAt = 0;
+let viewedProduct: EventInput | null = null;
+export function lastViewedProduct(){ return viewedProduct; }
 export const cookieValue = (name: string) => {
   try { return document.cookie.split("; ").find(s=>s.startsWith(name+"="))?.slice(name.length+1) ?? ""; } catch { return ""; }
 };
@@ -42,6 +44,7 @@ export function trackRoute(path: string) {
   if (/^\/(?:ar\/)?checkout\/?$/.test(path.split("?")[0])) trackEvent("checkout_started");
 }
 export function trackProduct(data: EventInput) {
+  viewedProduct=data;
   const key = `${cookieValue("_as_id")}:${location.pathname}:${data.product_id}`;
   if (key === recentEvent && Date.now()-recentAt<1000) return;
   recentEvent=key; recentAt=Date.now(); trackEvent("product_view",data);

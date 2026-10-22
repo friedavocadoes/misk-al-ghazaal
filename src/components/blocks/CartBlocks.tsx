@@ -1,5 +1,5 @@
 "use client";
-import {CartStockNotice} from "./CartStockNotice";
+import {CartStockNotice, StockCheckoutGuard} from "./CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
 
 import {useEffect,useState} from "react";
@@ -32,8 +32,11 @@ export function BagView() {
   const [serverQuote,setServerQuote]=useState<{key:string;total:number;stockIssues:CartStockIssue[]}|null>(null);
   const serverSubtotal=serverQuote?.key===cartKey?serverQuote.total:null;
   useEffect(()=>{const controller=new AbortController();if(lines.length)fetch("/api/quote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lines:lines.map(l=>({slug:l.productSlug,variantId:l.variantId,qty:l.qty}))}),signal:controller.signal}).then(r=>r.json()).then(d=>setServerQuote({key:cartKey,total:d.quote?.subtotal??0,stockIssues:d.stockIssues||[]})).catch(()=>{});return()=>controller.abort();},[lines,cartKey]);
-  const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
-  const shipping = subtotal >= FREE_SHIP_THRESHOLD || subtotal === 0 ? 0 : FLAT_SHIPPING;
+  const subtotal = rows.reduce((s, l) => s + (l.product?.variants?.find(v=>v.id===l.variantId)?.price ?? l.product?.price ?? 0) * l.qty, 0);
+  const displayedSubtotal=serverSubtotal??subtotal;
+  const shipping = displayedSubtotal >= FREE_SHIP_THRESHOLD || displayedSubtotal === 0 ? 0 : FLAT_SHIPPING;
+  const stockIssues=serverQuote?.stockIssues??[];
+  const quoteLoading=serverSubtotal===null;
 
   if (rows.length === 0) {
     return (
@@ -93,7 +96,7 @@ export function BagView() {
                 </button>
               </div>
               <p className="mt-auto pt-2 font-display text-lg text-ink">
-                {formatAED((l.product?.price ?? 0) * l.qty)}
+                {formatAED((l.product?.variants?.find(v=>v.id===l.variantId)?.price ?? l.product?.price ?? 0) * l.qty)}
               </p>
             </div>
           </li>
@@ -102,10 +105,10 @@ export function BagView() {
 
       <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24">
         <h2 className="font-display text-xl text-ink">{t("summary")}</h2>
-        <CartStockNotice issues={serverQuote?.key===cartKey?serverQuote.stockIssues:[]}/><SamplePicker subtotal={serverSubtotal??0}/><PdpOffers slug="" price={serverSubtotal??0} coupons={[]} locale={locale}/><dl className="mt-5 space-y-2.5 text-sm">
+        <CartStockNotice issues={stockIssues} loading={quoteLoading}/><SamplePicker subtotal={serverSubtotal??0}/><PdpOffers slug="" price={serverSubtotal??0} coupons={[]} locale={locale}/><dl className="mt-5 space-y-2.5 text-sm">
           <div className="flex justify-between">
             <dt className="text-fog">{t("subtotal")}</dt>
-            <dd className="font-medium text-ink">{formatAED(subtotal)}</dd>
+            <dd className="font-medium text-ink">{formatAED(displayedSubtotal)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-fog">{t("shipping")}</dt>
@@ -117,12 +120,12 @@ export function BagView() {
             <dt className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink">
               {t("total")}
             </dt>
-            <dd className="font-display text-xl text-ink">{formatAED(subtotal + shipping)}</dd>
+            <dd className="font-display text-xl text-ink">{formatAED(displayedSubtotal + shipping)}</dd>
           </div>
         </dl>
-        <Button asChild className="mt-6 w-full" size="lg">
-          <Link href="/checkout">{t("checkout")}</Link>
-        </Button>
+        <div className="mt-6"><StockCheckoutGuard issues={stockIssues}>
+          {stockIssues.length ? <Button className="w-full" size="lg" disabled>{t("checkout")}</Button> : <Button asChild className="w-full" size="lg"><Link href="/checkout">{t("checkout")}</Link></Button>}
+        </StockCheckoutGuard></div>
         <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">
           {t("checkoutNote")}
         </p>

@@ -6,6 +6,9 @@ export interface CountMetric { reason:string; count:number }
 export interface Report {
  kpis:Kpis; daily:Daily[]; products:ProductMetric[]; acquisition:Acquisition[];
  funnel:{name:string;value:number}[]; bots:CountMetric[];surveys:CountMetric[];
+ survey_activity?:{opportunities:number;shown:number;dismissed:number;responses:number;responded_shown:number};
+ survey_contexts?:{survey_type:string;trigger:string;count:number}[];
+ responses?:{id:string;survey_type:string;trigger:string;product_id:string|null;product_name:string|null;reason:string;custom_comment:string|null;cart_items:{product_name:string;quantity:number}[];cart_total:number;created_at:string}[];
  comments:{reason:string;custom_comment:string;cart_items:{product_name:string;quantity:number}[];cart_total:number;created_at:string}[];
 }
 export interface DashboardData {current:Report;previous:Report|null}
@@ -14,7 +17,7 @@ export interface CustomerData {rows:CustomerRow[];total:number}
 export interface LiveData {live:number;visitors:number;orders:number;conversion:number}
 export const ANALYTICS_SECTIONS = ["overview","traffic","products","acquisition","feedback","customers"] as const;
 export type AnalyticsSection = typeof ANALYTICS_SECTIONS[number];
-export const REASON_LABELS:Record<string,string> = {shipping_cost:"Shipping / extra fees",just_browsing:"Browsing / comparing",price_too_high:"Price",payment_issue:"Payment method",delivery_time:"Delivery time",other:"Something else"};
+export const REASON_LABELS:Record<string,string> = {shipping_cost:"Shipping / extra fees",just_browsing:"Browsing / comparing",price_too_high:"Price",payment_issue:"Payment method",delivery_time:"Delivery time",other:"Something else",scent_unsure:"Unsure about the scent",need_more_details:"Needs product information",stock_issue:"Availability / quantity",not_ready:"Not ready yet"};
 export function analyticsRange(params:URLSearchParams) {
  const start=params.get("start"),end=params.get("end");
  if (!start || !end || !/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) throw new Error("Choose a valid start and end date.");

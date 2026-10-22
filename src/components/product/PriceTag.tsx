@@ -23,10 +23,11 @@ export function PriceTag({
 
   return (
     <span
+      data-lens-sharp
       className={cn(
         "inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5",
         !available && "opacity-70",
-        className
+        className,
       )}
     >
       {onSale ? (
@@ -37,7 +38,7 @@ export function PriceTag({
               "font-medium text-[#9c2b2e]",
               size === "sm" && "text-sm",
               size === "md" && "text-base",
-              size === "lg" && "text-2xl"
+              size === "lg" && "text-2xl",
             )}
           >
             {formatAED(price)}
@@ -54,7 +55,7 @@ export function PriceTag({
             "font-medium text-ink",
             size === "sm" && "text-sm",
             size === "md" && "text-base",
-            size === "lg" && "text-2xl"
+            size === "lg" && "text-2xl",
           )}
         >
           {formatAED(price)}

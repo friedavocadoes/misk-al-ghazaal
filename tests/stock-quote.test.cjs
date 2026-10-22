@@ -1,3 +1,4 @@
+function loadSavings(){const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/lib/coupon-savings.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{exports});return exports;}
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -41,7 +42,7 @@ function pricing(stock = 0) {
       exports,
       Error,
       require: (n) =>
-        n === "./supabase/service"
+        n === "./coupon-savings" ? loadSavings() : n === "./supabase/service"
           ? { createAdminClient: () => db }
           : { FREE_SHIP_THRESHOLD: 200, FLAT_SHIPPING: 26 },
     },

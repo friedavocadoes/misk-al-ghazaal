@@ -16,7 +16,7 @@ create index if not exists analytics_sessions_created on public.analytics_sessio
 create index if not exists analytics_sessions_seen on public.analytics_sessions(last_seen_at);
 create table if not exists public.analytics_events (
  id uuid primary key default gen_random_uuid(), session_id uuid not null references public.analytics_sessions(id) on delete cascade,
- visitor_id text not null, event_type text not null check(event_type in ('page_view','product_view','add_to_cart','remove_from_cart','checkout_started','purchase')),
+ visitor_id text not null, event_type text not null check(event_type in ('page_view','product_view','add_to_cart','remove_from_cart','checkout_started','purchase','survey_opportunity','survey_shown','survey_dismissed')),
  page_path text not null, product_id text, product_name text, product_price numeric, quantity integer not null default 1,
  order_id text, revenue numeric, metadata jsonb not null default '{}', created_at timestamptz not null default now()
 );
@@ -28,10 +28,20 @@ create index if not exists analytics_events_product on public.analytics_events(p
 create unique index if not exists analytics_purchase_once on public.analytics_events(order_id) where event_type='purchase';
 create table if not exists public.analytics_abandonment_surveys (
  id uuid primary key default gen_random_uuid(), session_id uuid not null unique references public.analytics_sessions(id) on delete cascade,
- reason text not null check(reason in ('shipping_cost','just_browsing','price_too_high','payment_issue','delivery_time','other')),
+ reason text not null check(reason in ('shipping_cost','just_browsing','price_too_high','payment_issue','delivery_time','other','scent_unsure','need_more_details','stock_issue','not_ready')),
+ survey_type text not null default 'cart', trigger text not null default 'unknown', product_id text, product_name text,
  custom_comment text check(length(custom_comment)<=500), cart_items jsonb not null default '[]', cart_total numeric not null default 0,
  created_at timestamptz not null default now()
 );
+alter table public.analytics_abandonment_surveys
+ add column if not exists survey_type text not null default 'cart',
+ add column if not exists trigger text not null default 'unknown',
+ add column if not exists product_id text,
+ add column if not exists product_name text;
+alter table public.analytics_abandonment_surveys drop constraint if exists analytics_abandonment_surveys_reason_check;
+alter table public.analytics_abandonment_surveys add constraint analytics_abandonment_surveys_reason_check check(reason in ('shipping_cost','just_browsing','price_too_high','payment_issue','delivery_time','other','scent_unsure','need_more_details','stock_issue','not_ready'));
+alter table public.analytics_events drop constraint if exists analytics_events_event_type_check;
+alter table public.analytics_events add constraint analytics_events_event_type_check check(event_type in ('page_view','product_view','add_to_cart','remove_from_cart','checkout_started','purchase','survey_opportunity','survey_shown','survey_dismissed'));
 create index if not exists analytics_surveys_created on public.analytics_abandonment_surveys(created_at);
 alter table public.analytics_sessions enable row level security;
 alter table public.analytics_events enable row level security;
@@ -87,6 +97,9 @@ select jsonb_build_object(
  'funnel',(select jsonb_build_array(jsonb_build_object('name','Viewers','value',count(*)),jsonb_build_object('name','Product viewers','value',count(*) filter(where viewed)),jsonb_build_object('name','Added to cart','value',count(*) filter(where added)),jsonb_build_object('name','Started checkout','value',count(*) filter(where checkout)),jsonb_build_object('name','Purchased','value',count(*) filter(where bought))) from flags),
  'bots',coalesce((select jsonb_agg(b) from (select coalesce(bot_reason,'unknown') as reason,count(*) as count from all_s where is_bot group by 1 order by count(*) desc) b),'[]'),
  'surveys',coalesce((select jsonb_agg(b) from (select reason,count(*) as count from surveys group by reason order by count(*) desc) b),'[]'),
+ 'survey_activity',jsonb_build_object('opportunities',(select count(*) from e where event_type='survey_opportunity'),'shown',(select count(*) from e where event_type='survey_shown'),'dismissed',(select count(*) from e where event_type='survey_dismissed'),'responses',(select count(*) from surveys),'responded_shown',(select count(*) from surveys where exists(select 1 from e shown where shown.session_id=surveys.session_id and shown.event_type='survey_shown'))),
+ 'survey_contexts',coalesce((select jsonb_agg(b) from (select survey_type,trigger,count(*) as count from surveys group by 1,2 order by count(*) desc) b),'[]'),
+ 'responses',coalesce((select jsonb_agg(b) from (select id,survey_type,trigger,product_id,product_name,reason,custom_comment,cart_items,cart_total,created_at from surveys order by created_at desc limit 100) b),'[]'),
  'comments',coalesce((select jsonb_agg(b) from (select reason,custom_comment,cart_items,cart_total,created_at from surveys where nullif(custom_comment,'') is not null order by created_at desc limit 30) b),'[]')
 );
 $$;

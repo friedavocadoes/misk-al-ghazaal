@@ -63,3 +63,13 @@ npm run build
 - Collection is best effort: blocked beacons, browser termination, or a failed background database write may lose events. Purchase deduplication prevents duplicates but is not a durable retry queue. This is store analytics rather than an accounting ledger.
 - Analytics tables contain history until explicitly removed. To implement a retention policy, delete old `analytics_sessions` after your chosen interval; event/survey rows cascade. No automatic deletion policy is enabled by this migration.
 - Before launch, check collection and a real order in the deployed environment after running the migration. Local verification does not place a live order or change Supabase data.
+
+## Contextual feedback update (2026-10-22)
+
+Existing installations: run `supabase/migration_survey_experience.sql` after the original analytics migration. Fresh installations can run the updated `migration_analytics.sql` directly.
+
+Feedback now distinguishes returning to an unfinished bag (after at least 15 seconds away), leaving checkout, removing a scent, desktop exit intent, mobile idle (45 seconds), and product interest without adding it (120 foreground seconds). Context-specific options include uncertainty about the scent, missing details, availability, fees and payment preferences. Return/removal/checkout navigation prompts wait 6–7 seconds; they do not interrupt the click itself.
+
+One question is shown per analytics session, with a cross-visit cooldown: 30 minutes after showing, two hours after dismissal, twelve hours after an answer or purchase. Purchase/checkout submission and open dialogs suppress prompts. Use a fresh browser test context when validating separate triggers, rather than interpreting the deliberate cooldown as a failure. Closing/leaving the site records a bag snapshot for a later return; no prompt tries to block unload.
+
+Admin → Analytics → Why no buy? now shows opportunity/shown/dismissed/answer counts, response rate for prompts in the chosen range, responses grouped by journey, and a searchable/filterable feed of the latest 100 answers, including answers with no comment. Aggregates run in PostgreSQL. Feedback only shows a success acknowledgement after the server confirms storage; failed saves expose retry.

@@ -16,6 +16,8 @@ async function createCoupon(formData: FormData) {
   const rawLimit = String(formData.get("usage_limit") ?? "").trim();
   const usageLimit = rawLimit ? Number(rawLimit) : null;
   if (usageLimit !== null && (!Number.isSafeInteger(usageLimit) || usageLimit < 1)) throw new Error("Uses per account must be a positive whole number, or blank for unlimited.");
+  const amount = Number(formData.get("amount") || 0);
+  if (!Number.isFinite(amount) || amount < 0 || (formData.get("kind") === "percent" && amount > 100)) throw new Error("Percentage discounts must be between 0 and 100; other amounts must be positive.");
   const supabase = await createClient();
   const code = String(formData.get("code")).trim().toUpperCase();
   const kind = String(formData.get("kind"));

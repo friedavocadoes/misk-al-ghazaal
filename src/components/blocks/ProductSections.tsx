@@ -211,7 +211,7 @@ export async function LineupRow({ product, locale }: { product: Product; locale:
       <ProductCarousel
         title={tx(product.lineupTitle ?? "", product.lineupTitleAr, locale) || t("lineupTitle")}
         products={siblings}
-        viewAllHref={`/collection/${product.categorySlugs[0] ?? "best-sellers"}`}
+        viewAllHref={product.lineupSlug ? `/collection/all?lineup=${encodeURIComponent(product.lineupSlug)}` : undefined}
       />
     </div>
   );

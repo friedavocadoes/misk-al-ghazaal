@@ -1,6 +1,6 @@
 "use client";
 import { markPurchase } from "@/lib/analytics/client";
-import {CartStockNotice} from "@/components/blocks/CartStockNotice";
+import {CartStockNotice, StockCheckoutGuard} from "@/components/blocks/CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -512,7 +512,7 @@ export default function CheckoutPage() {
               offers.find(o => o.code === appliedCoupon) ? <CouponTicket
                 coupon={offers.find(o => o.code === appliedCoupon)!} locale={locale} selected
                 action={<span className="flex shrink-0 items-center gap-1">
-                  <span className="flex items-center gap-1 text-[11px] text-[#1e7a46]"><Check className="size-3.5"/>{quote && quote.discount > 0 ? `−${formatAED(quote.discount)}` : t("couponOk")}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-[#1e7a46]"><Check className="size-3.5"/>{quote && quote.discount > quote.referralDiscount ? `−${formatAED(Math.max(0,quote.discount-quote.referralDiscount))}` : t("couponOk")}</span>
                   <button type="button" onClick={removeCoupon} aria-label={t("couponRemove")} className="offer-reveal"><X size={14}/></button>
                 </span>}
               /> : (
@@ -529,7 +529,7 @@ export default function CheckoutPage() {
                   </span>
                   <span className="mt-0.5 block text-[12px] font-semibold uppercase tracking-[0.14em] text-[#1e7a46]">
                     {t("couponOk")}
-                    {quote && quote.discount > 0 ? ` · −${formatAED(quote.discount)}` : ""}
+                    {quote && quote.discount > quote.referralDiscount ? ` · −${formatAED(quote.discount-quote.referralDiscount)}` : ""}
                   </span>
                 </span>
                 <button
@@ -688,7 +688,7 @@ export default function CheckoutPage() {
                   <span className="flex-1 truncate text-ink">
                     {m ? m.title : l.productSlug} <span className="text-fog">× {l.qty}</span>
                   </span>
-                  <span className="text-espresso">{m ? formatAED(m.price * l.qty) : "…"}</span>
+                  <span className="text-espresso">{m ? formatAED((m.variants?.find(v=>v.id===l.variantId)?.price??m.price) * l.qty) : "…"}</span>
                 </li>
               );
             })}
@@ -698,12 +698,8 @@ export default function CheckoutPage() {
               <dt className="text-fog">Subtotal</dt>
               <dd className="font-medium text-ink">{quote ? formatAED(quote.subtotal) : "…"}</dd>
             </div>
-            {quote && quote.discount > 0 && (
-              <div className="flex justify-between text-[#1e7a46]">
-                <dt>{quote.referralDiscount > 0 && quote.discount > quote.referralDiscount ? t("discount") : quote.referralCode ? t("referralDiscount") : t("discount")}</dt>
-                <dd>−{formatAED(quote.discount)}</dd>
-              </div>
-            )}
+            {quote && quote.discount > quote.referralDiscount && <div className="flex justify-between text-[#1e7a46]"><dt>{t("discount")}{quote.couponCode ? ` · ${quote.couponCode}` : ""}</dt><dd>−{formatAED(quote.discount-quote.referralDiscount)}</dd></div>}
+            {quote && quote.referralDiscount > 0 && <div className="flex justify-between text-[#1e7a46]"><dt>{t("referralDiscount")}</dt><dd>−{formatAED(quote.referralDiscount)}</dd></div>}
             <div className="flex justify-between">
               <dt className="text-fog">Shipping</dt>
               <dd className="font-medium text-ink">{quote ? (quote.shipping === 0 ? "Complimentary" : formatAED(quote.shipping)) : "…"}</dd>
@@ -720,9 +716,9 @@ export default function CheckoutPage() {
             </div>
           </dl>
           {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <CartStockNotice issues={stockIssues}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<Button className="mt-6 w-full" size="lg" disabled={!valid || placing} onClick={placeOrder}>
+          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button className="w-full" size="lg" disabled={!valid || placing} onClick={placeOrder}>
             {placing ? t("placing") : t("placeOrder")}
-          </Button>
+          </Button></StockCheckoutGuard></div>
           <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">{t("codNote")}</p>
         </aside>
       </div>

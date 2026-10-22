@@ -1,5 +1,6 @@
 "use client";
 
+import { couponSavings, money } from "@/lib/coupon-savings";
 import {createClient} from "@/lib/supabase/client";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
@@ -24,11 +25,13 @@ function readStoredCoupon(): string {
     Applied codes ride to checkout via localStorage. */
 export function PdpOffers({
   price,
+  quantity=1,
   coupons: initialCoupons,
   locale,
 }: {
   slug: string;
   price: number;
+  quantity?: number;
   coupons: Coupon[];
   locale: Locale;
 }) {
@@ -48,7 +51,7 @@ export function PdpOffers({
   const [session, setSession] = useState<string | null>(null);
   const applied = session ?? stored;
   const coupon = coupons.find(c => c.code === applied);
-  const saving = coupon && price >= coupon.minSubtotal ? Math.min(price,coupon.maxDiscount ?? Infinity,coupon.kind === "percent" ? Math.round(price*coupon.amount/100) : coupon.kind === "fixed" ? coupon.amount : 0) : null;
+  const saving = coupon && price >= coupon.minSubtotal ? couponSavings(price,coupon) : null;
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [shakeKey, setShakeKey] = useState(0);
@@ -106,7 +109,7 @@ export function PdpOffers({
                 <span className="flex shrink-0 items-center gap-1.5">
                   <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#1e7a46]">
                     <Check className="size-3.5" />
-                    {saving != null ? `−${saving.toFixed(0)}` : t("appliedLabel")}
+                    {saving != null ? `−${saving.toFixed(2)}` : t("appliedLabel")}
                   </span>
                   <button
                     type="button"
@@ -132,7 +135,7 @@ export function PdpOffers({
           );
         })}
       </ul>
-      {coupon && saving != null && saving > 0 && <div className="offer-result" role="status"><span>{locale === "ar" ? "السعر المتوقع مع العرض" : "Your price with this offer"}</span><strong>AED {(price - saving).toFixed(2)}</strong></div>}
+      {coupon && saving != null && saving > 0 && <div className="offer-result" role="status"><span>{locale === "ar" ? "السعر المتوقع مع العرض" : quantity>1 ? `Your total for ${quantity} with this offer` : "Your price with this offer"}</span><strong>AED {money(price - saving).toFixed(2)}</strong></div>}
       {applied && <p className="mt-3 text-xs text-espresso">{locale === "ar" ? "سجّل الدخول لاسترداد العرض عند الدفع. يخضع للشروط." : "Savings preview. Sign in to redeem at checkout; eligibility and terms apply."}</p>}
       {error && (
         <p key={shakeKey} className="coupon-shake mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9c2b2e]">

@@ -5,6 +5,7 @@
 // visibility rules live here, never in RLS-dependent queries.
 // ---------------------------------------------------------------------------
 
+import { couponSavings, money } from "./coupon-savings";
 import { createAdminClient } from "./supabase/service";
 import { FLAT_SHIPPING, FREE_SHIP_THRESHOLD } from "./pricing-client";
 import type { Coupon, CouponKind, Quote } from "./types";
@@ -123,7 +124,7 @@ async function priceLines(
     priced.push({ ...l, unit, title });
     subtotal += unit * l.qty;
   }
-  return { priced, subtotal, stockIssues };
+  return { priced, subtotal:money(subtotal), stockIssues };
 }
 
 async function hasPriorOrder(
@@ -344,15 +345,7 @@ export async function quoteBag(input: {
     if (subtotal < c.minSubtotal) throw new Error("coupon:min");
     couponCode = c.code;
     couponKind = c.kind;
-    const cap = (n: number) =>
-      c.maxDiscount != null ? Math.min(n, c.maxDiscount) : n;
-    if (c.kind === "percent")
-      discount += Math.min(
-        subtotal,
-        cap(Math.round((subtotal * Number(c.amount)) / 100)),
-      );
-    else if (c.kind === "fixed")
-      discount += Math.min(subtotal, cap(Number(c.amount)));
+    if (c.kind === "percent" || c.kind === "fixed") discount += couponSavings(subtotal,c);
     else if (c.kind === "free_shipping") {
       shipping = 0;
       freeShipping = true;
@@ -368,15 +361,15 @@ export async function quoteBag(input: {
     const check = await checkReferral(ref, email, input.userId);
     if (!check.ok) throw new Error(`referral:${check.reason ?? "invalid"}`);
     referralCode = ref.toUpperCase();
-    const rawReferral = Math.round(
+    const rawReferral = money(
       (subtotal * Number(check.percent ?? 20)) / 100,
     );
-    referralDiscount = Math.min(rawReferral, Number(check.cap ?? 50));
-    discount += Math.min(subtotal - discount, referralDiscount);
+    referralDiscount = money(Math.min(rawReferral, Number(check.cap ?? 50), subtotal-discount));
+    discount += referralDiscount;
   }
 
-  discount = Math.min(discount, subtotal);
-  const total = Math.max(0, subtotal - discount + shipping);
+  discount = money(Math.min(discount, subtotal));
+  const total = money(Math.max(0, subtotal - discount + shipping));
   return {
     priced,
     stockIssues,

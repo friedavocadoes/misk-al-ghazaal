@@ -12,10 +12,11 @@ import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SurveyFeedback } from "./SurveyFeedback";
 import { useSuggest } from "@/components/search/use-suggest";
 import { formatAED } from "@/lib/utils";
 import { csvCell } from "@/lib/analytics/shared";
-import { ANALYTICS_SECTIONS, REASON_LABELS, type AnalyticsSection, type DashboardData, type CustomerData, type ProductMetric } from "@/lib/analytics/dashboard";
+import { ANALYTICS_SECTIONS, type AnalyticsSection, type DashboardData, type CustomerData, type ProductMetric } from "@/lib/analytics/dashboard";
 
 const chartLoading=()=> <div className="h-72 animate-pulse rounded-lg bg-sand/40"/>;
 const Timeline=dynamic(()=>import("./AnalyticsCharts").then(m=>m.TimelineChart),{ssr:false,loading:chartLoading});
@@ -105,7 +106,8 @@ export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection
     {!productRows.length&&<p className="py-10 text-center text-sm text-fog">No product events in this selection.</p>}<p className="mt-4 text-[10px] leading-5 text-fog">Up to 500 products. Product revenue is merchandise value before discounts and shipping. Drop-offs are sessions with a cart add in this period and no recorded purchase, including later purchases.</p>
    </Panel>}
    {section==="acquisition"&&<Panel title="Traffic sources & campaigns" action={<Select aria-label="Attribution model" value={attribution} onChange={e=>update({attribution:e.target.value})}><option value="first">First touch</option><option value="last">Last touch</option></Select>}><p className="mb-5 text-xs leading-6 text-fog">Revenue attribution is shown below. ROI needs campaign spend, which this store does not collect.</p><Table><TableHeader><TableRow>{["Source / medium / campaign","Referrer","Viewers","Cart adds","Customers","Conversion %","Revenue AED"].map(c=><TableHead key={c}>{c}</TableHead>)}</TableRow></TableHeader><TableBody>{report.acquisition.map((a,i)=><TableRow key={`${a.source}:${a.medium}:${a.campaign}:${a.referrer_domain}`} className={i===0&&a.customers>0?"bg-[#eaf0e9]":""}><TableCell><span className="block font-medium">{a.source} / {a.medium}</span><span className="mt-1 block text-fog">{a.campaign||"No campaign"}</span>{i===0&&a.customers>0&&<Badge variant="outline" className="mt-2">Top customer source</Badge>}</TableCell><TableCell>{a.referrer_domain}</TableCell>{[a.visitors,a.cart_adds,a.customers,a.conversion_rate,a.revenue].map((v,n)=><TableCell key={n}>{pretty(v)}</TableCell>)}</TableRow>)}</TableBody></Table>{!report.acquisition.length&&<p className="py-10 text-center text-sm text-fog">Sources appear as visits arrive.</p>}<p className="mt-4 text-[10px] text-fog">Up to 500 source groups. Viewers are distinct visitors; conversion uses sessions.</p></Panel>}
-   {section==="feedback"&&<div className="analytics-chart-grid"><Panel title="Why no buy?"><Survey report={report}/></Panel><Panel title="In their own words"><div className="max-h-[600px] space-y-4 overflow-y-auto">{report.comments.map((c,i)=><article key={`${c.created_at}:${i}`} className="rounded-xl border border-ink/10 p-4"><p className="text-xs leading-6">“{c.custom_comment}”</p><p className="mt-3 text-[10px] text-gold">{REASON_LABELS[c.reason]} · {formatAED(c.cart_total)}</p><p className="mt-2 text-[10px] text-fog">{c.cart_items.map(p=>`${p.product_name} × ${p.quantity}`).join(" · ")}</p><time className="mt-2 block text-[9px] text-fog">{new Date(c.created_at).toLocaleDateString("en-GB",{timeZone:"Asia/Dubai"})}</time></article>)}{!report.comments.length&&<p className="py-12 text-center text-sm text-fog">No written feedback yet.</p>}</div></Panel></div>}
+   {section==="feedback"&&<SurveyFeedback report={report}/>}
+   {section==="feedback"&&<Panel title="What held shoppers back?"><Survey report={report}/></Panel>}
    {!report.kpis.sessions&&<p role="status" className="mt-6 text-center text-sm text-fog">No tracked sessions for this period. Tracking starts after the migration is installed.</p>}
   </div>}
   {section==="customers"&&canExport&&<Panel title="Customer directory" action={<Button asChild size="sm" variant="outline"><a href={`/api/admin/analytics/export?${requestKey}`}><Download/>Export Excel CSV</a></Button>}>

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         product_name:typeof body.product_name === "string" ? body.product_name.slice(0,200) : null,
         product_price:typeof body.product_price === "number" && Number.isFinite(body.product_price) ? Math.max(0,Math.min(1000000,body.product_price)) : null,
         quantity:typeof body.quantity === "number" ? Math.min(20,Math.max(1,Math.floor(body.quantity))) : 1,
-        metadata:{variant_id:typeof body.variant_id === "string" ? body.variant_id.slice(0,100) : null},
+        metadata:{survey_type:typeof body.survey_type==="string"?body.survey_type.slice(0,30):null,trigger:typeof body.trigger==="string"?body.trigger.slice(0,40):null,variant_id:typeof body.variant_id === "string" ? body.variant_id.slice(0,100) : null},
       };
       after(async () => { try {
         const session = await analyticsSession(req,body.client_bot_detected === true,typeof body.active_seconds === "number" ? body.active_seconds : 0);
