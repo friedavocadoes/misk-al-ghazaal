@@ -1,4 +1,5 @@
 import "server-only";
+import { refreshDemandRanking } from "@/lib/demand-ranking";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
@@ -45,7 +46,8 @@ export async function readSmallBody(req: Request): Promise<Record<string, unknow
 }
 export async function recordPurchase(req: Request, orderId: string, revenue: number, items: AnalyticsItem[], userId: string | null) {
   try {
-    const session = await analyticsSession(req,false,0,userId); if (!session) return;
+    const session = await analyticsSession(req,false,0,userId); if (!session) { await refreshDemandRanking(); return; }
     await createAdminClient().rpc("ingest_analytics_event",{p_session:session,p_event:{event_type:"purchase",page_path:"/checkout",order_id:orderId,revenue,metadata:{items,verified:true,payment_method:"cod"}}});
+    await refreshDemandRanking();
   } catch { /* Analytics never changes the outcome of an order. */ }
 }

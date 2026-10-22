@@ -1,3 +1,4 @@
+import { revalidateHome, revalidateProductPaths, revalidatePagePaths } from "@/lib/revalidate";
 import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -162,7 +163,8 @@ export async function POST(req: Request) {
     for (const l of priced) {
       if (l.variantId) await admin.rpc("decrement_stock", { p_variant_id: l.variantId, p_qty: l.qty });
     }
-    // Light best-seller algo: every sold unit quietly pulls the product up
+    after(()=>{for(const slug of new Set(priced.map(l=>l.slug)))revalidateProductPaths(slug);revalidateHome();revalidatePagePaths("/collection/[slug]");});
+    // Legacy lifetime-sales counter: every sold unit quietly pulls the product up
     // the maison ranking (score subtracts sales_count — see rankScore).
     const soldBySlug = new Map<string, number>();
     for (const l of priced) {

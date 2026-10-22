@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import {
-  productsBucketPath,
   revalidateCollectionPaths,
   revalidateHome,
   revalidateProductPaths,
@@ -16,10 +15,14 @@ import {
   SaveButton,
   ActionButton,
 } from "@/components/admin/admin-form";
+import { cleanupProductArt } from "@/lib/product-storage";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
 import { NotesArtworkField } from "@/components/admin/notes-artwork-field";
 import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admin/seo-fields";
 import { parseSchemaJson } from "@/lib/seo";
+import { BestsellerControl } from "@/components/admin/bestseller-control";
+import { ProductVariantsEditor } from "@/components/admin/product-variants-editor";
+import { setProductStock } from "../option-actions";
 import { logAdmin } from "@/lib/audit";
 
 async function savePageContent(formData: FormData) {
@@ -44,8 +47,11 @@ async function saveProduct(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id"));
+  const mode=String(formData.get("bestseller_mode")||"auto");
+  if(!["auto","pinned","excluded"].includes(mode))throw new Error("Invalid bestseller policy.");
   const supabase = await createClient();
-  await supabase
+  const {data:current}=await supabase.from("products").select("auto_best_seller").eq("id",id).single();
+  const {error:saveError}=await supabase
     .from("products")
     .update({
       title: String(formData.get("title")),
@@ -61,10 +67,12 @@ async function saveProduct(formData: FormData) {
       ritual_id: String(formData.get("ritual_id") || "") || null,
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
-      is_best_seller: formData.get("is_best_seller") === "on",
+      is_best_seller: mode==="pinned" || (mode==="auto" && !!current?.auto_best_seller),
+      bestseller_mode:mode,
       is_active: formData.get("is_active") === "on",
     })
     .eq("id", id);
+  if(saveError)throw new Error(saveError.message);
   const { data: prod } = await supabase
     .from("products")
     .select("slug")
@@ -109,42 +117,8 @@ async function saveProduct(formData: FormData) {
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
       is_best_seller: formData.get("is_best_seller") === "on",
+      bestseller_mode:mode,
       is_active: formData.get("is_active") === "on",
-    },
-  });
-}
-
-async function saveVariant(formData: FormData) {
-  "use server";
-  const s = await getAdminSession();
-  if (!s || s.role !== "super_admin") redirect("/admin/login");
-  const id = String(formData.get("variant_id"));
-  const productId = String(formData.get("product_id"));
-  const supabase = await createClient();
-  await supabase
-    .from("variants")
-    .update({
-      title: String(formData.get("v_title")),
-      price: Number(formData.get("v_price")),
-      stock: Number(formData.get("v_stock")),
-      sku: String(formData.get("v_sku") || "") || null,
-    })
-    .eq("id", id);
-  revalidatePath(`/admin/products/${productId}`);
-  await touchProduct(supabase, productId);
-  await logAdmin(supabase, s, {
-    category: "products",
-    action: "update",
-    entity: "variant",
-    entityId: id,
-    label: String(formData.get("v_title")),
-    summary: `Updated variant “${String(formData.get("v_title"))}” (Dhs ${formData.get("v_price")}, stock ${formData.get("v_stock")})`,
-    details: {
-      product_id: productId,
-      title: String(formData.get("v_title")),
-      price: Number(formData.get("v_price")),
-      stock: Number(formData.get("v_stock")),
-      sku: String(formData.get("v_sku") || "") || null,
     },
   });
 }
@@ -296,17 +270,7 @@ async function saveGallery(productId: string, images: string[]) {
     .update({ images })
     .eq("id", productId);
   if (error) throw new Error(error.message);
-  const orphans = [...before]
-    .filter((u) => !images.includes(u))
-    .map(productsBucketPath)
-    .filter((p): p is string => !!p);
-  if (orphans.length) {
-    try {
-      await supabase.storage.from("products").remove(orphans);
-    } catch {
-      /* orphan cleanup never fails the save */
-    }
-  }
+  const orphans=await cleanupProductArt(supabase,[...before].filter(u=>!images.includes(u)));
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
   await logAdmin(supabase, s, {
@@ -609,9 +573,10 @@ export default async function ProductDetail(props: {
                   />
                 </label>
                 <label className="block">
-                  Price AED
+                  Starting price AED · edit under variants
                   <input
                     name="price"
+                    readOnly
                     type="number"
                     step="0.01"
                     defaultValue={p.price}
@@ -722,15 +687,8 @@ export default async function ProductDetail(props: {
                     />{" "}
                     New
                   </label>
-                  <label className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      name="is_best_seller"
-                      defaultChecked={p.is_best_seller}
-                      className="size-4 accent-[#1c1917]"
-                    />{" "}
-                    Best seller
-                  </label>
+                  <BestsellerControl key={`${p.bestseller_mode}:${p.is_best_seller}`} mode={p.bestseller_mode??(p.is_best_seller?"pinned":"auto")} checked={p.is_best_seller} automatic={p.auto_best_seller??false} score={Number(p.demand_score??0)}/>
+
                 </div>
                 <SaveButton className="md:col-span-2">Save details</SaveButton>
               </AdminForm>
@@ -898,66 +856,16 @@ export default async function ProductDetail(props: {
               {sectionHead(
                 "06",
                 "Variants + stock",
-                "Size · price · stock · SKU",
+                "Concentration · capacity · photography · inventory",
               )}
-              <div className="space-y-3">
-                {(variants ?? []).map(
-                  (v: {
-                    id: string;
-                    title: string;
-                    price: number;
-                    stock: number;
-                    sku: string | null;
-                  }) => (
-                    <AdminForm
-                      key={v.id}
-                      action={saveVariant}
-                      success="Variant saved"
-                      className="grid gap-2 border border-ink/10 bg-cream/40 p-3 text-sm sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-end"
-                    >
-                      <input type="hidden" name="variant_id" value={v.id} />
-                      <input type="hidden" name="product_id" value={p.id} />
-                      <label className="block">
-                        Size
-                        <input
-                          name="v_title"
-                          defaultValue={v.title}
-                          className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5"
-                        />
-                      </label>
-                      <label className="block">
-                        Price
-                        <input
-                          name="v_price"
-                          type="number"
-                          step="0.01"
-                          defaultValue={v.price}
-                          className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5"
-                        />
-                      </label>
-                      <label className="block">
-                        Stock
-                        <input
-                          name="v_stock"
-                          type="number"
-                          defaultValue={v.stock}
-                          className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5"
-                        />
-                      </label>
-                      <label className="block">
-                        SKU
-                        <input
-                          name="v_sku"
-                          defaultValue={v.sku ?? ""}
-                          placeholder="—"
-                          className="mt-1 w-full border border-ink/20 bg-white px-2 py-1.5"
-                        />
-                      </label>
-                      <SaveButton>Save</SaveButton>
-                    </AdminForm>
-                  ),
-                )}
-              </div>
+              <AdminForm action={setProductStock} success="Availability updated" className="mb-5 flex flex-wrap items-center justify-between gap-4 border border-red-200 bg-red-50/40 p-4">
+                <input type="hidden" name="product_id" value={p.id}/>
+                <input type="hidden" name="out_of_stock" value={p.out_of_stock ? "false" : "true"}/>
+                <div><p className="text-sm font-medium">{p.out_of_stock ? "Manually marked out of stock" : "Availability follows option stock"}</p><p className="mt-1 text-xs text-ink/55">The manual override stops sales without changing inventory counts.</p></div>
+                <ActionButton>{p.out_of_stock ? "Use inventory counts" : "Mark product out of stock"}</ActionButton>
+              </AdminForm>
+              <ProductVariantsEditor productId={p.id} variants={variants ?? []} price={p.price}/>
+
             </section>
 
             {/* 07 — SEO (invisible crawler layer) */}

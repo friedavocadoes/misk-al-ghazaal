@@ -8,6 +8,11 @@ export interface Variant {
   price: number; // AED
   stock: number;
   sku?: string;
+  concentration?: string;
+  capacityMl?: number;
+  nameOverride?: string;
+  images?: string[];
+  useProductImages?: boolean;
 }
 
 export interface Product {
@@ -39,6 +44,9 @@ export interface Product {
   template?: "standard" | "miskalgazaal";
   /** Storefront visibility (admin can pause without deleting). */
   isActive?: boolean;
+  outOfStock?: boolean;
+  demandScore?: number;
+  autoBestSeller?: boolean;
   /** Manual rank weight (admin): lower floats up, higher sinks. */
   sortRank?: number;
   /** Units sold — the light best-seller signal. */

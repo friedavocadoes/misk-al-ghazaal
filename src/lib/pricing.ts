@@ -41,7 +41,7 @@ async function priceLines(
   const slugs = [...new Set(lines.map((l) => l.slug))];
   const { data: prods, error: productError } = await supabase
     .from("products")
-    .select("id, slug, title, price")
+    .select("*")
     .in("slug", slugs)
     .is("deleted_at", null);
   if (productError) throw productError;
@@ -49,50 +49,25 @@ async function priceLines(
   const bySlug = new Map(
     (
       (prods as
-        { id: string; slug: string; title: string; price: number }[] | null) ??
+        { id: string; slug: string; title: string; price: number; out_of_stock?:boolean; is_active?:boolean }[] | null) ??
       []
     ).map((p) => [p.slug, p]),
   );
-  const variantIds = [
-    ...new Set(lines.map((l) => l.variantId).filter(Boolean)),
-  ] as string[];
-  let byVariant = new Map<
-    string,
-    {
-      id: string;
-      product_id: string;
-      title: string;
-      price: number;
-      stock: number;
-    }
-  >();
-  if (variantIds.length) {
-    const { data: vars, error: variantError } = await supabase
-      .from("variants")
-      .select("id, product_id, title, price, stock")
-      .in("id", variantIds);
-    if (variantError) throw variantError;
-    byVariant = new Map(
-      (
-        (vars as
-          | {
-              id: string;
-              product_id: string;
-              title: string;
-              price: number;
-              stock: number;
-            }[]
-          | null) ?? []
-      ).map((v) => [v.id, v]),
-    );
-  }
+  const {data: variants, error:variantError}=await supabase.from("variants").select("*").in("product_id",[...bySlug.values()].map(p=>p.id));
+  if(variantError)throw variantError;
+  type StockVariant={id:string;product_id:string;title:string;price:number;stock:number;is_active?:boolean;name_override?:string|null};
+  const allVariants=(variants??[]) as StockVariant[];
+  const byVariant=new Map(allVariants.map(v=>[v.id,v]));
+  // Canonicalize legacy cart lines without an option so they cannot bypass stock checks.
+  const normalized=lines.map(l=>({...l,variantId:l.variantId ?? allVariants.filter(v=>v.product_id===bySlug.get(l.slug)?.id && v.is_active!==false).sort((a,b)=>Number(b.stock>0)-Number(a.stock>0)||a.price-b.price||a.id.localeCompare(b.id))[0]?.id}));
   const priced: PricedLine[] = [];
   let subtotal = 0;
-  for (const l of lines) {
+  for (const l of normalized) {
     const p = bySlug.get(l.slug);
     if (!p) throw new Error(`Unknown product: ${l.slug}`);
     let unit = Number(p.price);
     let title = p.title;
+    if(!l.variantId)throw new Error(`Out of stock: ${p.title}`);
     if (l.variantId) {
       const v = byVariant.get(l.variantId);
       if (!v) throw new Error(`Unknown variant: ${l.variantId}`);
@@ -100,10 +75,11 @@ async function priceLines(
         throw new Error(
           `This option no longer belongs to ${p.title}. Please select it again from the product page.`,
         );
-      const requested = lines
+      const requested = normalized
         .filter((x) => x.slug === l.slug && x.variantId === l.variantId)
         .reduce((n, x) => n + x.qty, 0);
-      if (v.stock < requested) {
+      const available=p.out_of_stock || p.is_active===false || v.is_active===false ? 0 : v.stock;
+      if (available < requested) {
         if (!previewStock) throw new Error(`Out of stock: ${p.title}`);
         if (
           !stockIssues.some(
@@ -115,11 +91,11 @@ async function priceLines(
             variantId: l.variantId,
             title: p.title,
             requested,
-            available: Math.max(0, v.stock),
+            available: Math.max(0, available),
           });
       }
       unit = Number(v.price);
-      title = `${p.title} — ${v.title}`;
+      title = `${v.name_override || p.title} — ${v.title}`;
     }
     priced.push({ ...l, unit, title });
     subtotal += unit * l.qty;

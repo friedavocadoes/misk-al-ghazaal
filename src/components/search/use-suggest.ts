@@ -1,71 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { SuggestItem } from "@/app/api/search/suggest/route";
-
-const DEBOUNCE_MS = 180;
-const CACHE_TTL_MS = 60_000;
-// Live rows per batch, repeat queries served instantly: Postgres is the
-// index (renames/additions/deletes reflect immediately), this cache only
-// skips the network for identical keystrokes within a minute.
-const cache = new Map<string, { at: number; items: SuggestItem[] }>();
-
-export function useSuggest(query: string, scope: "store" | "admin" = "store") {
-  const trimmed = query.trim();
-  const short = trimmed.length < 2;
-  const [items, setItems] = useState<SuggestItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const abort = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    const q = trimmed;
-    if (q.length < 2) return;
-    const t = setTimeout(() => {
-      const key = `${scope}:${q.toLowerCase()}`;
-      const hit = cache.get(key);
-      // State changes happen inside async continuations (network +
-      // timer callbacks), never synchronously in the effect body.
-      if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
-        setItems(hit.items);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      setError(false);
-      abort.current?.abort();
-      const ctrl = new AbortController();
-      abort.current = ctrl;
-      const sp = new URLSearchParams({ q, limit: "8" });
-      if (scope === "admin") sp.set("scope", "admin");
-      fetch(`/api/search/suggest?${sp}`, { signal: ctrl.signal })
-        .then((r) => {
-          if (!r.ok) throw new Error("suggest");
-          return r.json() as Promise<{ items?: SuggestItem[] }>;
-        })
-        .then((j) => {
-          const next = j.items ?? [];
-          cache.set(key, { at: Date.now(), items: next });
-          // Cap memory: keep the freshest 60 queries.
-          if (cache.size > 60) cache.delete(cache.keys().next().value as string);
-          setItems(next);
-        })
-        .catch((e: Error) => {
-          if (e.name !== "AbortError") setError(true);
-        })
-        .finally(() => {
-          if (abort.current === ctrl) setLoading(false);
-        });
-    }, DEBOUNCE_MS);
-    return () => {
-      clearTimeout(t);
-      abort.current?.abort();
-    };
-  }, [trimmed, scope]);
-
-  // Short queries always read empty — no stale rows linger, no reset effect.
-  if (short) return { items: [] as SuggestItem[], loading: false, error: false };
-  return { items, loading, error };
+import { useEffect, useState } from "react";
+import { createSearchIndex, type SearchDocument } from "@/lib/search-index";
+type Index=ReturnType<typeof createSearchIndex>;
+const indexes=new Map<string,{at:number; promise:Promise<Index>}>();
+function load(scope:"store"|"admin") {
+  const hit=indexes.get(scope);
+  if(hit && Date.now()-hit.at<60_000)return hit.promise;
+  const promise=fetch(`/api/search/index?scope=${scope}`,{cache:"no-cache"}).then(async r=>{
+    if(!r.ok)throw new Error("Search unavailable");
+    const body=await r.json() as {items:SearchDocument[]};
+    return createSearchIndex(body.items);
+  }).catch(error=>{indexes.delete(scope);throw error;});
+  indexes.set(scope,{at:Date.now(),promise});
+  return promise;
+}
+/** Download one compact catalog, then search locally without a request per key. */
+export function useSuggest(query:string, scope:"store"|"admin"="store") {
+  const [state,setState]=useState<{query:string;items:SearchDocument[];loading:boolean;error:boolean}>({query:"",items:[],loading:false,error:false});
+  useEffect(()=>{ void load(scope).catch(()=>{}); },[scope]);
+  useEffect(()=>{
+    let current=true;
+    const trimmed=query.trim();
+    if(trimmed.length<2)return;
+    // Microtask keeps ready-index keystrokes immediate and avoids effects resetting state synchronously.
+    void load(scope).then(engine=>{if(current)setState({query,items:engine.search(trimmed,8),loading:false,error:false});})
+      .catch(()=>{if(current)setState({query,items:[],loading:false,error:true});});
+    return ()=>{current=false;};
+  },[query,scope]);
+  if(query.trim().length<2)return {items:[],loading:false,error:false};
+  return state.query===query ? state : {items:[],loading:true,error:false};
 }
 
 const MAX_RECENTS = 6;

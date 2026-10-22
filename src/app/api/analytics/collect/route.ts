@@ -1,3 +1,4 @@
+import { refreshDemandRanking } from "@/lib/demand-ranking";
 import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { analyticsSession, readSmallBody, sameOrigin } from "@/lib/analytics/server";
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
             }
           }
         }
-        await db.rpc("ingest_analytics_event",{p_session:session,p_event:event});
+        const {error}=await db.rpc("ingest_analytics_event",{p_session:session,p_event:event});
+        if(!error && !session.is_bot && event && ["page_view","product_view","add_to_cart","checkout_started"].includes(String(event.event_type)))await refreshDemandRanking();
       } catch { /* non-blocking */ } });
     }
   } catch { /* best effort */ }

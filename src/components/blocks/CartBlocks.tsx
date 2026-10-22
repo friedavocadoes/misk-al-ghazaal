@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/product/ProductCard";
 import type { Product } from "@/lib/types";
 import { useCart } from "@/lib/cart";
-import { useCartMeta } from "@/lib/cart-meta";
+import { useCartMeta, cartVariantMeta } from "@/lib/cart-meta";
 import { FLAT_SHIPPING, FREE_SHIP_THRESHOLD } from "@/lib/pricing-client";
 
 export function BagView() {
@@ -26,7 +26,7 @@ export function BagView() {
   const { meta } = useCartMeta(lines.map((l) => l.productSlug));
 
   const rows = lines
-    .map((l) => ({ ...l, product: meta[l.productSlug] }))
+    .map((l) => ({ ...l, product: cartVariantMeta(meta[l.productSlug],l.variantId) }))
     .filter((l) => l.product);
   const cartKey=JSON.stringify(lines);
   const [serverQuote,setServerQuote]=useState<{key:string;total:number;stockIssues:CartStockIssue[]}|null>(null);

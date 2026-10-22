@@ -59,7 +59,7 @@ export function OlfactoryShowcase({ products, notes = [], eyebrow, title, prompt
   const currentIndex = Math.min(resultIndex, Math.max(0, results.length - 1));
   const entry = results[currentIndex];
   const product = entry?.product;
-  const variant = product?.variants.find((v) => v.stock > 0);
+  const variant = product?.outOfStock ? undefined : product?.variants.find((v) => v.stock > 0);
   const chosen = selected.map((slug) => library.find((n) => n.slug.toLowerCase() === slug)).filter((n): n is Note => !!n);
 
   function toggle(slug: string) {

@@ -2,29 +2,10 @@ import { NextResponse } from "next/server";
 import { suggestProducts } from "@/lib/store";
 import { getAdminSession } from "@/lib/admin-auth";
 
-export interface SuggestItem {
-  id: string;
-  slug: string;
-  title: string;
-  titleAr?: string;
-  image?: string;
-  price: number;
-  compareAtPrice?: number;
-  lineupTitle?: string;
-  lineupTitleAr?: string;
-  rating: number;
-  reviewCount: number;
-  isNew?: boolean;
-  isBestSeller?: boolean;
-  isActive?: boolean;
-  variantCount: number;
-  firstVariant?: string;
-  topNotes: { name: string; nameAr?: string }[];
-}
+export type SuggestItem = Omit<import("@/lib/search-index").SearchDocument,"keywords">;
 
 /** GET /api/search/suggest?q=…&limit=8[&scope=admin] — live autocomplete.
-    Queries live rows per batch (no stale client index to maintain):
-    renames, additions, pauses and deletes reflect instantly. `scope=admin`
+    Searches a short-lived, mutation-invalidated catalog index. `scope=admin`
     (staff only) also surfaces paused products for the console quick-find. */
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
@@ -52,6 +33,7 @@ export async function GET(req: Request) {
           ...(p.compareAtPrice != null ? { compareAtPrice: p.compareAtPrice } : {}),
           ...(p.lineupTitle ? { lineupTitle: p.lineupTitle } : {}),
           ...(p.lineupTitleAr ? { lineupTitleAr: p.lineupTitleAr } : {}),
+          outOfStock:p.outOfStock || !p.variants.some(v=>v.stock>0),
           rating: p.rating,
           reviewCount: p.reviewCount,
           ...(p.isNew ? { isNew: true } : {}),

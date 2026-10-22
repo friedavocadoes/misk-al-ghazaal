@@ -8,25 +8,31 @@ export interface CartMeta {
   titleAr?: string;
   price: number;
   image: string;
-  variants?: {id:string;price:number}[];
+  variants?: CartVariant[];
+}
+
+export interface CartVariant {id:string;price:number;title?:string;name_override?:string|null;images?:string[];use_product_images?:boolean}
+export function cartVariantMeta(product:CartMeta|undefined,variantId?:string):CartMeta|undefined {
+  if(!product)return undefined;
+  const variant=product.variants?.find(v=>v.id===variantId);
+  if(!variant)return product;
+  const name=variant.name_override||product.title;
+  return {...product,title:variant.title?`${name} — ${variant.title}`:name,
+    titleAr:variant.name_override?undefined:product.titleAr?(variant.title?`${product.titleAr} — ${variant.title}`:product.titleAr):undefined,
+    price:Number(variant.price),image:variant.use_product_images===false&&variant.images?.[0]?variant.images[0]:product.image};
 }
 
 /** Catalog display data for bag lines (titles, images). Totals always
     come from /api/quote — never from these display prices. */
 export function useCartMeta(slugs: string[]): { meta: Record<string, CartMeta>; loading: boolean } {
-  const [meta, setMeta] = useState<Record<string, CartMeta>>({});
-  const [loading, setLoading] = useState(false);
+  const [result,setResult]=useState<{key:string;meta:Record<string,CartMeta>}>({key:"",meta:{}});
   const key = [...slugs].sort().join(",");
   useEffect(() => {
-    if (!key) {
-      setMeta({});
-      return;
-    }
+    if (!key) return;
     let live = true;
-    setLoading(true);
     fetch(`/api/products?slugs=${encodeURIComponent(key)}`)
       .then((r) => r.json())
-      .then((j: { products?: { slug: string; title: string; title_ar?: string; price: number; variants?: {id:string;price:number}[]; images?: string[] }[] }) => {
+      .then((j: { products?: { slug: string; title: string; title_ar?: string; price: number; variants?: CartVariant[]; images?: string[] }[] }) => {
         if (!live) return;
         const map: Record<string, CartMeta> = {};
         for (const p of j.products ?? []) {
@@ -39,14 +45,12 @@ export function useCartMeta(slugs: string[]): { meta: Record<string, CartMeta>; 
             image: p.images?.[0] ?? "",
           };
         }
-        setMeta(map);
+        setResult({key,meta:map});
       })
-      .catch(() => {})
-      .finally(() => live && setLoading(false));
+      .catch(() => {if(live)setResult({key,meta:{}});});
     return () => {
       live = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  return { meta, loading };
+  return {meta:key?result.meta:{},loading:!!key && result.key!==key};
 }

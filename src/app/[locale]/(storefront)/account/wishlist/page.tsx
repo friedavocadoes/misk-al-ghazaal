@@ -25,28 +25,12 @@ export default function WishlistPage() {
         return;
       }
       try {
-        const r = await fetch(`/api/products?slugs=${encodeURIComponent(ids.join(","))}`);
+        const r = await fetch(`/api/products?view=cards&slugs=${encodeURIComponent(ids.join(","))}`);
         const j = (await (r.ok ? r.json() : null)) as {
-          products?: { slug: string; title: string; title_ar?: string; price: number; images?: string[] }[];
+          products?: Product[];
         } | null;
         if (!live) return;
-        setProducts(
-          (j?.products ?? []).map((p) => ({
-            id: p.slug,
-            slug: p.slug,
-            title: p.title,
-            ...(p.title_ar ? { titleAr: p.title_ar } : {}),
-            descriptionHtml: "",
-            price: Number(p.price),
-            images: p.images ?? [],
-            categorySlugs: [],
-            tags: [],
-            rating: 0,
-            reviewCount: 0,
-            variants: [],
-            notes: [],
-          })),
-        );
+        setProducts(j?.products ?? []);
       } catch {
         if (live) setProducts([]);
       }

@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -25,6 +25,7 @@ export function revalidatePagePaths(path: string) {
 }
 
 export function revalidateHome() {
+  revalidateTag("catalog-search", {expire:0});
   revalidatePagePaths("/find-your-scent");
   revalidateNavigation();
   for (const p of ["/", "/en", "/ar"]) revalidatePath(p, "page");

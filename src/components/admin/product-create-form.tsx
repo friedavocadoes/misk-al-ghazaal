@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { CONCENTRATIONS } from "@/lib/product-options";
 import { MultiImageUploader } from "./multi-image-uploader";
 import { toast } from "./admin-form";
 
@@ -25,6 +26,7 @@ export function ProductCreateForm({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [concentration,setConcentration]=useState("");
   const [images, setImages] = useState<string[]>([]);
   const [slugTouched, setSlugTouched] = useState(false);
   const [prefix] = useState(() => `new-${Date.now()}`);
@@ -91,7 +93,7 @@ export function ProductCreateForm({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
-            Price AED *
+            First option price AED *
             <input
               name="price"
               type="number"
@@ -184,25 +186,15 @@ export function ProductCreateForm({
         </section>
 
         <section className="space-y-3 border border-ink/10 bg-white p-6">
-          <h2 className="font-display text-xl">First variant</h2>
+          <h2 className="font-display text-xl">First option</h2>
+          <label className="block text-sm">Concentration<select name="concentration" value={concentration} onChange={e=>setConcentration(e.target.value)} className={field}><option value="">Other product / no concentration</option>{CONCENTRATIONS.map(c=><option key={c}>{c}</option>)}</select></label>
+          <label className="block text-sm">Capacity (ml)<input name="capacity_ml" type="number" min="0.1" step="0.1" required={!!concentration} placeholder="e.g. 100" className={field}/></label>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <label className="block">
-              Size *
+              Custom label (other products)
               <input
                 name="v_title"
-                required
-                placeholder="50ml"
-                className={field}
-              />
-            </label>
-            <label className="block">
-              Price AED *
-              <input
-                name="v_price"
-                type="number"
-                step="0.01"
-                min={0}
-                required
+                placeholder="e.g. 100 g"
                 className={field}
               />
             </label>

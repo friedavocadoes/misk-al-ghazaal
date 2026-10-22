@@ -86,6 +86,7 @@ export function SuggestRow({
         )}
         <span className="block truncate font-display text-[15px] text-ink">
           {title}
+          {item.outOfStock && <span className="ms-2 text-[10px] text-red-700">{locale==="ar"?"نفد المخزون":"Out of stock"}</span>}
           {item.isActive === false && (
             <span className="ms-2 border border-gold/50 bg-gold-wash/60 px-1.5 py-px align-middle font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">
               Paused

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { ProductGallery } from "@/components/product/ProductGallery";
+import { ProductSelection, VariantGallery } from "@/components/product/ProductSelection";
 import { PromoStrip } from "@/components/blocks/PromoStrip";
 import {
   ProductInfo,
@@ -97,11 +97,11 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
         <span className="mx-2">/</span>
         <span className="text-ink">{product.title}</span>
       </nav>
-      <div className="pdp-overview grid items-start gap-8 lg:grid-cols-[1.08fr_1fr] lg:gap-16">
+      <ProductSelection product={product}><div className="pdp-overview grid items-start gap-8 lg:grid-cols-[1.08fr_1fr] lg:gap-16">
         {/* min-w-0 on both tracks: Embla's flex row must never force the
             grid wider than the viewport (the mobile right-bleed bug). */}
         <div className="relative min-w-0 lg:sticky lg:top-28">
-          <ProductGallery images={product.images} title={product.title} />
+          <VariantGallery product={product} />
           <ShareButtons title={product.title} label={tp("share")} copiedLabel={tp("shareCopied")} />
         </div>
         <div className="pdp-buybox min-w-0">
@@ -116,7 +116,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
             heading={tx(seo?.h1 ?? "", seo?.h1Ar, locale) || undefined}
           />
         </div>
-      </div>
+      </div></ProductSelection>
       <AboutShort product={product} locale={locale} />
       <NotesBrief product={product} locale={locale} />
       <DetailedNotes product={product} locale={locale} />

@@ -25,8 +25,9 @@ test('ranges are inclusive Dubai calendar days and reject oversized/reversed win
 test('collector rejects client purchase events, ignores failures, and schedules writes after response',async()=>{
  let called=0;const pending=[];
  const route=load('src/app/api/analytics/collect/route.ts',{
+  '@/lib/demand-ranking':{refreshDemandRanking:async()=>{}},
   'next/server':{NextResponse:Response,after:fn=>pending.push(fn)},
-  '@/lib/supabase/service':{createAdminClient:()=>({rpc:async()=>{called++}})},
+  '@/lib/supabase/service':{createAdminClient:()=>({rpc:async()=>{called++;return {error:null}}})},
   '@/lib/analytics/shared':shared,
   '@/lib/analytics/server':{sameOrigin:()=>true,readSmallBody:r=>r.json(),analyticsSession:async()=>({id:'session',visitor_id:'visitor'})},
  });

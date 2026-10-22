@@ -5,6 +5,9 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ArrowUpRight, Check, Minus, Plus, ShoppingBag, Star } from "lucide-react";
+import { useProductVariant } from "@/components/product/ProductSelection";
+import { VariantPicker } from "@/components/product/VariantPicker";
+import { variantImages } from "@/lib/product-options";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { WishHeart } from "@/components/product/WishHeart";
 import { flyToBag } from "@/lib/fly-to-bag";
@@ -134,30 +137,30 @@ export function ProductInfo({
     if (r === "login") router.push(`/account/login?next=/product/${product.slug}`);
     return r;
   };
-  const [variantId, setVariantId] = useState(product.variants[0]?.id);
+  const {variant,select:setVariantId}=useProductVariant(product);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-  const variant =
-    product.variants.find((v) => v.id === variantId) ?? product.variants[0];
-  const stock = variant?.stock ?? 0;
-  const maxQty = Math.max(1, Math.min(stock > 0 ? stock : 10, 20));
+  const stock = product.outOfStock ? 0 : (variant?.stock ?? 0);
+  const maxQty = Math.max(1, Math.min(stock, 20));
   // Always clamped at the point of use — no settle effects needed.
   const safeQty = Math.min(Math.max(1, qty), maxQty);
   // Real aggregates only: seeded catalog numbers never stand in.
   const liveRating = rating ?? product.rating;
   const liveCount = reviewCount ?? product.reviewCount;
-  const title = tx(product.title, product.titleAr, locale);
+  const title = variant?.nameOverride ?? tx(product.title, product.titleAr, locale);
   const catName =
     categoryName ?? product.categorySlugs[0]?.replace(/-/g, " ");
 
   const addToBag = (e?: React.MouseEvent) => {
+    if(stock<=0)return;
     add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
-    if (e?.currentTarget instanceof HTMLElement) flyToBag(e.currentTarget, product.images[0]);
+    if (e?.currentTarget instanceof HTMLElement) flyToBag(e.currentTarget, variantImages(product,variant)[0]);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
   };
   const [couponLogin,setCouponLogin]=useState(false);
   const buyNow = async () => {
+    if(stock<=0)return;
     add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
     if(localStorage.getItem("misk-coupon")){
       const {data:{user}}=await createBrowserClient().auth.getUser();
@@ -203,32 +206,10 @@ export function ProductInfo({
 
       <NoteDiscovery notes={product.notes} locale={locale} />
 
-      {product.variants.length > 1 && (
-        <div className="mt-7">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
-            {t("size")} — <span className="text-ink">{variant?.title}</span>
-          </p>
-          <div className="pdp-size-options mt-3 flex flex-wrap gap-2">
-            {product.variants.map((v) => (
-              <button
-                key={v.id}
-                onClick={() => setVariantId(v.id)}
-                aria-pressed={v.id === variantId}
-                className={cn(
-                  "border px-5 py-2.5 text-[13px] transition",
-                  v.id === variantId
-                    ? "border-ink bg-ink text-white"
-                    : "border-ink/20 text-espresso hover:border-ink"
-                )}
-              >
-                {v.title}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <VariantPicker product={product} variant={variant} onSelect={id=>{setVariantId(id);setQty(1);}} ar={locale==="ar"}/>
+      {stock<=0 && <p role="status" className="mt-4 border-l-2 border-red-700 bg-red-50 px-4 py-3 text-sm text-red-800">{locale==="ar"?"نفد المخزون — غير متاح للطلب حالياً.":"Out of stock — currently unavailable to order."}</p>}
 
-      <SamplePicker subtotal={(variant?.price ?? product.price)*qty} product/>
+      <SamplePicker subtotal={(variant?.price ?? product.price)*safeQty} product/>
 
       <div className="pdp-purchase-actions mt-5">
         <span className="pdp-quantity flex items-center">
@@ -252,9 +233,9 @@ export function ProductInfo({
             <Plus className="size-4" />
           </button>
         </span>
-        <Button className="pdp-add-button h-[52px] flex-1" size="lg" onClick={addToBag}>
+        <Button className="pdp-add-button h-[52px] flex-1" size="lg" onClick={addToBag} disabled={stock<=0}>
           {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}{" "}
-          {added ? t("added") : t("addToBag")}
+          {stock<=0 ? (locale==="ar"?"نفد المخزون":"Out of stock") : added ? t("added") : t("addToBag")}
         </Button>
         <WishHeart
           wished={wished}
@@ -269,7 +250,7 @@ export function ProductInfo({
           heartClassName="size-4"
         />
       </div>
-      <Button variant="outline" size="lg" className="pdp-buy-button mt-3 w-full" onClick={buyNow}>
+      <Button variant="outline" size="lg" className="pdp-buy-button mt-3 w-full" onClick={buyNow} disabled={stock<=0}>
         {t("buyNow")} <ArrowUpRight />
       </Button>
       {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}
@@ -285,7 +266,7 @@ export function ProductInfo({
           </p>
           <div className="mt-4">
             <div className="flex justify-between text-[11px] font-semibold uppercase tracking-[0.16em]">
-              <span className="text-[#9c2b2e]">{t("sellingFast")}</span>
+              <span className="text-[#9c2b2e]">{stock>0?t("sellingFast"):(locale==="ar"?"نفد المخزون":"Out of stock")}</span>
               <span className="text-fog">{stock} {t("left")}</span>
             </div>
             <div className="mt-2 h-[3px] overflow-hidden bg-ink/10">

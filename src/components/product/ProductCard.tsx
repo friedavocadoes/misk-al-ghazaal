@@ -1,5 +1,6 @@
 "use client";
 
+import { productAvailable, defaultVariant } from "@/lib/product-options";
 import { useState } from "react";
 import { useLocale } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -35,15 +36,20 @@ export function ProductCard({
     product.compareAtPrice !== undefined &&
     product.compareAtPrice > product.price;
 
-  const variantLabel = product.variants[0]?.title;
+  const available=productAvailable(product);
+  const multiple=product.variants.length>1;
+  const firstVariant=defaultVariant(product);
+  const variantLabel = firstVariant?.title;
   const previewNotes = product.notes?.slice(0, 3) ?? [];
 
   const addToBag = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if(!available)return;
+    if(multiple){router.push(`/product/${product.slug}`);return;}
     add({
       productSlug: product.slug,
-      variantId: product.variants[0]?.id,
+      variantId: firstVariant?.id,
       qty: 1,
     });
     if (e.currentTarget instanceof HTMLElement) {
@@ -56,9 +62,11 @@ export function ProductCard({
   const buyNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if(!available)return;
+    if(multiple){router.push(`/product/${product.slug}`);return;}
     add({
       productSlug: product.slug,
-      variantId: product.variants[0]?.id,
+      variantId: firstVariant?.id,
       qty: 1,
     });
     router.push("/checkout");
@@ -83,6 +91,7 @@ export function ProductCard({
 
   const badges = (
     <span className="absolute left-3.5 top-3.5 z-20 flex flex-col items-start gap-1.5">
+      {!available && <span className="border border-red-200 bg-white/95 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-red-800">{locale==="ar"?"نفد المخزون":"Out of stock"}</span>}
       {onSale && (
         <span className="border border-[#9c2b2e]/25 bg-cream/90 px-2.5 py-1 text-[8.5px] font-semibold uppercase tracking-[0.22em] text-[#9c2b2e] backdrop-blur-sm">
           {locale === "ar" ? "عرض" : "Sale"}
@@ -105,11 +114,12 @@ export function ProductCard({
   const desktopActionBar = (
     <div className=" absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-1.5 bg-gradient-to-t from-cream/95 via-cream/90 to-transparent p-3 pt-6 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 md:flex">
       <button
+        disabled={!available} aria-label={!available ? (locale==="ar"?"نفد المخزون":"Out of stock") : undefined}
         onClick={addToBag}
-        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-ink py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:border-gold hover:bg-gold"
+        className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-ink py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:border-gold hover:bg-gold"
       >
         {added ? <Check className="size-3" /> : <ShoppingBag className="size-3" />}
-        {added
+        {multiple ? (locale==="ar"?"اختر الخيارات":"Choose options") : added
           ? locale === "ar"
             ? "أُضيفت"
             : "Added"
@@ -118,8 +128,9 @@ export function ProductCard({
             : "Add to Bag"}
       </button>
       <button
+        disabled={!available}
         onClick={buyNow}
-        className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 border border-ink/80 bg-cream/95 py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 hover:border-gold hover:bg-gold-wash"
+        className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer items-center justify-center gap-1.5 border border-ink/80 bg-cream/95 py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 hover:border-gold hover:bg-gold-wash"
       >
         <Zap className="size-3 text-gold" />
         {locale === "ar" ? "اشترِ الآن" : "Buy Now"}
@@ -131,11 +142,12 @@ export function ProductCard({
   const mobileActions = (
     <div className="mt-3.5 flex w-full gap-1.5 md:hidden">
       <button
+        disabled={!available} aria-label={!available ? (locale==="ar"?"نفد المخزون":"Out of stock") : undefined}
         onClick={addToBag}
-        className="flex flex-1 items-center justify-center gap-1.5 border border-ink/80 bg-transparent py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-ink transition active:bg-ink active:text-white"
+        className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 items-center justify-center gap-1.5 border border-ink/80 bg-transparent py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-ink transition active:bg-ink active:text-white"
       >
         <ShoppingBag className="size-3" />
-        {added
+        {multiple ? (locale==="ar"?"الخيارات":"Options") : added
           ? locale === "ar"
             ? "أُضيفت"
             : "Added"
@@ -144,8 +156,9 @@ export function ProductCard({
             : "Add"}
       </button>
       <button
+        disabled={!available}
         onClick={buyNow}
-        className="flex flex-1 items-center justify-center gap-1.5 bg-ink py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-white transition active:bg-gold"
+        className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 items-center justify-center gap-1.5 bg-ink py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-white transition active:bg-gold"
       >
         <Zap className="size-3 text-gold-soft" />
         {locale === "ar" ? "اشترِ" : "Buy"}
@@ -175,8 +188,9 @@ export function ProductCard({
           >
             {title}
           </Link>
+          {!available && <span className="mt-1 text-xs text-red-700">{locale==="ar"?"نفد المخزون":"Out of stock"}</span>}
           <div className="mt-1 text-[12px] tracking-wider text-ink/80">
-            <span className="font-medium">AED {product.price.toFixed(2)}</span>
+            <span className="font-medium">{multiple && "From "}AED {product.price.toFixed(2)}</span>
             {onSale && product.compareAtPrice && (
               <s className="ml-2 text-ink/35">
                 AED {product.compareAtPrice.toFixed(2)}
@@ -185,14 +199,16 @@ export function ProductCard({
           </div>
           <div className="mt-4 flex gap-1.5">
             <button
-              onClick={addToBag}
+              disabled={!available} aria-label={!available ? (locale==="ar"?"نفد المخزون":"Out of stock") : undefined}
+        onClick={addToBag}
               className="flex cursor-pointer items-center gap-1.5 border border-ink bg-transparent px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-ink transition hover:bg-ink hover:text-white"
             >
               <ShoppingBag className="size-3" />
-              {added ? "Added" : "Add"}
+              {multiple ? "Options" : added ? "Added" : "Add"}
             </button>
             <button
-              onClick={buyNow}
+              disabled={!available}
+        onClick={buyNow}
               className="flex cursor-pointer items-center gap-1.5 bg-ink px-4 py-2 text-[8.5px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-gold"
             >
               <Zap className="size-3" />
@@ -280,7 +296,7 @@ export function ProductCard({
         </Link>
 
         <div className="mt-1.5 flex items-center justify-center gap-2 text-[12px] font-medium tracking-[0.14em] text-espresso">
-          <span>AED {product.price.toFixed(2)}</span>
+          <span>{multiple && <small className="me-1 text-[10px] text-fog">{locale==="ar"?"من":"From"}</small>}AED {product.price.toFixed(2)}</span>
           {onSale && product.compareAtPrice && (
             <s className="text-fog/60">
               AED {product.compareAtPrice.toFixed(2)}

@@ -75,7 +75,7 @@ export default async function ProductsPage(props: {
   ] = await Promise.all([
     supabase
       .from("products")
-      .select("*")
+      .select("*,variants(*)")
       .is("deleted_at", null)
       .order("title")
       .limit(300),
@@ -98,12 +98,18 @@ export default async function ProductsPage(props: {
     lineup_id?: string | null;
     sort?: number | null;
     sales_count?: number | null;
+    out_of_stock?: boolean;
+    demand_score?: number;
+    auto_best_seller?: boolean;
+    variants?: {stock:number;is_active?:boolean}[];
   };
   let rows = ((prods as Row[] | null) ?? []).map((p) => ({
     ...p,
     images: p.images ?? [],
     is_active: p.is_active ?? true,
   }));
+  const outOfStock=(p:Row)=>p.out_of_stock || !(p.variants??[]).some(v=>v.is_active!==false && v.stock>0);
+  const outOfStockCount=rows.filter(outOfStock).length;
   // Console default: maison rank (manual weight → sales lift → newest).
   rows = [...rows].sort(
     (a, b) =>
@@ -118,6 +124,7 @@ export default async function ProductsPage(props: {
     );
   if (lineupFilter) rows = rows.filter((p) => p.lineup_id === lineupFilter);
   if (statusFilter === "active") rows = rows.filter((p) => p.is_active);
+  if (statusFilter === "out-of-stock") rows=rows.filter(outOfStock);
   if (statusFilter === "paused") rows = rows.filter((p) => !p.is_active);
   if (collectionFilter) {
     const inColl = new Set(
@@ -176,6 +183,7 @@ export default async function ProductsPage(props: {
         {/* Filters: live quick-find + group by collection / lineup / status */}
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <AdminProductSearch />
+          {outOfStockCount>0 && <Link href="/admin/products?status=out-of-stock" className="border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">{outOfStockCount} out of stock →</Link>}
         </div>
         <form
           action="/admin/products"
@@ -224,6 +232,7 @@ export default async function ProductsPage(props: {
             <option value="all">Active + paused</option>
             <option value="active">Active only</option>
             <option value="paused">Paused only</option>
+            {outOfStockCount>0 && <option value="out-of-stock">Out of stock</option>}
           </select>
           <button className="cursor-pointer border border-ink bg-ink px-4 py-2 text-sm text-white transition hover:bg-ink/85">
             Filter
@@ -308,6 +317,7 @@ export default async function ProductsPage(props: {
                   >
                     <p className="truncate font-medium">
                       {p.title}
+                      {outOfStock(p) && <span className="ms-2 rounded-full bg-red-50 px-2 py-1 text-[10px] font-semibold uppercase text-red-700">Out of stock</span>}
                       {!p.is_active && (
                         <span className="ms-2 border border-gold/50 bg-gold-wash/60 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-[0.14em] text-gold">
                           Paused
@@ -320,7 +330,7 @@ export default async function ProductsPage(props: {
                       {p.lineup_id && lineupName.get(p.lineup_id)
                         ? ` · ${lineupName.get(p.lineup_id)}`
                         : ""}
-                      {` · rank ${p.sort ?? 0} · ${p.sales_count ?? 0} sold`}
+                      {` · rank ${p.sort ?? 0} · demand ${Number(p.demand_score??0).toFixed(1)} · ${p.sales_count ?? 0} sold`}{p.auto_best_seller && " · auto bestseller"}
                     </p>
                   </Link>
                   <p className="shrink-0 font-medium">

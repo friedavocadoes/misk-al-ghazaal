@@ -18,6 +18,7 @@ function toCard(p: Product) {
     reviewCount: p.reviewCount,
     variants: p.variants,
     notes: p.notes,
+    outOfStock: p.outOfStock,
     isNew: p.isNew,
     isBestSeller: p.isBestSeller,
     lineupTitle: p.lineupTitle,

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
-import { useCartMeta } from "@/lib/cart-meta";
+import { useCartMeta, cartVariantMeta } from "@/lib/cart-meta";
 import { DeliveryAddress } from "@/components/blocks/DeliveryAddress";
 import {SamplePicker} from "@/components/blocks/SamplePicker";
 import {readSamples} from "@/lib/sample-tiers";
@@ -682,7 +682,7 @@ export default function CheckoutPage() {
         <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
           <ul className="divide-y divide-ink/10">
             {lines.map((l) => {
-              const m = meta[l.productSlug];
+              const m = cartVariantMeta(meta[l.productSlug],l.variantId);
               return (
                 <li key={`${l.productSlug}-${l.variantId ?? ""}`} className="flex items-center gap-3 py-3 text-sm">
                   <span className="flex-1 truncate text-ink">

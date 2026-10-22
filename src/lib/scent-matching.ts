@@ -17,7 +17,7 @@ export function rankScents(products: Product[], audience: ScentAudience, selecte
     // then audience-only alternatives. No invented match percentages.
     const tier = hits.length ? (audienceMatch ? 3 : 2) : audienceMatch ? 1 : 0;
     return { product, hits, audienceMatch, tier };
-  }).sort((a,b) => b.tier - a.tier || b.hits.length - a.hits.length || Number(b.product.variants.some(v => v.stock > 0)) - Number(a.product.variants.some(v => v.stock > 0)) || (a.product.sortRank ?? 0) - (b.product.sortRank ?? 0) || a.product.slug.localeCompare(b.product.slug)).slice(0,6);
+  }).sort((a,b) => b.tier - a.tier || b.hits.length - a.hits.length || Number(!b.product.outOfStock && b.product.variants.some(v => v.stock > 0)) - Number(!a.product.outOfStock && a.product.variants.some(v => v.stock > 0)) || (a.product.sortRank ?? 0) - (b.product.sortRank ?? 0) || a.product.slug.localeCompare(b.product.slug)).slice(0,6);
 }
 const PALETTE = ["#a994b5", "#b29a74", "#71969c", "#b78d98", "#8c9d82", "#c4a174"];
 export function noteTint(name: string) {

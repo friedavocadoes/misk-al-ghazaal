@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
-function pricing(stock = 0) {
+function pricing(stock = 0, productExtra={}, variantExtra={}) {
   const exports = {};
   const db = {
     from: (table) => {
@@ -16,14 +16,14 @@ function pricing(stock = 0) {
           Promise.resolve({
             data:
               table === "products"
-                ? [{ id: "p", slug: "oud", title: "Oud", price: 100 }]
+                ? [{ id: "p", slug: "oud", title: "Oud", price: 100,...productExtra }]
                 : [
                     {
                       id: "v",
                       product_id: "p",
                       title: "50ml",
                       price: 100,
-                      stock,
+                      stock,...variantExtra,
                     },
                   ],
           }).then(resolve),
@@ -71,4 +71,16 @@ test("quantity increase above stock provides exact available quantity", async ()
 test("in-stock order has no stock issues", async () => {
   const r = await pricing(2).quoteBag({ lines });
   assert.equal(r.stockIssues.length, 0);
+});
+
+test("manual out-of-stock and archived options cannot be ordered despite positive inventory",async()=>{
+ for(const engine of [pricing(10,{out_of_stock:true}),pricing(10,{}, {is_active:false})]){
+  const preview=await engine.quoteBag({lines,previewStock:true});assert.equal(preview.stockIssues[0].available,0);
+  await assert.rejects(engine.quoteBag({lines}),/Out of stock/);
+ }
+});
+test("legacy lines without variant IDs still validate stock and resolve a real option",async()=>{
+ const input={lines:[{slug:"oud",qty:1}]};
+ await assert.rejects(pricing(0).quoteBag(input),/Out of stock/);
+ const result=await pricing(5).quoteBag(input);assert.equal(result.priced[0].variantId,"v");
 });

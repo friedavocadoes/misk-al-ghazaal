@@ -1,4 +1,7 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { createSearchIndex, searchDocument } from "./search-index";
+import { productAvailable } from "./product-options";
 // ---------------------------------------------------------------------------
 // Database-backed data-access layer (Supabase is the ONLY source of truth).
 //
@@ -39,6 +42,9 @@ function requireConfigured(): void {
 }
 
 interface DbProduct {
+  out_of_stock?: boolean;
+  demand_score?: number;
+  auto_best_seller?: boolean;
   id: string;
   slug: string;
   title: string;
@@ -68,6 +74,12 @@ interface DbProduct {
 }
 
 interface DbVariant {
+  concentration?: string | null;
+  capacity_ml?: number | null;
+  name_override?: string | null;
+  images?: string[];
+  use_product_images?: boolean;
+  is_active?: boolean;
   id: string;
   product_id: string;
   title: string;
@@ -151,12 +163,14 @@ function toProduct(
       ? { notesImageDesktop: p.notes_image_desktop }
       : {}),
     ...(p.notes_image_mobile ? { notesImageMobile: p.notes_image_mobile } : {}),
-    variants: variants.map(
+    variants: variants.filter(v => v.is_active !== false).sort((a,b)=>(a.concentration ?? "").localeCompare(b.concentration ?? "") || Number(a.capacity_ml ?? 0)-Number(b.capacity_ml ?? 0) || a.id.localeCompare(b.id)).map(
       (v): Variant => ({
         id: v.id,
         title: v.title,
         price: Number(v.price),
         stock: v.stock,
+        concentration: v.concentration ?? undefined, capacityMl: v.capacity_ml == null ? undefined : Number(v.capacity_ml),
+        nameOverride: v.name_override ?? undefined, images: v.images ?? [], useProductImages: v.use_product_images ?? true,
         ...(v.sku ? { sku: v.sku } : {}),
       }),
     ),
@@ -165,6 +179,7 @@ function toProduct(
     ...(p.is_best_seller ? { isBestSeller: true } : {}),
     template: p.template ?? "standard",
     isActive: p.is_active ?? true,
+    outOfStock: p.out_of_stock ?? false, demandScore: Number(p.demand_score ?? 0), autoBestSeller: p.auto_best_seller ?? false,
     sortRank: p.sort ?? 0,
     salesCount: p.sales_count ?? 0,
     ...(p.created_at ? { createdAt: p.created_at } : {}),
@@ -285,7 +300,7 @@ async function fetchProductsWithRelationsUncached(filter?: {
 }
 
 export function rankScore(p: Product): number {
-  return (p.sortRank ?? 0) - (p.isBestSeller ? 5000 : 0) - (p.salesCount ?? 0);
+  return (p.sortRank ?? 0) - (p.isBestSeller ? 5000 : 0) - (p.demandScore ?? 0) * 10 - (p.salesCount ?? 0);
 }
 
 export function rankProducts<T extends Product>(list: T[]): T[] {
@@ -530,7 +545,7 @@ function applyCatalogFacets<T extends Product>(
 ): T[] {
   let out = items;
   if (opts?.inStockOnly)
-    out = out.filter((p) => p.variants.some((v) => v.stock > 0));
+    out = out.filter((p) => productAvailable(p));
   if (opts?.onSaleOnly)
     out = out.filter(
       (p) => p.compareAtPrice != null && p.compareAtPrice > p.price,
@@ -566,6 +581,7 @@ function applyCatalogSort<T extends Product>(
   if (sort === "popular")
     return [...items].sort(
       (a, b) =>
+        (b.demandScore ?? 0) - (a.demandScore ?? 0) ||
         (b.salesCount ?? 0) - (a.salesCount ?? 0) ||
         rankScore(a) - rankScore(b),
     );
@@ -577,60 +593,29 @@ function discountPct(p: Product): number {
   return (p.compareAtPrice - p.price) / p.compareAtPrice;
 }
 
-export async function searchCatalog(
-  query: string,
-  opts?: CatalogQuery,
-): Promise<Product[]> {
-  if (!query.trim()) return [];
-  requireConfigured();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .is("deleted_at", null)
-    .ilike("title", `%${query.trim()}%`)
-    .limit(60);
-  if (error || !data) throw error ?? new Error("search failed");
-  const ids = (data as DbProduct[]).map((p) => p.id);
-  const { data: vars } = ids.length
-    ? await supabase.from("variants").select("*").in("product_id", ids)
-    : { data: [] };
-  const vmap = new Map<string, DbVariant[]>();
-  for (const v of (vars as DbVariant[]) ?? []) {
-    const arr = vmap.get(v.product_id) ?? [];
-    arr.push(v);
-    vmap.set(v.product_id, arr);
-  }
-  let items = (data as DbProduct[])
-    .map((p) => toProduct(p, vmap.get(p.id) ?? [], [], []))
-    .filter((p) => p.isActive !== false);
-  items = applyCatalogFacets(items, opts);
-  return applyCatalogSort(items, opts?.sort);
+// Cookie-free catalog snapshot shared across requests; mutations expire this tag.
+export const getSearchProducts = unstable_cache(
+  async (includeInactive = false) => fetchProductsWithRelationsUncached({includeInactive}),
+  ["catalog-search-v2"], {tags:["catalog-search"], revalidate:60},
+);
+const searchIndexes=new Map<boolean,{version:string;engine:ReturnType<typeof createSearchIndex>}>();
+async function indexedMatches(query:string, includeInactive=false) {
+  const products = await getSearchProducts(includeInactive);
+  const documents=products.map(searchDocument);
+  const version=JSON.stringify(documents);
+  let indexed=searchIndexes.get(includeInactive);
+  if(!indexed || indexed.version!==version){indexed={version,engine:createSearchIndex(documents)};searchIndexes.set(includeInactive,indexed);}
+  const byId = new Map(products.map(p=>[p.id,p]));
+  return indexed.engine.search(query).map(d=>byId.get(d.id)!).filter(Boolean);
 }
-
-export async function suggestProducts(
-  query: string,
-  limit = 8,
-  opts?: { includeInactive?: boolean },
-): Promise<Product[]> {
-  const q = query.trim().replace(/[%_,]/g, "");
-  if (q.length < 2) return [];
-  requireConfigured();
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("slug")
-    .is("deleted_at", null)
-    .or(`title.ilike.%${q}%,title_ar.ilike.%${q}%`)
-    .limit(Math.min(24, Math.max(1, limit * 3)));
-  if (error || !data) throw error ?? new Error("suggest failed");
-  const slugs = [...new Set((data as { slug: string }[]).map((r) => r.slug))];
-  if (!slugs.length) return [];
-  const full = await fetchProductsWithRelations({
-    slugs,
-    includeInactive: opts?.includeInactive,
-  });
-  return rankProducts(full).slice(0, Math.min(12, Math.max(1, limit)));
+export async function searchCatalog(query:string, opts?:CatalogQuery):Promise<Product[]> {
+  if (!query.trim()) return [];
+  const matches=applyCatalogFacets(await indexedMatches(query),opts);
+  return opts?.sort && opts.sort !== "featured" ? applyCatalogSort(matches,opts.sort) : matches;
+}
+export async function suggestProducts(query:string,limit=8,opts?:{includeInactive?:boolean}):Promise<Product[]> {
+  if(query.trim().length<2)return [];
+  return (await indexedMatches(query,opts?.includeInactive)).slice(0,Math.min(12,Math.max(1,limit)));
 }
 
 export async function getRelatedProducts(

@@ -1,3 +1,4 @@
+import { productAvailable } from "./product-options";
 import type { Metadata } from "next";
 import { createPublicClient } from "./supabase/public";
 import { isSupabaseConfigured } from "./supabase/keys";
@@ -166,15 +167,7 @@ export function stripHtml(html: string): string {
 /** Auto Product JSON-LD merged with the row's custom schema (custom wins
     on key conflicts, arrays concatenate). */
 export function productJsonLd(
-  product: {
-    slug: string;
-    title: string; titleAr?: string;
-    descriptionHtml: string;
-    images: string[];
-    price: number;
-    compareAtPrice?: number;
-    rating: number; reviewCount: number;
-  },
+  product: Pick<Product,"slug"|"title"|"titleAr"|"descriptionHtml"|"images"|"price"|"compareAtPrice"|"rating"|"reviewCount"|"variants"|"outOfStock">,
   seo: PageSeo | null,
   locale: Locale,
   origin: string,
@@ -191,7 +184,7 @@ export function productJsonLd(
       url: `${origin}${seoPathFor("product", product.slug)}`,
       priceCurrency: "AED",
       price: product.price.toFixed(2),
-      availability: "https://schema.org/InStock",
+      availability: productAvailable(product) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     },
   };
   if (product.reviewCount > 0) {

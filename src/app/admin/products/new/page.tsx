@@ -1,3 +1,4 @@
+import { CONCENTRATIONS, variantLabel } from "@/lib/product-options";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -20,6 +21,10 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
   const price = Number(formData.get("price") || 0);
   if (!(price > 0)) return { ok: false, error: "Price must be above zero." };
 
+  const concentration=String(formData.get("concentration")||"");
+  const capacity=formData.get("capacity_ml")?Number(formData.get("capacity_ml")):null;
+  const vPrice=Number(formData.get("v_price")||price),stock=Number(formData.get("v_stock")||0);
+  if((concentration&&!CONCENTRATIONS.some(c=>c===concentration)) || (concentration&&!capacity) || (capacity!==null && (!Number.isFinite(capacity)||capacity<=0)) || !Number.isFinite(vPrice)||vPrice<=0||!Number.isSafeInteger(stock)||stock<0)return {ok:false,error:"Check concentration, capacity, price and stock."};
   const { data: existing } = await supabase.from("products").select("id").eq("slug", slug).single();
   if (existing) return { ok: false, error: "That slug is already taken." };
 
@@ -37,7 +42,8 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
       slug,
       title,
       title_ar: String(formData.get("title_ar") || "") || null,
-      price,
+      price:vPrice,
+      bestseller_mode:formData.get("is_best_seller")==="on"?"pinned":"auto",
       compare_at: formData.get("compare_at") ? Number(formData.get("compare_at")) : null,
       images,
       is_active: formData.get("is_active") === "on",
@@ -52,15 +58,16 @@ async function createProduct(formData: FormData): Promise<{ ok: boolean; id?: st
   if (pErr || !product) return { ok: false, error: pErr?.message ?? "Insert failed." };
   const productId = (product as { id: string }).id;
 
-  const vPrice = Number(formData.get("v_price") || price);
-  await supabase.from("variants").insert({
+  const {error:vErr}=await supabase.from("variants").insert({
     product_id: productId,
-    title: String(formData.get("v_title") || "Standard"),
+    title: variantLabel(concentration,capacity,String(formData.get("v_title")||"")),
+    concentration:concentration||null,capacity_ml:capacity,
     price: vPrice > 0 ? vPrice : price,
-    stock: Math.max(0, Number(formData.get("v_stock") || 0)),
+    stock,
     sku: String(formData.get("v_sku") || "") || null,
   });
 
+  if(vErr){await supabase.from("products").delete().eq("id",productId);return {ok:false,error:vErr.message};}
   const collIds = formData.getAll("collections").map(String).filter(Boolean);
   if (collIds.length) {
     await supabase

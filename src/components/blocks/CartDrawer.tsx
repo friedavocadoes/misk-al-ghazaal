@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { formatAED } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
-import { useCartMeta } from "@/lib/cart-meta";
+import { useCartMeta, cartVariantMeta } from "@/lib/cart-meta";
 
 export function CartDrawer({
   open,
@@ -25,7 +25,7 @@ export function CartDrawer({
   const { meta } = useCartMeta(lines.map((l) => l.productSlug));
 
   const rows = lines
-    .map((l) => ({ ...l, product: meta[l.productSlug] }))
+    .map((l) => ({ ...l, product: cartVariantMeta(meta[l.productSlug],l.variantId) }))
     .filter((l) => l.product);
   const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
 

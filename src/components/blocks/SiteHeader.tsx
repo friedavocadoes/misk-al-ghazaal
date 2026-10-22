@@ -698,13 +698,13 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
           </div>
         </div>
 
-        {/* Stacked nav — grid halves keep the divider exactly under the crest */}
+        {/* Stacked nav — center the complete group, including its divider */}
         <nav
           aria-label="Primary"
           className="maison-navigation hidden overflow-hidden border-t border-ink/10 transition-all duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] lg:block"
           style={{ maxHeight: compact ? 0 : 64, opacity: compact ? 0 : 1 }}
         >
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center pt-3.5 pb-4">
+          <div className="flex items-center justify-center pt-3.5 pb-4">
             <span
               className={`flex items-center justify-end ${locale === "ar" ? "gap-14 pe-12" : "gap-10 pe-8"}`}
             >
