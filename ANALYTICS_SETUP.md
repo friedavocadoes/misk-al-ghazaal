@@ -1,5 +1,7 @@
 # First-party store analytics
 
+For the detailed explanation of tracking, bot detection, abandonment, surveys, metric formulas, and the source-code map, read [How analytics works](ANALYTICS_EXPLAINED.md).
+
 ## Install and open
 
 1. Run **`supabase/migration_analytics.sql`** in the Supabase SQL editor after the existing project migrations. It is safe to rerun. The application uses the existing Supabase environment variables; no analytics account, keys, or third-party SDK is required.
