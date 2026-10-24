@@ -1,3 +1,4 @@
+import { FindInStore } from "@/components/product/FindInStore";
 import { ProductView } from "@/components/analytics/ProductView";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -120,6 +121,7 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
       <AboutShort product={product} locale={locale} />
       <NotesBrief product={product} locale={locale} />
       <DetailedNotes product={product} locale={locale} />
+      <Suspense fallback={null}><FindInStore productId={product.id} locale={locale}/></Suspense>
       <Suspense fallback={null}><RitualSection product={product} locale={locale} /></Suspense>
       <Suspense fallback={<div className="mt-12 h-64 animate-pulse bg-sand/40" />}><ReviewsSection product={product} locale={locale} /></Suspense>
       <Suspense fallback={null}><LineupRow product={product} locale={locale} /></Suspense>

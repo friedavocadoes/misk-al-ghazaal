@@ -496,6 +496,7 @@ export default async function ProductDetail(props: {
                 {(p.images ?? []).length} images · {(variants ?? []).length}{" "}
                 variants
               </span>
+              <Link href="/admin/stores" className="text-xs text-gold underline underline-offset-4">Manage in-store availability ↗</Link>
             </div>
           </div>
           <div className="flex shrink-0 gap-2">

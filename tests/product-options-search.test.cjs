@@ -44,3 +44,16 @@ test('blank stock is unlimited while explicit zero and manual override remain un
  assert.equal(search.searchDocument(unlimited).outOfStock,false);
  assert.equal(search.searchDocument({...product,variants:[]}).outOfStock,false);
 });
+
+test('perfume name typos, short misspellings and missing spaces return useful matches',()=>{
+ const make=(id,title)=>search.searchDocument({...product,id,slug:id,title,titleAr:undefined,notes:[],categorySlugs:[],variants:[]});
+ const engine=search.createSearchIndex([make('oud','Classic Oud'),make('abukhalid','Abukhalid Oud'),make('wish','My Wish'),make('oudh','Classic Oudh'),make('rose','Rose Essence')]);
+ assert.equal(engine.search('aud')[0]?.slug,'oud');
+ assert.equal(engine.search('abukalid oud')[0]?.slug,'abukhalid');
+ assert.equal(engine.search('abukhalidoud')[0]?.slug,'abukhalid');
+ assert.equal(engine.search('mywish')[0]?.slug,'wish');
+ assert.equal(engine.search('rose essense')[0]?.slug,'rose');
+ assert.equal(engine.search('classic oud')[0]?.slug,'oud');
+ assert.equal(new Set(engine.search('oud').map(p=>p.id)).size,engine.search('oud').length);
+ assert.equal(engine.search('utterlyunrelatedquery').length,0);
+});

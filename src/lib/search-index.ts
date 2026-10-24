@@ -31,11 +31,31 @@ export function searchDocument(p: Product): SearchDocument {
     firstVariant:p.variants[0]?.title, topNotes:p.notes.filter(n=>n.kind==="top").slice(0,2).map(n=>({name:n.name,nameAr:n.nameAr})),
     keywords:[p.slug,p.lineupTitle,p.lineupTitleAr,...p.categorySlugs,...p.notes.flatMap(n=>[n.name,n.nameAr]),...p.variants.map(v=>v.title)].filter(Boolean).join(" ") };
 }
+export function normalizeSearchTerm(term:string):string {
+  return term.normalize("NFKD").replace(/[\u0300-\u036f\u064b-\u065f\u0670]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").toLowerCase();
+}
+const compactName=(value:string)=>normalizeSearchTerm(value).replace(/[^\p{L}\p{N}]/gu,"");
 export function createSearchIndex(documents: SearchDocument[]) {
-  const engine = new MiniSearch<SearchDocument>({fields:["title","titleAr","keywords"],
-    processTerm:term=>term.normalize("NFKD").replace(/[\u0300-\u036f\u064b-\u065f\u0670]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").toLowerCase(),
-    searchOptions:{prefix:true, fuzzy:term=>term.length>3?0.2:false, combineWith:"AND", boost:{title:5,titleAr:5,keywords:1}}});
-  engine.addAll(documents);
+  type Indexed=SearchDocument & {compactTitle:string;compactTitleAr:string};
+  const engine = new MiniSearch<Indexed>({fields:["title","titleAr","keywords","compactTitle","compactTitleAr"],
+    processTerm:normalizeSearchTerm,
+    searchOptions:{prefix:true,combineWith:"AND",maxFuzzy:3,boost:{title:5,titleAr:5,keywords:1,compactTitle:4,compactTitleAr:4}}});
+  engine.addAll(documents.map(d=>({...d,compactTitle:compactName(d.title),compactTitleAr:compactName(d.titleAr??"")})));
   const byId = new Map(documents.map(d=>[d.id,d]));
-  return { search:(query:string, limit=1000) => engine.search(query.slice(0,160)).slice(0,limit).map(r=>byId.get(String(r.id))!).filter(Boolean) };
+  return {search:(query:string,limit=1000)=>{
+    const clean=query.trim().slice(0,160);
+    if(!clean)return [];
+    const found=new Map<string,SearchDocument>();
+    const add=(hits:ReturnType<typeof engine.search>)=>{for(const hit of hits){const doc=byId.get(String(hit.id));if(doc && !found.has(doc.id))found.set(doc.id,doc);}};
+    // Exact names and prefixes always come before approximate spelling matches.
+    add(engine.search(clean,{fuzzy:false,fields:["title","titleAr","keywords"]}));
+    const compact=compactName(clean);
+    if(found.size<limit && compact.length>=3)add(engine.search(compact,{fuzzy:false,fields:["compactTitle","compactTitleAr"]}));
+    if(found.size<limit && clean.length>=3){
+      const fuzzy=(term:string)=>term.length<3?false:term.length<=5?1:term.length<=9?2:3;
+      add(engine.search(clean,{fuzzy,fields:["title","titleAr","keywords"]}));
+      if(found.size<limit && compact.length>=4)add(engine.search(compact,{fuzzy,fields:["compactTitle","compactTitleAr"]}));
+    }
+    return [...found.values()].slice(0,Math.max(0,limit));
+  }};
 }

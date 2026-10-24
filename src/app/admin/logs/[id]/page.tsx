@@ -11,6 +11,7 @@ function entityHref(entity: string, entityId: string): string | null {
   if (entity === "product" || entity === "product_gallery" || entity === "product_notes" || entity === "product_collections" || entity === "product_artwork" || entity === "variant") {
     return `/admin/products/${entityId}`;
   }
+  if (entity === "retail_store") return `/admin/stores/${entityId}`;
   if (entity === "order") return `/admin/orders/${entityId}`;
   if (entity === "banner" || entity === "banner_artwork") return `/admin/banners/${entityId}`;
   if (entity === "coupon") return `/admin/coupons/${entityId}`;

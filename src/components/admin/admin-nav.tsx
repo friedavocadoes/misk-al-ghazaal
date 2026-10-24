@@ -39,6 +39,7 @@ const GROUPS: NavGroup[] = [
     label: "Catalog",
     items: [
       { href: "/admin/products", label: "Products" },
+      { href: "/admin/stores", label: "Stores & product availability" },
       { href: "/admin/samples", label: "Samples & spending tiers" },
       { href: "/admin/lineups", label: "Lineups" },
       { href: "/admin/notes", label: "Notes" },

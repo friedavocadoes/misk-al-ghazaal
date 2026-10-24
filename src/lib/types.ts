@@ -244,3 +244,11 @@ export interface OrderStub {
   total: number;
   status: "pending" | "fulfilled" | "cancelled";
 }
+
+/** Central physical stockists; product links store only assignment overrides. */
+export interface RetailStore {
+  id:string; name:string; name_ar?:string|null; location:string; location_ar?:string|null;
+  address:string; address_ar?:string|null; maps_url:string; phone:string; hours:string; hours_ar?:string|null;
+  active:boolean; all_products:boolean; sort:number;
+}
+export interface StoreAssignment {store_id:string;product_id:string;available:boolean}

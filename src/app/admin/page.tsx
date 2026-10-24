@@ -23,6 +23,7 @@ const CARDS: {
     group: "Catalog",
     links: [
       { href: "/admin/products", label: "Products", desc: "Prices, copy, lineups, notes & artwork" },
+      { href: "/admin/stores", label: "Stores", desc: "Stockist details & bulk product assignment" },
       { href: "/admin/lineups", label: "Lineups", desc: "Named lines behind “More from the lineup”" },
       { href: "/admin/notes", label: "Notes", desc: "Fragrance-note library + brand colors" },
       { href: "/admin/rituals", label: "Rituals", desc: "Reusable how-to-use guides" },

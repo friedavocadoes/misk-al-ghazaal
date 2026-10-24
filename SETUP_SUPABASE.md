@@ -182,3 +182,7 @@ The notes editor at `/admin/notes` accepts transparent PNG, WebP or AVIF drawing
 ### First-party analytics
 
 Run `supabase/migration_analytics.sql`, then open Admin → Analytics. See [ANALYTICS_SETUP.md](ANALYTICS_SETUP.md) for dashboard access, cookie/event behavior, verified purchase tracking, customer Excel CSV exports, metric definitions and verification.
+
+### Physical stores and product availability
+
+Run `supabase/migration_retail_stores.sql`, then open Admin → Catalog → Stores & product availability (`/admin/stores`). It seeds Mamzar Centre for all current/future products. Edit its details centrally, add locations, and bulk assign products by collection or lineup. See [RETAIL_STORES.md](RETAIL_STORES.md) for assignments, Maps links, access controls and caching. This is a store directory, separate from online stock quantities and checkout delivery.
