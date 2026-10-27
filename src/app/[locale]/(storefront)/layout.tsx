@@ -1,3 +1,4 @@
+import { StorefrontHaptics } from "@/components/blocks/StorefrontHaptics";
 import { CartAbandonmentSurvey } from "@/components/analytics/CartAbandonmentSurvey";
 import {ReviewInvitation} from "@/components/blocks/ReviewInvitation";
 import { StorefrontToasts } from "@/components/blocks/StorefrontToasts";
@@ -31,7 +32,7 @@ export default async function StorefrontLayout(
             `#page-content` reserves the header's live height as padding-top
             (synced pre-paint + RO inside SiteHeader) so geometry matches
             in-flow layout exactly, morph included. */}
-        <CartAbandonmentSurvey/><StorefrontToasts /><ReviewInvitation/>
+        <StorefrontHaptics/><CartAbandonmentSurvey/><StorefrontToasts /><ReviewInvitation/>
         <RouteProgress />
         <SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />
         <div id="page-content">

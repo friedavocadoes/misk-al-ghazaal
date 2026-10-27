@@ -1,5 +1,6 @@
 "use client";
 import { attributionCookie, attributionFromUrl, uuid, type AnalyticsEventType, type EventInput } from "./shared";
+import { rememberPurchase } from "./survey-memory";
 
 let lastRoute = "";
 let recentEvent = "";
@@ -51,5 +52,8 @@ export function trackProduct(data: EventInput) {
 }
 export function markPurchase(orderId: string) {
   // UI suppression only. Revenue is recorded by the checkout server, not this call.
-  try { ensureAnalyticsIdentity();sessionStorage.setItem(`analytics-purchased:${cookieValue("_as_id")}`,orderId);window.dispatchEvent(new Event("analytics-purchased")); } catch {}
+  rememberPurchase();
+  try { ensureAnalyticsIdentity();sessionStorage.setItem(`analytics-purchased:${cookieValue("_as_id")}`,orderId); } catch {}
+  // Storage denial must never prevent the currently open survey from closing.
+  try{window.dispatchEvent(new Event("analytics-purchased"));}catch{}
 }

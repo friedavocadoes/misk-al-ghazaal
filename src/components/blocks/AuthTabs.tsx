@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/lib/haptics";
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -58,13 +59,16 @@ function LoginPane({ next }: { next: string }) {
     const { error } = await createBrowserClient().auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) {
+      haptic("error");
       setError(error.message);
       return;
     }
+    haptic("success");
     await afterAuth();
   };
 
   const googleLogin = async () => {
+    haptic("selection");
     if (busy) return;
     setBusy(true);
     setError("");
@@ -74,6 +78,7 @@ function LoginPane({ next }: { next: string }) {
     });
     if (error) {
       setBusy(false);
+      haptic("error");
       setError(error.message);
     }
   };
@@ -135,9 +140,11 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
     });
     if (error) {
       setBusy(false);
+      haptic("error");
       setError(error.message);
       return;
     }
+    haptic("success");
     if (data.session) {
       try {
         await fetch("/api/auth/ensure", {
@@ -157,6 +164,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
   };
 
   const googleSignup = async () => {
+    haptic("selection");
     if (busy) return;
     setBusy(true);
     setError("");
@@ -169,6 +177,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
     });
     if (error) {
       setBusy(false);
+      haptic("error");
       setError(error.message);
     }
   };

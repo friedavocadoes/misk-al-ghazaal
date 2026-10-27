@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { haptic } from "./haptics";
 import { trackEvent, cookieValue } from "./analytics/client";
 import type { CartItem } from "./types";
 import { createClient as createBrowserClient } from "./supabase/client";
@@ -13,7 +14,7 @@ interface CartCtx {
   hydrated: boolean;
   lines: CartLine[];
   count: number;
-  add: (line: CartLine) => void;
+  add: (line: CartLine, feedback?: "flight") => void;
   remove: (slug: string, variantId?: string) => void;
   setQty: (slug: string, variantId: string | undefined, qty: number) => void;
   clear: () => void;
@@ -159,10 +160,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(id);
   }, [lines, hydrated, userId, readyUser]);
 
-  const add = useCallback((line: CartLine) => {
+  const add = useCallback((line: CartLine, feedback?: "flight") => {
     const before=analyticsLines.current.find(l=>same(l,line.productSlug,line.variantId))?.qty ?? 0;
     const delta=Math.min(20,before+line.qty)-before;
-    if (delta>0 && (before>0 || analyticsLines.current.length<50)) {cartSignal(false,"add",line.productSlug);trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});}
+    if (delta>0 && (before>0 || analyticsLines.current.length<50)) {haptic(feedback==="flight"?"flight":"add");cartSignal(false,"add",line.productSlug);trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});}
     setLines((prev) => {
       const i = prev.findIndex((l) => same(l, line.productSlug, line.variantId));
       if (i >= 0) {
@@ -176,13 +177,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const remove = useCallback((slug: string, variantId?: string) => {
     const old=analyticsLines.current.find(l=>same(l,slug,variantId));
-    if(old){trackEvent("remove_from_cart",{product_id:slug,quantity:old.qty,variant_id:variantId});cartSignal(analyticsLines.current.length===1,"remove",slug);}
+    if(old){haptic("close");trackEvent("remove_from_cart",{product_id:slug,quantity:old.qty,variant_id:variantId});cartSignal(analyticsLines.current.length===1,"remove",slug);}
     setLines((prev) => prev.filter((l) => !same(l, slug, variantId)));
   }, []);
 
   const setQty = useCallback((slug: string, variantId: string | undefined, qty: number) => {
     const old=analyticsLines.current.find(l=>same(l,slug,variantId));
     const delta=Math.min(20,Math.max(0,qty))-(old?.qty ?? 0);
+    if(old && delta)haptic("step");
     if(old && delta) trackEvent(delta>0?"add_to_cart":"remove_from_cart",{product_id:slug,quantity:Math.abs(delta),variant_id:variantId});
     if(old && qty<=0)cartSignal(analyticsLines.current.length===1,"remove",slug);
     setLines((prev) =>

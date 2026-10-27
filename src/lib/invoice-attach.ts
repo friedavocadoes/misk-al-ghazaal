@@ -1,3 +1,4 @@
+import { paymentMethodLabel } from "@/lib/admin-orders-model";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { statusLabel } from "./order-status";
 import { buildInvoicePdf } from "./invoice";
@@ -20,6 +21,7 @@ export async function resolveInvoiceAttachment(
     if (!order) return null;
     const o = order as {
       order_no: string;
+      payment_method: string;
       customer_name: string;
       phone: string;
       email: string | null;
@@ -71,6 +73,7 @@ export async function resolveInvoiceAttachment(
 
     const pdf = await buildInvoicePdf({
       orderNo: o.order_no,
+      paymentLabel: paymentMethodLabel(o.payment_method ?? "cod"),
       date: new Date().toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }),
       statusLabel: statusLabel(o.status),
       customerName: o.customer_name,

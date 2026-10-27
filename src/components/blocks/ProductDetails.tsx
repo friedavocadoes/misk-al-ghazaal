@@ -10,6 +10,7 @@ import { VariantPicker } from "@/components/product/VariantPicker";
 import { variantImages } from "@/lib/product-options";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { WishHeart } from "@/components/product/WishHeart";
+import { haptic } from "@/lib/haptics";
 import { flyToBag } from "@/lib/fly-to-bag";
 import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
@@ -153,7 +154,7 @@ export function ProductInfo({
 
   const addToBag = (e?: React.MouseEvent) => {
     if(stock<=0)return;
-    add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty });
+    add({ productSlug: product.slug, variantId: variant?.id, qty: safeQty }, "flight");
     if (e?.currentTarget instanceof HTMLElement) flyToBag(e.currentTarget, variantImages(product,variant)[0]);
     setAdded(true);
     setTimeout(() => setAdded(false), 1400);
@@ -215,7 +216,7 @@ export function ProductInfo({
         <span className="pdp-quantity flex items-center">
           <button
             className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            onClick={() => {haptic("step");setQty((q) => Math.max(1, q - 1));}}
             disabled={safeQty <= 1}
             aria-label={t("decrease")}
           >
@@ -226,7 +227,7 @@ export function ProductInfo({
           </span>
           <button
             className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
-            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
+            onClick={() => {haptic("step");setQty((q) => Math.min(maxQty, q + 1));}}
             disabled={safeQty >= maxQty}
             aria-label={t("increase")}
           >

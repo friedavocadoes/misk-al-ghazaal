@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { trackingLink } from "./order-tracking";
 import type { Transporter } from "nodemailer";
 
 // ---------------------------------------------------------------------------
@@ -9,8 +10,8 @@ import type { Transporter } from "nodemailer";
 //   orders  → shopper order-issue forms, forwarded to SUPPORT_EMAIL
 //   support → human inbox, mailto-only (no SMTP — see SUPPORT_EMAIL)
 // Graceful no-op when a mailbox is unconfigured, so dev/staging never crash.
-// Every mailbox reads its own *_SMTP_* env block and falls back to the
-// legacy SMTP_* block, so existing single-sender setups keep working.
+// All mailboxes share SMTP_HOST / SMTP_PORT / SMTP_SECURE.
+// Only credentials and optional FROM addresses vary by mailbox.
 // ---------------------------------------------------------------------------
 
 export type Mailbox = "hello" | "noreply" | "promo" | "orders";
@@ -36,22 +37,31 @@ export function mailboxAddress(m: Mailbox): string {
   );
 }
 
+export function smtpConnectionSettings(env: NodeJS.ProcessEnv = process.env) {
+  // Transitional fallback is resolved ONCE for every mailbox, never per sender.
+  const legacy = Object.values(MAILBOX_PREFIX).find(p=>env[`${p}_SMTP_HOST`]);
+  const host = env.SMTP_HOST || (legacy ? env[`${legacy}_SMTP_HOST`] : undefined);
+  const parsedPort = Number(env.SMTP_PORT || (legacy ? env[`${legacy}_SMTP_PORT`] : undefined) || 465);
+  const port=Number.isInteger(parsedPort)&&parsedPort>0&&parsedPort<=65535?parsedPort:465;
+  const secureValue = env.SMTP_SECURE ?? (legacy ? env[`${legacy}_SMTP_SECURE`] : undefined);
+  return {host,port,
+    secure:secureValue!==undefined ? ["1","true"].includes(secureValue.toLowerCase()) : port===465};
+}
+
 function mailboxTransporter(m: Mailbox): Transporter | null {
   const p = MAILBOX_PREFIX[m];
-  const host = process.env[`${p}_SMTP_HOST`] ?? process.env.SMTP_HOST ?? null;
+  const {host,port,secure}=smtpConnectionSettings();
   const user = process.env[`${p}_SMTP_USER`] ?? process.env.SMTP_USER ?? null;
   const pass = process.env[`${p}_SMTP_PASS`] ?? process.env.SMTP_PASS ?? null;
   if (!host || !user || !pass) return null;
-  const portRaw =
-    process.env[`${p}_SMTP_PORT`] ?? process.env.SMTP_PORT ?? "465";
-  const port = Number(portRaw) || 465;
-  const secureRaw = process.env[`${p}_SMTP_SECURE`] ?? process.env.SMTP_SECURE;
-  const secure = secureRaw !== undefined ? secureRaw === "1" : port === 465;
   return nodemailer.createTransport({
     host,
     port,
     secure,
     auth: { user, pass },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
   });
 }
 
@@ -67,7 +77,7 @@ function shell(
 <h1 style="font-size:28px;font-weight:400;margin:12px 0 4px">${title}</h1>
 <p style="font-size:13px;color:#78716c;margin:0 0 20px">${preheader}</p>
 <div style="border-top:1px solid #e9e1d2;padding-top:20px;font-size:15px;line-height:1.7">${body}</div>
-<p style="margin-top:28px;font-size:12px;color:#78716c">Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Cash on delivery across the UAE.<br />Need help? Write to <a href="mailto:${SUPPORT_EMAIL}" style="color:#8a6d2f">${SUPPORT_EMAIL}</a></p>
+<p style="margin-top:28px;font-size:12px;color:#78716c">Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Delivering across the UAE.<br />Need help? Write to <a href="mailto:${SUPPORT_EMAIL}" style="color:#8a6d2f">${SUPPORT_EMAIL}</a></p>
 </div></body></html>`;
   return { html, text };
 }
@@ -143,13 +153,14 @@ export function orderLinesHtml(
 
 /** Table-based status graphic remains legible when email clients block images. */
 export function orderStatusGraphic(status: string): string {
- const stages = ["new", "confirmed", "packed", "out_for_delivery", "delivered"];
- const labels = ["Received", "Confirmed", "Packed", "On its way", "Delivered"];
- const index = stages.indexOf(status);
+ const stages = ["new", "confirmed", "dispatched", "out_for_delivery", "delivered"];
+ const labels = ["Received", "Confirmed", "Dispatched", "Out for delivery", "Delivered"];
+ const index = stages.indexOf(status === "packed" ? "confirmed" : status);
  const messages: Record<string,string> = {
   new: "Our team will review your order. We’ll send an update once it is confirmed.",
   confirmed: "Your order is confirmed. We’re getting your selection ready.",
   packed: "Your selection is packed with care and ready for dispatch.",
+  dispatched: "Your parcel has been handed to the courier. Copy the tracking number below to follow its journey.",
   out_for_delivery: "Your parcel is on its way. Watch for delivery updates below.",
   delivered: "Your order has arrived. We hope you enjoy every note.",
   cancelled: "This order has been cancelled. Contact our team if you need help.",
@@ -184,6 +195,7 @@ export function buildOrderEmail(opts: {
   pinUrl?: string;
   trackingNo?: string;
   trackingUrl?: string;
+  paymentLabel?: string;
   couponCode?: string;
 }): { subject: string; title: string; preheader: string; bodyHtml: string } {
   const o = opts;
@@ -204,22 +216,22 @@ export function buildOrderEmail(opts: {
     })
     .join("");
   const tracking = o.trackingNo
-    ? `<p>Tracking: <strong>${o.trackingNo}</strong>${o.trackingUrl ? ` — <a href="${o.trackingUrl}">track your parcel</a>` : ""}</p>`
+    ? `<p>Tracking: <strong>${o.trackingNo.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")}</strong> — <a href="${trackingLink(o.trackingUrl,o.trackingNo).replaceAll("&","&amp;").replaceAll('"',"&quot;")}">track your parcel</a><br /><small>Copy this number and paste it on the courier’s tracking page.</small></p>`
     : "";
   return {
     subject: `Order ${o.orderNo} — ${o.statusLabel} · Misk Al Ghazaal`,
     title:
-      o.statusLabel === "received"
+      (o.statusLabel === "received" || status === "new")
         ? "Shukran — order received."
         : `Order ${o.statusLabel.toLowerCase()}.`,
-    preheader: `${o.orderNo} · ${o.date} · cash on delivery`,
+    preheader: `${o.orderNo} · ${o.date} · ${o.paymentLabel ?? "cash on delivery"}`,
     bodyHtml: `<p>Dear ${o.customerName},</p>
 <p>Your order <strong>${o.orderNo}</strong> (${o.date}) is now <strong>${o.statusLabel}</strong>.</p>
 ${orderStatusGraphic(status)}
 <h2 style="font-size:16px;font-weight:500;margin:24px 0 10px">Your selection</h2>
 <table style="width:100%;border-collapse:collapse">${itemRows}</table>
 <p>Subtotal AED ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −AED ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `AED ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>
-<p style="font-size:20px">Total AED ${o.total.toFixed(2)} — cash on delivery.</p>
+<p style="font-size:20px">Total AED ${o.total.toFixed(2)} — ${o.paymentLabel ?? "cash on delivery"}.</p>
 <h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f">Delivery</h3>
 <p>${o.addressHtml}</p>
 ${o.pinUrl ? `<p><a href="${o.pinUrl}">View location on map</a></p>` : ""}

@@ -1,3 +1,4 @@
+import { HapticPreference } from "./HapticPreference";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -58,7 +59,7 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
         ))}
       </div>
       <div className="border-t border-ink/10 py-5 text-center text-[11px] uppercase tracking-[0.18em] text-fog">
-        © 2026 Misk Al Ghazaal · {t("rights")}
+        © 2026 Misk Al Ghazaal · {t("rights")}<br/><HapticPreference locale={locale}/>
       </div>
     </footer>
   );

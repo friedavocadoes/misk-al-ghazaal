@@ -138,7 +138,7 @@ export function OlfactoryShowcase({ products, notes = [], eyebrow, title, prompt
                 <button type="button" disabled={!available} className="atelier-button border border-ink/25 text-ink hover:border-ink disabled:cursor-default disabled:opacity-40" onClick={() => { if (!available) return; add({ productSlug: product.slug, variantId: variant?.id, qty: 1 }); router.push("/checkout"); }}>{t("buy")}<ArrowRight className="size-3.5 rtl:rotate-180" /></button>
                 <button type="button" disabled={!available} className="atelier-button bg-ink text-cream hover:bg-espresso disabled:cursor-default disabled:opacity-40" onClick={(e) => {
                   if (!available) return;
-                  add({ productSlug: product.slug, variantId: variant?.id, qty: 1 });
+                  add({ productSlug: product.slug, variantId: variant?.id, qty: 1 }, "flight");
                   if (product.images[0]) flyToBag(e.currentTarget, product.images[0]);
                   setAdded(product.slug);
                   setTimeout(() => setAdded(null), 1600);

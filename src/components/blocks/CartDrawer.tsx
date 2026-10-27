@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/lib/haptics";
 
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
@@ -30,7 +31,7 @@ export function CartDrawer({
   const subtotal = rows.reduce((s, l) => s + (l.product?.price ?? 0) * l.qty, 0);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={next=>{haptic(next?"open":"close");onOpenChange(next);}}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>
@@ -114,10 +115,10 @@ export function CartDrawer({
               <span className="font-display text-lg text-ink">{formatAED(subtotal)}</span>
             </div>
             <div className="grid gap-2">
-              <Button asChild onClick={() => onOpenChange(false)}>
+              <Button asChild data-haptic="step" onClick={() => onOpenChange(false)}>
                 <Link href="/cart">{t("viewBag")}</Link>
               </Button>
-              <Button variant="outline" asChild onClick={() => onOpenChange(false)}>
+              <Button variant="outline" asChild data-haptic="step" onClick={() => onOpenChange(false)}>
                 <Link href="/checkout">{t("toCheckout")}</Link>
               </Button>
             </div>

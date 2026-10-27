@@ -51,7 +51,7 @@ export function ProductCard({
       productSlug: product.slug,
       variantId: firstVariant?.id,
       qty: 1,
-    });
+    }, "flight");
     if (e.currentTarget instanceof HTMLElement) {
       flyToBag(e.currentTarget, primary);
     }

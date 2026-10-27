@@ -1,5 +1,11 @@
+import { after } from "next/server";
+import { uuid } from "@/lib/analytics/shared";
+import { DEFAULT_TRACKING_URL,trackingLink } from "@/lib/order-tracking";
+import { OrderDispatchFields } from "@/components/admin/orders/OrderDispatchFields";
+import { paymentMethodLabel,paymentStatusLabel } from "@/lib/admin-orders-model";
+import { notifyOrderUpdate } from "@/lib/order-notifications";
+import { revalidatePagePaths } from "@/lib/revalidate";
 import sharp from "sharp";
-import { getSiteUrl } from "@/lib/site-url";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -9,126 +15,29 @@ import { createAdminClient } from "@/lib/supabase/service";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminForm, SaveButton, ActionButton } from "@/components/admin/admin-form";
 import { PrintButton } from "@/components/admin/print-button";
-import { ORDER_STATUSES, OrderStatusChip, statusLabel } from "@/lib/order-status";
-import { sendMailboxMail, buildOrderEmail } from "@/lib/mailer";
-import { resolveInvoiceAttachment } from "@/lib/invoice-attach";
-import { wantsOrderMail } from "@/lib/email-settings";
+import { OrderStatusChip } from "@/lib/order-status";
 import { logAdmin } from "@/lib/audit";
 
-const NEXT_STATUSES = ORDER_STATUSES;
 
 async function updateOrder(formData: FormData) {
   "use server";
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
-  const id = String(formData.get("id") ?? "");
-  const toStatus = String(formData.get("status") ?? "");
-  const trackingNo = String(formData.get("tracking_no") ?? "").trim() || null;
-  const trackingUrl = String(formData.get("tracking_url") ?? "").trim() || null;
-  const internalNote = String(formData.get("internal_note") ?? "").trim() || null;
-  const etaRaw = String(formData.get("expected_delivery_date") ?? "").trim();
-  const eta = /^\d{4}-\d{2}-\d{2}$/.test(etaRaw) ? etaRaw : null;
-  const invoiceSource = formData.get("invoice_source") === "upload" ? "upload" : "auto";
-  const attachInvoice = formData.get("attach_invoice") === "on";
-  if (!NEXT_STATUSES.includes(toStatus as (typeof NEXT_STATUSES)[number])) return;
-
-  const supabase = await createClient();
-  const { data: current } = await supabase
-    .from("orders")
-    .select("status, email, customer_name, order_no, user_id")
-    .eq("id", id)
-    .single();
-  await supabase
-    .from("orders")
-    .update({ status: toStatus, tracking_no: trackingNo, tracking_url: trackingUrl, internal_note: internalNote, expected_delivery_date: eta, invoice_source: invoiceSource })
-    .eq("id", id);
-  await supabase.from("order_status_history").insert({
-    order_id: id,
-    from_status: current?.status ?? null,
-    to_status: toStatus,
-    changed_by: session.userId,
-  });
-  // Status email (skipped when unconfigured, on no-change, or when the
-  // account holder switched order updates off in email preferences).
-  const cur = current as { status?: string; email?: string | null; customer_name?: string; order_no?: string; user_id?: string | null } | null;
-  let mailed = false;
-  if (cur?.email && cur.status !== toStatus && (await wantsOrderMail(supabase, cur.user_id ?? null))) {
-    const { data: full } = await supabase
-      .from("orders")
-      .select("total, subtotal, discount, shipping, address, city, emirate, country_code, state_name, postcode, address_label, delivery_lat, delivery_lng, coupon_code, created_at")
-      .eq("id", id)
-      .single();
-    const { data: itemRows } = await supabase.from("order_items").select("title, qty, unit_price, product_slug").eq("order_id", id);
-    const slugs = (itemRows ?? []).map(l => l.product_slug);
-    const { data: faces } = slugs.length ? await supabase.from("products").select("slug, images").in("slug", slugs) : { data: [] };
-    const images = new Map((faces ?? []).map(p => [p.slug, p.images?.[0] as string | undefined]));
-    const f = (full ?? {}) as {
-      total?: number; subtotal?: number; discount?: number; shipping?: number;
-      address?: string; city?: string; emirate?: string; country_code?: string;
-      state_name?: string; postcode?: string; address_label?: string;
-      delivery_lat?: number | null; delivery_lng?: number | null;
-      coupon_code?: string; created_at?: string;
-    };
-    const mail = buildOrderEmail({
-      orderNo: cur.order_no ?? "",
-      date: f.created_at ? new Date(f.created_at).toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }) : "",
-      statusLabel: statusLabel(toStatus),
-      status: toStatus,
-      customerName: cur.customer_name ?? "client",
-      lines: ((itemRows as { title: string; qty: number; unit_price: number; product_slug: string }[] | null) ?? []).map((l) => ({
-        title: l.title,
-        qty: l.qty,
-        unit: Number(l.unit_price),
-        image: images.get(l.product_slug),
-        href: `/product/${l.product_slug}`,
-      })),
-      origin: getSiteUrl(),
-      subtotal: Number(f.subtotal ?? 0),
-      discount: Number(f.discount ?? 0),
-      shipping: Number(f.shipping ?? 0),
-      total: Number(f.total ?? 0),
-      addressHtml: `${f.address ?? ""}<br />${[f.city, f.state_name, f.postcode, f.country_code].filter(Boolean).join(" · ")}`,
-      pinUrl: f.delivery_lat != null && f.delivery_lng != null ? `https://www.google.com/maps/search/?api=1&query=${f.delivery_lat},${f.delivery_lng}` : undefined,
-      trackingNo: trackingNo ?? undefined,
-      trackingUrl: trackingUrl ?? undefined,
-      couponCode: f.coupon_code || undefined,
-    });
-    // Per-update choice: attach the current invoice (uploaded file or
-    // fresh system PDF) only when the admin ticked the box. Bytes come
-    // from the secret client: the invoices bucket has no direct reads
-    // (it holds PII — everything flows through code-checked paths).
-    const invoiceFile = attachInvoice
-      ? await resolveInvoiceAttachment(await createAdminClient(), id)
-      : null;
-    mailed = (
-      await sendMailboxMail("noreply", {
-        to: cur.email,
-        ...mail,
-        ...(attachInvoice && invoiceFile ? { attachments: [invoiceFile] } : {}),
-      })
-    ).sent;
-  }
-  await logAdmin(supabase, session, {
-    category: "orders",
-    action: "status",
-    entity: "order",
-    entityId: id,
-    label: cur?.order_no ?? id,
-    summary: `Order ${cur?.order_no ?? id}: ${cur?.status ?? "?"} → ${toStatus}`,
-    details: {
-      from: cur?.status ?? null,
-      to: toStatus,
-      tracking_no: trackingNo,
-      tracking_url: trackingUrl,
-      expected_delivery_date: eta,
-      invoice_source: invoiceSource,
-      attach_invoice: attachInvoice,
-      internal_note: internalNote,
-      mailed,
-    },
-  });
-  revalidatePath(`/admin/orders/${id}`);
-  revalidatePath("/admin/orders");
+  const id=String(formData.get("id")??"");
+  const status=String(formData.get("status")??"");
+  const trackingNo=String(formData.get("tracking_no")??"").trim();
+  const trackingUrl=String(formData.get("tracking_url")??"").trim()||DEFAULT_TRACKING_URL;
+  trackingLink(trackingUrl,trackingNo);
+  if(!uuid(id)||trackingNo.length>200||trackingUrl.length>2048)throw new Error("Invalid order or tracking details");
+  const patch={status,payment_status:String(formData.get("payment_status")??"pending"),tracking_no:trackingNo,tracking_url:trackingUrl,
+    internal_note:String(formData.get("internal_note")??"").slice(0,2000),expected_delivery_date:String(formData.get("expected_delivery_date")??""),invoice_source:formData.get("invoice_source")==="upload"?"upload":"auto"};
+  const db=createAdminClient();
+  const {data,error}=await db.rpc("admin_update_order",{p_actor:session.userId,p_id:id,p_patch:patch});
+  if(error)throw new Error(error.message);
+  await logAdmin(db,session,{category:"orders",action:"status",entity:"order",entityId:id,label:data?.[0]?.order_no??id,summary:`Updated order ${data?.[0]?.order_no??id}`,details:{changes:data,...patch}});
+  if(data?.[0]?.from_status!==data?.[0]?.to_status)after(()=>notifyOrderUpdate(id,formData.get("attach_invoice")==="on",status));
+  revalidatePath(`/admin/orders/${id}`);revalidatePath("/admin/orders");
+  revalidatePagePaths("/account/orders");revalidatePagePaths("/account/orders/[id]");
 }
 
 async function uploadInvoice(formData: FormData) {
@@ -327,8 +236,8 @@ export default async function OrderDetail(props: {
             )}
             {order.email && <div><dt className="text-ink/60">Email</dt><dd>{order.email}</dd></div>}
             {order.notes && <div><dt className="text-ink/60">Customer note</dt><dd>{order.notes}</dd></div>}
-            <div><dt className="text-ink/60">Payment</dt><dd>{order.payment_method === "cod" ? "Cash on delivery" : "Card"}</dd></div>
-            <div><dt className="text-ink/60">Total (COD to collect)</dt><dd className="font-medium">AED {Number(order.total).toFixed(2)}</dd></div>
+            <div><dt className="text-ink/60">Payment</dt><dd>{paymentMethodLabel(order.payment_method)} · {paymentStatusLabel(order.payment_status??"pending")}</dd></div>
+            <div><dt className="text-ink/60">Order total</dt><dd className="font-medium">AED {Number(order.total).toFixed(2)}</dd></div>
             <div>
               <dt className="text-ink/60">Expected delivery (shopper sees this)</dt>
               <dd>{(order as { expected_delivery_date?: string | null }).expected_delivery_date ?? "— not set"}</dd>
@@ -357,22 +266,7 @@ export default async function OrderDetail(props: {
           <h2 className="mt-6 font-display text-xl">Update status</h2>
           <AdminForm action={updateOrder} success="Order updated" className="mt-4 space-y-3">
             <input type="hidden" name="id" value={order.id} />
-            <label className="block text-sm">
-              Status
-              <select name="status" defaultValue={order.status} className="mt-1 w-full border border-ink/20 bg-white px-3 py-2">
-                {NEXT_STATUSES.map((s) => (
-                  <option key={s} value={s}>{s.replaceAll("_", " ")}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              Tracking no / courier (optional)
-              <input name="tracking_no" defaultValue={order.tracking_no ?? ""} placeholder="e.g. Aramex 123456" className="mt-1 w-full border border-ink/20 px-3 py-2" />
-            </label>
-            <label className="block text-sm">
-              Tracking link (courier URL — shopper gets a Track button)
-              <input name="tracking_url" defaultValue={(order as { tracking_url?: string }).tracking_url ?? ""} placeholder="https://…" dir="ltr" className="mt-1 w-full border border-ink/20 px-3 py-2" />
-            </label>
+            <OrderDispatchFields status={order.status} trackingNo={order.tracking_no} trackingUrl={order.tracking_url} paymentStatus={order.payment_status??"pending"}/>
             <label className="block text-sm">
               Expected delivery date (shown to the shopper)
               <input

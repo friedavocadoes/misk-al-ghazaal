@@ -117,12 +117,9 @@ Run `supabase/migration_emails_promo.sql` once (adds `profiles.promo_opt_in`,
 | `orders@` | Shopper order-issue forms (`/account/orders` cards + order page) forwarded to support | `ORDERS_SMTP_*` |
 | `support@` | Human inbox — mailto links (contact, account, footer, every mail footer). No SMTP needed. | — |
 
-cPanel values per mailbox (each address has its OWN password):
-`HOST=miskalghazaalperfumes.com PORT=465 SECURE=1 USER=<full address> PASS=<mailbox password> FROM=<same address>`.
-Example: `HELLO_SMTP_HOST / HELLO_SMTP_PORT / HELLO_SMTP_USER / HELLO_SMTP_PASS / HELLO_SMTP_FROM / HELLO_SMTP_SECURE`.
-See `.env.example` — every block falls back to the legacy `SMTP_*`, and any
-unconfigured mailbox is a graceful no-op skip (orders/auth still succeed).
-Login/register carry the promo checkbox (on by default, quiet styling).
+Shared cPanel connection: `SMTP_HOST=miskalghazaalperfumes.com`, `SMTP_PORT=465`, `SMTP_SECURE=1`. Each mailbox keeps its own login/password; its FROM address defaults to that login.
+All application mailboxes now share `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`. Only `<PREFIX>_SMTP_USER`, `<PREFIX>_SMTP_PASS`, and optional `<PREFIX>_SMTP_FROM` vary by mailbox. See `.env.example` and [System emails](SYSTEM_EMAILS.md) for compact configuration and every design/template call site. Hosted Supabase Auth recovery/verification mail has its own dashboard SMTP/template configuration.
+
 
 ## 6c. Shopper auth (email + Google) + referrals
 
@@ -188,3 +185,7 @@ Run `supabase/migration_analytics.sql`, then open Admin → Analytics. See [ANAL
 ### Physical stores and product availability
 
 Run `supabase/migration_retail_stores.sql`, then open Admin → Catalog → Stores & product availability (`/admin/stores`). It seeds Mamzar Centre for all current/future products. Edit its details centrally, add locations, and bulk assign products by collection or lineup. See [RETAIL_STORES.md](RETAIL_STORES.md) for assignments, Maps links, access controls and caching. This is a store directory, separate from online stock quantities and checkout delivery.
+
+
+## Orders workspace upgrade (27 October 2026)
+Apply `supabase/migration_orders_workspace.sql` after the existing order/product-options/samples/optional-stock migrations. Read [Orders workspace](ORDERS_WORKSPACE.md). Admin Orders now provides filtered summaries, a selectable/paginated table, all-matching/selected CSV export, atomic bulk changes and manual creation. Dispatched requires a tracking number. Existing Packed rows are retained as legacy preparation, not silently relabeled as courier handover. No Tap/card checkout integration is enabled by this upgrade.

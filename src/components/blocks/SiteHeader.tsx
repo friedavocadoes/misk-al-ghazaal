@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/lib/haptics";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -680,7 +681,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
               </Link>
             )}
             <button
-              onClick={() => setCartOpen(true)}
+              onClick={() => {haptic("open");setCartOpen(true);}}
               aria-label={t("bag")}
               data-bag-target
               className="relative flex size-9 cursor-pointer items-center justify-center text-espresso transition hover:text-gold"
@@ -749,7 +750,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
               <Search className="size-5" />
             </button>
             <button
-              onClick={() => setCartOpen(true)}
+              onClick={() => {haptic("open");setCartOpen(true);}}
               aria-label={t("bag")}
               data-bag-target
               className="relative cursor-pointer p-2 text-espresso"

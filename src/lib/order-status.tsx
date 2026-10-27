@@ -4,7 +4,7 @@
 export const ORDER_STATUSES = [
   "new",
   "confirmed",
-  "packed",
+  "dispatched",
   "out_for_delivery",
   "delivered",
   "cancelled",
@@ -17,7 +17,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export const JOURNEY: { id: string; label: string; labelAr: string }[] = [
   { id: "new", label: "Placed", labelAr: "تم الطلب" },
   { id: "confirmed", label: "Confirmed", labelAr: "تم التأكيد" },
-  { id: "packed", label: "Packed", labelAr: "تم التغليف" },
+  { id: "dispatched", label: "Dispatched", labelAr: "تم الشحن" },
   { id: "out_for_delivery", label: "On its way", labelAr: "في الطريق" },
   { id: "delivered", label: "Delivered", labelAr: "تم التوصيل" },
 ];
@@ -31,7 +31,7 @@ const META: Record<OrderStatus, { chip: string; dot: string }> = {
     chip: "border border-ink bg-ink text-white",
     dot: "bg-ink",
   },
-  packed: {
+  dispatched: {
     chip: "border border-ink/25 bg-linen text-ink",
     dot: "bg-espresso",
   },
@@ -54,19 +54,21 @@ const META: Record<OrderStatus, { chip: string; dot: string }> = {
 };
 
 export function statusMeta(status: string): { chip: string; dot: string } {
+  if(status === "packed") return META.confirmed;
   return (META as Record<string, { chip: string; dot: string }>)[status] ?? META.new;
 }
 
 export function statusLabel(status: string): string {
   // The DB value stays `new` (constraints, filters, history all key on it);
   // humans read what it means: placed and waiting for our confirmation.
-  if (status === "new") return "Waiting for confirmation";
-  return status.replaceAll("_", " ");
+  if (status === "new") return "New order";
+  if (status === "packed") return "Packed (legacy)";
+  return ({confirmed:"Confirmed",dispatched:"Dispatched",out_for_delivery:"Out for delivery",delivered:"Delivered",cancelled:"Cancelled",returned:"Returned"} as Record<string,string>)[status]??status.replaceAll("_", " ");
 }
 
 /** Index into JOURNEY (-1 for terminal states handled separately). */
 export function journeyIndex(status: string): number {
-  return JOURNEY.findIndex((s) => s.id === status);
+  return JOURNEY.findIndex((s) => s.id === (status === "packed" ? "confirmed" : status));
 }
 
 export function OrderStatusChip({ status, className = "", label }: { status: string; className?: string; label?: string }) {

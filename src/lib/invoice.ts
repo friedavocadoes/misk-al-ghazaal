@@ -31,6 +31,7 @@ export interface InvoiceData {
   total: number;
   couponCode?: string;
   trackingNo?: string;
+  paymentLabel?: string;
   expectedDeliveryDate?: string | null;
 }
 
@@ -220,7 +221,7 @@ export function buildInvoicePdf(d: InvoiceData): Promise<Buffer> {
       if (d.discount > 0)
         trow("Discount" + (d.couponCode ? ` (${d.couponCode})` : ""), `−AED ${d.discount.toFixed(2)}`);
       trow("Shipping", d.shipping === 0 ? "Complimentary" : `AED ${d.shipping.toFixed(2)}`);
-      trow("TOTAL — cash on delivery", `AED ${d.total.toFixed(2)}`, true, true);
+      trow(`TOTAL — ${d.paymentLabel ?? "cash on delivery"}`, `AED ${d.total.toFixed(2)}`, true, true);
 
       // Meta
       y += 8;
@@ -233,7 +234,7 @@ export function buildInvoicePdf(d: InvoiceData): Promise<Buffer> {
       // line onto page two on short invoices).
       const foot = Math.min(Math.max(y + 28, 700), 756);
       doc.moveTo(48, foot).lineTo(48 + W, foot).strokeColor(HAIR).lineWidth(1).stroke();
-      drawLine(doc, f, "Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Cash on delivery across the UAE.", 48, foot + 8, {
+      drawLine(doc, f, "Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Delivering across the UAE.", 48, foot + 8, {
         size: 9,
         color: MUTED,
         width: W,

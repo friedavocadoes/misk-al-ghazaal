@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/lib/haptics";
 import { markPurchase } from "@/lib/analytics/client";
 import {CartStockNotice, StockCheckoutGuard} from "@/components/blocks/CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
@@ -311,9 +312,12 @@ export default function CheckoutPage() {
   };
 
   const placeOrder = async () => {
+    if(placing||!valid)return;
+    haptic("selection");
     window.dispatchEvent(new Event("analytics-checkout-attempt"));
     setPlacing(true);
     setOrderError("");
+    try {
     // Structured delivery wins; legacy manual fields are the fallback
     // when the countries service is unreachable.
     const addr = delivery && deliveryValid ? delivery : null;
@@ -348,8 +352,8 @@ export default function CheckoutPage() {
       }),
     });
     const j = await res.json().catch(() => null);
-    setPlacing(false);
     if (res.ok && j?.order_no) {
+      haptic("order");
       try { localStorage.removeItem("misk-samples");window.dispatchEvent(new Event("samples-change")); } catch { /* Storage may be disabled. */ }
       setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? ""})) });
       try {
@@ -360,8 +364,11 @@ export default function CheckoutPage() {
       markPurchase(j.order_no);
       clear();
     } else {
+      haptic("error");
       setOrderError(friendlyError(j?.error));
     }
+    } catch {haptic("error");setOrderError(locale==="ar"?"تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.":"Couldn’t send your order. Please try again.");}
+    finally {setPlacing(false);}
   };
 
   if (done) {
@@ -716,7 +723,7 @@ export default function CheckoutPage() {
             </div>
           </dl>
           {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button className="w-full" size="lg" disabled={!valid || placing} onClick={placeOrder}>
+          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
             {placing ? t("placing") : t("placeOrder")}
           </Button></StockCheckoutGuard></div>
           <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">{t("codNote")}</p>

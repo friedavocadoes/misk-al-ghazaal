@@ -1,3 +1,4 @@
+import { paymentMethodLabel } from "@/lib/admin-orders-model";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
@@ -38,6 +39,7 @@ export async function GET(
   if (!order) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const o = order as {
     order_no: string;
+    payment_method: string;
     customer_name: string;
     phone: string;
     email: string | null;
@@ -90,6 +92,7 @@ export async function GET(
 
   const pdf = await buildInvoicePdf({
     orderNo: o.order_no,
+      paymentLabel: paymentMethodLabel(o.payment_method ?? "cod"),
     date: new Date(o.created_at).toLocaleDateString("en-AE", {
       day: "numeric",
       month: "long",

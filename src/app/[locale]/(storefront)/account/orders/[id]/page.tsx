@@ -1,8 +1,10 @@
+import { canTrackOrder } from "@/lib/order-tracking";
+import { TrackOrderButton } from "@/components/blocks/TrackOrderButton";
 import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import Image from "next/image";
-import { ArrowLeft, ArrowUpRight, CalendarDays, Download, Gift, MapPin, Phone, ReceiptText, Truck } from "lucide-react";
+import { ArrowLeft, CalendarDays, Download, Gift, MapPin, Phone, ReceiptText, Truck } from "lucide-react";
 import { formatAED } from "@/lib/utils";
 import { OrderStatusChip } from "@/lib/order-status";
 import { OrderTimeline } from "@/components/blocks/OrderTimeline";
@@ -110,7 +112,7 @@ export default async function AccountOrderDetail(props: {
         )}
       </div>
 
-      {(o.tracking_no || o.tracking_url) && (
+      {canTrackOrder(o.status,o.tracking_no) && (
         <div className="mt-4 flex flex-wrap items-center gap-3 border border-gold/40 bg-gold-wash/50 p-4 md:p-5">
           <span className="flex size-10 items-center justify-center rounded-full bg-ink text-gold-soft">
             <Truck className="size-4" strokeWidth={1.75} />
@@ -126,16 +128,7 @@ export default async function AccountOrderDetail(props: {
             )}
           </span>
           {o.tracking_no && <CopyCode code={o.tracking_no} label={t("copyCode")} copied={t("codeCopied")} />}
-          {o.tracking_url && (
-            <a
-              href={o.tracking_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 bg-ink px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-gold-soft hover:text-ink"
-            >
-              {t("trackParcel")} <ArrowUpRight className="size-3.5" />
-            </a>
-          )}
+          <TrackOrderButton number={o.tracking_no} url={o.tracking_url} locale={locale} label={t("trackParcel")}/>
         </div>
       )}
 
