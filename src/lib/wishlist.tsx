@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "./haptics";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { createClient as createBrowserClient } from "./supabase/client";
@@ -57,15 +58,17 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggle = useCallback(
     async (slug: string): Promise<"added" | "removed" | "login" | "error"> => {
-      if (!userId) return "login";
+      if (!userId) {haptic("selection");return "login";}
       const adding = !ids.includes(slug);
       const next = adding ? [...ids, slug].slice(0, 200) : ids.filter((s) => s !== slug);
+      haptic(adding?"success":"close");
       setIds(next);
       const { error } = await createBrowserClient()
         .from("profiles")
         .update({ wishlist: next })
         .eq("id", userId);
       if (error) {
+        haptic("error");
         setIds(ids);
         return "error";
       }

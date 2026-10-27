@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { WishHeart } from "./WishHeart";
+import { haptic } from "@/lib/haptics";
 import { flyToBag } from "@/lib/fly-to-bag";
 
 export function ProductCard({
@@ -46,7 +47,7 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     if(!available)return;
-    if(multiple){router.push(`/product/${product.slug}`);return;}
+    if(multiple){haptic("selection");router.push(`/product/${product.slug}`);return;}
     add({
       productSlug: product.slug,
       variantId: firstVariant?.id,
@@ -63,7 +64,7 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     if(!available)return;
-    if(multiple){router.push(`/product/${product.slug}`);return;}
+    if(multiple){haptic("selection");router.push(`/product/${product.slug}`);return;}
     add({
       productSlug: product.slug,
       variantId: firstVariant?.id,

@@ -17,6 +17,6 @@ export function isShoppingPath(path:string){return /^\/(?:ar\/)?(?:checkout|cart
 export function productSlug(path:string){return path.match(/^\/(?:ar\/)?product\/([^/]+)\/?$/)?.[1]??null;}
 export function surveyRouteAllowed(path:string){
  const clean=path.replace(/^\/ar(?=\/|$)/,"")||"/";
- return clean==="/"||/^\/(?:product|collection)\/[^/]+\/?$/.test(clean)||/^\/(?:search|find-your-scent)\/?$/.test(clean);
+ return clean==="/"||/^\/(?:product|collection)\/[^/]+\/?$/.test(clean)||/^\/(?:search)\/?$/.test(clean);
 }
 export const SURVEY_TRIGGER_LABELS:Record<SurveyTrigger,string>={cart_return:"Returned to an unfinished bag",checkout_abandonment:"Left checkout",cart_removal:"Removed a scent",cart_exit:"Exit intent",cart_idle:"Idle on bag / checkout",product_dwell:"Product interest, no cart add"};

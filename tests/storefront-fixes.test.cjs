@@ -30,7 +30,8 @@ test('survey eligibility permits a fresh return, but respects session, dismissal
  assert.equal(policy.surveyEligible(now,{},true,false),false);assert.equal(policy.surveyEligible(now,{},false,true),false);
  assert.equal(policy.surveyEligible(now,{dismissedAt:now-1000},false,false),false);
  assert.equal(policy.surveyEligible(now,{answeredAt:now-3600000},false,false),false);
- assert.equal(policy.surveyEligible(now,{dismissedAt:now-3*3600000},false,false),true);
+ assert.equal(policy.surveyEligible(now,{dismissedAt:now-3*3600000},false,false),false);
+ assert.equal(policy.surveyEligible(now,{dismissedAt:now-8*86400000},false,false),true);
 });
 test('survey routing recognizes localized checkout and product journeys',()=>{
  assert.equal(policy.isShoppingPath('/ar/checkout'),true);assert.equal(policy.productSlug('/ar/product/oud'),'oud');assert.equal(policy.productSlug('/collection/all'),null);

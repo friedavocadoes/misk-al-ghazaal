@@ -1,6 +1,7 @@
 -- Apply AFTER migration_orders_workspace.sql, analytics locations and existing survey migrations.
 -- Financial aggregates follow current fully-paid order state; raw behavior events stay historical.
 begin;
+create index if not exists orders_paid_analytics_id on public.orders((id::text)) where payment_status='paid' and deleted_at is null;
 create or replace function public.admin_orders_report(
  search_text text default '',filter_status text default '',filter_payment text default '',filter_method text default '',
  start_date timestamptz default null,end_date timestamptz default null,
@@ -151,3 +152,26 @@ o as (select user_id,count(*) as orders,sum(total) filter(where payment_status='
 people as (select p.id,u.email,p.full_name,p.phone,p.default_address,p.promo_opt_in,p.order_updates_opt_in,coalesce(a.sessions,0) as sessions,coalesce(a.active_seconds,0) as active_seconds,a.first_seen,a.last_seen,coalesce(o.orders,0) as orders,coalesce(o.spent,0) as spent from profiles p join auth.users u on u.id=p.id left join a on a.user_id=p.id left join o on o.user_id=p.id where p.role='customer' and (search_text='' or u.email ilike '%'||search_text||'%' or p.full_name ilike '%'||search_text||'%' or p.phone ilike '%'||search_text||'%') and (promo_filter='all' or p.promo_opt_in=(promo_filter='yes')))
 select jsonb_build_object('total',(select count(*) from people),'rows',coalesce((select jsonb_agg(r) from (select * from people order by id offset greatest(0,page_offset) limit least(500,greatest(1,page_size))) r),'[]'));
 $$;
+
+-- Feedback invitations are denied for recent purchasers across sessions/devices.
+create or replace function public.analytics_survey_allowed(p_session uuid,p_visitor text,p_user uuid default null,p_submitting boolean default false)
+returns boolean language sql stable security definer set search_path=public as $$
+select
+ not exists(select 1 from profiles p where p.id=p_user and p.role in ('super_admin','orders','content_editor'))
+ and
+ not exists(select 1 from analytics_events e where e.event_type='purchase' and (e.session_id=p_session or(e.visitor_id=p_visitor and e.created_at>now()-interval '7 days')))
+ and not exists(select 1 from orders o where p_user is not null and o.user_id=p_user and o.deleted_at is null and o.created_at>now()-interval '7 days')
+ and not exists(select 1 from analytics_abandonment_surveys a join analytics_sessions s on s.id=a.session_id
+  where (s.visitor_id=p_visitor or(p_user is not null and s.user_id=p_user)) and a.created_at>now()-interval '30 days')
+ and not exists(select 1 from analytics_events e join analytics_sessions s on s.id=e.session_id
+  where (s.visitor_id=p_visitor or(p_user is not null and s.user_id=p_user))
+  and ((e.event_type='survey_shown' and e.created_at>now()-interval '1 day') or(e.event_type='survey_dismissed' and e.created_at>now()-interval '7 days'))
+  and (not p_submitting or e.session_id<>p_session))
+ and not exists(select 1 from analytics_events e join analytics_sessions s on s.id=e.session_id
+  where e.event_type='checkout_started' and e.created_at>now()-interval '2 hours'
+  and (s.visitor_id=p_visitor or(p_user is not null and s.user_id=p_user)));
+$$;
+create index if not exists analytics_events_visitor_type_time on public.analytics_events(visitor_id,event_type,created_at);
+revoke all on function public.analytics_survey_allowed(uuid,text,uuid,boolean),public.admin_orders_report(text,text,text,text,timestamptz,timestamptz,integer,integer,text,uuid[]),public.analytics_report(timestamptz,timestamptz,boolean,boolean,text),public.analytics_locations(timestamptz,timestamptz,boolean,boolean,text,text),public.analytics_customers(timestamptz,timestamptz,text,integer,integer,text) from public,anon,authenticated;
+grant execute on function public.analytics_survey_allowed(uuid,text,uuid,boolean),public.admin_orders_report(text,text,text,text,timestamptz,timestamptz,integer,integer,text,uuid[]),public.analytics_report(timestamptz,timestamptz,boolean,boolean,text),public.analytics_locations(timestamptz,timestamptz,boolean,boolean,text,text),public.analytics_customers(timestamptz,timestamptz,text,integer,integer,text) to service_role;
+commit;

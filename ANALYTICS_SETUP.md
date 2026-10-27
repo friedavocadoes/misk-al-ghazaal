@@ -1,5 +1,7 @@
 # First-party store analytics
 
+**Current reporting/feedback upgrade:** apply `supabase/migration_paid_feedback.sql` after Orders workspace and existing analytics/location/survey migrations. See [Paid reporting, haptics and quiet feedback](HAPTICS_AND_FEEDBACK.md). This supersedes older placed-value revenue and aggressive survey timing descriptions.
+
 Location reporting: apply `supabase/migration_analytics_locations.sql` **after** the existing analytics/survey migrations, then open **Analytics → Locations & emirates**. See [Location analytics](ANALYTICS_LOCATIONS.md) for installation, UAE mapping, page conversion, hosting headers, and accuracy limits.
 
 For the detailed explanation of tracking, bot detection, abandonment, surveys, metric formulas, and the source-code map, read [How analytics works](ANALYTICS_EXPLAINED.md).
@@ -26,9 +28,9 @@ The live strip refreshes every 30 seconds while the admin tab is visible. Live v
 
 - Date controls use **Asia/Dubai**, inclusive calendar dates, with a maximum 366-day window. Comparison is the immediately preceding interval of equal length.
 - Viewers are unique visitor IDs. Conversion is purchase sessions / sessions. Funnel stages count sessions independently; shoppers may enter midway through the funnel.
-- Revenue is **order value placed**, including COD awaiting confirmation. It is not settled cash, profit, or net revenue after refunds. The dashboard does not invent advertising ROI: spend is not available.
+- Revenue includes tracked orders currently fully Paid and active; pending/refunded/cancelled/returned/deleted orders are excluded. This is not a transaction ledger or profit calculation. The dashboard does not invent advertising ROI: spend is not available.
 - One purchase event is stored per order UUID, only from `/api/checkout`. The public collector rejects browser-supplied purchase/revenue events. The server's existing quote supplies amounts. Tracking runs after the response and never changes an order's outcome.
-- Product revenue is merchandise price × units before discounts/shipping. Product drop-offs count sessions adding that product in the selected period with no recorded purchase, including purchases recorded later. Dashboard tables return at most 500 product/source groups; product sorting and filters work within that result.
+- Product revenue is merchandise price × units from fully paid active tracked orders, before discounts/shipping. Product drop-offs count sessions adding that product in the selected period with no recorded purchase, including purchases recorded later. Dashboard tables return at most 500 product/source groups; product sorting and filters work within that result.
 - First/last-touch attribution uses the respective campaign captured for a session. Attribution is not a guarantee that an ad caused an order. Cookies cleared by shoppers or blocked storage can reduce attribution accuracy.
 - Customer data shows all shopper accounts, with orders in the selected period and activity for sessions started in that period. Session active time crossing a date boundary is not split at midnight. Visitors who never log in remain anonymous.
 

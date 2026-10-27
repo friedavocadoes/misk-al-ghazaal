@@ -10,7 +10,7 @@ The migration was tested in disposable local PostgreSQL and was not applied to l
 
 ## Workspace
 
-- Summary cards: matching orders, units ordered, active order value, unpaid orders, parcels with the courier, delivered orders.
+- Summary cards: matching orders, units ordered, paid order value, unpaid orders, parcels with the courier, delivered orders.
 - Columns: selection, order number, readable Dubai date, customer, amount, payment status, payment type, order status, item quantities/details.
 - Search by order number, customer name, email, phone, or tracking number.
 - Filter by order status, payment status/type and inclusive Dubai date range. Sort by date or amount.
@@ -18,7 +18,7 @@ The migration was tested in disposable local PostgreSQL and was not applied to l
 - Export all matching orders across every page, or selected matching orders, as Excel-compatible UTF-8 CSV. Exports are authorized, private/no-store, audited, and formula escaped.
 - Bulk change order status/payment state or move selected orders to the recycle bin. A review dialog shows the action and selection count. Updates are atomic: a validation failure rolls back the entire selection.
 
-Summary values use the chosen filters. Active order value excludes Cancelled/Returned. Units include complimentary item lines where present. CSV exports represent a live database read, not an immutable accounting snapshot during concurrent changes.
+Summary values use the chosen filters. Paid order value includes only fully paid active orders and excludes pending, partial, refunded, cancelled, returned and deleted records after migration_paid_feedback.sql. Units include complimentary item lines where present. CSV exports represent a live database read, not an immutable accounting snapshot during concurrent changes.
 
 ## Statuses and tracking
 
@@ -81,3 +81,5 @@ The optional confirmation email respects saved order-mail preferences. Status up
 | `tests/orders-workspace.test.cjs` | SMTP, tracking, dates, access, export and real PostgreSQL regressions |
 
 For all email design locations, see [System emails](SYSTEM_EMAILS.md).
+
+Current follow-up: apply `migration_paid_feedback.sql` after this workspace migration for paid-only money in analytics too. See [Paid reporting and customer feedback](HAPTICS_AND_FEEDBACK.md).

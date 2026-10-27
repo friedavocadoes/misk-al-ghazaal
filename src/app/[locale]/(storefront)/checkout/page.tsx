@@ -1,5 +1,6 @@
 "use client";
 import { haptic } from "@/lib/haptics";
+import { rememberFeedback } from "@/lib/analytics/survey-memory";
 import { markPurchase } from "@/lib/analytics/client";
 import {CartStockNotice, StockCheckoutGuard} from "@/components/blocks/CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
@@ -314,6 +315,7 @@ export default function CheckoutPage() {
   const placeOrder = async () => {
     if(placing||!valid)return;
     haptic("selection");
+    rememberFeedback({checkoutAttemptAt:Date.now()});
     window.dispatchEvent(new Event("analytics-checkout-attempt"));
     setPlacing(true);
     setOrderError("");

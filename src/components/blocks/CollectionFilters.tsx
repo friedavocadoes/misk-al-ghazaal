@@ -1,4 +1,5 @@
 "use client";
+import { haptic } from "@/lib/haptics";
 
 import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
@@ -126,6 +127,7 @@ export function CollectionFilters({
   });
 
   const apply = () => {
+    haptic("success");
     pushParams(staged());
   };
 

@@ -11,6 +11,7 @@ export const HAPTIC_PATTERNS = {
  order:[{duration:24,intensity:.5},{delay:70,duration:35,intensity:.75},{delay:105,duration:18,intensity:.35}],
 } satisfies Record<string,Vibration[]>;
 export type HapticKind=keyof typeof HAPTIC_PATTERNS;
+export function cartFeedbackKind(flight:boolean,reducedMotion:boolean):HapticKind{return flight&&!reducedMotion?"flight":"add";}
 type Sink=(kind:HapticKind)=>void;
 let sink:Sink|null=null;
 /** No provider/device support means a silent no-op, never a blocked action. */

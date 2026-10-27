@@ -21,10 +21,11 @@ export function CartAbandonmentSurvey(){
  const {lines,hydrated}=useCart(),{meta}=useCartMeta(lines.map(l=>l.productSlug)),path=usePathname(),ar=useLocale()==="ar";
  const [context,setContext]=useState<SurveyContext|null>(null),[expanded,setExpanded]=useState(false),[reason,setReason]=useState(""),[comment,setComment]=useState(""),[state,setState]=useState<"idle"|"saving"|"sent"|"error">("idle");
  const cart=useRef<AnalyticsItem[]>([]),lastBag=useRef<AnalyticsItem[]>([]),product=useRef<AnalyticsItem|null>(null),active=useRef<SurveyContext|null>(null);
- const currentPath=useRef(path),previous=useRef(path),paused=useRef(false),activeMs=useRef(0),dwell=useRef(0),lastInteraction=useRef(Date.now());
+ const currentPath=useRef(path),previous=useRef(path),paused=useRef(false),activeMs=useRef(0),dwell=useRef(0),lastInteraction=useRef(0);
  const added=useRef(new Set<string>()),considered=useRef(new Set<string>()),version=useRef(0);
  const timer=useRef<ReturnType<typeof setTimeout>|null>(null),closing=useRef<ReturnType<typeof setTimeout>|null>(null),request=useRef<AbortController|null>(null);
- const close=useCallback(()=>{version.current++;if(timer.current)clearTimeout(timer.current);request.current?.abort();active.current=null;setContext(null);setExpanded(false);},[]);
+ const cancelPending=useCallback(()=>{version.current++;if(timer.current)clearTimeout(timer.current);request.current?.abort();},[]);
+ const close=useCallback(()=>{cancelPending();active.current=null;setContext(null);setExpanded(false);},[cancelPending]);
  const eligible=useCallback(()=>{
   if(paused.current||document.hidden||!surveyRouteAllowed(currentPath.current))return false;
   try{const sid=ensureAnalyticsIdentity();return surveyEligible(Date.now(),feedbackHistory(),!!sessionStorage.getItem(`analytics-survey:${sid}`),!!sessionStorage.getItem(`analytics-purchased:${sid}`));}catch{return false;}
@@ -39,7 +40,7 @@ export function CartAbandonmentSurvey(){
    request.current?.abort();const controller=new AbortController();request.current=controller;
    try{
     const response=await fetch("/api/analytics/survey",{cache:"no-store",signal:controller.signal});const result=await response.json();
-    if(!response.ok||!result.allowed||controller.signal.aborted||generation!==version.current||!eligible()||!relevant(next))return;
+    if(!response.ok||!result.allowed||controller.signal.aborted||generation!==version.current||!eligible()||!relevant(next)||Date.now()-lastInteraction.current<15000||document.querySelector('[role="dialog"][data-state="open"]'))return;
     const sid=ensureAnalyticsIdentity();sessionStorage.setItem(`analytics-survey:${sid}`,"1");rememberFeedback({shownAt:Date.now()});
     active.current=next;setContext(next);setExpanded(false);setReason("");setComment("");setState("idle");
     trackEvent("survey_shown",{survey_type:next.type,trigger:next.trigger,product_id:next.product_id});
@@ -54,11 +55,13 @@ export function CartAbandonmentSurvey(){
   const old=readBag();saveBag({...old,items:cart.current,updatedAt:Date.now()});
  },[lines,meta,hydrated]);
  useEffect(()=>{
-  const old=previous.current;previous.current=path;currentPath.current=path;close();dwell.current=0;product.current=null;
+  const old=previous.current;previous.current=path;currentPath.current=path;cancelPending();active.current=null;dwell.current=0;product.current=null;
+  queueMicrotask(()=>{setContext(null);setExpanded(false);});
   if(/^\/(?:ar\/)?checkout\/?$/.test(path)){paused.current=true;rememberFeedback({checkoutAt:Date.now()});const b=readBag();saveBag({...b,checkoutAt:Date.now()});}
   if(old!==path&&isShoppingPath(old)&&lastBag.current.length&&activeMs.current>=180000)schedule({type:/checkout/.test(old)?"checkout":"cart",trigger:"checkout_abandonment",items:lastBag.current},60000);
- },[path,close,schedule]);
+ },[path,cancelPending,schedule]);
  useEffect(()=>{
+  lastInteraction.current=Date.now();
   const maybeReturn=()=>{const saved=readBag();if(saved.items.length&&saved.awayAt&&Date.now()-saved.awayAt>=30*60000&&Date.now()-saved.updatedAt<14*86400000){lastBag.current=saved.items;schedule({type:saved.checkoutAt?"checkout":"cart",trigger:"cart_return",items:saved.items});}};
   maybeReturn();
   const away=()=>{if(cart.current.length)saveBag({...readBag(),items:cart.current,updatedAt:Date.now(),awayAt:Date.now()});};
@@ -93,7 +96,7 @@ export function CartAbandonmentSurvey(){
  if(!context||!surveyRouteAllowed(path))return null;
  if(!expanded)return <aside aria-label={ar?"ملاحظات التسوق":"Shopping feedback"} className="analytics-survey-prompt" dir={ar?"rtl":"ltr"}><button type="button" data-haptic="selection" className="min-w-0 flex-1 px-4 py-3 text-start" aria-expanded={false} onClick={()=>setExpanded(true)}><span className="block text-xs">{ar?"هل نساعدك في الاختيار؟":"A little help choosing?"}</span><span className="mt-1 block text-[10px] text-fog">{ar?"شاركنا رأيك إذا أحببت":"Share a thought, if you like"}</span></button><button type="button" onClick={dismiss} aria-label={ar?"إغلاق":"Dismiss feedback"} className="me-2 rounded-full p-2 text-fog"><X size={14}/></button></aside>;
  const keys=context.type==="product"?["scent_unsure","need_more_details","price_too_high","just_browsing","other"]:context.trigger==="cart_removal"?["scent_unsure","price_too_high","stock_issue","just_browsing","other"]:["shipping_cost","just_browsing","price_too_high","delivery_time","payment_issue","other"];
- const submit=async()=>{setState("saving");try{const response=await fetch("/api/analytics/survey",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({reason,custom_comment:comment,cart_items:context.items,survey_type:context.type,trigger:context.trigger,product_id:context.product_id,product_name:context.product_name})});const data=await response.json().catch(()=>null);if(!response.ok||!data?.saved)throw Error("Not saved");setState("sent");rememberFeedback({answeredAt:Date.now()});closing.current=setTimeout(close,2000);}catch{setState("error");}};
+ const submit=async()=>{setState("saving");try{const response=await fetch("/api/analytics/survey",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({reason,custom_comment:comment,cart_items:context.items,survey_type:context.type,trigger:context.trigger,product_id:context.product_id,product_name:context.product_name})});const data=await response.json().catch(()=>null);if(response.status===409&&data?.reason==="ineligible"){close();return;}if(!response.ok||!data?.saved)throw Error("Not saved");setState("sent");rememberFeedback({answeredAt:Date.now()});closing.current=setTimeout(close,2000);}catch{setState("error");}};
  return <aside aria-label={ar?"ملاحظات التسوق":"Shopping feedback"} className="analytics-survey" dir={ar?"rtl":"ltr"}>
  <button type="button" onClick={dismiss} aria-label={ar?"إغلاق":"Dismiss feedback"} className="absolute end-3 top-3 p-2 text-fog"><X size={17}/></button>
  {state==="sent"?<div className="py-8 text-center" role="status"><Check className="mx-auto mb-4 text-gold"/><p>{ar?"شكراً لملاحظاتك.":"Thank you. We’re listening."}</p></div>:<><p className="text-[9px] uppercase tracking-[.18em] text-gold">{ar?"رأيك يهمنا":"Your perspective"}</p><h2 className="mt-3 text-xl font-light">{ar?"ما الذي يمكننا تحسينه؟":"What could we make better?"}</h2>{context.product_name&&<p className="mt-2 text-xs text-fog">{context.product_name}</p>}<fieldset disabled={state==="saving"} className="mt-4 grid gap-1"><legend className="sr-only">What held you back?</legend>{keys.map(key=><label key={key} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-xs hover:bg-sand/50"><input type="radio" name="abandonment-reason" value={key} checked={reason===key} onChange={()=>setReason(key)} className="accent-[#8a6d2f]"/>{OPTIONS[key][ar?1:0]}</label>)}</fieldset>{reason&&<textarea value={comment} onChange={e=>setComment(e.target.value)} maxLength={500} rows={2} aria-label="Optional feedback" placeholder={ar?"تفاصيل إضافية (اختياري)":"A few words, if you like (optional)"} className="mt-3 w-full rounded-lg border border-ink/15 p-3 text-xs"/>}{state==="error"&&<p role="alert" className="mt-2 text-xs text-red-700">{ar?"تعذر الحفظ. حاول لاحقاً.":"Couldn’t save just now. Please try later."}</p>}<button type="button" disabled={!reason||state==="saving"} onClick={()=>void submit()} className="mt-4 flex w-full items-center justify-between rounded-lg bg-ink px-4 py-3 text-xs text-white disabled:opacity-40">{ar?"إرسال":"Share feedback"}{state==="saving"?<Loader2 size={15} className="animate-spin"/>:<ArrowUpRight size={15}/>}</button></>}

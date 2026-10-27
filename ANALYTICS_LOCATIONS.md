@@ -61,7 +61,7 @@ The date window is inclusive Dubai calendar dates, matching existing analytics. 
 - **Buyers:** distinct authenticated account IDs when associated, otherwise visitor IDs, among sessions with a purchase event in the window.
 - **Orders:** recorded server purchase events in the window, deduplicated by order ID.
 - **Conversion:** sessions with a purchase in the window ÷ included sessions × 100. It is not orders ÷ page views.
-- **Revenue:** placed-order totals, including COD orders awaiting confirmation. It is not settled cash or automatically reconciled for later refunds/cancellations.
+- **Revenue:** tracked purchase totals from current fully paid active orders only after `migration_paid_feedback.sql`; pending/refunded/cancelled/returned/deleted orders contribute zero.
 
 Country and emirate comparisons count distinct visitors within each group. A browser appearing in multiple location sessions can appear in more than one group, so group visitor counts should not be summed as globally unique people.
 

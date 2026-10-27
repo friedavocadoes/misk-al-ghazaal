@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { haptic } from "./haptics";
+import { haptic,cartFeedbackKind } from "./haptics";
 import { trackEvent, cookieValue } from "./analytics/client";
 import type { CartItem } from "./types";
 import { createClient as createBrowserClient } from "./supabase/client";
@@ -163,7 +163,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const add = useCallback((line: CartLine, feedback?: "flight") => {
     const before=analyticsLines.current.find(l=>same(l,line.productSlug,line.variantId))?.qty ?? 0;
     const delta=Math.min(20,before+line.qty)-before;
-    if (delta>0 && (before>0 || analyticsLines.current.length<50)) {haptic(feedback==="flight"?"flight":"add");cartSignal(false,"add",line.productSlug);trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});}
+    if (delta>0 && (before>0 || analyticsLines.current.length<50)) {haptic(cartFeedbackKind(feedback==="flight",window.matchMedia?.("(prefers-reduced-motion: reduce)").matches??false));cartSignal(false,"add",line.productSlug);trackEvent("add_to_cart",{product_id:line.productSlug,quantity:delta,variant_id:line.variantId});}
     setLines((prev) => {
       const i = prev.findIndex((l) => same(l, line.productSlug, line.variantId));
       if (i >= 0) {

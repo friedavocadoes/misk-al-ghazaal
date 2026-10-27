@@ -10,7 +10,7 @@ export function StorefrontHaptics(){
   const play=(kind:HapticKind)=>{
    const now=Date.now();let preference:string|null=null;
    try{preference=localStorage.getItem("misk-haptics");}catch{}
-   if(document.hidden||now-lastTouch>60000||now-lastFeedback<65||!hapticsEnabled(preference,matchMedia("(prefers-reduced-motion: reduce)").matches))return;
+   if(document.hidden||now-lastTouch>60000||(now-lastFeedback<65&&!["order","success","error"].includes(kind))||!hapticsEnabled(preference,matchMedia("(prefers-reduced-motion: reduce)").matches))return;
    lastFeedback=now;void engine.trigger(HAPTIC_PATTERNS[kind]).catch(()=>{});
   };
   const disconnect=connectHaptics(play);
@@ -23,10 +23,10 @@ export function StorefrontHaptics(){
    if(target?.closest('label[for^="web-haptics-"]'))return;
    if(!target||target.closest('[data-haptic="none"]')||target.matches(":disabled,[aria-disabled=true]"))return;
    const requested=target.dataset.haptic;
-   if(requested&&requested in HAPTIC_PATTERNS)play(requested as HapticKind);
+   if(requested&&Object.hasOwn(HAPTIC_PATTERNS,requested))play(requested as HapticKind);
    else play(target.matches('[role=tab],[role=radio],[role=switch],input[type=checkbox],input[type=radio]')?"selection":"tick");
   };
-  const change=(event:Event)=>{if(event.isTrusted&&event.target instanceof HTMLSelectElement)play("selection");};
+  const change=(event:Event)=>{if(event.isTrusted&&event.target instanceof HTMLSelectElement)play("selection");else if(event.isTrusted&&event.target instanceof HTMLInputElement&&event.target.type==="range")play("step");};
   const stop=()=>{try{engine.cancel();}catch{}};
   const visibility=()=>{if(document.hidden)stop();};
   window.addEventListener("pointerdown",pointer,{capture:true,passive:true});document.addEventListener("click",click);document.addEventListener("change",change);

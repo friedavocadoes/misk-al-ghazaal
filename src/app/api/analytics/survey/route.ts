@@ -3,12 +3,27 @@ import { NextResponse } from "next/server";
 import { analyticsSession, readSmallBody, sameOrigin } from "@/lib/analytics/server";
 import { createAdminClient } from "@/lib/supabase/service";
 const reasons = new Set(["shipping_cost","just_browsing","price_too_high","payment_issue","delivery_time","other","scent_unsure","need_more_details","stock_issue","not_ready"]);
+export async function GET(req:Request){
+ try{
+  if(!sameOrigin(req))return NextResponse.json({allowed:false},{headers:{"Cache-Control":"private, no-store"}});
+  const session=await analyticsSession(req);if(!session||session.is_bot)return NextResponse.json({allowed:false},{headers:{"Cache-Control":"private, no-store"}});
+  const {data,error}=await createAdminClient().rpc("analytics_survey_allowed",{p_session:session.id,p_visitor:session.visitor_id,p_user:session.user_id??null,p_submitting:false});
+  if(error)throw error;
+  return NextResponse.json({allowed:data===true},{headers:{"Cache-Control":"private, no-store"}});
+ }catch{return NextResponse.json({allowed:false},{status:503,headers:{"Cache-Control":"private, no-store"}});}
+}
 export async function POST(req: Request) {
   try {
     if (!sameOrigin(req)) return new NextResponse(null,{status:204});
     const body=await readSmallBody(req); if (!body || !reasons.has(String(body.reason))) return new NextResponse(null,{status:204});
     const session=await analyticsSession(req); if (!session || session.is_bot) return new NextResponse(null,{status:204});
     const db=createAdminClient();
+    const existing=await db.from("analytics_abandonment_surveys").select("id").eq("session_id",session.id).maybeSingle();
+    if(existing.error)throw existing.error;
+    if(existing.data)return NextResponse.json({saved:true});
+    const eligibility=await db.rpc("analytics_survey_allowed",{p_session:session.id,p_visitor:session.visitor_id,p_user:session.user_id??null,p_submitting:true});
+    if(eligibility.error)throw eligibility.error;
+    if(eligibility.data!==true)return NextResponse.json({saved:false,reason:"ineligible"},{status:409});
     const ingested=await db.rpc("ingest_analytics_event",{p_session:session,p_event:null});
     if(ingested.error)throw ingested.error;
     const {data:purchases}=await db.from("analytics_events").select("id").eq("session_id",session.id).eq("event_type","purchase").limit(1);
