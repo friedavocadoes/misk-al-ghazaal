@@ -1,3 +1,4 @@
+import { assertAdminWrite } from "@/lib/admin-write";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -152,11 +153,11 @@ async function saveProductNotes(formData: FormData) {
     .map((r) => r.note_id)
     .filter((id) => !keep.has(id));
   if (stale.length)
-    await supabase
+    await assertAdminWrite(supabase
       .from("product_notes")
       .delete()
       .eq("product_id", productId)
-      .in("note_id", stale);
+      .in("note_id", stale));
   // …then upsert the rest (insert-or-update atomically per row).
   if (rows.length) {
     const { error } = await supabase
@@ -197,17 +198,17 @@ async function saveProductCollections(formData: FormData) {
   const drop = [...have].filter((id) => !keep.has(id));
   const add = [...keep].filter((id) => !have.has(id));
   if (drop.length)
-    await supabase
+    await assertAdminWrite(supabase
       .from("product_collections")
       .delete()
       .eq("product_id", productId)
-      .in("collection_id", drop);
+      .in("collection_id", drop));
   if (add.length) {
-    await supabase
+    await assertAdminWrite(supabase
       .from("product_collections")
       .insert(
         add.map((collection_id) => ({ product_id: productId, collection_id })),
-      );
+      ));
   }
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
@@ -356,10 +357,10 @@ async function moveToBin(formData: FormData) {
     .select("slug")
     .eq("id", id)
     .single();
-  await supabase
+  await assertAdminWrite(supabase
     .from("products")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id));
   revalidatePath("/admin/products");
   const dslug = (doomed as { slug?: string } | null)?.slug;
   if (dslug) revalidateProductPaths(dslug);

@@ -96,7 +96,9 @@ async function saveSection(formData: FormData) {
     config.rightSrc = str("right_src");
   }
 
-  await supabase
+  {
+
+    const { error: mutationError } = await supabase
     .from("homepage_sections")
     .update({
       title: String(formData.get("title") || ""),
@@ -106,6 +108,10 @@ async function saveSection(formData: FormData) {
       config,
     })
     .eq("id", id);
+
+    if (mutationError) throw new Error(mutationError.message);
+
+  }
 
   revalidatePath(`/admin/homepage/${id}`);
   revalidatePath("/admin/homepage");
@@ -129,7 +135,7 @@ export default async function SectionDetail(props: { params: Promise<{ id: strin
   const supabase = await createClient();
   const { data: s } = await supabase.from("homepage_sections").select("*").eq("id", id).single();
   if (!s) redirect("/admin/homepage");
-  if (s.kind === "scent_alchemist") return <><AdminNav email={session.email} role={session.role} /><div className="mx-auto max-w-3xl px-6 py-16"><h1 className="text-3xl">The scent finder has moved</h1><p className="mt-5 text-sm leading-7">Find Your Scent is now a dedicated page. It uses all active products and the notes library, with twelve popular notes shown first. This legacy homepage section is no longer displayed.</p><div className="mt-8 flex gap-6 text-sm underline"><Link href="/find-your-scent">View scent finder</Link><Link href="/admin/notes">Manage notes</Link><Link href="/admin/products">Manage products</Link></div></div></>;
+  if (s.kind === "scent_alchemist") return <><AdminNav email={session.email} role={session.role} /><div className="admin-workspace admin-legacy"><h1 className="text-3xl">The scent finder has moved</h1><p className="mt-5 text-sm leading-7">Find Your Scent is now a dedicated page. It uses all active products and the notes library, with twelve popular notes shown first. This legacy homepage section is no longer displayed.</p><div className="mt-8 flex gap-6 text-sm underline"><Link href="/find-your-scent">View scent finder</Link><Link href="/admin/notes">Manage notes</Link><Link href="/admin/products">Manage products</Link></div></div></>;
 
   const [{ data: collections }, { data: notes }] = await Promise.all([
     supabase.from("collections").select("slug,title").is("deleted_at", null).order("sort"),

@@ -110,12 +110,12 @@ export default async function NotesPage() {
   const notes = (data ?? []) as NoteRow[];
   return <>
     <AdminNav email={session.email} role={session.role} />
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="admin-workspace admin-legacy">
       <h1 className="font-display text-3xl">Fragrance notes</h1>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-fog">Your artwork library for the scent finder and product notes. Upload each drawing once, then assign the note to products.</p>
       <details className="mt-8 border border-ink/15 bg-white p-6">
         <summary className="cursor-pointer font-display text-xl">Add a note</summary>
-        <AdminForm action={createNote} success="Note added" className="mt-6 grid gap-5 md:grid-cols-4"><NoteFields /><SaveButton className="md:col-span-4">Add note</SaveButton></AdminForm>
+        <AdminForm resetOnSuccess action={createNote} success="Note added" className="mt-6 grid gap-5 md:grid-cols-4"><NoteFields /><SaveButton className="md:col-span-4">Add note</SaveButton></AdminForm>
       </details>
       <ul className="mt-8 space-y-5">
         {notes.map((note) => <li key={note.id} className="border border-ink/10 bg-white p-5 md:p-6">

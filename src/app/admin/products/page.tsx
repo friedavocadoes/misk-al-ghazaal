@@ -1,3 +1,4 @@
+import { assertAdminWrite } from "@/lib/admin-write";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -6,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidateHome, revalidateProductPaths } from "@/lib/revalidate";
 import { logAdmin } from "@/lib/audit";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { ActionButton } from "@/components/admin/admin-form";
+import { AdminForm, ActionButton } from "@/components/admin/admin-form";
 import { AdminProductSearch } from "@/components/admin/admin-product-search";
 import { Plus } from "lucide-react";
 
@@ -16,19 +17,19 @@ async function bulkProducts(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op"));
-  if (!ids.length) return;
-  if (op !== "activate" && op !== "deactivate" && op !== "delete") return;
+  if (!ids.length) throw new Error("Select at least one product first.");
+  if (op !== "activate" && op !== "deactivate" && op !== "delete") throw new Error("Choose a product action.");
   const supabase = await createClient();
   if (op === "delete") {
-    await supabase
+    await assertAdminWrite(supabase
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
-      .in("id", ids);
+      .in("id", ids));
   } else {
-    await supabase
+    await assertAdminWrite(supabase
       .from("products")
       .update({ is_active: op === "activate" })
-      .in("id", ids);
+      .in("id", ids));
   }
   // Storefront now: every touched PDP + the pages that list them.
   const { data } = await supabase.from("products").select("slug").in("id", ids);
@@ -260,7 +261,7 @@ export default async function ProductsPage(props: {
             or clear the filters.
           </p>
         ) : (
-          <form
+          <AdminForm
             action={bulkProducts}
             className="mt-6 border border-ink/10 bg-white"
           >
@@ -339,7 +340,7 @@ export default async function ProductsPage(props: {
                 </div>
               ))}
             </div>
-          </form>
+          </AdminForm>
         )}
       </div>
     </>

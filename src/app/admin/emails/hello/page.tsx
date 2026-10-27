@@ -1,3 +1,4 @@
+import { assertAdminWrite } from "@/lib/admin-write";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -27,7 +28,7 @@ async function saveHello(formData: FormData) {
     product_slugs: slugs,
     updated_at: new Date().toISOString(),
   };
-  await supabase.from("hello_mail_settings").upsert({ id: 1, ...row });
+  await assertAdminWrite(supabase.from("hello_mail_settings").upsert({ id: 1, ...row }));
   await logAdmin(supabase, s, {
     category: "emails",
     action: "update",
@@ -62,7 +63,7 @@ export default async function HelloMailPage() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">Emails / Hello</p>
         <h1 className="font-display text-3xl">Hello welcome mail</h1>
         <p className="mt-1 text-sm text-ink/60">

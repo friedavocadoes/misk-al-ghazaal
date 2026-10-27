@@ -40,7 +40,8 @@ async function saveLineup(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase
+  {
+    const { error: mutationError } = await supabase
     .from("lineups")
     .update({
       title: String(formData.get("title")),
@@ -48,6 +49,8 @@ async function saveLineup(formData: FormData) {
       sort: Number(formData.get("sort") || 0),
     })
     .eq("id", String(formData.get("id")));
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "lineups",
     action: "update",
@@ -68,7 +71,10 @@ async function deleteLineup(formData: FormData) {
   const supabase = await createClient();
   const { data: doomed } = await supabase.from("lineups").select("slug, title").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { slug?: string; title?: string };
-  await supabase.from("lineups").delete().eq("id", String(formData.get("id")));
+  {
+    const { error: mutationError } = await supabase.from("lineups").delete().eq("id", String(formData.get("id")));
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "lineups",
     action: "delete",
@@ -97,11 +103,11 @@ export default async function LineupsPage() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <h1 className="font-display text-3xl">Lineups</h1>
         <p className="mt-1 text-sm text-ink/60">Classify perfumes into named lines — PDP “More from the lineup” follows this.</p>
 
-        <AdminForm action={createLineup} success="Lineup added" className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-4">
+        <AdminForm resetOnSuccess action={createLineup} success="Lineup added" className="mt-8 grid gap-3 border border-ink/10 bg-white p-6 text-sm md:grid-cols-4">
           <h2 className="font-display text-xl md:col-span-4">New lineup</h2>
           <label className="block">Slug*<input name="slug" required placeholder="maison-noir" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
           <label className="block">Title EN*<input name="title" required placeholder="Maison Noir" className="mt-1 w-full border border-ink/20 px-3 py-2" /></label>
@@ -121,10 +127,10 @@ export default async function LineupsPage() {
                 <input name="sort" type="number" defaultValue={l.sort} className="w-20 border border-ink/20 px-2 py-1.5" />
                 <SaveButton>Save</SaveButton>
               </AdminForm>
-              <form action={deleteLineup} className="mt-1 text-right">
+              <AdminForm action={deleteLineup} className="mt-1 text-right">
                 <input type="hidden" name="id" value={l.id} />
                 <ActionButton className="border-0 px-0 text-xs text-[#9c2b2e] hover:underline">Delete lineup</ActionButton>
-              </form>
+              </AdminForm>
             </li>
           ))}
         </ul>

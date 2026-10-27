@@ -17,6 +17,7 @@ const CARDS: {
     group: "Sell",
     links: [
       { href: "/admin/orders", label: "Orders", desc: "Confirm, track & support every parcel" },
+      { href: "/admin/users", label: "Customers & staff", desc: "Account history, customer support & workspace access" },
     ],
   },
   {

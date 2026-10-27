@@ -109,8 +109,14 @@ async function moveSection(formData: FormData) {
   if (i < 0 || j < 0 || j >= rows.length) return;
   const a = rows[i]!;
   const b = rows[j]!;
-  await supabase.from("homepage_sections").update({ sort: b.sort }).eq("id", a.id);
-  await supabase.from("homepage_sections").update({ sort: a.sort }).eq("id", b.id);
+  {
+    const { error: mutationError } = await supabase.from("homepage_sections").update({ sort: b.sort }).eq("id", a.id);
+    if (mutationError) throw new Error(mutationError.message);
+  }
+  {
+    const { error: mutationError } = await supabase.from("homepage_sections").update({ sort: a.sort }).eq("id", b.id);
+    if (mutationError) throw new Error(mutationError.message);
+  }
   const { data: moved } = await supabase.from("homepage_sections").select("title").eq("id", id).single();
   await logAdmin(supabase, s, {
     category: "homepage",
@@ -131,10 +137,13 @@ async function toggleSection(formData: FormData) {
   const supabase = await createClient();
   const { data: cur } = await supabase.from("homepage_sections").select("active, title").eq("id", String(formData.get("id"))).single();
   const turning = !((cur as { active: boolean } | null)?.active);
-  await supabase
+  {
+    const { error: mutationError } = await supabase
     .from("homepage_sections")
     .update({ active: turning })
     .eq("id", String(formData.get("id")));
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "homepage",
     action: "update",
@@ -154,7 +163,10 @@ async function deleteSection(formData: FormData) {
   const supabase = await createClient();
   const { data: doomed } = await supabase.from("homepage_sections").select("kind, title").eq("id", String(formData.get("id"))).single();
   const d = (doomed ?? {}) as { kind?: string; title?: string };
-  await supabase.from("homepage_sections").delete().eq("id", String(formData.get("id")));
+  {
+    const { error: mutationError } = await supabase.from("homepage_sections").delete().eq("id", String(formData.get("id")));
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "homepage",
     action: "delete",
@@ -180,7 +192,7 @@ export default async function HomepageAdmin() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-ink/10 pb-6">
           <div>
             <p className="eyebrow">Homepage CMS</p>
@@ -205,7 +217,7 @@ export default async function HomepageAdmin() {
           </div>
         </div>
 
-        <AdminForm action={createSection} success="Section created" className="mt-8 flex flex-wrap items-end gap-3 border border-ink/10 bg-white p-5 text-sm">
+        <AdminForm resetOnSuccess action={createSection} success="Section created" className="mt-8 flex flex-wrap items-end gap-3 border border-ink/10 bg-white p-5 text-sm">
           <label className="block">Kind
             <select name="kind" className="mt-1 border border-ink/20 bg-white px-3 py-2" defaultValue="products_carousel">
               {KINDS.filter(k => k !== "scent_alchemist").map((k) => (
@@ -235,32 +247,32 @@ export default async function HomepageAdmin() {
                 </span>
               </span>
               <span className="flex items-center gap-1">
-                <form action={moveSection}>
+                <AdminForm action={moveSection}>
                   <input type="hidden" name="id" value={r.id} />
                   <input type="hidden" name="dir" value="up" />
                   <ActionButton className="!border-0 !px-2" ariaLabel="Move up">
                     <ArrowUp className="size-4" />
                   </ActionButton>
-                </form>
-                <form action={moveSection}>
+                </AdminForm>
+                <AdminForm action={moveSection}>
                   <input type="hidden" name="id" value={r.id} />
                   <input type="hidden" name="dir" value="down" />
                   <ActionButton className="!border-0 !px-2" ariaLabel="Move down">
                     <ArrowDown className="size-4" />
                   </ActionButton>
-                </form>
-                <form action={toggleSection}>
+                </AdminForm>
+                <AdminForm action={toggleSection}>
                   <input type="hidden" name="id" value={r.id} />
                   <ActionButton className="!border-0 !px-2" ariaLabel={r.active ? "Disable" : "Enable"}>
                     {r.active ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                   </ActionButton>
-                </form>
-                <form action={deleteSection}>
+                </AdminForm>
+                <AdminForm action={deleteSection}>
                   <input type="hidden" name="id" value={r.id} />
                   <ActionButton danger className="!border-0 !px-2" ariaLabel="Delete">
                     <Trash2 className="size-4" />
                   </ActionButton>
-                </form>
+                </AdminForm>
               </span>
             </li>
           ))}

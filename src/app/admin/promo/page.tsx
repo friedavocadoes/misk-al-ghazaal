@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { ActionButton } from "@/components/admin/admin-form";
+import { AdminForm, ActionButton } from "@/components/admin/admin-form";
 import { logAdmin } from "@/lib/audit";
 import { getPromoSubscribers } from "@/lib/email-settings";
 import { mailboxAddress } from "@/lib/mailer";
@@ -14,7 +14,7 @@ async function createCampaign() {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("promo_campaigns")
     .insert({
       subject: "New offer from the Maison",
@@ -25,6 +25,7 @@ async function createCampaign() {
     })
     .select("id")
     .single();
+  if (error || !data) throw new Error(error?.message || "Could not create a campaign.");
   await logAdmin(supabase, s, {
     category: "promo",
     action: "create",
@@ -63,7 +64,7 @@ export default async function PromoListPage() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">        <p className="eyebrow">Growth / Promo</p>
+      <div className="admin-workspace admin-legacy">        <p className="eyebrow">Growth / Promo</p>
         <h1 className="font-display text-3xl">Promo mail</h1>
         <p className="mt-1 text-sm text-ink/60">
           Sent from <span className="font-mono" dir="ltr">{mailboxAddress("promo")}</span> to{" "}
@@ -73,9 +74,9 @@ export default async function PromoListPage() {
 
         {/* No inputs here — a plain form + ActionButton (SaveButton
             stays disabled until dirty, which an input-less form never is). */}
-        <form action={createCampaign} className="mt-6">
+        <AdminForm action={createCampaign} className="mt-6">
           <ActionButton>+ New campaign</ActionButton>
-        </form>
+        </AdminForm>
 
         <h2 className="mt-8 font-display text-xl">Campaigns</h2>
         <ul className="mt-4 divide-y divide-ink/10 border border-ink/10 bg-white text-sm">

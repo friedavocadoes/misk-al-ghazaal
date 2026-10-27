@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,32 +20,51 @@ import { cn } from "@/lib/utils";
 export type ToastTone = "ok" | "bad";
 
 export function toast(message: string, tone: ToastTone = "ok"): void {
-  window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message, tone } }));
+  window.dispatchEvent(
+    new CustomEvent("admin-toast", { detail: { message, tone } }),
+  );
 }
 
 export function Toaster() {
-  const [items, setItems] = useState<{ id: number; message: string; tone: ToastTone }[]>([]);
+  const [items, setItems] = useState<
+    { id: number; message: string; tone: ToastTone }[]
+  >([]);
   useEffect(() => {
     const onToast = (e: Event) => {
-      const { message, tone } = (e as CustomEvent).detail as { message: string; tone: ToastTone };
+      const { message, tone } = (e as CustomEvent).detail as {
+        message: string;
+        tone: ToastTone;
+      };
       const id = Date.now() + Math.random();
       setItems((prev) => [...prev.slice(-2), { id, message, tone }]);
-      setTimeout(() => setItems((prev) => prev.filter((i) => i.id !== id)), 3200);
+      setTimeout(
+        () => setItems((prev) => prev.filter((i) => i.id !== id)),
+        3200,
+      );
     };
     window.addEventListener("admin-toast", onToast);
     return () => window.removeEventListener("admin-toast", onToast);
   }, []);
   return (
-    <div aria-live="polite" className="pointer-events-none fixed bottom-6 left-1/2 z-[100] flex -translate-x-1/2 flex-col items-center gap-2">
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed bottom-6 left-1/2 z-[100] flex -translate-x-1/2 flex-col items-center gap-2"
+    >
       {items.map((i) => (
         <p
           key={i.id}
           className={cn(
             "pointer-events-auto flex items-center gap-2.5 border px-5 py-3 text-sm font-medium shadow-[0_16px_40px_-16px_rgba(28,25,23,0.5)]",
-            i.tone === "ok" ? "border-ink bg-ink text-white" : "border-[#9c2b2e] bg-[#9c2b2e] text-white",
+            i.tone === "ok"
+              ? "border-ink bg-ink text-white"
+              : "border-[#9c2b2e] bg-[#9c2b2e] text-white",
           )}
         >
-          {i.tone === "ok" ? <Check className="size-4 text-gold-soft" /> : <X className="size-4" />}
+          {i.tone === "ok" ? (
+            <Check className="size-4 text-gold-soft" />
+          ) : (
+            <X className="size-4" />
+          )}
           {i.message}
         </p>
       ))}
@@ -65,7 +85,9 @@ interface FormState {
 const FormCtx = createContext<FormState>({ dirty: false, pending: false });
 
 function serialize(form: HTMLFormElement): string {
-  return new URLSearchParams(new FormData(form) as unknown as Record<string, string>).toString();
+  return new URLSearchParams(
+    new FormData(form) as unknown as Record<string, string>,
+  ).toString();
 }
 
 export function AdminForm({
@@ -73,29 +95,40 @@ export function AdminForm({
   success = "Saved",
   className,
   children,
+  resetOnSuccess = false,
 }: {
   action: (formData: FormData) => Promise<void>;
   success?: string;
   className?: string;
   children: React.ReactNode;
+  resetOnSuccess?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const initial = useRef<string | null>(null);
+  const lastSubmitSucceeded = useRef(false);
   const [dirty, setDirty] = useState(false);
 
   const [state, formAction] = useActionState(
     async (_prev: { ok: boolean; message: string } | null, fd: FormData) => {
+      lastSubmitSucceeded.current = false;
       try {
         await action(fd);
       } catch (e) {
         // redirect() throws to navigate — let it through, never toast it.
-        if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) throw e;
-        return { ok: false as boolean, message: e instanceof Error ? e.message : "Save failed" };
+        if ((e as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT"))
+          throw e;
+        return {
+          ok: false as boolean,
+          message: e instanceof Error ? e.message : "Save failed",
+        };
       }
+      lastSubmitSucceeded.current = true;
       // Success: re-baseline so further untouched submits stay disabled.
       // (setState here is an event context, not an effect.)
       if (formRef.current) initial.current = serialize(formRef.current);
       setDirty(false);
+      router.refresh();
       return { ok: true as boolean, message: success };
     },
     null as null | { ok: boolean; message: string },
@@ -108,6 +141,23 @@ export function AdminForm({
   }, []);
 
   useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    // React resets forms during commit, with synthetic events disabled. A
+    // native listener is required; JSX onReset cannot cancel that reset.
+    const onReset = (event: Event) => {
+      if (!resetOnSuccess || !lastSubmitSucceeded.current) event.preventDefault();
+      else
+        queueMicrotask(() => {
+          initial.current = serialize(form);
+          setDirty(false);
+        });
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [resetOnSuccess]);
+
+  useEffect(() => {
     if (state) toast(state.message, state.ok ? "ok" : "bad");
   }, [state]);
 
@@ -117,15 +167,29 @@ export function AdminForm({
   }, []);
 
   return (
-    <form ref={formRef} action={formAction} onChange={onChange} onInput={onChange} className={className}>
+    <form
+      ref={formRef}
+      action={formAction}
+      onChange={onChange}
+      onInput={onChange}
+      className={className}
+    >
       <PendingBridge dirty={dirty}>{children}</PendingBridge>
     </form>
   );
 }
 
-function PendingBridge({ dirty, children }: { dirty: boolean; children: React.ReactNode }) {
+function PendingBridge({
+  dirty,
+  children,
+}: {
+  dirty: boolean;
+  children: React.ReactNode;
+}) {
   const { pending } = useFormStatus();
-  return <FormCtx.Provider value={{ dirty, pending }}>{children}</FormCtx.Provider>;
+  return (
+    <FormCtx.Provider value={{ dirty, pending }}>{children}</FormCtx.Provider>
+  );
 }
 
 export function useAdminForm(): FormState {
@@ -149,7 +213,9 @@ export function SaveButton({
       disabled={!dirty || pending}
       className={cn(
         "flex items-center justify-center gap-2 px-4 py-2.5 text-sm transition",
-        danger ? "bg-[#9c2b2e] text-white hover:bg-[#9c2b2e]/90" : "bg-ink text-white hover:bg-ink/85",
+        danger
+          ? "bg-[#9c2b2e] text-white hover:bg-[#9c2b2e]/90"
+          : "bg-ink text-white hover:bg-ink/85",
         !dirty && !pending && "cursor-not-allowed opacity-40 hover:bg-ink",
         danger && !dirty && !pending && "hover:bg-[#9c2b2e]",
         className,

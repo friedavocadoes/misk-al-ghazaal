@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
-import { ActionButton } from "@/components/admin/admin-form";
+import { AdminForm, ActionButton } from "@/components/admin/admin-form";
 import { autoDeleteAt, purgeExpiredBin, type BinTable } from "@/lib/trash";
-import { revalidateNavigation, revalidateHome, touchProduct } from "@/lib/revalidate";
+import { revalidatePagePaths, revalidateNavigation, revalidateHome, touchProduct } from "@/lib/revalidate";
 import { logAdmin } from "@/lib/audit";
 
 const TABS: { key: BinTable; label: string; superOnly?: boolean }[] = [
@@ -31,7 +31,8 @@ async function restoreItem(formData: FormData) {
     table === "products" ? String(r.title ?? r.slug ?? formData.get("id"))
     : table === "orders" ? String(r.order_no ?? formData.get("id"))
     : String(r.title ?? r.slot ?? formData.get("id"));
-  await supabase.from(table).update({ deleted_at: null }).eq("id", String(formData.get("id")));
+  const { error: restoreError } = await supabase.from(table).update({ deleted_at: null }).eq("id", String(formData.get("id"))).select("id").single();
+  if (restoreError) throw new Error(restoreError.message);
   await logAdmin(supabase, s, {
     category: "bin",
     action: "restore",
@@ -42,6 +43,7 @@ async function restoreItem(formData: FormData) {
     details: { table, id: String(formData.get("id")) },
   });
   revalidatePath("/admin/bin");
+  if (table === "orders") { revalidatePath("/admin/orders"); revalidatePath("/admin/users", "layout"); revalidatePagePaths("/account/orders"); revalidatePagePaths("/account/orders/[id]"); }
   // Restored rows are live again — refresh their storefront surfaces too.
   if (table === "banners") { revalidateHome(); revalidateNavigation(); }
   if (table === "products") await touchProduct(supabase, String(formData.get("id")));
@@ -75,7 +77,10 @@ async function destroyItem(formData: FormData) {
     if (error) throw error;
     await cleanupBannerArt(supabase, [b?.src, b?.fallback, b?.mobile_src, b?.mobile_fallback].filter((url): url is string => typeof url === "string"));
   }
-  await supabase.from(table).delete().eq("id", String(formData.get("id")));
+  if (table !== "banners") {
+    const { error: deleteError } = await supabase.from(table).delete().eq("id", String(formData.get("id")));
+    if (deleteError) throw new Error(deleteError.message);
+  }
   await logAdmin(supabase, s, {
     category: "bin",
     action: "delete",
@@ -86,22 +91,23 @@ async function destroyItem(formData: FormData) {
     details: { table, id: String(formData.get("id")), snapshot: doomed ?? null },
   });
   revalidatePath("/admin/bin");
+  if (table === "orders") { revalidatePath("/admin/orders"); revalidatePath("/admin/users", "layout"); revalidatePagePaths("/account/orders"); revalidatePagePaths("/account/orders/[id]"); }
   if (table === "banners") { revalidateHome(); revalidateNavigation(); }
 }
 
 function BinButtons({ table, id }: { table: BinTable; id: string }) {
   return (
     <div className="flex shrink-0 gap-2">
-      <form action={restoreItem}>
+      <AdminForm action={restoreItem}>
         <input type="hidden" name="table" value={table} />
         <input type="hidden" name="id" value={id} />
         <ActionButton>Restore</ActionButton>
-      </form>
-      <form action={destroyItem}>
+      </AdminForm>
+      <AdminForm action={destroyItem}>
         <input type="hidden" name="table" value={table} />
         <input type="hidden" name="id" value={id} />
         <ActionButton danger>Delete forever</ActionButton>
-      </form>
+      </AdminForm>
     </div>
   );
 }
@@ -135,7 +141,7 @@ export default async function BinPage(props: {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <div className="border-b border-ink/10 pb-6">
           <p className="eyebrow">Recycle bin</p>
           <h1 className="font-display text-3xl">Deleted items</h1>

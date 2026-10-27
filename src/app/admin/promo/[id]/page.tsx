@@ -1,3 +1,4 @@
+import { assertAdminWrite } from "@/lib/admin-write";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -16,14 +17,14 @@ async function saveCampaign(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
-  await supabase
+  await assertAdminWrite(supabase
     .from("promo_campaigns")
     .update({
       subject: String(formData.get("subject") ?? "").trim(),
       preheader: String(formData.get("preheader") ?? "").trim(),
       body_html: String(formData.get("body_html") ?? ""),
     })
-    .eq("id", id);
+    .eq("id", id));
   await logAdmin(supabase, s, {
     category: "promo",
     action: "update",
@@ -68,10 +69,10 @@ async function sendCampaign(formData: FormData) {
     // Gentle pacing for shared cPanel limits.
     await new Promise((res) => setTimeout(res, 120));
   }
-  await supabase
+  await assertAdminWrite(supabase
     .from("promo_campaigns")
     .update({ status: "sent", recipient_count: sent, sent_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id));
   await logAdmin(supabase, s, {
     category: "promo",
     action: "send",
@@ -91,7 +92,7 @@ async function deleteCampaign(formData: FormData) {
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
-  await supabase.from("promo_campaigns").delete().eq("id", id);
+  await assertAdminWrite(supabase.from("promo_campaigns").delete().eq("id", id));
   await logAdmin(supabase, s, {
     category: "promo",
     action: "delete",
@@ -131,7 +132,7 @@ export default async function PromoDetailPage(props: {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">
           <Link href="/admin/promo" className="underline">Promo</Link> /{" "}
           {c.subject || "(untitled)"}

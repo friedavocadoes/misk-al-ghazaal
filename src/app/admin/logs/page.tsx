@@ -64,7 +64,7 @@ export default async function AuditLogPage(props: {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">Console / Activity</p>
         <h1 className="mt-1 font-display text-3xl">Audit log</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink/60">

@@ -189,3 +189,7 @@ Run `supabase/migration_retail_stores.sql`, then open Admin → Catalog → Stor
 
 ## Orders workspace upgrade (27 October 2026)
 Apply `supabase/migration_orders_workspace.sql` after the existing order/product-options/samples/optional-stock migrations. Read [Orders workspace](ORDERS_WORKSPACE.md). Admin Orders now provides filtered summaries, a selectable/paginated table, all-matching/selected CSV export, atomic bulk changes and manual creation. Dispatched requires a tracking number. Existing Packed rows are retained as legacy preparation, not silently relabeled as courier handover. No Tap/card checkout integration is enabled by this upgrade.
+
+
+### Admin customer workspace (2026-10-27)
+After the orders workspace migration, run `supabase/migration_admin_customer_workspace.sql`. This adds service-only paginated customer search and accurate order/paid-spending summaries, plus the customer-order index. See [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) for account support, permissions and save behavior. Password recovery still requires the storefront `/account/reset` redirect URL to be allowlisted in Supabase Auth.

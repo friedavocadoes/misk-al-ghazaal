@@ -48,7 +48,7 @@ export default async function AuditLogDetail(props: { params: Promise<{ id: stri
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">
           <Link href="/admin/logs" className="link-underline">Audit log</Link> / entry
         </p>

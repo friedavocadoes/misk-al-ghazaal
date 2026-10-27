@@ -68,7 +68,7 @@ export default async function SeoHub() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">Console / SEO</p>
         <h1 className="mt-1 font-display text-3xl">Page SEO</h1>
         <p className="mt-2 max-w-2xl text-sm text-ink/60">

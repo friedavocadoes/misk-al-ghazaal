@@ -13,7 +13,8 @@ async function saveRitual(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const supabase = await createClient();
-  await supabase
+  {
+    const { error: mutationError } = await supabase
     .from("rituals")
     .update({
       title: String(formData.get("title")),
@@ -24,6 +25,8 @@ async function saveRitual(formData: FormData) {
       video_url: String(formData.get("video_url") || "") || "",
     })
     .eq("id", String(formData.get("id")));
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "rituals",
     action: "update",
@@ -49,7 +52,7 @@ export default async function RitualDetail(props: { params: Promise<{ id: string
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">
           <Link href="/admin/rituals" className="link-underline">Guides</Link> / {r.slug}
         </p>

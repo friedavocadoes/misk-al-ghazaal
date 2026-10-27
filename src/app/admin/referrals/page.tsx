@@ -26,10 +26,13 @@ async function saveSettings(formData: FormData) {
     referee_cap: clampCap(formData.get("referee_cap"), 50),
     active: formData.get("active") === "on",
   };
-  await supabase
+  {
+    const { error: mutationError } = await supabase
     .from("referral_settings")
     .update(row)
     .eq("id", 1);
+    if (mutationError) throw new Error(mutationError.message);
+  }
   await logAdmin(supabase, s, {
     category: "referrals",
     action: "update",
@@ -66,7 +69,7 @@ export default async function ReferralsPage() {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <h1 className="font-display text-3xl">Referrals</h1>
         <p className="mt-1 text-sm text-ink/60">
           Live rule: referrers earn <strong>{rp}% off, capped at Dhs {rc}</strong> (personal

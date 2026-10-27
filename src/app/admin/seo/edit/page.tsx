@@ -110,7 +110,7 @@ export default async function SeoEditPage(props: {
   return (
     <>
       <AdminNav email={session.email} role={session.role} />
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="admin-workspace admin-legacy">
         <p className="eyebrow">
           <Link href="/admin/seo" className="link-underline">Page SEO</Link> / {SEO_TYPE_LABELS[type]}
           {slug ? ` / ${slug}` : ""}
