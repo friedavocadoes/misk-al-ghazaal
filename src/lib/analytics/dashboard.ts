@@ -15,7 +15,16 @@ export interface DashboardData {current:Report;previous:Report|null}
 export interface CustomerRow {id:string;email:string;full_name:string|null;phone:string|null;default_address:unknown;promo_opt_in:boolean;order_updates_opt_in:boolean;sessions:number;active_seconds:number;first_seen:string|null;last_seen:string|null;orders:number;spent:number}
 export interface CustomerData {rows:CustomerRow[];total:number}
 export interface LiveData {live:number;visitors:number;orders:number;conversion:number}
-export const ANALYTICS_SECTIONS = ["overview","traffic","products","acquisition","feedback","customers"] as const;
+export interface LocationMetric {visitors:number;sessions:number;views:number;buyers:number;orders:number;revenue:number;conversion_rate:number}
+export interface LocationReport {
+ summary:LocationMetric&{located_sessions:number;uae_sessions:number;emirate_sessions:number};
+ countries:(LocationMetric&{country:string|null})[];
+ emirates:(LocationMetric&{emirate:string|null})[];
+ cities:(LocationMetric&{country:string|null;region:string|null;emirate:string|null;city:string|null})[];
+ pages:(LocationMetric&{page_path:string})[];
+ visits:{session_id:string;visitor_id:string;country:string|null;region:string|null;emirate:string|null;city:string|null;views:number;orders:number;created_at:string;last_seen_at:string;location_source:string|null}[];
+}
+export const ANALYTICS_SECTIONS = ["overview","traffic","locations","products","acquisition","feedback","customers"] as const;
 export type AnalyticsSection = typeof ANALYTICS_SECTIONS[number];
 export const REASON_LABELS:Record<string,string> = {shipping_cost:"Shipping / extra fees",just_browsing:"Browsing / comparing",price_too_high:"Price",payment_issue:"Payment method",delivery_time:"Delivery time",other:"Something else",scent_unsure:"Unsure about the scent",need_more_details:"Needs product information",stock_issue:"Availability / quantity",not_ready:"Not ready yet"};
 export function analyticsRange(params:URLSearchParams) {

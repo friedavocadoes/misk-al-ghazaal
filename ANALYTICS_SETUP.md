@@ -1,5 +1,7 @@
 # First-party store analytics
 
+Location reporting: apply `supabase/migration_analytics_locations.sql` **after** the existing analytics/survey migrations, then open **Analytics → Locations & emirates**. See [Location analytics](ANALYTICS_LOCATIONS.md) for installation, UAE mapping, page conversion, hosting headers, and accuracy limits.
+
 For the detailed explanation of tracking, bot detection, abandonment, surveys, metric formulas, and the source-code map, read [How analytics works](ANALYTICS_EXPLAINED.md).
 
 ## Install and open

@@ -10,11 +10,17 @@ export async function GET(req:Request) {
   const params=new URL(req.url).searchParams; const kind=params.get("kind");const db=createAdminClient();
   let result;
   if(kind==="live")result=await db.rpc("analytics_live");
+  else if(kind==="locations"){
+   const country=(params.get("country")??"").toUpperCase();
+   const emirate=(params.get("emirate")??"").toUpperCase();
+   if((country&&!/^[A-Z]{2}$/.test(country))||(emirate&&!["AZ","DU","SH","AJ","UQ","RK","FU"].includes(emirate))||(emirate&&country!=="AE"))return NextResponse.json({error:"Choose a valid country and UAE emirate."},{status:400});
+   result=await db.rpc("analytics_locations",{...analyticsRange(params),include_bots:params.get("bots")==="all",bots_only:params.get("bots")==="only",filter_country:country,filter_emirate:emirate});
+  }
   else if(kind==="customers"){
    if(session.role!=="super_admin")return NextResponse.json({error:"Customer data is restricted to super admins."},{status:403});
    result=await db.rpc("analytics_customers",{...analyticsRange(params),search_text:(params.get("q")??"").slice(0,100),page_offset:Math.max(0,Math.min(100000,Number(params.get("offset"))||0)),page_size:100,promo_filter:["yes","no"].includes(params.get("promo")??"")?params.get("promo"):"all"});
   }else result=await db.rpc("analytics_dashboard",{...analyticsRange(params),include_bots:params.get("bots")==="all",bots_only:params.get("bots")==="only",attribution:params.get("attribution")==="first"?"first":"last",compare:params.get("compare")!=="false"});
-  if(result.error)throw result.error;
+  if(result.error)throw new Error(kind==="locations"?"Location analytics unavailable. Apply supabase/migration_analytics_locations.sql after the existing analytics migrations.":result.error.message);
   return NextResponse.json(result.data,{headers:{"Cache-Control":"private, no-store"}});
  }catch(error){
   const text=error instanceof Error ? error.message : "Analytics unavailable. Apply migration_analytics.sql in Supabase.";

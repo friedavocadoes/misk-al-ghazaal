@@ -126,6 +126,8 @@ Login/register carry the promo checkbox (on by default, quiet styling).
 
 ## 6c. Shopper auth (email + Google) + referrals
 
+To show the brand name/logo on Google sign-in and optionally replace the visible Supabase callback domain, see [Google sign-in branding](GOOGLE_LOGIN_BRANDING.md). These are Google Auth Platform/Supabase custom-domain settings, separate from the storefront logo and Site URL.
+
 1. Dashboard → Authentication → Providers → enable **Email** (confirm email ON
    for production) and **Google**: create the OAuth client (Google Cloud
    Console → Credentials), paste Client ID + Secret, and add the redirect URL

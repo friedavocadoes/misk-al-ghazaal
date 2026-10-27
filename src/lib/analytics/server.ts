@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { botReason, cleanAttribution, uuid, type AnalyticsItem } from "./shared";
+import { analyticsLocation } from "./location";
 
 export async function analyticsSession(req: Request, clientBot = false, activeSeconds = 0, userId?: string | null) {
   const jar = await cookies();
@@ -20,7 +21,7 @@ export async function analyticsSession(req: Request, clientBot = false, activeSe
   return { id:sid, visitor_id:vid, user_id:owner, is_bot:!!reason, bot_reason:reason,
     first_touch_utm:first, last_touch_utm:last, referrer_domain:first.referrer ?? "direct",
     device_type:/ipad|tablet/i.test(ua) ? "tablet" : /mobi|android|iphone/i.test(ua) ? "mobile" : "desktop",
-    country:(req.headers.get("x-vercel-ip-country") ?? req.headers.get("cf-ipcountry"))?.slice(0,2) ?? null,
+    ...analyticsLocation(req.headers),
     active_seconds:Math.min(60,Math.max(0,Math.floor(activeSeconds))) };
 }
 export function sameOrigin(req: Request): boolean {

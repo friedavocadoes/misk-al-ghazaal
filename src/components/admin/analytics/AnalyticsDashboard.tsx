@@ -13,16 +13,17 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SurveyFeedback } from "./SurveyFeedback";
+import { LocationAnalytics } from "./LocationAnalytics";
 import { useSuggest } from "@/components/search/use-suggest";
 import { formatAED } from "@/lib/utils";
 import { csvCell } from "@/lib/analytics/shared";
-import { ANALYTICS_SECTIONS, type AnalyticsSection, type DashboardData, type CustomerData, type ProductMetric } from "@/lib/analytics/dashboard";
+import { ANALYTICS_SECTIONS, type AnalyticsSection, type DashboardData, type CustomerData, type LocationReport, type ProductMetric } from "@/lib/analytics/dashboard";
 
 const chartLoading=()=> <div className="h-72 animate-pulse rounded-lg bg-sand/40"/>;
 const Timeline=dynamic(()=>import("./AnalyticsCharts").then(m=>m.TimelineChart),{ssr:false,loading:chartLoading});
 const Bots=dynamic(()=>import("./AnalyticsCharts").then(m=>m.BotCharts),{ssr:false,loading:chartLoading});
 const Survey=dynamic(()=>import("./AnalyticsCharts").then(m=>m.SurveyChart),{ssr:false,loading:chartLoading});
-const LABELS:Record<AnalyticsSection,string>={overview:"Overview",traffic:"Traffic & bots",products:"Product interest",acquisition:"Acquisition",feedback:"Why no buy?",customers:"Customer data"};
+const LABELS:Record<AnalyticsSection,string>={overview:"Overview",traffic:"Traffic & bots",locations:"Locations & emirates",products:"Product interest",acquisition:"Acquisition",feedback:"Why no buy?",customers:"Customer data"};
 function dates(preset:string){
  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Dubai"}).format(new Date());const now=new Date(today+"T12:00:00Z");
  let start=now,end=now;
@@ -59,6 +60,7 @@ function AdLinkBuilder(){
 export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection;canExport:boolean}){
  const query=useSearchParams();const router=useRouter();const path=usePathname();const initial=dates("month");
  const start=query.get("start")??initial.start,end=query.get("end")??initial.end,bots=query.get("bots")??"real",compare=query.get("compare")!=="false",attribution=query.get("attribution")??"last";
+ const [locations,setLocations]=useState<LocationReport|null>(null);
  const [data,setData]=useState<DashboardData|null>(null);const [customers,setCustomers]=useState<CustomerData|null>(null);const [error,setError]=useState("");const [loading,setLoading]=useState(true);const [refresh,setRefresh]=useState(0);const [mode,setMode]=useState<"viewers"|"revenue">("viewers");
  const [productFilter,setProductFilter]=useState("all");const [productQuery,setProductQuery]=useState("");const [sort,setSort]=useState<{key:keyof ProductMetric;desc:boolean}>({key:"views",desc:true});
  const [customerSearch,setCustomerSearch]=useState(query.get("q")??"");const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
@@ -67,7 +69,7 @@ export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection
  function update(values:Record<string,string>){const p=new URLSearchParams(requestKey);for(const [key,value] of Object.entries(values))p.set(key,value);router.replace(`${path}?${p}`,{scroll:false});}
  useEffect(()=>{
   const controller=new AbortController();let live=true;
-  const run=async()=>{setLoading(true);setError("");try{const url=new URLSearchParams(requestKey);if(section==="customers")url.set("kind","customers");const r=await fetch(`/api/admin/analytics?${url}`,{cache:"no-store",signal:controller.signal});const value=await r.json();if(!r.ok)throw new Error(value.error??"Unable to load analytics");if(live){if(section==="customers")setCustomers(value as CustomerData);else setData(value as DashboardData);}}catch(e){if(live)setError(e instanceof Error?e.message:"Unable to load analytics");}finally{if(live)setLoading(false);}};
+  const run=async()=>{setLoading(true);setError("");try{const url=new URLSearchParams(requestKey);if(section==="customers")url.set("kind","customers");else if(section==="locations")url.set("kind","locations");const r=await fetch(`/api/admin/analytics?${url}`,{cache:"no-store",signal:controller.signal});const value=await r.json();if(!r.ok)throw new Error(value.error??"Unable to load analytics");if(live){if(section==="customers")setCustomers(value as CustomerData);else if(section==="locations")setLocations(value as LocationReport);else setData(value as DashboardData);}}catch(e){if(live)setError(e instanceof Error?e.message:"Unable to load analytics");}finally{if(live)setLoading(false);}};
   void run();return()=>{live=false;controller.abort();};
  },[requestKey,section,refresh]);
  useEffect(()=>{const timer=setInterval(()=>{if(document.visibilityState==="visible")setRefresh(v=>v+1);},60000);return()=>clearInterval(timer);},[]);
@@ -86,11 +88,11 @@ export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection
    <label>Date range<Select aria-label="Date range" value={query.get("preset")??"month"} onChange={e=>{if(e.target.value==="custom")update({preset:"custom"});else update({...dates(e.target.value),preset:e.target.value,offset:"0"});}}><option value="today">Today</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="month">This month</option><option value="lastmonth">Last month</option><option value="custom">Custom</option></Select></label>
    <label>From<input type="date" aria-label="Start date" value={start} onChange={e=>update({start:e.target.value,preset:"custom",offset:"0"})}/></label>
    <label>Through<input type="date" aria-label="End date" value={end} onChange={e=>update({end:e.target.value,preset:"custom",offset:"0"})}/></label>
-   {section!=="customers"&&<><label>Traffic<Select aria-label="Bot traffic filter" value={bots} onChange={e=>update({bots:e.target.value})}><option value="real">Real users only</option><option value="all">Include bots</option><option value="only">Bots only</option></Select></label><label className="analytics-check"><input type="checkbox" checked={compare} onChange={e=>update({compare:String(e.target.checked)})}/>Compare periods</label></>}
+   {section!=="customers"&&<><label>Traffic<Select aria-label="Bot traffic filter" value={bots} onChange={e=>update({bots:e.target.value})}><option value="real">Real users only</option><option value="all">Include bots</option><option value="only">Bots only</option></Select></label>{section!=="locations"&&<label className="analytics-check"><input type="checkbox" checked={compare} onChange={e=>update({compare:String(e.target.checked)})}/>Compare periods</label>}</>}
    <Button size="sm" variant="outline" onClick={()=>setRefresh(v=>v+1)} aria-label="Refresh analytics"><RefreshCw className={loading?"animate-spin":""}/></Button>
   </div>
-  {error?<Card className="p-6" role="alert"><p className="font-medium">Analytics isn’t ready yet</p><p className="mt-2 text-sm text-fog">{error}</p><p className="mt-2 text-xs text-fog">If this is a new installation, run supabase/migration_analytics.sql. No historical traffic is fabricated.</p><Button className="mt-4" variant="outline" onClick={()=>setRefresh(v=>v+1)}>Retry</Button></Card>:loading&&!data&&!customers?<div role="status" className="grid grid-cols-2 gap-4 lg:grid-cols-5">{Array.from({length:5},(_,i)=><div key={i} className="h-32 animate-pulse rounded-xl bg-sand/60"/>)}<span className="sr-only">Loading analytics</span></div>:null}
-  {section!=="customers"&&report&&!error&&<div className={loading?"opacity-65":""} aria-busy={loading}>
+  {error?<Card className="p-6" role="alert"><p className="font-medium">Analytics isn’t ready yet</p><p className="mt-2 text-sm text-fog">{error}</p><p className="mt-2 text-xs text-fog">If this is a new installation, run supabase/migration_analytics.sql. No historical traffic is fabricated.</p><Button className="mt-4" variant="outline" onClick={()=>setRefresh(v=>v+1)}>Retry</Button></Card>:loading&&!data&&!customers&&!locations?<div role="status" className="grid grid-cols-2 gap-4 lg:grid-cols-5">{Array.from({length:5},(_,i)=><div key={i} className="h-32 animate-pulse rounded-xl bg-sand/60"/>)}<span className="sr-only">Loading analytics</span></div>:null}
+  {section!=="customers"&&section!=="locations"&&report&&!error&&<div className={loading?"opacity-65":""} aria-busy={loading}>
    <div className="analytics-kpis">
     {([{key:"viewers",label:bots==="only"?"Bot viewers":bots==="all"?"All viewers":"Real viewers",render:pretty},{key:"conversion_rate",label:"Viewer → customer",render:(n:number)=>`${pretty(n)}%`},{key:"revenue",label:"Order revenue",render:formatAED},{key:"dropoffs",label:"High-interest drop-offs",render:pretty}] as const).map(item=><Card key={item.key} className="p-5"><p className="text-[10px] uppercase tracking-wider text-fog">{item.label}</p><p className="my-3 text-2xl font-light">{item.render(report.kpis[item.key])}</p><Growth value={report.kpis[item.key]} previous={previous?.kpis[item.key]}/></Card>)}
     <Card className="p-5"><p className="text-[10px] uppercase tracking-wider text-fog">Bot share of traffic</p><p className="my-3 text-2xl font-light">{pretty(100*report.kpis.bot_viewers/Math.max(1,report.kpis.real_viewers+report.kpis.bot_viewers))}%</p><Growth value={100*report.kpis.bot_viewers/Math.max(1,report.kpis.real_viewers+report.kpis.bot_viewers)} previous={previous ? 100*previous.kpis.bot_viewers/Math.max(1,previous.kpis.real_viewers+previous.kpis.bot_viewers) : undefined}/><button type="button" className="mt-2 block text-[10px] underline" onClick={()=>update({bots:bots==="real"?"all":"real"})}>{bots==="real"?"Excluded · include bots":"Change to real users only"}</button></Card>
@@ -110,6 +112,7 @@ export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection
    {section==="feedback"&&<Panel title="What held shoppers back?"><Survey report={report}/></Panel>}
    {!report.kpis.sessions&&<p role="status" className="mt-6 text-center text-sm text-fog">No tracked sessions for this period. Tracking starts after the migration is installed.</p>}
   </div>}
+  {section==="locations"&&locations&&!error&&<div aria-busy={loading} className={loading?"pointer-events-none opacity-65":""}><LocationAnalytics report={locations} country={query.get("country")??""} emirate={query.get("emirate")??""} onFilter={update}/></div>}
   {section==="customers"&&canExport&&<Panel title="Customer directory" action={<Button asChild size="sm" variant="outline"><a href={`/api/admin/analytics/export?${requestKey}`}><Download/>Export Excel CSV</a></Button>}>
    <p className="mb-5 text-xs leading-6 text-fog">All shopper accounts. Activity and order figures use the chosen date range. Active time measures foreground interaction, not time in a background tab. Guest visits remain anonymous.</p>
    <div className="mb-5 flex flex-wrap gap-3"><input value={customerSearch} aria-label="Search customers" placeholder="Email, name or phone" className="min-w-0 rounded-lg border border-ink/15 px-3 py-2 text-xs" onChange={e=>{const value=e.target.value;setCustomerSearch(value);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>update({q:value,offset:"0"}),300);}}/><Select aria-label="Promotion consent filter" value={query.get("promo")??"all"} onChange={e=>update({promo:e.target.value,offset:"0"})}><option value="all">All promotion preferences</option><option value="yes">Promotions enabled</option><option value="no">Promotions disabled</option></Select></div>

@@ -23,6 +23,7 @@ const GROUPS: NavGroup[] = [
   {label:"Analytics",items:[
     {href:"/admin/analytics",label:"Overview & conversion"},
     {href:"/admin/analytics/traffic",label:"Traffic & bot detection"},
+    {href:"/admin/analytics/locations",label:"Locations & emirates"},
     {href:"/admin/analytics/products",label:"Product interest"},
     {href:"/admin/analytics/acquisition",label:"Sources & campaigns"},
     {href:"/admin/analytics/feedback",label:"Why no buy?"},
