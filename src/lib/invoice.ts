@@ -219,7 +219,7 @@ export function buildInvoicePdf(d: InvoiceData): Promise<Buffer> {
       };
       trow("Subtotal", `AED ${d.subtotal.toFixed(2)}`);
       if (d.discount > 0)
-        trow("Discount" + (d.couponCode ? ` (${d.couponCode})` : ""), `−AED ${d.discount.toFixed(2)}`);
+        trow("Discount" + (d.couponCode ? ` (${d.couponCode})` : ""), `AED -${d.discount.toFixed(2)}`);
       trow("Shipping", d.shipping === 0 ? "Complimentary" : `AED ${d.shipping.toFixed(2)}`);
       trow(`TOTAL — ${d.paymentLabel ?? "cash on delivery"}`, `AED ${d.total.toFixed(2)}`, true, true);
 
