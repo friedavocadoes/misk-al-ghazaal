@@ -47,7 +47,7 @@ export const SITE = {
   email: "support@miskalghazaalperfumes.com",
   phone: "+971 4 000 0000",
   address: L("Mamzar Center, Shop No. 08, Dubai", "ممرز سنتر، دبي، الإمارات"),
-  hours: L("Open Mon–Sat, 10AM–5PM", "مفتوح من الاثنين للسبت، 10ص–5م"),
+  hours: L("Open Mon-Sun, 10AM-5PM", "مفتوح من الاثنين للسبت، 10ص-5م"),
 };
 
 export const SUPPORT_EMAIL =
