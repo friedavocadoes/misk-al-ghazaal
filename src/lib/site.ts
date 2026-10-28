@@ -57,7 +57,7 @@ export const ORDERS_EMAIL = "orders@miskalghazaalperfumes.com";
 export const PROMO_EMAIL = "promo@miskalghazaalperfumes.com";
 export const NOREPLY_EMAIL = "noreply@miskalghazaalperfumes.com";
 
-export const INSTAGRAM_URL = "https://www.instagram.com/misk.al.ghazaal";
+export const INSTAGRAM_URL = "https://www.instagram.com/gazaalperfumes";
 
 export const STORE_CONTACT = {
   /** Boutique mobile — doubles as the shop WhatsApp line. */

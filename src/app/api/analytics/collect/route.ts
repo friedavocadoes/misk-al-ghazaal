@@ -2,13 +2,14 @@ import { refreshDemandRanking } from "@/lib/demand-ranking";
 import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { analyticsSession, readSmallBody, sameOrigin } from "@/lib/analytics/server";
-import { EVENT_TYPES, safePath, uuid } from "@/lib/analytics/shared";
+import { privateOrderPath, EVENT_TYPES, safePath, uuid } from "@/lib/analytics/shared";
 
 export async function POST(req: Request) {
   try {
     if (!sameOrigin(req)) return new NextResponse(null,{status:204});
     const body = await readSmallBody(req);
     if (!body || body.event_type === "purchase" || !(body.event_type === "heartbeat" || EVENT_TYPES.includes(body.event_type as typeof EVENT_TYPES[number]))) return new NextResponse(null,{status:204});
+    if(typeof body.page_path==="string"&&privateOrderPath(body.page_path))return new NextResponse(null,{status:204});
     {
       const event = body.event_type === "heartbeat" ? null : {
         id:uuid(body.id) ? body.id : crypto.randomUUID(), event_type:body.event_type,

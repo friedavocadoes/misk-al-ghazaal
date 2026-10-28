@@ -1,8 +1,9 @@
 import type { NextRequest, NextResponse } from "next/server";
-import { attributionCookie, attributionFromUrl, botReason, uuid } from "./shared";
+import { privateOrderPath, attributionCookie, attributionFromUrl, botReason, uuid } from "./shared";
 
 /** Extend the existing locale/auth response without replacing its cookies. */
 export function analyticsCookies(req: NextRequest, response: NextResponse): NextResponse {
+  if(privateOrderPath(req.nextUrl.pathname))return response;
   if (req.headers.has("next-router-prefetch") || /prefetch/i.test(req.headers.get("purpose") ?? "")) return response;
   const options = { path: "/", sameSite: "lax" as const, secure: req.nextUrl.protocol === "https:" };
   const set = (key: string, value: string, maxAge: number) => response.cookies.set(key, value, {...options,maxAge});

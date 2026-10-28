@@ -4,12 +4,9 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  FaqAccordion,
-  WishlistGrid,
-} from "@/components/blocks/ContentBlocks";
-import { ContactExperience, type ContactTopic } from "@/components/blocks/ContactExperience";
-import { ContactChannels } from "@/components/blocks/ContactChannels";
+import { FaqAccordion, WishlistGrid } from "@/components/blocks/ContentBlocks";
+import { type ContactTopic } from "@/components/blocks/ContactExperience";
+import { ContactLanding } from "@/components/blocks/ContactLanding";
 import { getProducts } from "@/lib/store";
 import { getFaqs } from "@/lib/site";
 import { toLocale } from "@/lib/i18n";
@@ -23,7 +20,13 @@ import { customJsonLd, getPageSeo, seoMetadata, stripHtml } from "@/lib/seo";
 // Exported for the admin SEO hub (one editable row per page).
 export const PAGES: Record<
   string,
-  { title: string; titleAr?: string; eyebrow: string; eyebrowAr?: string; html: string }
+  {
+    title: string;
+    titleAr?: string;
+    eyebrow: string;
+    eyebrowAr?: string;
+    html: string;
+  }
 > = {
   wholesale: {
     title: "Wholesale",
@@ -32,9 +35,25 @@ export const PAGES: Record<
     eyebrowAr: "تجارة",
     html: "<p><strong>Bulk orders accepting.</strong> Partner with Misk Al Ghazaal for retail and distribution of fine perfumes, dukhoon and bakhoor.</p><p>Write to <a href='mailto:support@miskalghazaalperfumes.com'>support@miskalghazaalperfumes.com</a> or visit our Mamzar Centre store in Dubai, UAE.</p>",
   },
-  contact: { title: "Write to the Maison", eyebrow: "Correspondence", html: "" },
-  faq: { title: "Questions, Answered", titleAr: "أسئلة وأجوبة", eyebrow: "Client Care", eyebrowAr: "خدمة العملاء", html: "" },
-  wishlist: { title: "Wishlist", titleAr: "المفضلة", eyebrow: "Saved", eyebrowAr: "محفوظ", html: "" },
+  contact: {
+    title: "Write to the Maison",
+    eyebrow: "Correspondence",
+    html: "",
+  },
+  faq: {
+    title: "Questions, Answered",
+    titleAr: "أسئلة وأجوبة",
+    eyebrow: "Client Care",
+    eyebrowAr: "خدمة العملاء",
+    html: "",
+  },
+  wishlist: {
+    title: "Wishlist",
+    titleAr: "المفضلة",
+    eyebrow: "Saved",
+    eyebrowAr: "محفوظ",
+    html: "",
+  },
   about: {
     title: "Our Story",
     titleAr: "قصتنا",
@@ -90,7 +109,9 @@ export function generateStaticParams() {
   return Object.keys(PAGES).map((slug) => ({ slug }));
 }
 
-export async function generateMetadata(props: PageProps<"/[locale]/pages/[slug]">): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps<"/[locale]/pages/[slug]">,
+): Promise<Metadata> {
   const { slug, locale: rawLocale } = await props.params;
   const locale = toLocale(rawLocale);
   const page = PAGES[slug];
@@ -108,7 +129,7 @@ export async function generateMetadata(props: PageProps<"/[locale]/pages/[slug]"
 }
 
 export default async function StaticInfoPage(
-  props: PageProps<"/[locale]/pages/[slug]">
+  props: PageProps<"/[locale]/pages/[slug]">,
 ) {
   const { slug, locale: rawLocale } = await props.params;
   const locale = toLocale(rawLocale);
@@ -120,23 +141,48 @@ export default async function StaticInfoPage(
 
   const topicParam = searchParams?.topic;
   const initialTopic: ContactTopic | null =
-    topicParam === "meeting" || topicParam === "review" || topicParam === "complaint"
+    topicParam === "meeting" ||
+    topicParam === "review" ||
+    topicParam === "complaint"
       ? topicParam
       : null;
-  const productList = (await getProducts()).map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    titleAr: p.titleAr,
-  }));
+  const productList =
+    slug === "contact"
+      ? getProducts()
+          .then((rows) =>
+            rows.map((p) => ({
+              slug: p.slug,
+              title: p.title,
+              titleAr: p.titleAr,
+            })),
+          )
+          .catch(() => [])
+      : Promise.resolve([]);
 
   // Contact chrome comes from the dictionary; the rest is
   // admin-owned page content (English with Arabic fallback later).
   const header =
     slug === "contact"
       ? { eyebrow: t("eyebrow"), title: t("title") }
-      : { eyebrow: tx(page.eyebrow, page.eyebrowAr, locale), title: tx(page.title, page.titleAr, locale) };
+      : {
+          eyebrow: tx(page.eyebrow, page.eyebrowAr, locale),
+          title: tx(page.title, page.titleAr, locale),
+        };
   const seo = await getPageSeo("info", slug);
 
+  if (slug === "contact")
+    return (
+      <>
+        <SeoJsonLd blocks={customJsonLd(seo)} />
+        <ContactLanding
+          locale={locale}
+          title={tx(seo?.h1 ?? "", seo?.h1Ar, locale) || header.title}
+          eyebrow={header.eyebrow}
+          products={productList}
+          initialTopic={initialTopic}
+        />
+      </>
+    );
   return (
     <div className="mx-auto max-w-5xl px-5 py-12 md:px-8">
       <SeoJsonLd blocks={customJsonLd(seo)} />
@@ -146,12 +192,6 @@ export default async function StaticInfoPage(
       </h1>
       <span className="mx-auto mt-5 block h-px w-12 bg-gold-soft" />
       <div className="mt-10">
-        {slug === "contact" && (
-          <>
-            <ContactChannels locale={locale} />
-            <ContactExperience products={productList} initialTopic={initialTopic} />
-          </>
-        )}
         {slug === "faq" && <FaqAccordion items={getFaqs(locale)} />}
         {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}
         {slug !== "contact" && slug !== "faq" && slug !== "wishlist" && (

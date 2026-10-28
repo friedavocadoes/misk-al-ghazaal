@@ -197,6 +197,7 @@ export function buildOrderEmail(opts: {
   trackingUrl?: string;
   paymentLabel?: string;
   couponCode?: string;
+  orderUrl?: string;
 }): { subject: string; title: string; preheader: string; bodyHtml: string } {
   const o = opts;
   const status = o.status ?? (o.statusLabel === "received" || o.statusLabel === "Waiting for confirmation" ? "new" : o.statusLabel.toLowerCase().replaceAll(" ", "_"));
@@ -228,6 +229,7 @@ export function buildOrderEmail(opts: {
     bodyHtml: `<p>Dear ${o.customerName},</p>
 <p>Your order <strong>${o.orderNo}</strong> (${o.date}) is now <strong>${o.statusLabel}</strong>.</p>
 ${orderStatusGraphic(status)}
+${o.orderUrl ? `<p style="margin:26px 0"><a href="${o.orderUrl.replaceAll("&","&amp;").replaceAll('"',"&quot;")}" style="display:inline-block;background:#292923;color:#fff;padding:15px 24px;text-decoration:none;font-size:12px;letter-spacing:1px">VIEW YOUR ORDER &amp; UPDATES ↗</a></p><p style="font-size:11px;color:#78716c">No sign-in needed. Keep this private link for your order updates.</p>` : ""}
 <h2 style="font-size:16px;font-weight:500;margin:24px 0 10px">Your selection</h2>
 <table style="width:100%;border-collapse:collapse">${itemRows}</table>
 <p>Subtotal AED ${o.subtotal.toFixed(2)}${o.discount > 0 ? ` · Discount −AED ${o.discount.toFixed(2)}` : ""} · Shipping ${o.shipping === 0 ? "complimentary" : `AED ${o.shipping.toFixed(2)}`}${o.couponCode ? ` · Code ${o.couponCode}` : ""}</p>

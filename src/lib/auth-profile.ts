@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { revalidatePagePaths } from "./revalidate";
 // ---------------------------------------------------------------------------
 // Shopper profile bootstrap: every authenticated user gets a profiles row
 // with a unique referral code (their earning identity). Called from the
@@ -80,29 +81,21 @@ export async function ensureProfile(
   return { created: false };
 }
 
-/** Adopt guest orders placed with this address before signup: the auth
-    email is verified by Supabase, so matching user_id-NULL rows are
-    unambiguously this shopper's. Exact lower() match only (never LIKE). */
+/** Adopt only unowned, non-binned orders using verified Auth email or
+    private order capabilities remembered by this browser. SQL keeps owner
+    checks atomic and excludes staff previews. Login itself remains fail-open. */
 export async function claimGuestOrders(
   admin: SupabaseClient,
   userId: string,
   email: string,
 ): Promise<void> {
+  void email; // Ownership is checked against verified Auth data inside SQL.
   try {
-    const { data } = await admin
-      .from("orders")
-      .select("id, email")
-      .is("user_id", null);
-    const ids = (
-      (data as { id: string; email: string | null }[] | null) ?? []
-    )
-      .filter((o) => (o.email ?? "").toLowerCase() === email.toLowerCase())
-      .map((o) => o.id);
-    if (!ids.length) return;
-    await admin.from("orders").update({ user_id: userId }).in("id", ids);
-  } catch {
-    /* claiming must never block login */
-  }
+    const {data:emailClaims}=await admin.rpc("claim_verified_email_orders", {p_user:userId});
+    const {claimRememberedOrders}=await import("./order-access");
+    const browserClaims=await claimRememberedOrders(admin,userId);
+    if(Number(emailClaims)>0||browserClaims>0){revalidatePagePaths("/account/orders");revalidatePagePaths("/account/orders/[id]");}
+  } catch { /* A claim failure must never block sign-in; the order page can retry. */ }
 }
 
 async function claimBrowserRatings(admin:SupabaseClient,userId:string){

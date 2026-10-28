@@ -7,6 +7,12 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AdminRole } from "@/lib/admin-auth";
 import { LiveAnalytics } from "./analytics/LiveAnalytics";
+import {
+  AdminAttentionProvider,
+  AdminNotificationMenu,
+  AttentionBadge,
+  useAdminAttention,
+} from "./notifications";
 import { SignOutButton } from "./sign-out-button";
 
 interface NavItem {
@@ -74,7 +80,15 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
+export function AdminNav(props: { email: string; role: AdminRole }) {
+  return (
+    <AdminAttentionProvider key={`${props.email}:${props.role}`} enabled={props.role !== "content_editor"}>
+      <AdminNavContent {...props} />
+    </AdminAttentionProvider>
+  );
+}
+function AdminNavContent({ email, role }: { email: string; role: AdminRole }) {
+  const { feed } = useAdminAttention();
   const [query, setQuery] = useState("");
   const pathname = usePathname();
   const drawer = useRef<HTMLDialogElement>(null);
@@ -106,6 +120,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
             items: [
               { href: "/admin", label: "Overview" },
               { href: "/admin/orders", label: "Orders" },
+              { href: "/admin/inbox", label: "Contact inbox" },
               { href: "/admin/bin", label: "Recycle bin" },
               { href: "/admin/logs", label: "Audit log" },
             ],
@@ -128,6 +143,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
               label: "Operations",
               items: [
                 { href: "/admin/orders", label: "Orders" },
+                { href: "/admin/inbox", label: "Contact inbox" },
                 { href: "/admin/bin", label: "Recycle bin" },
                 { href: "/admin/logs", label: "Audit log" },
               ],
@@ -145,6 +161,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
         >
           <Menu size={17} />
           Workspace
+          <AttentionBadge count={feed.counts.total} />
           <kbd className="hidden rounded border border-ink/15 px-1.5 text-[10px] text-fog sm:inline">
             Ctrl / ⌘ K
           </kbd>
@@ -165,6 +182,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
             </span>
             <span className="text-fog">{role.replaceAll("_", " ")}</span>
           </span>
+          {role !== "content_editor" && <AdminNotificationMenu />}
           <SignOutButton />
         </div>
       </header>
@@ -226,7 +244,7 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
                     href={i.href}
                     onClick={() => drawer.current?.close()}
                     className={cn(
-                      "my-1 block rounded-lg px-3 py-2.5 text-sm",
+                      "my-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm",
                       pathname === i.href ||
                         (pathname.startsWith(i.href + "/") &&
                           i.href !== "/admin")
@@ -234,7 +252,18 @@ export function AdminNav({ email, role }: { email: string; role: AdminRole }) {
                         : "hover:bg-sand",
                     )}
                   >
-                    {i.label}
+                    <span className="flex-1">{i.label}</span>
+                    <AttentionBadge
+                      count={
+                        i.href === "/admin/orders"
+                          ? feed.counts.order
+                          : i.href === "/admin/inbox"
+                            ? feed.counts.contact
+                            : i.href === "/admin/reviews"
+                              ? feed.counts.review
+                              : 0
+                      }
+                    />
                   </Link>
                 ))}
               </section>

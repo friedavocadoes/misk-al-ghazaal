@@ -12,6 +12,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, X } from "lucide-react";
+import { notifyAdminAttentionChanged } from "@/lib/admin-attention";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -128,6 +129,7 @@ export function AdminForm({
       // (setState here is an event context, not an effect.)
       if (formRef.current) initial.current = serialize(formRef.current);
       setDirty(false);
+      notifyAdminAttentionChanged();
       router.refresh();
       return { ok: true as boolean, message: success };
     },
@@ -146,7 +148,8 @@ export function AdminForm({
     // React resets forms during commit, with synthetic events disabled. A
     // native listener is required; JSX onReset cannot cancel that reset.
     const onReset = (event: Event) => {
-      if (!resetOnSuccess || !lastSubmitSucceeded.current) event.preventDefault();
+      if (!resetOnSuccess || !lastSubmitSucceeded.current)
+        event.preventDefault();
       else
         queueMicrotask(() => {
           initial.current = serialize(form);

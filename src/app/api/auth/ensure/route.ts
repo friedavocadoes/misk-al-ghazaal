@@ -26,7 +26,6 @@ export async function POST(req: Request) {
     promoOptIn,
   );
   if (user.email) await claimGuestOrders(admin, user.id, user.email);
-  if (user.email) await claimGuestOrders(admin, user.id, user.email);
   if (created && user.email) {
     const meta = (user.user_metadata ?? {}) as { full_name?: string; name?: string };
     const name = meta.full_name || meta.name || user.email.split("@")[0] || "";

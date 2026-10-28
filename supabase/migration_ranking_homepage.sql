@@ -67,4 +67,4 @@ insert into public.homepage_sections (kind, title, title_ar, eyebrow, config, so
   ('dual_feature', '', '', '', '{}', 80, true),
   ('testimonials', '', '', '', '{}', 90, true),
   ('blog_grid', 'Notes on Scent', 'خواطر عن العطر', 'Journal', '{"limit":3}', 100, true),
-  ('instagram', 'Follow the Ritual', 'تابع الطقوس', '@misk.al.ghazaal', '{}', 110, true);
+  ('instagram', 'Follow the Ritual', 'تابع الطقوس', '@gazaalperfumes', '{}', 110, true);

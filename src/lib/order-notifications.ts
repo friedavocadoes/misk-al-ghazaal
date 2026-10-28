@@ -1,4 +1,5 @@
 import "server-only";
+import { getOrderAccessPath } from "./order-access";
 import { createAdminClient } from "./supabase/service";
 import { buildOrderEmail,sendMailboxMail } from "./mailer";
 import { statusLabel } from "./order-status";
@@ -19,8 +20,9 @@ export async function notifyOrderUpdate(id:string,attachInvoice=false,expectedSt
   const slugs=[...new Set((items??[]).map(i=>i.product_slug))];
   const {data:products}=slugs.length?await db.from("products").select("slug,images").in("slug",slugs):{data:[]};
   const images=new Map((products??[]).map(p=>[p.slug,p.images?.[0] as string|undefined]));
+  const orderPath=await getOrderAccessPath(db,id).catch(()=>null);
   const mail=buildOrderEmail({orderNo:o.order_no,date:new Date(o.created_at).toLocaleDateString("en-GB",{timeZone:"Asia/Dubai",day:"numeric",month:"long",year:"numeric"}),status:o.status,statusLabel:statusLabel(o.status),
-   customerName:h(o.customer_name),origin:getSiteUrl(),lines:(items??[]).map(i=>({title:h(i.title),qty:i.qty,unit:Number(i.unit_price),image:images.get(i.product_slug),href:i.product_slug!=="gift"&&i.product_slug!=="sample"?`/product/${encodeURIComponent(i.product_slug)}`:undefined})),
+   customerName:h(o.customer_name),origin:getSiteUrl(),orderUrl:orderPath?`${getSiteUrl()}${orderPath}`:undefined,lines:(items??[]).map(i=>({title:h(i.title),qty:i.qty,unit:Number(i.unit_price),image:images.get(i.product_slug),href:i.product_slug!=="gift"&&i.product_slug!=="sample"?`/product/${encodeURIComponent(i.product_slug)}`:undefined})),
    subtotal:Number(o.subtotal),discount:Number(o.discount),shipping:Number(o.shipping),total:Number(o.total),addressHtml:[o.address,o.city,o.state_name||o.emirate,o.country_code].filter(Boolean).map(h).join(" · "),
    trackingNo:o.tracking_no??undefined,trackingUrl:o.tracking_url??undefined,paymentLabel:paymentMethodLabel(o.payment_method),couponCode:o.coupon_code||undefined});
   const attachment=attachInvoice?await resolveInvoiceAttachment(db,id):null;

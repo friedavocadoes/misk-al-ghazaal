@@ -1,3 +1,4 @@
+import { getOrderAccessPath, rememberOrderAccess } from "@/lib/order-access";
 import { revalidateHome, revalidateProductPaths, revalidatePagePaths } from "@/lib/revalidate";
 import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
@@ -266,6 +267,8 @@ export async function POST(req: Request) {
 
     // Order confirmation email (skipped when unconfigured OR the
     // account holder switched order updates off in email preferences).
+    const orderPath=await getOrderAccessPath(admin,orderId).catch(()=>null);
+    if(orderPath)await rememberOrderAccess(orderPath.split("/").at(-1)!).catch(()=>{});
     const receiptEmail = email || sessionEmail || "";
     if (receiptEmail && (await wantsOrderMail(admin, ownerId))) {
       const origin = new URL(req.url).origin;
@@ -280,6 +283,7 @@ export async function POST(req: Request) {
       const stateName = ((body.state ?? body.emirate ?? "Dubai") as string).trim() || "Dubai";
       const addrHtml = `${address}<br />${[cityName, stateName, (body.postcode ?? "").trim(), countryCode].filter(Boolean).join(" · ")}`;
       const mail = buildOrderEmail({
+        orderUrl: orderPath ? `${origin}${orderPath}` : undefined,
         orderNo: (order as { order_no: string }).order_no,
         date: new Date().toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }),
         statusLabel: "received",
@@ -311,6 +315,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       order_no: (order as { order_no: string }).order_no,
+      order_url: orderPath,
       total: quote.total,
       shipping: quote.shipping,
       discount: quote.discount,

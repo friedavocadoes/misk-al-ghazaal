@@ -34,7 +34,9 @@ import type { Locale } from "@/i18n/routing";
 import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
 import { customJsonLd, getPageSeo, seoMetadata } from "@/lib/seo";
 
-export async function generateMetadata(props: PageProps<"/[locale]">): Promise<Metadata> {
+export async function generateMetadata(
+  props: PageProps<"/[locale]">,
+): Promise<Metadata> {
   const { locale: raw } = await props.params;
   const locale = toLocale(raw);
   const seo = await getPageSeo("home");
@@ -51,16 +53,24 @@ export async function generateMetadata(props: PageProps<"/[locale]">): Promise<M
 
 /** Resolve a carousel's products: explicit admin-ordered picks win;
     otherwise the ranked collection (manual rank → sales lift → newest). */
-async function carouselProducts(s: HomepageSection): Promise<ReturnType<typeof getProductsByCollection>> {
+async function carouselProducts(
+  s: HomepageSection,
+): Promise<ReturnType<typeof getProductsByCollection>> {
   const cfg = s.config ?? {};
   if (cfg.mode === "manual" && cfg.slugs?.length) {
-    return getProductsBySlugs(cfg.slugs).then((l) => l.slice(0, cfg.limit ?? 8));
+    return getProductsBySlugs(cfg.slugs).then((l) =>
+      l.slice(0, cfg.limit ?? 8),
+    );
   }
   const items = await getProductsByCollection(cfg.collection ?? "best-sellers");
   return items.slice(0, cfg.limit ?? 8);
 }
 
-async function Section({ s, locale, ctx }: {
+async function Section({
+  s,
+  locale,
+  ctx,
+}: {
   s: HomepageSection;
   locale: Locale;
   ctx: {
@@ -76,12 +86,14 @@ async function Section({ s, locale, ctx }: {
   const tc = await getTranslations({ locale, namespace: "Common" });
   const collectionHref = (slug?: string) => {
     const clean = (slug ?? "").trim();
-    if (clean === "all" || ctx.collections.some((c) => c.slug === clean)) return `/collection/${clean}`;
+    if (clean === "all" || ctx.collections.some((c) => c.slug === clean))
+      return `/collection/${clean}`;
     return "/collection/all";
   };
 
   switch (s.kind) {
-    case "scent_alchemist": return null; // Dedicated /find-your-scent experience.
+    case "scent_alchemist":
+      return null; // Dedicated /find-your-scent experience.
     case "products_carousel": {
       const products = await carouselProducts(s);
       if (!products.length) return null;
@@ -135,9 +147,24 @@ async function Section({ s, locale, ctx }: {
           eyebrow={t(s.eyebrow, s.eyebrowAr)}
           title={t(s.title, s.titleAr) || ts("trending")}
           tabs={[
-            { label: ts("tabBest"), value: "best", products: ctx.bestSellers, href: "/collection/best-sellers" },
-            { label: ts("tabNew"), value: "new", products: ctx.newArrivals, href: "/collection/new-arrivals" },
-            { label: ts("tabFeatured"), value: "featured", products: trending, href: "/collection/all" },
+            {
+              label: ts("tabBest"),
+              value: "best",
+              products: ctx.bestSellers,
+              href: "/collection/best-sellers",
+            },
+            {
+              label: ts("tabNew"),
+              value: "new",
+              products: ctx.newArrivals,
+              href: "/collection/new-arrivals",
+            },
+            {
+              label: ts("tabFeatured"),
+              value: "featured",
+              products: trending,
+              href: "/collection/all",
+            },
           ]}
         />
       );
@@ -160,11 +187,12 @@ async function Section({ s, locale, ctx }: {
           title={t(s.title, s.titleAr) || ts("testiTitle")}
         />
       );
-    case "blog_grid": return null; // Blog discovery is footer-only.
+    case "blog_grid":
+      return null; // Blog discovery is footer-only.
     case "instagram":
       return (
         <InstagramFeed
-          eyebrow={t(s.eyebrow, s.eyebrowAr) || "@misk.al.ghazaal"}
+          eyebrow={t(s.eyebrow, s.eyebrowAr) || "@gazaalperfumes"}
           title={t(s.title, s.titleAr) || ts("instaTitle")}
         />
       );
@@ -191,41 +219,59 @@ export default async function HomePage(props: PageProps<"/[locale]">) {
   const { locale: raw } = await props.params;
   const locale = toLocale(raw);
   setRequestLocale(locale);
-  return <>
-    <Suspense fallback={<div className="home-hero-pending"><ArrivalMark /></div>}>
-      <HomeHero />
-    </Suspense>
-    <Suspense fallback={<div className="mx-auto h-64 max-w-7xl animate-pulse bg-sand/40" />}>
-      <HomeContent locale={locale} />
-    </Suspense>
-  </>;
+  return (
+    <>
+      <Suspense
+        fallback={
+          <div className="home-hero-pending">
+            <ArrivalMark />
+          </div>
+        }
+      >
+        <HomeHero />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="mx-auto h-64 max-w-7xl animate-pulse bg-sand/40" />
+        }
+      >
+        <HomeContent locale={locale} />
+      </Suspense>
+    </>
+  );
 }
 
 function ArrivalMark() {
-  return <div className="arrival-mark"><img src="/mag.webp" width="80" height="80" alt="Misk Al Ghazaal" /><span>Misk Al Ghazaal</span><small>PERFUMESS</small><i /></div>;
+  return (
+    <div className="arrival-mark">
+      <img src="/mag.webp" width="80" height="80" alt="Misk Al Ghazaal" />
+      <span>Misk Al Ghazaal</span>
+      <small>PERFUMESS</small>
+      <i />
+    </div>
+  );
 }
 
 async function HomeHero() {
   const slides = await getHeroSlides();
-  return <><HomeArrival /><HeroSlider slides={slides} /></>;
+  return (
+    <>
+      <HomeArrival />
+      <HeroSlider slides={slides} />
+    </>
+  );
 }
 
 async function HomeContent({ locale }: { locale: Locale }) {
-  const [
-    sections,
-    brands,
-    collections,
-    bestSellers,
-    newArrivals,
-    featured,
-  ] = await Promise.all([
-    getHomepageSections(),
-    getBrandBanners(),
-    getCollections(),
-    getProductsByCollection("best-sellers"),
-    getProductsByCollection("new-arrivals"),
-    getProductsByCollection("best-sellers"),
-  ]);
+  const [sections, brands, collections, bestSellers, newArrivals, featured] =
+    await Promise.all([
+      getHomepageSections(),
+      getBrandBanners(),
+      getCollections(),
+      getProductsByCollection("best-sellers"),
+      getProductsByCollection("new-arrivals"),
+      getProductsByCollection("best-sellers"),
+    ]);
 
   const ctx = {
     collections,
@@ -265,14 +311,32 @@ async function HomeContent({ locale }: { locale: Locale }) {
             title={ts("libraryTitle")}
             link={{ label: tc("viewAll"), href: "/collections" }}
           />
-          <CollectionGrid categories={collections.slice(0, 6)} locale={locale} />
+          <CollectionGrid
+            categories={collections.slice(0, 6)}
+            locale={locale}
+          />
         </section>
         <ProductTabs
           title={ts("trending")}
           tabs={[
-            { label: ts("tabBest"), value: "best", products: bestSellers, href: "/collection/best-sellers" },
-            { label: ts("tabNew"), value: "new", products: newArrivals, href: "/collection/new-arrivals" },
-            { label: ts("tabFeatured"), value: "featured", products: trending, href: "/collection/all" },
+            {
+              label: ts("tabBest"),
+              value: "best",
+              products: bestSellers,
+              href: "/collection/best-sellers",
+            },
+            {
+              label: ts("tabNew"),
+              value: "new",
+              products: newArrivals,
+              href: "/collection/new-arrivals",
+            },
+            {
+              label: ts("tabFeatured"),
+              value: "featured",
+              products: trending,
+              href: "/collection/all",
+            },
           ]}
         />
         <StoryBlock />
@@ -291,7 +355,12 @@ async function HomeContent({ locale }: { locale: Locale }) {
     <>
       <HomeSeo locale={locale} />
       {sections.map((s) => (
-        <Suspense key={s.id} fallback={<div className="h-64 animate-pulse bg-sand/30" />}><Section s={s} locale={locale} ctx={ctx} /></Suspense>
+        <Suspense
+          key={s.id}
+          fallback={<div className="h-64 animate-pulse bg-sand/30" />}
+        >
+          <Section s={s} locale={locale} ctx={ctx} />
+        </Suspense>
       ))}
     </>
   );

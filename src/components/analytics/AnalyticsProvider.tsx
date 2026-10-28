@@ -1,13 +1,15 @@
 "use client";
+
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { attributionCookie, attributionFromUrl } from "@/lib/analytics/shared";
+import { privateOrderPath, attributionCookie, attributionFromUrl } from "@/lib/analytics/shared";
 import { trackEvent, trackRoute } from "@/lib/analytics/client";
 
 export function AnalyticsProvider() {
   const pathname = usePathname(); const query = useSearchParams();
   useEffect(() => {
+    if(privateOrderPath(pathname))return;
     if (/^\/(admin|auth|api)(\/|$)/.test(pathname)) return;
     try {
       const touch=attributionFromUrl(new URL(location.href),document.referrer);

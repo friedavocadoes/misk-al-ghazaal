@@ -1,5 +1,6 @@
 "use client";
-import { attributionCookie, attributionFromUrl, uuid, type AnalyticsEventType, type EventInput } from "./shared";
+
+import { privateOrderPath, attributionCookie, attributionFromUrl, uuid, type AnalyticsEventType, type EventInput } from "./shared";
 import { rememberPurchase } from "./survey-memory";
 
 let lastRoute = "";
@@ -27,6 +28,7 @@ export function ensureAnalyticsIdentity(): string {
 function clientBot() { return navigator.webdriver === true || (window.outerWidth === 0 && window.outerHeight === 0) || /HeadlessChrome/i.test(navigator.userAgent); }
 export function trackEvent(type: AnalyticsEventType | "heartbeat",data: EventInput & {active_seconds?:number} = {}) {
   try {
+    if(privateOrderPath(location.pathname))return;
     if (/^\/(admin|auth|api)(\/|$)/.test(location.pathname)) return;
     ensureAnalyticsIdentity();
     const payload = JSON.stringify({ ...data,id:crypto.randomUUID(),event_type:type,page_path:location.pathname,client_bot_detected:clientBot() });

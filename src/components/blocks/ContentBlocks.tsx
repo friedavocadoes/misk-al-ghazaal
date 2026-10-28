@@ -77,9 +77,7 @@ export function BlogCardGrid({ articles }: { articles: Article[] }) {
                 </span>
               </span>
               <span className="mt-5 inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.22em] text-ink group-hover:text-gold">
-                <span>
-                  {locale === "ar" ? "اقرأ المقال" : "Read Essay"}
-                </span>
+                <span>{locale === "ar" ? "اقرأ المقال" : "Read Essay"}</span>
                 <ArrowUpRight className="size-3.5 text-gold transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
             </span>
@@ -164,7 +162,7 @@ export function InstagramFeed({
       <SectionHeading
         eyebrow={eyebrow}
         title={title}
-        link={{ label: "@misk.al.ghazaal", href: INSTAGRAM_URL }}
+        link={{ label: "@gazaalperfumes", href: INSTAGRAM_URL }}
       />
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-6">
         {shots.map((src, idx) => (

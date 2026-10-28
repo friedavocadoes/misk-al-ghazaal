@@ -193,3 +193,11 @@ Apply `supabase/migration_orders_workspace.sql` after the existing order/product
 
 ### Admin customer workspace (2026-10-27)
 After the orders workspace migration, run `supabase/migration_admin_customer_workspace.sql`. This adds service-only paginated customer search and accurate order/paid-spending summaries, plus the customer-order index. See [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) for account support, permissions and save behavior. Password recovery still requires the storefront `/account/reset` redirect URL to be allowlisted in Supabase Auth.
+
+
+### Guest orders and contact inbox (2026-10-27)
+Apply `supabase/migration_guest_order_links.sql`, then `supabase/migration_contact_inbox.sql`, after existing order/auth/profile migrations. This enables existing/new order links, safe account adoption and durable contact enquiries. Keep `NEXT_PUBLIC_SITE_URL` set to your real public origin for email links. Details: [GUEST_ORDERS_AND_CONTACT.md](GUEST_ORDERS_AND_CONTACT.md).
+
+
+### Admin notifications and read/unread inbox (2026-10-28)
+Run `supabase/migration_admin_attention.sql` after `migration_contact_inbox.sql` and existing order/review migrations, before deploying the notifications/inbox UI. No extra service or package is needed. See [ADMIN_NOTIFICATIONS_AND_CONTACT.md](ADMIN_NOTIFICATIONS_AND_CONTACT.md).

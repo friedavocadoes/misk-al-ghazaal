@@ -1,14 +1,9 @@
 import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
+import { MagneticContactLink } from "./MagneticContactLink";
 import { Mail, MapPin, Phone, Smartphone } from "lucide-react";
 import { InstagramIcon, WhatsAppIcon } from "@/components/ui/brand-icons";
 import { CopyButton } from "@/components/ui/copy-button";
-import {
-  INSTAGRAM_URL,
-  SITE,
-  STORE_CONTACT,
-  waLink,
-} from "@/lib/site";
+import { INSTAGRAM_URL, SITE, STORE_CONTACT, waLink } from "@/lib/site";
 import type { Locale } from "@/i18n/routing";
 
 /** Direct-line cards above the form: chat, call, landline, social, email —
@@ -20,9 +15,7 @@ export async function ContactChannels({ locale }: { locale: Locale }) {
     {
       href: waLink(STORE_CONTACT.shopMobile),
       external: true,
-      icon: (
-        <WhatsAppIcon className="size-[22px] text-[#1e7a46]" />
-      ),
+      icon: <WhatsAppIcon className="size-[22px]" />,
       name: t("channelChat"),
       value: STORE_CONTACT.shopMobile,
       ltr: true,
@@ -30,7 +23,7 @@ export async function ContactChannels({ locale }: { locale: Locale }) {
     {
       href: `tel:${STORE_CONTACT.shopMobile.replace(/\s/g, "")}`,
       external: false,
-      icon: <Smartphone className="size-5 text-gold" strokeWidth={1.5} />,
+      icon: <Smartphone className="size-5" strokeWidth={1.5} />,
       name: t("channelCall"),
       value: STORE_CONTACT.shopMobile,
       ltr: true,
@@ -38,7 +31,7 @@ export async function ContactChannels({ locale }: { locale: Locale }) {
     {
       href: `tel:${STORE_CONTACT.landline.replace(/\s/g, "")}`,
       external: false,
-      icon: <Phone className="size-5 text-gold" strokeWidth={1.5} />,
+      icon: <Phone className="size-5" strokeWidth={1.5} />,
       name: t("channelLandline"),
       value: STORE_CONTACT.landline,
       ltr: true,
@@ -46,78 +39,94 @@ export async function ContactChannels({ locale }: { locale: Locale }) {
     {
       href: INSTAGRAM_URL,
       external: true,
-      icon: <InstagramIcon className="size-5 text-gold" />,
+      icon: <InstagramIcon className="size-5" />,
       name: "Instagram",
-      value: "@misk.al.ghazaal",
+      value: "@gazaalperfumes",
       ltr: true,
     },
     {
       href: `mailto:${SITE.email}`,
       external: false,
-      icon: <Mail className="size-5 text-gold" strokeWidth={1.5} />,
+      icon: <Mail className="size-5" strokeWidth={1.5} />,
       name: "Email",
       value: SITE.email,
       ltr: true,
     },
   ];
 
-  return (
-    <div className="mb-12">
-      <p className="text-center font-display text-2xl text-ink md:text-[28px]">
-        {t("channelsTitle")}
-      </p>
-      <p className="mx-auto mt-2 max-w-md text-center text-sm leading-relaxed text-espresso">
-        {t("channelsText")}
-      </p>
-
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => (
-          <div
-            key={c.name + c.value}
-            className="group flex items-center gap-3 border border-ink/10 bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-[0_16px_32px_-20px_rgba(28,25,23,0.4)]"
-          >
-            <a
-              href={c.href}
-              {...(c.external ? { target: "_blank", rel: "noreferrer" } : {})}
-              className="flex min-w-0 flex-1 items-center gap-4"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-ink/10 bg-cream transition-colors group-hover:border-gold/40">
-                {c.icon}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-fog">
-                  {c.name}
-                </span>
-                <span
-                  className="mt-0.5 block truncate text-[15px] font-medium text-ink"
-                  dir={c.ltr ? "ltr" : undefined}
-                >
-                  {c.value}
-                </span>
-              </span>
-            </a>
-            <CopyButton value={c.value} label={t("copyNumber")} />
-          </div>
-        ))}
-
-        {/* The way to the doors: locations, hours, directions. */}
-        <Link
-          href="/locate-us"
-          className="group flex items-center gap-4 border border-gold/50 bg-gold-wash/60 p-5 transition-all hover:-translate-y-0.5 hover:border-gold hover:shadow-[0_16px_32px_-20px_rgba(138,109,47,0.5)]"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-colors group-hover:bg-gold group-hover:text-ink">
-            <MapPin className="size-5" strokeWidth={1.5} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
-              {t("channelVisit")}
-            </span>
-            <span className="mt-0.5 block truncate text-[15px] font-medium text-ink">
-              {t("visitCta")}
-            </span>
-          </span>
-        </Link>
+  const ar = locale === "ar";
+  const render = (c: (typeof cards)[number], index: number) => (
+    <div
+      key={c.name}
+      className={`studio-channel ${index === 0 ? "studio-channel-featured" : ""}`}
+      data-contact-reveal
+    >
+      <MagneticContactLink href={c.href} external={c.external}>
+        <span className="studio-channel-symbol">{c.icon}</span>
+        <span className="studio-channel-label">{c.name}</span>
+        <strong dir="ltr">{c.value}</strong>
+        <span className="studio-channel-invitation">
+          {index === 0
+            ? ar
+              ? "نتحدث عن كل ما يهمك"
+              : "A little question. A real conversation."
+            : ar
+              ? "نتواصل بطريقتك"
+              : "On your terms."}
+        </span>
+      </MagneticContactLink>
+      <div className="studio-channel-copy">
+        <CopyButton value={c.value} label={ar ? "نسخ" : "Copy"} />
       </div>
     </div>
+  );
+  return (
+    <section className="contact-direct-studio" aria-label={t("channelsTitle")}>
+      <div className="studio-direct-intro" data-contact-reveal>
+        <p className="eyebrow">{ar ? "تواصل مباشر" : "In good company"}</p>
+        <h2>
+          {ar
+            ? `إنسان حقيقي.
+على الطرف الآخر.`
+            : `A human.
+At the other end.`}
+        </h2>
+        <p>
+          {ar
+            ? "سؤال عابر أو فكرة كبيرة، يسعدنا أن نسمع منك."
+            : "A passing thought or a big idea. We’d love to hear it."}
+        </p>
+        <a href="#correspondence" className="studio-text-link">
+          {ar ? "أفضّل أن أكتب" : "I’d rather write"}
+          <span>↓</span>
+        </a>
+        <div className="studio-connection-graphic" aria-hidden>
+          <i />
+          <i />
+          <i />
+          <span>M</span>
+        </div>
+      </div>
+      <div className="studio-channel-layout">
+        {render(cards[0], 0)}
+        <div className="studio-channel-pairs">
+          {cards.slice(1).map((c, index) => render(c, index + 1))}
+        </div>
+        <div className="studio-visit" data-contact-reveal>
+          <MagneticContactLink href={ar ? "/ar/locate-us" : "/locate-us"}>
+            <span className="studio-visit-map" aria-hidden>
+              <MapPin size={25} strokeWidth={1} />
+            </span>
+            <span>
+              <small>{t("channelVisit")}</small>
+              <strong>
+                {ar ? "تعال. واكتشف عطرك." : "Come in. Find your scent."}
+              </strong>
+              <span>{ar ? "ممرز سنتر · دبي" : "Mamzar Centre · Dubai"}</span>
+            </span>
+          </MagneticContactLink>
+        </div>
+      </div>
+    </section>
   );
 }

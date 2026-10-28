@@ -1,3 +1,6 @@
+import {AttentionReadState} from "@/components/admin/notifications";
+import { getOrderAccessPath } from "@/lib/order-access";
+import { OrderCustomerLink } from "@/components/admin/orders/OrderCustomerLink";
 import { after } from "next/server";
 import { uuid } from "@/lib/analytics/shared";
 import { DEFAULT_TRACKING_URL, trackingLink } from "@/lib/order-tracking";
@@ -248,6 +251,7 @@ export default async function OrderDetail(props: {
   if (itemsError || historyError)
     throw new Error("Order items or timeline could not load. Please retry.");
   const db = createAdminClient();
+  const customerOrderPath=await getOrderAccessPath(db,id).catch(()=>null);
   const [customerResult, summaryResult, productsResult, purchaseResult] =
     await Promise.all([
       order.user_id
@@ -322,6 +326,7 @@ export default async function OrderDetail(props: {
     <>
       <AdminNav email={session.email} role={session.role} />
       <main className="admin-workspace">
+        {!order.deleted_at&&<AttentionReadState kind="order" id={id} showControl={false}/>} 
         <Link href="/admin/orders" className="text-xs text-fog hover:text-ink">
           ← All orders
         </Link>
@@ -556,6 +561,7 @@ export default async function OrderDetail(props: {
             </AdminPanel>
           </div>
           <aside className="admin-stack">
+          <AdminPanel title="Customer order link"><OrderCustomerLink path={customerOrderPath}/></AdminPanel>
             <AdminPanel title="Customer">
               <div className="flex items-center gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#eef0e8] text-lg">

@@ -357,7 +357,7 @@ export default function CheckoutPage() {
     if (res.ok && j?.order_no) {
       haptic("order");
       try { localStorage.removeItem("misk-samples");window.dispatchEvent(new Event("samples-change")); } catch { /* Storage may be disabled. */ }
-      setDone({ orderNo: j.order_no as string, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? ""})) });
+      setDone({ orderNo: j.order_no as string, orderUrl:j.order_url??undefined, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? ""})) });
       try {
         localStorage.removeItem("misk-coupon");
       } catch {
