@@ -434,7 +434,7 @@ export function CollectionFilters({
         )}
       </div>
 
-      <Button
+      <Button data-ios-haptic="on"
         onClick={apply}
         disabled={!dirty || pending}
         className={cn(

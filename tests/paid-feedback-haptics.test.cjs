@@ -27,7 +27,7 @@ test('haptic runtime ignores desktop/duplicate taps and cancels on hidden tabs',
  const h=load('src/lib/haptics.ts');class Clock extends Date{static now(){return now;}}
  const window={addEventListener:(n,fn)=>listeners[n]=fn,removeEventListener:()=>{}};
  const document={hidden:false,addEventListener:(n,fn)=>listeners[n]=fn,removeEventListener:()=>{}};
- const component=load('src/components/blocks/StorefrontHaptics.tsx',{'react':{useEffect:fn=>{cleanup=fn()}},'web-haptics':{WebHaptics:class{trigger(p){calls.push(p);return Promise.resolve()}cancel(){cancelled++}destroy(){destroyed++}}},'@/lib/haptics':h},{window,document,Date:Clock,matchMedia:()=>({matches:false}),localStorage:{getItem:()=>null}});
+ const component=load('src/components/blocks/StorefrontHaptics.tsx',{'react':{useEffect:fn=>{cleanup=fn()}},'web-haptics':{WebHaptics:class{trigger(p){calls.push(p);return Promise.resolve()}cancel(){cancelled++}destroy(){destroyed++}}},'@/lib/ios-haptic-taps':load('src/lib/ios-haptic-taps.ts'),'@/lib/haptics':h},{window,document,Date:Clock,matchMedia:()=>({matches:false}),localStorage:{getItem:()=>null}});
  component.StorefrontHaptics();h.haptic('tick');assert.equal(calls.length,0);listeners.pointerdown({isTrusted:true,pointerType:'touch'});h.haptic('step');h.haptic('tick');assert.equal(calls.length,1);h.haptic('order');assert.equal(calls.length,2);now+=100;document.hidden=true;listeners.visibilitychange();h.haptic('tick');assert.equal(calls.length,2);assert.equal(cancelled,1);cleanup();assert.equal(destroyed,1);h.haptic('tick');assert.equal(calls.length,2);
 });
 test('survey eligibility API fails closed when unavailable',async()=>{

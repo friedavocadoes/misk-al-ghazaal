@@ -2,13 +2,20 @@
 import { useEffect } from "react";
 import { WebHaptics } from "web-haptics";
 import { connectHaptics,HAPTIC_PATTERNS,hapticsEnabled,type HapticKind } from "@/lib/haptics";
+import { installIOSHapticTaps, needsIOSHapticTap } from "@/lib/ios-haptic-taps";
 
 export function StorefrontHaptics(){
  useEffect(()=>{
   const engine=new WebHaptics({debug:false,showSwitch:false});
+  const iosDirectTap=typeof navigator!=="undefined"&&needsIOSHapticTap(navigator);
+  const disconnectIOS=installIOSHapticTaps(()=>{
+   try{return hapticsEnabled(localStorage.getItem("misk-haptics"),matchMedia("(prefers-reduced-motion: reduce)").matches);}catch{return false;}
+  });
   let lastTouch=0,lastFeedback=0;
   const play=(kind:HapticKind)=>{
    const now=Date.now();let preference:string|null=null;
+   // iOS native ticks come from actual switch taps, never duplicate synthetic patterns.
+   if(iosDirectTap)return;
    try{preference=localStorage.getItem("misk-haptics");}catch{}
    if(document.hidden||now-lastTouch>60000||(now-lastFeedback<65&&!["order","success","error"].includes(kind))||!hapticsEnabled(preference,matchMedia("(prefers-reduced-motion: reduce)").matches))return;
    lastFeedback=now;void engine.trigger(HAPTIC_PATTERNS[kind]).catch(()=>{});
@@ -31,7 +38,7 @@ export function StorefrontHaptics(){
   const visibility=()=>{if(document.hidden)stop();};
   window.addEventListener("pointerdown",pointer,{capture:true,passive:true});document.addEventListener("click",click);document.addEventListener("change",change);
   document.addEventListener("visibilitychange",visibility);window.addEventListener("pagehide",stop);window.addEventListener("haptics-preference",stop);
-  return()=>{disconnect();engine.destroy();window.removeEventListener("pointerdown",pointer,true);document.removeEventListener("click",click);document.removeEventListener("change",change);document.removeEventListener("visibilitychange",visibility);window.removeEventListener("pagehide",stop);window.removeEventListener("haptics-preference",stop);};
+  return()=>{disconnectIOS();disconnect();engine.destroy();window.removeEventListener("pointerdown",pointer,true);document.removeEventListener("click",click);document.removeEventListener("change",change);document.removeEventListener("visibilitychange",visibility);window.removeEventListener("pagehide",stop);window.removeEventListener("haptics-preference",stop);};
  },[]);
  return null;
 }

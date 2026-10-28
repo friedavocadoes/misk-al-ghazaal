@@ -16,7 +16,7 @@ function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean })
   const t = useTranslations("Account");
   return (
     <>
-      <Button variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
+      <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
         <GoogleGlyph className="size-[18px]" /> {t("google")}
       </Button>
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-fog">
@@ -104,7 +104,7 @@ function LoginPane({ next }: { next: string }) {
           />
           <span>{t("promoOpt")}</span>
         </label>
-        <Button type="submit" disabled={busy}>
+        <Button data-ios-haptic="on" type="submit" disabled={busy}>
           {t("signIn")}
         </Button>
       </form>
@@ -211,7 +211,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
           />
           <span>{t("promoOpt")}</span>
         </label>
-        <Button type="submit" disabled={busy}>
+        <Button data-ios-haptic="on" type="submit" disabled={busy}>
           {t("create")}
         </Button>
       </form>

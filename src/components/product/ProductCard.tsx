@@ -114,7 +114,7 @@ export function ProductCard({
   // DESKTOP HOVER ACTIONS: Silky cubic-bezier slide-up bar inside the pedestal frame
   const desktopActionBar = (
     <div className=" absolute inset-x-0 bottom-0 z-20 hidden translate-y-full gap-1.5 bg-gradient-to-t from-cream/95 via-cream/90 to-transparent p-3 pt-6 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 md:flex">
-      <button
+      <button data-ios-haptic="on"
         disabled={!available} aria-label={!available ? (locale==="ar"?"نفد المخزون":"Out of stock") : undefined}
         onClick={addToBag}
         className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer items-center justify-center gap-1.5 border border-ink bg-ink py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:border-gold hover:bg-gold"
@@ -128,7 +128,7 @@ export function ProductCard({
             ? "أضف للسلة"
             : "Add to Bag"}
       </button>
-      <button
+      <button data-ios-haptic="on"
         disabled={!available}
         onClick={buyNow}
         className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer items-center justify-center gap-1.5 border border-ink/80 bg-cream/95 py-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 hover:border-gold hover:bg-gold-wash"
@@ -142,7 +142,7 @@ export function ProductCard({
   // MOBILE ACTIONS: Clean hairline pair below the price block
   const mobileActions = (
     <div className="mt-3.5 flex w-full gap-1.5 md:hidden">
-      <button
+      <button data-ios-haptic="on"
         disabled={!available} aria-label={!available ? (locale==="ar"?"نفد المخزون":"Out of stock") : undefined}
         onClick={addToBag}
         className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 items-center justify-center gap-1.5 border border-ink/80 bg-transparent py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-ink transition active:bg-ink active:text-white"
@@ -156,7 +156,7 @@ export function ProductCard({
             ? "أضف"
             : "Add"}
       </button>
-      <button
+      <button data-ios-haptic="on"
         disabled={!available}
         onClick={buyNow}
         className="flex flex-1 disabled:cursor-not-allowed disabled:opacity-40 items-center justify-center gap-1.5 bg-ink py-2.5 text-[9.5px] font-semibold uppercase tracking-[0.16em] text-white transition active:bg-gold"
