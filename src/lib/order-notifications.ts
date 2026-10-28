@@ -1,3 +1,4 @@
+import { systemEmailAllowed } from "./notification-settings";
 import "server-only";
 import { getOrderAccessPath } from "./order-access";
 import { createAdminClient } from "./supabase/service";
@@ -11,8 +12,9 @@ const h=(v:unknown)=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;"
 
 export async function notifyOrderUpdate(id:string,attachInvoice=false,expectedStatus?:string) {
  try{
+  if(!await systemEmailAllowed("order_updates"))return false;
   const db=createAdminClient();const {data:o,error}=await db.from("orders").select("*").eq("id",id).is("deleted_at",null).single();
-  if(error||!o?.email||(expectedStatus&&o.status!==expectedStatus))return false;
+  if(error||!o?.email||o.status==="new"||(expectedStatus&&o.status!==expectedStatus))return false;
   let owner=o.user_id as string|null;
   if(!owner){const {data:profile}=await db.from("profiles").select("id").eq("email",o.email.toLowerCase()).limit(1).maybeSingle();owner=profile?.id??null;}
   if(!await wantsOrderMail(db,owner))return false;

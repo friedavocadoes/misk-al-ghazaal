@@ -71,7 +71,7 @@ export function BagView() {
               </Link>
               <div className="mt-2 flex items-center gap-3">
                 <span className="flex items-center border border-ink/15">
-                  <button
+                  <button data-ios-haptic="on"
                     className="p-1.5 text-espresso hover:text-ink"
                     aria-label={t("decrease")}
                     onClick={() => setQty(l.productSlug, l.variantId, l.qty - 1)}
@@ -79,7 +79,7 @@ export function BagView() {
                     <Minus className="size-3" />
                   </button>
                   <span className="w-6 text-center text-xs font-semibold">{l.qty}</span>
-                  <button
+                  <button data-ios-haptic="on"
                     className="p-1.5 text-espresso hover:text-ink"
                     aria-label={t("increase")}
                     onClick={() => setQty(l.productSlug, l.variantId, l.qty + 1)}
@@ -87,7 +87,7 @@ export function BagView() {
                     <Plus className="size-3" />
                   </button>
                 </span>
-                <button
+                <button data-ios-haptic="on"
                   className="p-1 text-fog transition hover:text-[#9c2b2e]"
                   aria-label={t("remove")}
                   onClick={() => remove(l.productSlug, l.variantId)}

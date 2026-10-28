@@ -100,7 +100,7 @@ ${clean("note") ? `<p><strong>Details:</strong> ${esc(clean("note"))}</p>` : ""}
       ...(shopperEmail.includes("@") ? { replyTo: shopperEmail } : {}),
     });
     if (!result.sent)
-      return NextResponse.json({ error: "Mail server not configured — WhatsApp us instead." }, { status: 500 });
+      return NextResponse.json({ error: result.disabled ? "Email requests are paused. Please contact us by WhatsApp instead." : "Mail server not configured — WhatsApp us instead." }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json(

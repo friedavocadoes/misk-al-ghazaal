@@ -1,3 +1,5 @@
+import { WhatsAppPreferences } from "@/components/account/WhatsAppPreferences";
+import { createAdminClient } from "@/lib/supabase/service";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -34,6 +36,9 @@ export default async function AccountNotificationsPage(props: {
     .single();
   const p = (profile as { promo_opt_in?: boolean | null; order_updates_opt_in?: boolean | null } | null) ?? {};
   const ar = locale === "ar";
+  const db=createAdminClient();
+  const {data:waAccount}=await db.from("whatsapp_accounts").select("phone").eq("user_id",user.id).maybeSingle();
+  const {data:wa}=waAccount?.phone ? await db.from("whatsapp_contacts").select("orders_opt_in,marketing_opt_in,stopped_at").eq("phone",waAccount.phone).maybeSingle() : {data:null};
 
   return (
     <div className="mx-auto max-w-xl px-5 py-12 md:px-8">
@@ -45,7 +50,7 @@ export default async function AccountNotificationsPage(props: {
       </Link>
       <p className="eyebrow mt-3 text-gold">{ar ? "الإعدادات" : "Settings"}</p>
       <h1 className="mt-2 font-display text-4xl text-ink">
-        {ar ? "تفضيلات البريد" : "Email preferences"}
+        {ar ? "تفضيلات الإشعارات" : "Notification preferences"}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-espresso">
         {ar
@@ -83,6 +88,7 @@ export default async function AccountNotificationsPage(props: {
           }
         />
       </div>
+      <WhatsAppPreferences initialPhone={waAccount?.phone ? `+${waAccount.phone}` : ""} initialOrders={!!wa?.orders_opt_in && !wa.stopped_at} initialMarketing={!!wa?.marketing_opt_in && !wa.stopped_at} ar={ar}/>
     </div>
   );
 }

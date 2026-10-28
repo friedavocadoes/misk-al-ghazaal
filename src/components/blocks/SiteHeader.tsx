@@ -680,7 +680,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
                 )}
               </Link>
             )}
-            <button
+            <button data-ios-haptic="on"
               onClick={() => {haptic("open");setCartOpen(true);}}
               aria-label={t("bag")}
               data-bag-target
@@ -749,7 +749,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
             >
               <Search className="size-5" />
             </button>
-            <button
+            <button data-ios-haptic="on"
               onClick={() => {haptic("open");setCartOpen(true);}}
               aria-label={t("bag")}
               data-bag-target

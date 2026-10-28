@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [guest, setGuest] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
   const [savePhone, setSavePhone] = useState(true);
+  const [whatsappOptIn,setWhatsappOptIn]=useState(false);
   const [addrInitial, setAddrInitial] = useState<{
     line?: string; building?: string; countryCode?: string; state?: string;
     city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
@@ -345,6 +346,7 @@ export default function CheckoutPage() {
         referral_code: quote?.referralCode || undefined,
         user_id: userId ?? undefined,
         save_phone: userId ? savePhone : undefined,
+        whatsapp_opt_in: whatsappOptIn,
         country_code: addr ? addr.countryCode : undefined,
         state: finalState,
         postcode: addr ? addr.postcode : undefined,
@@ -724,8 +726,9 @@ export default function CheckoutPage() {
               <dd className="font-display text-xl text-ink">{quote ? formatAED(quote.total) : "…"}</dd>
             </div>
           </dl>
-          {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
+          <label className="mb-4 flex items-start gap-3 border border-ink/10 bg-white p-4 text-sm leading-6"><input type="checkbox" checked={whatsappOptIn} onChange={e=>setWhatsappOptIn(e.target.checked)} className="mt-1"/>{locale === "ar" ? "أوافق على تلقي تفاصيل هذا الطلب وتحديثاته عبر واتساب على الرقم المذكور. أرسل STOP للإلغاء." : "Send this order’s details and delivery updates to my number on WhatsApp. Optional; reply STOP to stop."}</label>
+            {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
+          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
             {placing ? t("placing") : t("placeOrder")}
           </Button></StockCheckoutGuard></div>
           <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">{t("codNote")}</p>

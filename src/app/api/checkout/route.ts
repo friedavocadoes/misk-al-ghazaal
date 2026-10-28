@@ -1,3 +1,5 @@
+import { processTelegramQueue } from "@/lib/telegram";
+import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { getOrderAccessPath, rememberOrderAccess } from "@/lib/order-access";
 import { revalidateHome, revalidateProductPaths, revalidatePagePaths } from "@/lib/revalidate";
 import { recordPurchase } from "@/lib/analytics/server";
@@ -5,9 +7,6 @@ import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
-import { buildOrderEmail, sendMailboxMail } from "@/lib/mailer";
-import { resolveInvoiceAttachment } from "@/lib/invoice-attach";
-import { wantsOrderMail } from "@/lib/email-settings";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
 // (coupons + referral + shipping in one place), gift lines, coupon usage +
@@ -45,6 +44,7 @@ export async function POST(req: Request) {
       lat?: number | null;
       lng?: number | null;
       save_phone?: boolean;
+      whatsapp_opt_in?: boolean;
     };
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Invalid cart item." }, { status: 400 });
     }
 
+    if (body.whatsapp_opt_in === true && !whatsappPhone(phone, (body.country_code ?? "").toUpperCase())) return NextResponse.json({error:"Enter an international WhatsApp number including the country code."},{status:400});
     const admin = createAdminClient();
     // Identity is server-authoritative: the session decides the owner.
     // A client-supplied user_id that disagrees with the session is
@@ -125,6 +126,7 @@ export async function POST(req: Request) {
         address_label: (body.address_label ?? "").trim(),
         delivery_lat: typeof body.lat === "number" ? body.lat : null,
         delivery_lng: typeof body.lng === "number" ? body.lng : null,
+        ...(body.whatsapp_opt_in === true ? {whatsapp_opt_in:true} : {}),
         payment_method: "cod",
         status: "new",
       })
@@ -265,54 +267,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Order confirmation email (skipped when unconfigured OR the
-    // account holder switched order updates off in email preferences).
+    // Customer communication starts when staff confirm the order.
     const orderPath=await getOrderAccessPath(admin,orderId).catch(()=>null);
     if(orderPath)await rememberOrderAccess(orderPath.split("/").at(-1)!).catch(()=>{});
-    const receiptEmail = email || sessionEmail || "";
-    if (receiptEmail && (await wantsOrderMail(admin, ownerId))) {
-      const origin = new URL(req.url).origin;
-      const { data: faces } = await admin
-        .from("products")
-        .select("slug, images")
-        .in("slug", priced.map((l) => l.slug));
-      const faceMap = new Map(
-        ((faces as { slug: string; images: string[] }[] | null) ?? []).map((f) => [f.slug, f.images?.[0] ?? ""]),
-      );
-      const cityName = ((body.city ?? "Dubai") as string).trim() || "Dubai";
-      const stateName = ((body.state ?? body.emirate ?? "Dubai") as string).trim() || "Dubai";
-      const addrHtml = `${address}<br />${[cityName, stateName, (body.postcode ?? "").trim(), countryCode].filter(Boolean).join(" · ")}`;
-      const mail = buildOrderEmail({
-        orderUrl: orderPath ? `${origin}${orderPath}` : undefined,
-        orderNo: (order as { order_no: string }).order_no,
-        date: new Date().toLocaleDateString("en-AE", { day: "numeric", month: "long", year: "numeric" }),
-        statusLabel: "received",
-        status: "new",
-        customerName: name,
-        lines: [...sampleLines,...priced.map((l) => ({
-          title: l.title,
-          qty: l.qty,
-          unit: l.unit,
-          ...(faceMap.get(l.slug) ? { image: faceMap.get(l.slug) as string, href: `/product/${l.slug}` } : {}),
-        }))],
-        origin,
-        subtotal: quote.subtotal,
-        discount: quote.discount,
-        shipping: quote.shipping,
-        total: quote.total,
-        addressHtml: addrHtml,
-        couponCode: quote.couponCode || undefined,
-      });
-      // System invoice rides along as a PDF attachment (generated live;
-      // a failure here must never fail the order itself).
-      const invoiceFile = await resolveInvoiceAttachment(admin, orderId);
-      await sendMailboxMail("noreply", {
-        to: receiptEmail,
-        ...mail,
-        ...(invoiceFile ? { attachments: [invoiceFile] } : {}),
-      });
-    }
-
+    after(async()=>{try{await processTelegramQueue();}catch{/* Staff alerts remain queued for the scheduled worker. */}});
     return NextResponse.json({
       order_no: (order as { order_no: string }).order_no,
       order_url: orderPath,

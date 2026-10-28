@@ -5,7 +5,7 @@ import { ordersQuery } from "@/lib/admin-orders-query";
 import { quoteBag,type BagLine } from "@/lib/pricing";
 import { PAYMENT_METHODS } from "@/lib/admin-orders-model";
 import { uuid } from "@/lib/analytics/shared";
-import { notifyOrderUpdate } from "@/lib/order-notifications";
+import { processTelegramQueue } from "@/lib/telegram";
 import { logAdmin } from "@/lib/audit";
 import { revalidateHome,revalidatePagePaths,revalidateProductPaths } from "@/lib/revalidate";
 
@@ -37,7 +37,7 @@ export async function POST(req:Request){
   const {data,error}=await db.rpc("admin_create_order",{p_actor:staff.userId,p_request:b.request_id,p_customer:customer,p_lines:priced.map(l=>({slug:l.slug,variant_id:l.variantId??null,qty:l.qty})),p_shipping:shipping,p_method:b.payment_method,p_payment:b.payment_status});
   if(error)throw Error(error.message);
   if(!data.existing){await logAdmin(db,staff,{category:"orders",action:"create",entity:"order",entityId:data.id,label:data.order_no,summary:`Created manual order ${data.order_no}`,details:{payment_method:b.payment_method,payment_status:b.payment_status,request_id:b.request_id}});
-   after(async()=>{if(b.notify_customer)await notifyOrderUpdate(data.id,false,"new");});
+   after(async()=>{try{await processTelegramQueue();}catch{/* Durable staff queue remains pending. */}});
   }
   for(const slug of new Set(priced.map(l=>l.slug)))revalidateProductPaths(slug);revalidateHome();revalidatePagePaths("/collection/[slug]");
   return NextResponse.json(data);

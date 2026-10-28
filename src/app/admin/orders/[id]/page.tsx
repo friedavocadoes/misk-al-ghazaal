@@ -1,3 +1,7 @@
+import { getNotificationSettings } from "@/lib/notification-settings";
+import { mailAllowed } from "@/lib/notification-rules";
+import { EmailNotificationOption } from "@/components/admin/EmailNotificationOption";
+import { queueWhatsAppOrder, processWhatsAppQueue } from "@/lib/whatsapp";
 import {AttentionReadState} from "@/components/admin/notifications";
 import { getOrderAccessPath } from "@/lib/order-access";
 import { OrderCustomerLink } from "@/components/admin/orders/OrderCustomerLink";
@@ -62,6 +66,8 @@ async function updateOrder(formData: FormData) {
       formData.get("invoice_source") === "upload" ? "upload" : "auto",
   };
   const db = createAdminClient();
+  const {data:before,error:beforeError}=await db.from("orders").select("tracking_no,tracking_url").eq("id",id).single();
+  if(beforeError||!before)throw Error("Could not load the current order. Please retry.");
   const { data, error } = await db.rpc("admin_update_order", {
     p_actor: session.userId,
     p_id: id,
@@ -77,10 +83,15 @@ async function updateOrder(formData: FormData) {
     summary: `Updated order ${data?.[0]?.order_no ?? id}`,
     details: { changes: data, ...patch },
   });
-  if (data?.[0]?.from_status !== data?.[0]?.to_status)
+  const shareUpdate=status!=="new" && (data?.[0]?.from_status!==data?.[0]?.to_status || trackingNo!==(before.tracking_no??"") || (!!trackingNo&&trackingUrl!==(before.tracking_url||DEFAULT_TRACKING_URL)));
+  if (shareUpdate && formData.get("notify_email")==="on")
     after(() =>
       notifyOrderUpdate(id, formData.get("attach_invoice") === "on", status),
     );
+  if (shareUpdate && formData.get("notify_whatsapp") === "on") {
+    try { await queueWhatsAppOrder(id); after(async()=>{try{await processWhatsAppQueue();}catch{/* Pending queue is durable. */}}); }
+    catch { revalidatePath(`/admin/orders/${id}`);revalidatePath("/admin/orders");revalidatePagePaths("/account/orders");revalidatePagePaths("/account/orders/[id]");throw Error("Order saved, but WhatsApp could not be queued. Apply migration_whatsapp.sql and check the WhatsApp workspace."); }
+  }
   revalidatePath(`/admin/orders/${id}`);
   revalidatePath("/admin/orders");
   revalidatePagePaths("/account/orders");
@@ -250,8 +261,11 @@ export default async function OrderDetail(props: {
   ]);
   if (itemsError || historyError)
     throw new Error("Order items or timeline could not load. Please retry.");
+  const notificationSettings=await getNotificationSettings();
+  const emailEnabled=mailAllowed(notificationSettings,"order_updates");
   const db = createAdminClient();
   const customerOrderPath=await getOrderAccessPath(db,id).catch(()=>null);
+  const {data:waMessages}=await db.from("whatsapp_messages").select("id,state,error_code,created_at").eq("order_id",id).order("created_at",{ascending:false}).limit(3);
   const [customerResult, summaryResult, productsResult, purchaseResult] =
     await Promise.all([
       order.user_id
@@ -510,15 +524,16 @@ export default async function OrderDetail(props: {
                   </label>
                   <div className="flex flex-wrap items-center justify-between gap-4 border-t border-ink/10 pt-5">
                     <label className="flex items-center gap-2 text-xs">
-                      <input type="checkbox" name="attach_invoice" />
+                      <input type="checkbox" name="attach_invoice" disabled={!emailEnabled} />
                       Attach invoice to status-update email
                     </label>
+                    <EmailNotificationOption enabled={emailEnabled}/>
+                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="notify_whatsapp" defaultChecked={!!order.whatsapp_opt_in} disabled={!order.whatsapp_opt_in}/>Notify via WhatsApp on status or tracking change{!order.whatsapp_opt_in && " · customer has not opted in for this order"}</label>
                     <SaveButton>Save order changes</SaveButton>
                   </div>
+                  {!!waMessages?.length && <div className="border-t border-ink/10 pt-3 text-xs"><p className="font-medium">WhatsApp delivery</p>{waMessages.map(m=><p key={m.id} className="mt-2 text-fog">{adminDate(m.created_at)} · {m.state}{m.error_code ? ` · ${m.error_code}` : ""}</p>)}</div>}
                   <p className="text-[11px] leading-5 text-fog">
-                    Status changes send an order update when the customer has
-                    email updates enabled. Saving payment or staff notes alone
-                    does not send an email.
+                    Customer messages begin at confirmation. Share status or tracking changes using the channel checkboxes above. Customer preferences and master email controls still apply. Payment or staff-note changes alone send nothing.
                   </p>
                 </AdminForm>
               </AdminPanel>

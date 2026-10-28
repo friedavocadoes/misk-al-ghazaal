@@ -66,6 +66,7 @@ export default async function PromoListPage() {
       <AdminNav email={session.email} role={session.role} />
       <div className="admin-workspace admin-legacy">        <p className="eyebrow">Growth / Promo</p>
         <h1 className="font-display text-3xl">Promo mail</h1>
+        <Link href="/admin/whatsapp" className="mt-3 inline-block text-sm underline">WhatsApp promotions ↗</Link>
         <p className="mt-1 text-sm text-ink/60">
           Sent from <span className="font-mono" dir="ltr">{mailboxAddress("promo")}</span> to{" "}
           <strong>{subs.length} opted-in shoppers</strong>. Only accounts with the promo checkbox on

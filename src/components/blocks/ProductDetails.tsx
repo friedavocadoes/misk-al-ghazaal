@@ -214,7 +214,7 @@ export function ProductInfo({
 
       <div className="pdp-purchase-actions mt-5">
         <span className="pdp-quantity flex items-center">
-          <button
+          <button data-ios-haptic="on"
             className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => {haptic("step");setQty((q) => Math.max(1, q - 1));}}
             disabled={safeQty <= 1}
@@ -225,7 +225,7 @@ export function ProductInfo({
           <span className="w-10 text-center font-display text-lg text-ink" aria-live="polite">
             {safeQty}
           </span>
-          <button
+          <button data-ios-haptic="on"
             className="self-stretch px-3.5 text-espresso transition hover:text-ink disabled:opacity-30"
             onClick={() => {haptic("step");setQty((q) => Math.min(maxQty, q + 1));}}
             disabled={safeQty >= maxQty}
@@ -234,7 +234,7 @@ export function ProductInfo({
             <Plus className="size-4" />
           </button>
         </span>
-        <Button className="pdp-add-button h-[52px] flex-1" size="lg" onClick={addToBag} disabled={stock<=0}>
+        <Button data-ios-haptic="on" className="pdp-add-button h-[52px] flex-1" size="lg" onClick={addToBag} disabled={stock<=0}>
           {added ? <Check className="size-4" /> : <ShoppingBag className="size-4" />}{" "}
           {stock<=0 ? (locale==="ar"?"نفد المخزون":"Out of stock") : added ? t("added") : t("addToBag")}
         </Button>
@@ -251,7 +251,7 @@ export function ProductInfo({
           heartClassName="size-4"
         />
       </div>
-      <Button variant="outline" size="lg" className="pdp-buy-button mt-3 w-full" onClick={buyNow} disabled={stock<=0}>
+      <Button data-ios-haptic="on" variant="outline" size="lg" className="pdp-buy-button mt-3 w-full" onClick={buyNow} disabled={stock<=0}>
         {t("buyNow")} <ArrowUpRight />
       </Button>
       {couponLogin && <div role="status" className="mt-4 rounded-2xl border border-gold/30 bg-gold-wash p-5 text-sm"><p>{locale === "ar" ? "سجّل الدخول لاسترداد القسيمة. تم حفظ حقيبتك." : "Sign in to redeem this coupon. Your bag and selected code are saved."}</p><Link href="/account/login?next=%2Fcheckout" className="mt-3 inline-block underline">{locale === "ar" ? "تسجيل الدخول" : "Sign in & continue"}</Link><button className="ms-5 underline" onClick={() => { localStorage.removeItem("misk-coupon"); router.push("/checkout"); }}>{locale === "ar" ? "المتابعة بدون قسيمة" : "Continue without coupon"}</button></div>}

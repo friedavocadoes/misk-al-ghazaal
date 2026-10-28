@@ -26,6 +26,7 @@ interface NavGroup {
 }
 
 const GROUPS: NavGroup[] = [
+  { label:"Setup", items:[{href:"/admin/settings/notifications",label:"Notifications & master email controls"}] },
   {
     label: "Analytics",
     items: [
@@ -76,6 +77,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/emails/hello", label: "Hello mail" },
       { href: "/admin/promo", label: "Promo mail" },
+      { href: "/admin/whatsapp", label: "WhatsApp orders & promotions" },
     ],
   },
 ];

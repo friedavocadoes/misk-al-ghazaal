@@ -49,7 +49,7 @@ export function WishHeart({
   };
 
   return (
-    <button
+    <button data-ios-haptic="on"
       onClick={click}
       aria-label={label}
       aria-pressed={wished}

@@ -1,3 +1,4 @@
+import type { EmailRule } from "./notification-rules";
 import nodemailer from "nodemailer";
 import { trackingLink } from "./order-tracking";
 import type { Transporter } from "nodemailer";
@@ -85,6 +86,7 @@ function shell(
 export async function sendMailboxMail(
   mailbox: Mailbox,
   opts: {
+    kind?: EmailRule;
     to: string;
     subject: string;
     title: string;
@@ -93,7 +95,10 @@ export async function sendMailboxMail(
     replyTo?: string;
     attachments?: { filename: string; content: Buffer; contentType: string }[];
   },
-): Promise<{ sent: boolean }> {
+): Promise<{ sent: boolean; disabled?: boolean }> {
+  const kind = opts.kind ?? ({hello:"welcome",noreply:"order_updates",promo:"promotions",orders:"order_support"} as const)[mailbox];
+  try { if (!await (await import("./notification-settings")).systemEmailAllowed(kind)) return {sent:false,disabled:true}; }
+  catch { return {sent:false,disabled:true}; }
   const tp = mailboxTransporter(mailbox);
   if (!tp || !opts.to.includes("@")) return { sent: false };
   try {

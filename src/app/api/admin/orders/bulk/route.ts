@@ -1,3 +1,4 @@
+import { queueWhatsAppOrder,processWhatsAppQueue } from "@/lib/whatsapp";
 import { after,NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/service";
@@ -15,6 +16,12 @@ export async function POST(req:Request){
   await logAdmin(db,staff,{category:"orders",action:b.bin?"delete":"bulk_update",entity:"order",summary:`Updated ${data.length} selected orders`,details:{changes:data}});
   revalidatePath("/admin/orders");for(const id of b.ids)revalidatePath(`/admin/orders/${id}`);revalidatePagePaths("/account/orders");revalidatePagePaths("/account/orders/[id]");
   if(b.notify_customer&&!b.bin)after(async()=>{for(const change of data)if(change.from_status!==change.to_status)await notifyOrderUpdate(change.id,false,change.to_status);});
+  if(b.notify_whatsapp===true && !b.bin) {
+    let whatsappError=false;
+    for(const change of data) if(change.from_status!==change.to_status) { try {await queueWhatsAppOrder(change.id);} catch {whatsappError=true;} }
+    after(async()=>{try{await processWhatsAppQueue();}catch{/* Durable jobs remain pending. */}});
+    if(whatsappError)return NextResponse.json({updated:data.length,warning:"Orders saved, but some WhatsApp notifications could not be queued. Check WhatsApp setup."});
+  }
   return NextResponse.json({updated:data.length});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Could not update orders"},{status:400});}
 }

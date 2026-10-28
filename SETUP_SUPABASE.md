@@ -201,3 +201,7 @@ Apply `supabase/migration_guest_order_links.sql`, then `supabase/migration_conta
 
 ### Admin notifications and read/unread inbox (2026-10-28)
 Run `supabase/migration_admin_attention.sql` after `migration_contact_inbox.sql` and existing order/review migrations, before deploying the notifications/inbox UI. No extra service or package is needed. See [ADMIN_NOTIFICATIONS_AND_CONTACT.md](ADMIN_NOTIFICATIONS_AND_CONTACT.md).
+
+### Customer channels, master email and Telegram (2026-10-28)
+
+Apply `supabase/migration_whatsapp.sql` if needed, then `supabase/migration_notification_control.sql`. Always keep that order: the second migration supersedes placement receipts. Customer email/WhatsApp starts at admin confirmation/selected updates; new orders notify the Telegram shop chat. Master controls are at `/admin/settings/notifications`; unreadable/missing settings pause application SMTP, so apply the migration before deployment. Supabase Auth security mail remains managed separately. See [NOTIFICATION_SETUP.md](NOTIFICATION_SETUP.md) and [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md) for templates, webhook, BotFather/token/chat ID and the externally scheduled `/api/notifications/process` worker. No live scheduler or messages are installed/sent by these migrations.

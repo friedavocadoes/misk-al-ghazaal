@@ -4,7 +4,7 @@ const tracking=load('src/lib/order-tracking.ts');const status=load('src/lib/orde
 test('shared SMTP connection applies to every mailbox while sender credentials remain separate',async()=>{
  const configs=[];const env={SMTP_HOST:'shared.example.test',SMTP_PORT:'587',SMTP_SECURE:'0',HELLO_SMTP_HOST:'deprecated.example.test',HELLO_SMTP_PORT:'465',HELLO_SMTP_SECURE:'1'};
  for(const p of ['HELLO','NOREPLY','PROMO','ORDERS']){env[p+'_SMTP_USER']=p.toLowerCase()+'@example.test';env[p+'_SMTP_PASS']='test-placeholder';}
- const mail=load('src/lib/mailer.ts',{'./order-tracking':tracking,nodemailer:{createTransport:c=>{configs.push(c);return{sendMail:async()=>{}}}}},env);
+ const mail=load('src/lib/mailer.ts',{'./order-tracking':tracking,'./notification-settings':{systemEmailAllowed:async()=>true},nodemailer:{createTransport:c=>{configs.push(c);return{sendMail:async()=>{}}}}},env);
  for(const m of ['hello','noreply','promo','orders'])assert.equal((await mail.sendMailboxMail(m,{to:'customer@example.test',subject:'Test',title:'Test',preheader:'Test',bodyHtml:'<p>Test</p>'})).sent,true);
  assert.equal(configs.length,4);for(const c of configs){assert.equal(c.host,env.SMTP_HOST);assert.equal(c.port,587);assert.equal(c.secure,false);}assert.notEqual(configs[0].auth.user,configs[1].auth.user);
  assert.equal(mail.smtpConnectionSettings({SMTP_HOST:'mail',SMTP_PORT:'invalid'}).secure,true);
@@ -45,7 +45,7 @@ test('manual, bulk, and export endpoints deny non-order roles before database ac
   'next/server':{NextResponse:class extends Response{static json(b,o){return Response.json(b,o)}},after:()=>{}},
   '@/lib/admin-auth':{getAdminSession:async()=>({role:'content_editor'})},
   '@/lib/supabase/service':{createAdminClient:()=>{throw Error('Unexpected database access')}},
-  '@/lib/admin-orders-query':{},'@/lib/pricing':{},'@/lib/admin-orders-model':{},'@/lib/analytics/shared':{},'@/lib/order-notifications':{},'@/lib/audit':{},'@/lib/revalidate':{},'@/lib/order-status':{},'next/cache':{},
+  '@/lib/admin-orders-query':{},'@/lib/pricing':{},'@/lib/admin-orders-model':{},'@/lib/analytics/shared':{},'@/lib/order-notifications':{},'@/lib/whatsapp':{},'@/lib/telegram':{},'@/lib/audit':{},'@/lib/revalidate':{},'@/lib/order-status':{},'next/cache':{},
  };
  const main=load('src/app/api/admin/orders/route.ts',mocks);assert.equal((await main.GET(new Request('https://store.test/api/admin/orders'))).status,403);assert.equal((await main.POST(new Request('https://store.test/api/admin/orders',{method:'POST'}))).status,403);
  const bulk=load('src/app/api/admin/orders/bulk/route.ts',mocks);assert.equal((await bulk.POST(new Request('https://store.test/api/admin/orders/bulk',{method:'POST'}))).status,403);
@@ -58,7 +58,7 @@ test('a lost-response manual order retry returns the existing order before stock
   'next/server':{NextResponse:class extends Response{static json(b,o){return Response.json(b,o)}},after:()=>{}},
   '@/lib/admin-auth':{getAdminSession:async()=>({role:'orders',userId:uuid})},
   '@/lib/supabase/service':{createAdminClient:()=>({from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:uuid,order_no:'MG-0001',created_by:uuid},error:null})})})})})},
-  '@/lib/admin-orders-query':{},'@/lib/pricing':{quoteBag:async()=>{priced=true;throw Error('Out of stock')}},'@/lib/admin-orders-model':model,'@/lib/analytics/shared':load('src/lib/analytics/shared.ts'),'@/lib/order-notifications':{},'@/lib/audit':{},'@/lib/revalidate':{},
+  '@/lib/admin-orders-query':{},'@/lib/pricing':{quoteBag:async()=>{priced=true;throw Error('Out of stock')}},'@/lib/admin-orders-model':model,'@/lib/analytics/shared':load('src/lib/analytics/shared.ts'),'@/lib/order-notifications':{},'@/lib/whatsapp':{},'@/lib/telegram':{},'@/lib/audit':{},'@/lib/revalidate':{},
  });
  const response=await route.POST(new Request('https://store.test/api/admin/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({request_id:uuid,customer_name:'Test',phone:'123',address:'Street',city:'Dubai',state:'Dubai',country:'AE',payment_method:'cod',payment_status:'pending',items:[{slug:'oud',qty:1}]})}));
  assert.equal(response.status,200);assert.equal((await response.json()).existing,true);assert.equal(priced,false);

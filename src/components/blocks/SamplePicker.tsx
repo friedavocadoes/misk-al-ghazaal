@@ -95,7 +95,7 @@ export function SamplePicker({
   return (
     <>
       <div className="sample-invitation">
-        <button
+        <button data-ios-haptic="on"
           type="button"
           onClick={() => setOpen(true)}
           className="sample-invitation-trigger"
@@ -128,7 +128,7 @@ export function SamplePicker({
         {selected.length > 0 && (
           <div className="sample-selection-preview" aria-live="polite">
             {chosen.map((s) => (
-              <button
+              <button data-ios-haptic="on"
                 key={s.id}
                 type="button"
                 onClick={() => setOpen(true)}
@@ -149,7 +149,7 @@ export function SamplePicker({
               </button>
             ))}
             {chosen.length < selected.length && (
-              <button
+              <button data-ios-haptic="on"
                 type="button"
                 onClick={() => setOpen(true)}
                 className="text-xs underline"
@@ -201,7 +201,7 @@ export function SamplePicker({
           </SheetHeader>
           <div className="sample-categories" aria-label="Sample categories">
             {[{ id: "", name: "All scents" }, ...data.categories].map((c) => (
-              <button
+              <button data-ios-haptic="on"
                 type="button"
                 key={c.id}
                 aria-pressed={category === c.id}
@@ -281,7 +281,7 @@ export function SamplePicker({
                           </NoteTooltip>
                         ))}
                       </div>
-                      <button
+                      <button data-ios-haptic="on"
                         type="button"
                         aria-pressed={picked}
                         disabled={
@@ -326,7 +326,7 @@ export function SamplePicker({
                   : "A small introduction. A lasting impression."}
               </p>
               {selected.length > 0 && (
-                <button
+                <button data-ios-haptic="on"
                   type="button"
                   onClick={clear}
                   className="shrink-0 text-xs underline"
@@ -335,7 +335,7 @@ export function SamplePicker({
                 </button>
               )}
             </div>
-            <button
+            <button data-ios-haptic="on"
               type="button"
               className="sample-done"
               onClick={() => setOpen(false)}

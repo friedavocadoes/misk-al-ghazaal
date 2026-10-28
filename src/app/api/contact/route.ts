@@ -59,6 +59,7 @@ export async function POST(req: Request) {
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;");
         await sendMailboxMail("hello", {
+          kind:"contact_alerts",
           to: SITE.email,
           subject: `Enquiry ${reference} · ${data.topic}`,
           title: `New ${data.topic} enquiry`,
