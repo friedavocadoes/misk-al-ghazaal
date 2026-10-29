@@ -121,3 +121,7 @@ Check [Meta's live selector](https://business.whatsapp.com/products/platform-pri
 No contact-existence lookup is used: formatting is checked and delivery recorded. Undeliverable131026 does not conclusively mean “not registered”; numbers are not permanently blacklisted. Supplied-number consent is not an OTP ownership check. Email/order pages remain independent of WhatsApp. Promotions stay on hold.
 
 No live messages were sent during implementation. Real delivery requires credentials, deployment, approved templates and your own recipient.
+
+
+## Guest opt-out upgrade (29 October 2026)
+Apply the leads/preferences migration after the notification-control migration; read [LEADS_LOCATION_AND_PREFERENCES.md](LEADS_LOCATION_AND_PREFERENCES.md). Checkout now has a default-on short WhatsApp notice, while saved opt-outs persist. Private order pages link to phone-only preferences for guests. Backend STOP handling stays active. The existing unified worker also processes queued email campaigns.

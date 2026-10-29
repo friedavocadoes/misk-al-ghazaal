@@ -32,7 +32,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/analytics", label: "Overview & conversion" },
       { href: "/admin/analytics/traffic", label: "Traffic & bot detection" },
-      { href: "/admin/analytics/locations", label: "Locations & emirates" },
+      { href: "/admin/analytics/locations", label: "Countries & cities" },
       { href: "/admin/analytics/products", label: "Product interest" },
       { href: "/admin/analytics/acquisition", label: "Sources & campaigns" },
       { href: "/admin/analytics/feedback", label: "Why no buy?" },
@@ -77,6 +77,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/emails/hello", label: "Hello mail" },
       { href: "/admin/promo", label: "Promo mail" },
+      { href:"/admin/leads",label:"Customers, leads & CSV imports" },
       { href: "/admin/whatsapp", label: "WhatsApp orders & promotions" },
     ],
   },

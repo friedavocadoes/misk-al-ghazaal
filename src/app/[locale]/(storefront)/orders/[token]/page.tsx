@@ -87,6 +87,7 @@ export default async function GuestOrderPage({
   const images = new Map(
     (products ?? []).map((p) => [p.slug, p.images?.[0] as string | undefined]),
   );
+  const {data:waPreference}=await db.rpc("order_whatsapp_preference",{p_id:order.id});
   const terminal = order.status === "cancelled" || order.status === "returned";
   return (
     <main className="order-passport">
@@ -213,6 +214,7 @@ export default async function GuestOrderPage({
           </p>
         </section>
         <aside className="space-y-5">
+          {waPreference&&<Link href={`/preferences/${waPreference}`} className="mb-5 inline-block text-sm underline">{ar?"تفضيلات رسائل واتساب":"Manage WhatsApp updates"}</Link>}
           <GuestOrderAccess token={token} locale={locale} orderId={order.id} />
           <section className="order-address">
             <h2>{ar ? "تفاصيل التوصيل" : "Delivery details"}</h2>

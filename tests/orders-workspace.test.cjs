@@ -4,7 +4,7 @@ const tracking=load('src/lib/order-tracking.ts');const status=load('src/lib/orde
 test('shared SMTP connection applies to every mailbox while sender credentials remain separate',async()=>{
  const configs=[];const env={SMTP_HOST:'shared.example.test',SMTP_PORT:'587',SMTP_SECURE:'0',HELLO_SMTP_HOST:'deprecated.example.test',HELLO_SMTP_PORT:'465',HELLO_SMTP_SECURE:'1'};
  for(const p of ['HELLO','NOREPLY','PROMO','ORDERS']){env[p+'_SMTP_USER']=p.toLowerCase()+'@example.test';env[p+'_SMTP_PASS']='test-placeholder';}
- const mail=load('src/lib/mailer.ts',{'./order-tracking':tracking,'./notification-settings':{systemEmailAllowed:async()=>true},nodemailer:{createTransport:c=>{configs.push(c);return{sendMail:async()=>{}}}}},env);
+ const mail=load('src/lib/mailer.ts',{'./order-tracking':tracking,'./notification-settings':{systemEmailAllowed:async()=>true},'./leads':{getEmailCommunicationLink:async()=>({url:'https://shop.test/preferences/test',unsubscribeUrl:'https://shop.test/api/preferences/test/unsubscribe',marketing:true})},nodemailer:{createTransport:c=>{configs.push(c);return{sendMail:async()=>{}}}}},env);
  for(const m of ['hello','noreply','promo','orders'])assert.equal((await mail.sendMailboxMail(m,{to:'customer@example.test',subject:'Test',title:'Test',preheader:'Test',bodyHtml:'<p>Test</p>'})).sent,true);
  assert.equal(configs.length,4);for(const c of configs){assert.equal(c.host,env.SMTP_HOST);assert.equal(c.port,587);assert.equal(c.secure,false);}assert.notEqual(configs[0].auth.user,configs[1].auth.user);
  assert.equal(mail.smtpConnectionSettings({SMTP_HOST:'mail',SMTP_PORT:'invalid'}).secure,true);

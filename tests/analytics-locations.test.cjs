@@ -27,7 +27,7 @@ test('location endpoint validates filters and keeps role checks before database 
  const mocks={
   'next/server':{NextResponse:class extends Response{static json(body,init){return Response.json(body,init)}}},
   '@/lib/admin-auth':{getAdminSession:async()=>({role:'content_editor'})},
-  '@/lib/supabase/service':{createAdminClient:()=>({rpc:async(name,params)=>{calls++;assert.equal(name,'analytics_locations');args=params;return{data:{summary:{}},error:null};}})},
+  '@/lib/supabase/service':{createAdminClient:()=>({rpc:async(name,params)=>{calls++;assert.equal(name,'analytics_locations_city');args=params;return{data:{summary:{}},error:null};}})},
   '@/lib/analytics/dashboard':load('src/lib/analytics/dashboard.ts'),
  };
  const route=load('src/app/api/admin/analytics/route.ts',mocks);

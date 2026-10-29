@@ -28,9 +28,7 @@ export async function getHelloSettings(): Promise<HelloSettings> {
     return {
       subject: row.subject || "Welcome to the Maison — Misk Al Ghazaal",
       heading: row.heading || "Ahlan wa sahlan, {name}.",
-      bodyHtml:
-        row.body_html ||
-        "<p>Your maison account is ready.</p>",
+      bodyHtml: row.body_html || "<p>Your maison account is ready.</p>",
       productSlugs: Array.isArray(row.product_slugs)
         ? row.product_slugs.filter(Boolean).slice(0, 3)
         : [],
@@ -93,38 +91,40 @@ export async function getHelloProducts(
 }
 
 /** Promo subscriber list (opted-in shoppers with an email). */
-export async function getPromoSubscribers(): Promise<
-  { id: string; email: string; created_at: string }[]
-> {
-  const admin = await createAdminClient();
-  const { data } = await admin
-    .from("profiles")
-    .select("id, email, created_at")
-    .eq("promo_opt_in", true)
-    .order("created_at", { ascending: false })
-    .limit(5000);
-  const rows = (data as { id: string; email: string; created_at: string }[] | null) ?? [];
-  return rows.filter((r) => r.email && r.email.includes("@"));
+export async function getPromoSubscribers(
+  source = "all",
+): Promise<{ id: string; email: string; created_at: string }[]> {
+  if (
+    source !== "all" &&
+    !["account", "guest_order", "newsletter", "manual"].includes(source)
+  )
+    throw Error("Choose a valid campaign audience.");
+  const db = createAdminClient(),
+    out: { id: string; email: string; created_at: string }[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    let query = db
+      .from("marketing_lead_audience")
+      .select("id,email,created_at")
+      .order("id")
+      .range(offset, offset + 999);
+    if (["account", "guest_order", "newsletter", "manual"].includes(source))
+      query = query.contains("sources", [source]);
+    if(source==="account")query=query.eq("has_account",true);
+    if(source==="guest_order")query=query.eq("has_account",false);
+    const { data, error } = await query;
+    if (error) throw Error("Apply migration_leads_preferences.sql.");
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
 }
 
-/** Order-mail gate: guests default ON; account holders decide on
-    /account/notifications. Null-safe pre-migration (missing column or
-    row reads as opted-in — mail must fail open, never silently drop). */
+/** Essential order email is mandatory; the sitewide staff master switch still applies. */
 export async function wantsOrderMail(
-  client: SupabaseClient,
-  userId: string | null,
+  _client: SupabaseClient,
+  _userId: string | null,
 ): Promise<boolean> {
-  if (!userId) return true;
-  try {
-    const { data } = await client
-      .from("profiles")
-      .select("order_updates_opt_in")
-      .eq("id", userId)
-      .single();
-    const v = (data as { order_updates_opt_in?: boolean | null } | null)
-      ?.order_updates_opt_in;
-    return v !== false;
-  } catch {
-    return true;
-  }
+  void _client;
+  void _userId;
+  return true;
 }

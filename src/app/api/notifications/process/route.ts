@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { processWhatsAppQueue } from "@/lib/whatsapp";
 import { processTelegramQueue } from "@/lib/telegram";
+import { processEmailCampaignQueue } from "@/lib/email-campaigns";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
@@ -12,11 +13,12 @@ export async function GET(req: Request) {
   const results = await Promise.allSettled([
     processWhatsAppQueue(),
     processTelegramQueue(),
+    processEmailCampaignQueue(),
   ]);
   return Response.json(
     Object.fromEntries(
       results.map((r, i) => [
-        i ? "telegram" : "whatsapp",
+        ["whatsapp", "telegram", "email"][i],
         r.status === "fulfilled" ? r.value : { error: "Queue unavailable" },
       ]),
     ),

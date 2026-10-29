@@ -53,6 +53,7 @@ test("master mail switch and every category are enforced at the final SMTP bound
     "src/lib/mailer.ts",
     {
       "./order-tracking": {},
+      "./leads": {getEmailCommunicationLink:async()=>({url:"https://shop.test/preferences/test",unsubscribeUrl:"https://shop.test/api/preferences/test/unsubscribe",marketing:true})},
       "./notification-settings": {
         systemEmailAllowed: async (kind) => {
           kinds.push(kind);

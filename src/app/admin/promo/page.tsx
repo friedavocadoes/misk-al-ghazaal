@@ -17,6 +17,7 @@ async function createCampaign() {
   const { data, error } = await supabase
     .from("promo_campaigns")
     .insert({
+      audience_source:"account",
       subject: "New offer from the Maison",
       preheader: "Private offers, new arrivals and rituals.",
       body_html: "<p>Your private offer is here.</p>",
@@ -66,10 +67,11 @@ export default async function PromoListPage() {
       <AdminNav email={session.email} role={session.role} />
       <div className="admin-workspace admin-legacy">        <p className="eyebrow">Growth / Promo</p>
         <h1 className="font-display text-3xl">Promo mail</h1>
+        <Link href="/admin/leads" className="mt-3 inline-block text-sm underline">Customers, newsletter leads & CSV imports ↗</Link>
         <Link href="/admin/whatsapp" className="mt-3 inline-block text-sm underline">WhatsApp promotions ↗</Link>
         <p className="mt-1 text-sm text-ink/60">
           Sent from <span className="font-mono" dir="ltr">{mailboxAddress("promo")}</span> to{" "}
-          <strong>{subs.length} opted-in shoppers</strong>. Only accounts with the promo checkbox on
+          <strong>{subs.length} opted-in shoppers</strong>. Only contacts with marketing email permission
           receive these.
         </p>
 
@@ -106,7 +108,7 @@ export default async function PromoListPage() {
           Subscribers <span className="text-base text-ink/50">({subs.length})</span>
         </h2>
         <p className="mt-1 text-sm text-ink/60">
-          Login + register carry the promo checkbox (on by default). Unchecked accounts stay out.
+          Choose a saved audience in each campaign. Account, guest-buyer, newsletter and manual sources are available; opt-outs stay excluded.
         </p>
         <ul className="mt-4 max-h-96 divide-y divide-ink/10 overflow-auto border border-ink/10 bg-white font-mono text-[13px]">
           {subs.map((u) => (

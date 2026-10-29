@@ -1,4 +1,4 @@
-export function privateOrderPath(path:string): boolean {return /^\/(?:ar\/|en\/)?orders(?:\/|$)/.test(path.split("?")[0]);}
+export function privateOrderPath(path:string): boolean {return /^\/(?:ar\/|en\/)?(?:orders|preferences)(?:\/|$)/.test(path.split("?")[0]);}
 export const EVENT_TYPES = ["page_view", "product_view", "add_to_cart", "remove_from_cart", "checkout_started", "purchase", "survey_opportunity", "survey_shown", "survey_dismissed"] as const;
 export type AnalyticsEventType = typeof EVENT_TYPES[number];
 export type Attribution = Partial<Record<"source" | "medium" | "campaign" | "content" | "term" | "ref" | "landing_page" | "referrer", string>>;
@@ -42,7 +42,7 @@ export function attributionCookie(touch: Attribution): string {
   }
   return JSON.stringify(result);
 }
-export function safePath(path: string): string { if(privateOrderPath(path))return "/orders/[private]"; return path.split(/[?#]/)[0].slice(0,500) || "/"; }
+export function safePath(path: string): string { if(privateOrderPath(path))return /\/preferences(?:\/|$)/.test(path)?"/preferences/[private]":"/orders/[private]"; return path.split(/[?#]/)[0].slice(0,500) || "/"; }
 export function csvCell(value: unknown): string {
   let text = value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
   if (/^[\s]*[=+\-@\t\r]/.test(text)) text = "'" + text;

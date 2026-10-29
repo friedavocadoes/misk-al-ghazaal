@@ -13,7 +13,7 @@ New orders send no customer email/WhatsApp. Confirmation/later status or trackin
 | Master option | Trigger / source | Mailbox / destination |
 | --- | --- | --- |
 | Welcome | `src/app/api/auth/ensure/route.ts`, `src/app/auth/callback/route.ts` | hello → new customer |
-| Order confirmations & updates | `src/lib/order-notifications.ts`, selected admin actions | noreply → customer, respecting saved preference |
+| Order confirmations & updates | `src/lib/order-notifications.ts`, selected admin actions | noreply → customer; essential order email cannot be opted out by customers |
 | Contact alerts | `src/app/api/contact/route.ts` | hello → shop; inbox copy persists even if email is off |
 | Order-support forwards | `src/app/api/order-issue/route.ts` | orders → support; when paused customer is told to use WhatsApp rather than falsely reporting success |
 | Promotional email | Existing `src/app/admin/promo/[id]/page.tsx` | promo → email subscribers; no campaign expansion |
@@ -99,3 +99,7 @@ Latest15 states/errors appear in **Setup → Notifications**. Sent means Bot API
 - `src/components/admin/EmailNotificationOption.tsx`: disabled checkbox/tooltip.
 - `src/app/api/notifications/process/route.ts`: protected worker.
 - `tests/notification-control.test.cjs`: disposable SQL, SMTP gate, bot payload and callback tests; sends mocked.
+
+
+## Leads and customer preferences upgrade (29 October 2026)
+Read [LEADS_LOCATION_AND_PREFERENCES.md](LEADS_LOCATION_AND_PREFERENCES.md). The new leads migration adds guest preference links, persistent WhatsApp opt-outs, central lead sources and queued email campaigns. Essential order email is now customer-mandatory; staff master switches still apply. The unified worker also drains email deliveries.

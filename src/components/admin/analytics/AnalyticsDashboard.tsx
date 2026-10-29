@@ -23,7 +23,7 @@ const chartLoading=()=> <div className="h-72 animate-pulse rounded-lg bg-sand/40
 const Timeline=dynamic(()=>import("./AnalyticsCharts").then(m=>m.TimelineChart),{ssr:false,loading:chartLoading});
 const Bots=dynamic(()=>import("./AnalyticsCharts").then(m=>m.BotCharts),{ssr:false,loading:chartLoading});
 const Survey=dynamic(()=>import("./AnalyticsCharts").then(m=>m.SurveyChart),{ssr:false,loading:chartLoading});
-const LABELS:Record<AnalyticsSection,string>={overview:"Overview",traffic:"Traffic & bots",locations:"Locations & emirates",products:"Product interest",acquisition:"Acquisition",feedback:"Why no buy?",customers:"Customer data"};
+const LABELS:Record<AnalyticsSection,string>={overview:"Overview",traffic:"Traffic & bots",locations:"Countries & cities",products:"Product interest",acquisition:"Acquisition",feedback:"Why no buy?",customers:"Customer data"};
 function dates(preset:string){
  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Dubai"}).format(new Date());const now=new Date(today+"T12:00:00Z");
  let start=now,end=now;
@@ -112,7 +112,7 @@ export function AnalyticsDashboard({section,canExport}:{section:AnalyticsSection
    {section==="feedback"&&<Panel title="What held shoppers back?"><Survey report={report}/></Panel>}
    {!report.kpis.sessions&&<p role="status" className="mt-6 text-center text-sm text-fog">No tracked sessions for this period. Tracking starts after the migration is installed.</p>}
   </div>}
-  {section==="locations"&&locations&&!error&&<div aria-busy={loading} className={loading?"pointer-events-none opacity-65":""}><LocationAnalytics report={locations} country={query.get("country")??""} emirate={query.get("emirate")??""} onFilter={update}/></div>}
+  {section==="locations"&&locations&&!error&&<div aria-busy={loading} className={loading?"pointer-events-none opacity-65":""}><LocationAnalytics report={locations} country={query.get("country")??""} emirate={query.get("emirate")??""} city={query.get("city")??""} onFilter={update}/></div>}
   {section==="customers"&&canExport&&<Panel title="Customer directory" action={<Button asChild size="sm" variant="outline"><a href={`/api/admin/analytics/export?${requestKey}`}><Download/>Export Excel CSV</a></Button>}>
    <p className="mb-5 text-xs leading-6 text-fog">All shopper accounts. Activity and order figures use the chosen date range. Active time measures foreground interaction, not time in a background tab. Guest visits remain anonymous.</p>
    <div className="mb-5 flex flex-wrap gap-3"><input value={customerSearch} aria-label="Search customers" placeholder="Email, name or phone" className="min-w-0 rounded-lg border border-ink/15 px-3 py-2 text-xs" onChange={e=>{const value=e.target.value;setCustomerSearch(value);if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>update({q:value,offset:"0"}),300);}}/><Select aria-label="Promotion consent filter" value={query.get("promo")??"all"} onChange={e=>update({promo:e.target.value,offset:"0"})}><option value="all">All promotion preferences</option><option value="yes">Promotions enabled</option><option value="no">Promotions disabled</option></Select></div>

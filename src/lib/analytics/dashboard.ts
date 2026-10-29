@@ -17,6 +17,7 @@ export interface CustomerData {rows:CustomerRow[];total:number}
 export interface LiveData {live:number;visitors:number;orders:number;conversion:number}
 export interface LocationMetric {visitors:number;sessions:number;views:number;buyers:number;orders:number;revenue:number;conversion_rate:number}
 export interface LocationReport {
+ city_options?:{city:string;country:string}[];
  summary:LocationMetric&{located_sessions:number;uae_sessions:number;emirate_sessions:number};
  countries:(LocationMetric&{country:string|null})[];
  emirates:(LocationMetric&{emirate:string|null})[];

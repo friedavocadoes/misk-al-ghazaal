@@ -70,8 +70,9 @@ function shell(
   title: string,
   preheader: string,
   body: string,
+  preferenceUrl?:string,
 ): { html: string; text: string } {
-  const text = `${title}\n${preheader}\n\n${body.replace(/<[^>]*>/g, "")}`;
+  const text = `${title}\n${preheader}\n\n${body.replace(/<[^>]*>/g, "")}${preferenceUrl?`\n\nManage email and WhatsApp preferences: ${preferenceUrl}`:""}`;
   const html = `<!doctype html><html><body style="margin:0;background:#faf7f1;font-family:Arial,Helvetica,sans-serif;color:#1c1917">
 <div style="max-width:560px;margin:0 auto;padding:32px 24px">
 <p style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#8a6d2f;margin:0">Misk Al Ghazaal</p>
@@ -79,7 +80,7 @@ function shell(
 <p style="font-size:13px;color:#78716c;margin:0 0 20px">${preheader}</p>
 <div style="border-top:1px solid #e9e1d2;padding-top:20px;font-size:15px;line-height:1.7">${body}</div>
 <p style="margin-top:28px;font-size:12px;color:#78716c">Misk Al Ghazaal Perfumes · Mamzar Centre, Dubai · Delivering across the UAE.<br />Need help? Write to <a href="mailto:${SUPPORT_EMAIL}" style="color:#8a6d2f">${SUPPORT_EMAIL}</a></p>
-</div></body></html>`;
+${preferenceUrl?`<p style="font-size:12px;margin-top:20px"><a href="${preferenceUrl}" style="color:#78716c">Unsubscribe from offers / manage email and WhatsApp preferences</a></p>`:""}</div></body></html>`;
   return { html, text };
 }
 
@@ -102,13 +103,17 @@ export async function sendMailboxMail(
   const tp = mailboxTransporter(mailbox);
   if (!tp || !opts.to.includes("@")) return { sent: false };
   try {
-    const { html, text } = shell(opts.title, opts.preheader, opts.bodyHtml);
+    const customer=["welcome","order_updates","promotions"].includes(kind);
+    const prefs=customer?await (await import("./leads")).getEmailCommunicationLink(opts.to).catch(()=>null):null;
+    if(kind==="promotions"&&(!prefs||!prefs.marketing))return {sent:false,disabled:true};
+    const { html, text } = shell(opts.title, opts.preheader, opts.bodyHtml,prefs?.url);
     await tp.sendMail({
       from: `"Misk Al Ghazaal" <${mailboxAddress(mailbox)}>`,
       to: opts.to,
       subject: opts.subject,
       text,
       html,
+      ...(kind==="promotions"&&prefs?{headers:{"List-Unsubscribe":`<${prefs.unsubscribeUrl}>`,"List-Unsubscribe-Post":"List-Unsubscribe=One-Click"}}:{}),
       ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
       ...(opts.attachments?.length
         ? {

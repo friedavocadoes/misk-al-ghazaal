@@ -67,7 +67,7 @@ export default async function AccountNotificationsPage(props: {
             ar
               ? {
                   orderTitle: "تحديثات الطلبات",
-                  orderText: "تأكيد الطلب وحالات الشحن والتتبع. ننصح بإبقائها — بدونها لن تصلك أخبار طلبك.",
+                  orderText: "رسائل تأكيد الطلب والشحن والتتبع ضرورية ولا يمكن إيقافها.",
                   promoTitle: "العروض والوصلات الجديدة",
                   promoText: "رسائل خاصة من الدار، مرة بالشهر غالباً — وليست أبداً إزعاجاً.",
                   save: "حفظ",
@@ -77,7 +77,7 @@ export default async function AccountNotificationsPage(props: {
                 }
               : {
                   orderTitle: "Order updates",
-                  orderText: "Confirmation, shipping status and tracking. Keep these on — without them you won't hear about your parcel.",
+                  orderText: "Essential confirmation, delivery and tracking emails cannot be disabled.",
                   promoTitle: "Private offers & new arrivals",
                   promoText: "Be the first to know about new arrivals directly from the maison",
                   save: "Save",

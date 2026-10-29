@@ -52,7 +52,7 @@ export async function saveEmailPrefs(input: {
   const { error } = await supabase
     .from("profiles")
     .update({
-      order_updates_opt_in: input.orderUpdates,
+      order_updates_opt_in: true,
       promo_opt_in: input.promo,
     })
     .eq("id", user.id);

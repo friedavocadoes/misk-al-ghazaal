@@ -12,7 +12,7 @@ export async function SiteFooter({ locale }: { locale: Locale }) {
   const tn = await getTranslations({ locale, namespace: "Newsletter" });
   const columns = await getFooterColumns(locale);
   return (
-    <footer className="mt-20 border-t border-ink/10 bg-sand/60">
+    <footer className="border-t border-ink/10 bg-sand/60">
       <NewsletterSection
         eyebrow={tn("eyebrow")}
         title={tn("title")}
