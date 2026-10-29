@@ -3,20 +3,26 @@ import { createAdminClient } from "./supabase/service";
 import { getNotificationSettings } from "./notification-settings";
 import { getSiteUrl } from "./site-url";
 import { paymentMethodLabel } from "./admin-orders-model";
+
 export async function processTelegramQueue() {
   if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID)
     return { processed: 0, disabled: true };
+    
   const settings = await getNotificationSettings();
   if (!settings.available || !settings.telegram_new_order)
     return { processed: 0, disabled: true };
+    
   const db = createAdminClient(),
     { data: jobs, error } = await db.rpc("telegram_claim", { p_limit: 5 });
+    
   if (error)
     throw Error(
       "Telegram queue unavailable. Apply migration_notification_control.sql.",
     );
+    
   for (const [index, job] of (jobs ?? []).entries()) {
     if (index > 0) await new Promise((resolve) => setTimeout(resolve, 1100));
+    
     const settle = async (
       state: string,
       code: string | null = null,
@@ -42,6 +48,7 @@ export async function processTelegramQueue() {
         .eq("state", "sending");
       if (error) throw Error("Could not record Telegram delivery.");
     };
+    
     let attempted = false;
     try {
       const { data: o, error } = await db
@@ -51,19 +58,23 @@ export async function processTelegramQueue() {
         )
         .eq("id", job.order_id)
         .maybeSingle();
+        
       if (error) throw Error("Order unavailable");
-      if (
-        !o ||
-        o.deleted_at ||
-        o.status !== "new" ||
-        Date.now() - Date.parse(job.created_at) > 24 * 60 * 60_000
-      ) {
+      
+      // Log skipping reasons to terminal for debugging
+      if (!o || o.deleted_at || o.status !== "new" || Date.now() - Date.parse(job.created_at) > 24 * 60 * 60_000) {
+        console.warn(`Skipping job ${job.id}: Order ${o?.id} does not meet requirements (status: ${o?.status}).`);
         await settle("skipped", "order_no_longer_new");
         continue;
       }
+      
       const origin = getSiteUrl();
-      if (!/^https:\/\//.test(origin))
-        throw Error("Set the HTTPS public site URL");
+      
+      // FIX: Allow http://localhost or http://127.0.0.1 for local testing
+      if (!/^https:\/\//.test(origin) && !/^http:\/\/(localhost|127\.0\.0\.1)/.test(origin)) {
+        throw Error(`Invalid site URL: ${origin}. Must be HTTPS or localhost.`);
+      }
+        
       const url = `${origin}/admin/orders/${o.id}`;
       const text = `New Order\n\nOrder: #${String(o.order_no).replace(/^#/, "")}\nCustomer: ${String(
         o.customer_name,
@@ -73,6 +84,7 @@ export async function processTelegramQueue() {
           0,
           150,
         )}\nTotal: AED ${Number(o.total).toFixed(2)}\nPayment: ${paymentMethodLabel(o.payment_method)}\nStatus: Pending processing\n\n${url}`;
+        
       attempted = true;
       const response = await fetch(
         `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -96,7 +108,14 @@ export async function processTelegramQueue() {
           cache: "no-store",
         },
       );
+      
       const result = await response.json().catch(() => ({}));
+      
+      // FIX: Log Telegram API rejections to the terminal
+      if (!response.ok || !result.ok) {
+        console.error("Telegram API Error:", result.description || response.statusText);
+      }
+
       if (response.ok && result.ok && result.result?.message_id)
         await settle("sent", null, String(result.result.message_id));
       else if (response.status === 429 && job.attempts < 4)
@@ -114,7 +133,10 @@ export async function processTelegramQueue() {
           response.status >= 500 || response.ok ? "unknown" : "failed",
           String(result.error_code ?? response.status),
         );
-    } catch {
+    } catch (error) {
+      // FIX: Log internal code errors to the terminal
+      console.error(`Queue Error (Job ID: ${job.id}):`, error);
+      
       await settle(
         attempted ? "unknown" : job.attempts < 4 ? "pending" : "failed",
         attempted ? "ambiguous_attempt" : "preparation_failed",
