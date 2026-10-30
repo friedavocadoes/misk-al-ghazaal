@@ -72,7 +72,7 @@ function Field({
   );
 }
 
-const inputCls = "studio-input";
+const inputCls = "studio-input cursor-pointer";
 
 export function ContactExperience({
   products,
@@ -234,7 +234,7 @@ export function ContactExperience({
         </p>
         <button
           type="button"
-          className="studio-send-another"
+          className="studio-send-another cursor-pointer"
           onClick={() => {
             setForm({ ...EMPTY, topic: null });
             setStep(0);
@@ -278,6 +278,7 @@ export function ContactExperience({
               disabled={sending || i > step}
               onClick={() => setStep(i)}
               aria-current={step === i ? "step" : undefined}
+              className="cursor-pointer"
             >
               <span>
                 {i < step ? (
@@ -319,7 +320,7 @@ export function ContactExperience({
                     }}
                     aria-pressed={form.topic === x.id}
                     className={cn(
-                      "studio-topic-option",
+                      "studio-topic-option cursor-pointer",
                       form.topic === x.id ? "is-selected" : "",
                     )}
                   >
@@ -396,9 +397,9 @@ export function ContactExperience({
                         className={inputCls}
                       >
                         <option value="">{t("select")}</option>
-                        <option>500 – 1,000 units</option>
-                        <option>1,000 – 5,000 units</option>
-                        <option>5,000 – 20,000 units</option>
+                        <option>500 - 1,000 units</option>
+                        <option>1,000 - 5,000 units</option>
+                        <option>5,000 - 20,000 units</option>
                         <option>20,000+ units</option>
                       </select>
                     </Field>
@@ -455,7 +456,7 @@ export function ContactExperience({
                             onClick={() => set("rating", n)}
                             aria-label={`${n} stars`}
                             aria-pressed={n === form.rating}
-                            className="p-0.5"
+                            className="p-0.5 cursor-pointer"
                           >
                             <Star
                               className={cn(
@@ -584,7 +585,7 @@ export function ContactExperience({
               </h3>
               <div className="studio-confirm-topic">
                 <span>{topicMeta?.title}</span>
-                <button type="button" onClick={() => setStep(0)}>
+                <button type="button" onClick={() => setStep(0)} className="cursor-pointer">
                   {t("editLabel")}
                 </button>
               </div>
@@ -646,6 +647,7 @@ export function ContactExperience({
                         type="button"
                         onClick={() => setStep(field.edit)}
                         aria-label={`${t("editLabel")} ${field.label}`}
+                        className="cursor-pointer"
                       >
                         ↗
                       </button>
@@ -661,7 +663,7 @@ export function ContactExperience({
                         ? t("issueBody")
                         : t("reviewBody")}
                   </span>
-                  <button type="button" onClick={() => setStep(1)}>
+                  <button type="button" onClick={() => setStep(1)} className="cursor-pointer">
                     {t("editLabel")}
                   </button>
                 </div>
@@ -681,16 +683,16 @@ export function ContactExperience({
               type="button"
               onClick={back}
               disabled={step === 0 || sending}
-              className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-espresso transition hover:text-ink disabled:opacity-30"
+              className="inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-espresso transition hover:text-ink disabled:opacity-30 cursor-pointer"
             >
               <ArrowLeft className="size-4" /> {t("back")}
             </button>
             {step < 3 ? (
-              <Button type="submit" disabled={!stepValid()}>
+              <Button type="submit" disabled={!stepValid()} className="cursor-pointer">
                 {t("continue")} <ArrowRight className="size-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={sending}>
+              <Button type="submit" disabled={sending} className="cursor-pointer">
                 {sending
                   ? locale === "ar"
                     ? "جارٍ الإرسال…"
