@@ -1,3 +1,4 @@
+import { BANNER_PLACEMENTS } from "@/lib/banner-config";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { createSearchIndex, searchDocument } from "./search-index";
@@ -456,14 +457,17 @@ function toBanner(b: {
 }
 
 async function getBannersBySlot(slot: "hero" | "brand" | "navigation"): Promise<Banner[]> {
+  if (!BANNER_PLACEMENTS[slot].enabled) return [];
   requireConfigured();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("banners")
-    .select("*")
+    .select("id,src,fallback,mobile_src,mobile_fallback,alt,eyebrow,eyebrow_ar,title,title_ar,desc,desc_ar,cta,cta_ar,href,fit,focal")
     .eq("slot", slot)
+    .eq("is_active", true)
     .is("deleted_at", null)
-    .order("sort").order("id");
+    .order("sort").order("id")
+    .limit(slot === "navigation" ? 2 : 1000);
   if (error || !data) throw error ?? new Error("banners failed");
   return (data as Parameters<typeof toBanner>[0][]).map(toBanner);
 }

@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     if (!ffmpeg) throw new Error("Video processor unavailable on this host.");
     if (Number(request.headers.get("content-length")) > 30 * 1024 * 1024) throw new Error("Maximum source size: 30 MB.");
     const form = await request.formData();
+    const device=form.get("device")==="mobile"?"mobile":"desktop";
+    const bounds=device==="mobile"?{width:1080,height:1920}:{width:1920,height:1080};
     const file = form.get("file");
     if (!(file instanceof File) || !file.type.startsWith("video/") || file.size > 30 * 1024 * 1024) throw new Error("Choose a video under 30 MB.");
     directory = await mkdtemp(join(tmpdir(), "misk-hero-"));
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
     const output = join(directory, "hero.mp4");
     const poster = join(directory, "poster.webp");
     await writeFile(input, Buffer.from(await file.arrayBuffer()));
-    await run(ffmpeg, ["-nostdin", "-y", "-i", input, "-t", "20", "-an", "-vf", "scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30", "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-threads", "2", output], { timeout: 100000, maxBuffer: 1024 * 1024 });
+    await run(ffmpeg, ["-nostdin", "-y", "-i", input, "-t", "20", "-an", "-vf", `scale=w='min(${bounds.width},iw)':h='min(${bounds.height},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30`, "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-threads", "2", output], { timeout: 100000, maxBuffer: 1024 * 1024 });
     await run(ffmpeg, ["-nostdin", "-y", "-i", output, "-frames:v", "1", "-c:v", "libwebp", "-quality", "85", poster], { timeout: 15000, maxBuffer: 1024 * 1024 });
     const db = await createClient();
     const id = crypto.randomUUID();

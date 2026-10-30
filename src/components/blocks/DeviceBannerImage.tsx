@@ -27,7 +27,8 @@ export function DeviceBannerImage({
           props.className + " absolute inset-0 h-full w-full object-cover"
         }
         src={src}
-        poster={mobile ? mobileFallback : props.fallback}
+        poster={mobile && mobileSrc ? mobileFallback : props.fallback}
+        style={props.style}
         muted
         playsInline
         autoPlay

@@ -96,7 +96,7 @@ export function BannerSplit({
                 alt={b.alt}
                 fill
                 sizes="(min-width:768px) 33vw, 100vw"
-                style={b.focal ? { objectPosition: b.focal } : undefined}
+                style={{ objectPosition:b.focal||"center", objectFit:b.fit||"cover" }}
                 className="object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]"
               />
 

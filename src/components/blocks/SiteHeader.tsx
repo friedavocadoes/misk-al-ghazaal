@@ -54,7 +54,14 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
   const router = useRouter();
   const pathname = usePathname();
   const [headerHovered, setHeaderHovered] = useState(false);
-  const transparentPage = hasTransparentHeader(pathname);
+  const [emptyHomeHero,setEmptyHomeHero]=useState(false);
+  const transparentPage = hasTransparentHeader(pathname) && !(pathname === "/" && emptyHomeHero);
+  useEffect(()=>{
+    const sync=()=>setEmptyHomeHero(!!document.querySelector("[data-home-no-hero]"));
+    sync();
+    window.addEventListener("home-hero-availability",sync);
+    return()=>window.removeEventListener("home-hero-availability",sync);
+  },[pathname]);
   const [compact, setCompact] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const suggestRef = useRef<SearchSuggestHandle>(null);

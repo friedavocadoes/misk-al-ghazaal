@@ -256,17 +256,17 @@ async function HomeHero() {
   const slides = await getHeroSlides();
   return (
     <>
-      <HomeArrival />
+      {slides.length > 0 && <HomeArrival />}
       <HeroSlider slides={slides} />
     </>
   );
 }
 
 async function HomeContent({ locale }: { locale: Locale }) {
-  const [sections, brands, collections, bestSellers, newArrivals, featured] =
+  const sections = await getHomepageSections();
+  const [brands, collections, bestSellers, newArrivals, featured] =
     await Promise.all([
-      getHomepageSections(),
-      getBrandBanners(),
+      !sections.length || sections.some(section => section.kind === "brand_split") ? getBrandBanners() : Promise.resolve([]),
       getCollections(),
       getProductsByCollection("best-sellers"),
       getProductsByCollection("new-arrivals"),

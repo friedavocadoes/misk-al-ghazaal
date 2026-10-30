@@ -10,14 +10,16 @@ interface SafeImageProps extends Omit<ImageProps, "src"> {
 
 /** Responsive, optimized images with an optional fallback. */
 export function SafeImage({ src, fallback, alt, ...props }: SafeImageProps) {
-  const [current, setCurrent] = useState(src);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  // Follow viewport/source changes immediately; fallback belongs to the failed source only.
+  const current = failedSrc === src && fallback ? fallback : src;
   return (
     <Image
       src={current}
       alt={alt}
       unoptimized={current.startsWith("http") && !/^https:\/\/[^/]+\.supabase\.co\//.test(current)}
       onError={() => {
-        if (fallback && current !== fallback) setCurrent(fallback);
+        if (fallback && current !== fallback) setFailedSrc(src);
       }}
       {...props}
     />
