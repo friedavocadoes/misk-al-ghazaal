@@ -20,12 +20,12 @@ const TILES = CARTO_KEY
   ? {
       url: `https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attribution/">CARTO</a>',
+        '',
     }
   : {
       url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
       attribution:
-        "Esri, HERE, Garmin, OpenStreetMap contributors",
+        "",
     };
 
 function goldPin(): L.DivIcon {
