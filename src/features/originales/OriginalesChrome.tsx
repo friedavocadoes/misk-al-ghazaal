@@ -43,6 +43,7 @@ export function OriginalesChrome({
 }) {
   const ar = useLocale() === "ar";
   const path = usePathname();
+  const collectionPage = path === "/originales" || path === "/originales/";
   const query = useSearchParams();
   const router = useRouter();
   const { count } = useCart();
@@ -130,14 +131,17 @@ export function OriginalesChrome({
     </nav>
   );
   return (
-    <div className={s.world} dir={ar ? "rtl" : "ltr"}>
+    <div
+      className={`${s.world} ${collectionPage ? s.collectionWorld : ""}`}
+      dir={ar ? "rtl" : "ltr"}
+    >
       <header className={s.header}>
         <div className={s.headerLeft}>
           <button
             type="button"
             aria-label={ar ? "المجموعة" : "Explore the collection"}
             onClick={() => setMenu(true)}
-            className={s.mobileMenu}
+            className={`${s.mobileMenu} ${collectionPage ? s.collectionMenu : ""}`}
           >
             <Menu />
           </button>
@@ -199,7 +203,7 @@ export function OriginalesChrome({
           </button>
         </div>
       </header>
-      <aside className={s.rail}>{editions}</aside>
+      {!collectionPage && <aside className={s.rail}>{editions}</aside>}
       <div className={s.content}>
         {children}
         <footer className={s.footer}>

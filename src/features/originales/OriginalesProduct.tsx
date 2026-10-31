@@ -9,14 +9,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import {
-  ArrowDown,
-  ArrowUpRight,
-  Check,
-  Minus,
-  Plus,
-  ShoppingBag,
-} from "lucide-react";
+import { ArrowDown, ArrowUpRight, Check, Minus, Plus } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product, Coupon } from "@/lib/types";
@@ -34,6 +27,7 @@ import { SamplePicker } from "@/components/blocks/SamplePicker";
 import { DeviceBannerImage } from "@/components/blocks/DeviceBannerImage";
 import { editionFor } from "./config";
 import { LiquidName } from "./LiquidName";
+import { editionStory } from "./story";
 import s from "./originales.module.css";
 
 const FluidSurface = dynamic(() => import("./FluidSurface"), { ssr: false });
@@ -51,6 +45,7 @@ export function OriginalesProduct({
 }) {
   const ar = locale === "ar";
   const edition = editionFor(product);
+  const narrative = editionStory(edition.name, ar);
   const router = useRouter();
   const { add } = useCart();
   const root = useRef<HTMLDivElement>(null);
@@ -125,10 +120,44 @@ export function OriginalesProduct({
               x: 0,
               y: 0,
             });
-            gsap.set(element.querySelector("[data-liquid-title]"), {
-              xPercent: -50,
+            const title = element.querySelector<HTMLElement>(
+              "[data-travelling-title]",
+            );
+            const dock =
+              element.querySelector<HTMLElement>("[data-title-dock]");
+            if (!title || !dock) return;
+            const finalFont = mobile
+              ? 40
+              : Math.min(58, scene.clientWidth * 0.047);
+            gsap.set(title, {
+              left: 0,
+              top: 0,
               x: 0,
+              y: 0,
+              fontSize: mobile
+                ? scene.clientWidth * 0.195
+                : scene.clientWidth * 0.145,
             });
+            const surface = { glass: 1 };
+            // A separate scalar survives ScrollTrigger refreshes without losing the material's start state.
+            const syncSurface = () =>
+              title.style.setProperty("--glass", String(surface.glass));
+            syncSurface();
+            gsap.set(title, {
+              x: () => (scene.clientWidth - title.offsetWidth) / 2,
+              y: () => scene.clientHeight * 0.225,
+            });
+            const destination = () => {
+              const target = dock.getBoundingClientRect(),
+                origin = scene.getBoundingClientRect();
+              return {
+                x: target.left - origin.left,
+                y:
+                  target.top -
+                  origin.top -
+                  (Number(gsap.getProperty(buy, "y")) || 0),
+              };
+            };
             const timeline = gsap.timeline({
               scrollTrigger: {
                 trigger: element.querySelector("[data-runway]"),
@@ -137,6 +166,7 @@ export function OriginalesProduct({
                 scrub: 1.15,
                 invalidateOnRefresh: true,
               },
+              onUpdate: syncSurface,
             });
             timeline.to(
               scene,
@@ -165,7 +195,7 @@ export function OriginalesProduct({
                     ? -scene.clientHeight * 0.12
                     : scene.clientHeight * 0.03,
                 scale: mobile ? 0.67 : 0.88,
-                rotate: -3,
+                rotate: 0,
                 duration: 0.5,
                 ease: "power3.inOut",
               },
@@ -173,7 +203,7 @@ export function OriginalesProduct({
             );
             timeline.fromTo(
               element.querySelector("[data-box]"),
-              { opacity: 0, x: mobile ? -170 : -360, rotate: -12, scale: 0.82 },
+              { opacity: 0, x: mobile ? -170 : -360, rotate: 0, scale: 0.82 },
               {
                 opacity: 1,
                 x: () =>
@@ -181,7 +211,7 @@ export function OriginalesProduct({
                     ? -scene.clientWidth * 0.18
                     : -scene.clientWidth * 0.33,
                 y: () => (mobile ? -scene.clientHeight * 0.08 : 0),
-                rotate: -7,
+                rotate: 0,
                 scale: mobile ? 0.65 : 0.88,
                 duration: 0.5,
                 ease: "power3.inOut",
@@ -189,15 +219,25 @@ export function OriginalesProduct({
               0.42,
             );
             timeline.to(
-              element.querySelector("[data-liquid-title]"),
+              title,
               {
-                opacity: 0,
-                y: -45,
-                scale: 0.85,
-                duration: 0.38,
+                x: () => destination().x,
+                y: () => destination().y,
+                fontSize: finalFont,
+                duration: 0.65,
                 ease: "power2.inOut",
               },
-              0.22,
+              0.35,
+            );
+            timeline.to(
+              surface,
+              {
+                glass: 0,
+                duration: 0.65,
+                ease: "power2.inOut",
+                onUpdate: syncSurface,
+              },
+              0.35,
             );
             timeline.to(
               element.querySelector("[data-scroll-cue]"),
@@ -238,6 +278,7 @@ export function OriginalesProduct({
             ScrollTrigger.refresh();
             return () => {
               buy.inert = false;
+              title.style.removeProperty("--glass");
             };
           },
           element,
@@ -335,9 +376,16 @@ export function OriginalesProduct({
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تكوينٌ يتجلّى" : "A composition, becoming."}</span>
           </div>
-          <div className={s.liquidTitle} data-liquid-title aria-hidden="true">
-            <LiquidName name={edition.name} />
-          </div>
+          <h1
+            data-liquid-title
+            data-travelling-title
+            className={s.travellingTitle}
+          >
+            <LiquidName
+              name={variant?.nameOverride ?? edition.name}
+              backdrop={backdrop}
+            />
+          </h1>
           <div className={s.ingredients} aria-hidden="true">
             {product.notes.slice(0, 8).map((note, index) => (
               <span
@@ -405,7 +453,7 @@ export function OriginalesProduct({
           </a>
           <div id="originales-purchase" data-purchase className={s.purchase}>
             <p className={s.kicker}>MAG PARFUM — ORIGINALES</p>
-            <h1>{variant?.nameOverride ?? edition.name}</h1>
+            <div data-title-dock className={s.titleDock} aria-hidden="true" />
             {product.notes.length > 0 && (
               <p className={s.purchaseNotes}>
                 {product.notes
@@ -414,9 +462,14 @@ export function OriginalesProduct({
                   .join(" · ")}
               </p>
             )}
-            <p className={s.price}>
-              {formatAED(variant?.price ?? product.price)}
-            </p>
+            <div className={s.signaturePrice}>
+              <span>
+                {ar ? "العطر /" : "The signature /"} {edition.number}
+              </span>
+              <p className={s.price}>
+                {formatAED(variant?.price ?? product.price)}
+              </p>
+            </div>
             <VariantPicker
               product={product}
               variant={variant}
@@ -425,6 +478,9 @@ export function OriginalesProduct({
             />
             <div className={s.purchaseActions}>
               <div className={s.quantity}>
+                <span className={s.quantityLabel}>
+                  {ar ? "الكمية" : "Quantity"}
+                </span>
                 <button
                   type="button"
                   data-ios-haptic="on"
@@ -434,7 +490,9 @@ export function OriginalesProduct({
                 >
                   <Minus size={15} />
                 </button>
-                <span>{safeQty}</span>
+                <span className={s.quantityValue}>
+                  {String(safeQty).padStart(2, "0")}
+                </span>
                 <button
                   type="button"
                   data-ios-haptic="on"
@@ -450,11 +508,8 @@ export function OriginalesProduct({
                 type="button"
                 className={s.addButton}
                 disabled={stock <= 0}
-                onClick={(event) => purchase(event)}
-              >
-                {added ? <Check size={17} /> : <ShoppingBag size={17} />}
-                <span aria-live="polite">
-                  {stock <= 0
+                aria-label={
+                  stock <= 0
                     ? ar
                       ? "نفد المخزون"
                       : "Out of stock"
@@ -464,7 +519,28 @@ export function OriginalesProduct({
                         : "Added to your bag"
                       : ar
                         ? "أضف إلى الحقيبة"
-                        : "Add to bag"}
+                        : "Add to bag"
+                }
+                onClick={(event) => purchase(event)}
+              >
+                <span className={s.bagButtonCopy}>
+                  <small>MAG PARFUM · {edition.number}</small>
+                  <span aria-live="polite">
+                    {stock <= 0
+                      ? ar
+                        ? "نفد المخزون"
+                        : "Out of stock"
+                      : added
+                        ? ar
+                          ? "أضيف إلى الحقيبة"
+                          : "Added to your bag"
+                        : ar
+                          ? "أضف إلى الحقيبة"
+                          : "Add to bag"}
+                  </span>
+                </span>
+                <span className={s.bagButtonIcon}>
+                  {added ? <Check size={20} /> : <ArrowUpRight size={20} />}
                 </span>
               </button>
             </div>
@@ -519,9 +595,10 @@ export function OriginalesProduct({
           {ar ? "تعبير أصيل" : "The expression"} / {edition.number}
         </p>
         <h2>
-          {edition.name}.<br />
-          <span>{ar ? "حضور لا يشبه سواه." : "A world of its own."}</span>
+          {narrative?.heading ??
+            (ar ? "حضور لا يشبه سواه." : "A world of its own.")}
         </h2>
+        {narrative && <p className={s.storyCopy}>{narrative.body}</p>}
         {product.shortDesc ? (
           <p className={s.storyCopy}>
             {tx(product.shortDesc, product.shortDescAr, locale)}

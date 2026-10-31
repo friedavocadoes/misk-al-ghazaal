@@ -1,3 +1,5 @@
+"use client";
+import { useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -5,6 +7,7 @@ import type { Product } from "@/lib/types";
 import { formatAED } from "@/lib/utils";
 import { productAvailable } from "@/lib/product-options";
 import { editionFor, originalesPath } from "./config";
+import { COLLECTION_STORY, editionStory } from "./story";
 import s from "./originales.module.css";
 
 export function OriginalesGallery({
@@ -14,118 +17,256 @@ export function OriginalesGallery({
   products: Product[];
   locale: string;
 }) {
-  const ar = locale === "ar";
-  return (
-    <>
-      <section className={s.galleryHero}>
-        <div className={s.galleryIntro}>
-          <p className={s.kicker}>MAG PARFUM — COLLECTION 01</p>
-          <h1>
-            Originales
-            <span>{ar ? "لكل حضور، تعبير." : "Distinct by nature."}</span>
-          </h1>
-          <p>
-            {ar
-              ? "أربعة عطور. أربع شخصيات. تعبيرك الخاص."
-              : "Four signatures. Four worlds. Entirely your own."}
-          </p>
-        </div>
-        <div className={s.galleryObjects}>
-          {products.map((product) => {
-            const e = editionFor(product);
-            return (
-              <Link
-                href={originalesPath(product)}
-                key={product.id}
-                className={s.galleryObject}
-                style={
-                  {
-                    "--edition-accent": e.accent,
-                    "--edition-wash": e.wash,
-                  } as React.CSSProperties
-                }
-              >
-                <span className={s.objectHalo} />
-                <Image
-                  src={e.bottle ?? product.images[0] ?? "/logo.webp"}
-                  alt={`${e.name} perfume`}
-                  width={360}
-                  height={550}
-                  priority
-                  sizes="(max-width:600px) 36vw, 20vw"
-                />
-                <span className={s.objectLabel}>
-                  <small>{e.number}</small>
-                  {e.name}
-                  <ArrowUpRight size={15} />
-                </span>
-              </Link>
+  const ar = locale === "ar",
+    story = COLLECTION_STORY[ar ? "ar" : "en"];
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let live = true,
+      dispose = () => {};
+    Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
+      .then(([{ default: gsap }, { ScrollTrigger }]) => {
+        if (!live || !root.current) return;
+        gsap.registerPlugin(ScrollTrigger);
+        const mm = gsap.matchMedia();
+        mm.add(
+          "(prefers-reduced-motion: no-preference)",
+          () => {
+            const node = root.current!;
+            gsap.fromTo(
+              node.querySelectorAll("[data-hero-line]"),
+              { yPercent: 105 },
+              {
+                yPercent: 0,
+                stagger: 0.13,
+                duration: 1.5,
+                ease: "power3.out",
+                delay: 0.12,
+              },
             );
-          })}
+            gsap.fromTo(
+              node.querySelector("[data-hero-rule]"),
+              { scaleX: 0 },
+              { scaleX: 1, duration: 1.8, ease: "power2.inOut", delay: 0.3 },
+            );
+            gsap.to(node.querySelector("[data-editorial-atmosphere]"), {
+              yPercent: 12,
+              scale: 1.06,
+              ease: "none",
+              scrollTrigger: {
+                trigger: node.querySelector("[data-editorial-hero]"),
+                start: "top top",
+                end: "bottom top",
+                scrub: 1.5,
+              },
+            });
+            gsap.fromTo(
+              node.querySelectorAll("[data-story-word]"),
+              { opacity: 0.18 },
+              {
+                opacity: 1,
+                stagger: 0.035,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: node.querySelector("[data-manifesto]"),
+                  start: "top 75%",
+                  end: "bottom 70%",
+                  scrub: 0.7,
+                },
+              },
+            );
+            node
+              .querySelectorAll<HTMLElement>("[data-edition-chapter]")
+              .forEach((chapter) => {
+                gsap.fromTo(
+                  chapter.querySelector("[data-chapter-art]"),
+                  { clipPath: "inset(8% 0 8% 0)", opacity: 0.5 },
+                  {
+                    clipPath: "inset(0% 0 0% 0)",
+                    opacity: 1,
+                    duration: 1.4,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                      trigger: chapter,
+                      start: "top 78%",
+                      once: true,
+                    },
+                  },
+                );
+                gsap.fromTo(
+                  chapter.querySelector("[data-chapter-bottle]"),
+                  { y: 24 },
+                  {
+                    y: -18,
+                    ease: "none",
+                    scrollTrigger: {
+                      trigger: chapter,
+                      start: "top bottom",
+                      end: "bottom top",
+                      scrub: 1.4,
+                    },
+                  },
+                );
+                gsap.fromTo(
+                  chapter.querySelectorAll("[data-chapter-copy]"),
+                  { opacity: 0, y: 18 },
+                  {
+                    opacity: 1,
+                    y: 0,
+                    stagger: 0.1,
+                    duration: 1.1,
+                    ease: "power2.out",
+                    scrollTrigger: {
+                      trigger: chapter,
+                      start: "top 65%",
+                      once: true,
+                    },
+                  },
+                );
+              });
+          },
+          root.current,
+        );
+        dispose = () => mm.revert();
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+      dispose();
+    };
+  }, []);
+  return (
+    <div ref={root} className={s.editorial}>
+      <section data-editorial-hero className={s.editorialHero}>
+        <div data-editorial-atmosphere className={s.editorialAtmosphere}>
+          <Image
+            src="/originales/ambrato-atmosphere.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
         </div>
-        <a href="#the-editions" className={s.scrollCue}>
-          {ar ? "اكتشف المجموعة" : "Enter the collection"}
-          <ArrowDown size={16} />
+        <p className={s.editorialIssue}>
+          MAG PARFUM
+          <span>{ar ? "مجموعة أوريجينال" : "The Originales collection"}</span>
+        </p>
+        <div className={s.editorialHeadline}>
+          <p>
+            {ar ? "حضور، لا يحتاج إلى تفسير." : "An instinct, made personal."}
+          </p>
+          <h1>
+            <span>
+              <span data-hero-line>Originales</span>
+            </span>
+          </h1>
+          <div className={s.heroClosing}>
+            <span>
+              <span data-hero-line>
+                {ar ? "تعبيرك، كما أنت." : "An expression, entirely your own."}
+              </span>
+            </span>
+          </div>
+        </div>
+        <div className={s.editorialBottom}>
+          <span data-hero-rule className={s.editorialRule} />
+          <span>
+            {ar
+              ? "أربعة عطور. حضور واحد: حضورك."
+              : "Four fragrances. One point of view: yours."}
+          </span>
+          <a href="#the-story">
+            {ar ? "الحكاية" : "The story"}
+            <ArrowDown size={15} />
+          </a>
+        </div>
+      </section>
+      <section id="the-story" data-manifesto className={s.manifesto}>
+        <p className={s.kicker}>
+          {ar ? "روح المجموعة" : "The thought behind the collection"}
+        </p>
+        <h2>
+          {story.lead.split("\n").map((line, i) => (
+            <span key={i}>{line}</span>
+          ))}
+        </h2>
+        <p className={s.manifestoBody}>
+          {story.body.split(" ").map((word, i) => (
+            <span key={i} data-story-word>
+              {word}{" "}
+            </span>
+          ))}
+        </p>
+        <p className={s.manifestoClose}>{story.close}</p>
+        <a href="#the-editions" className={s.editorialTextLink}>
+          {ar ? "اكتشف التعابير الأربعة" : "Discover the four expressions"}
+          <ArrowDown size={14} />
         </a>
       </section>
-      <section
-        id="the-editions"
-        className={s.editionGrid}
-        aria-label={ar ? "العطور" : "The editions"}
-      >
+      <div id="the-editions" className={s.chapters}>
         {products.map((product) => {
-          const e = editionFor(product);
+          const edition = editionFor(product),
+            copy = editionStory(edition.name, ar);
           return (
-            <Link
-              href={originalesPath(product)}
+            <section
               key={product.id}
-              className={s.editionCard}
+              data-edition-chapter
+              className={s.chapter}
               style={
                 {
-                  "--edition-accent": e.accent,
-                  "--edition-wash": e.wash,
-                } as React.CSSProperties
+                  "--edition-accent": edition.accent,
+                  "--edition-wash": edition.wash,
+                } as CSSProperties
               }
             >
-              <div className={s.cardArt}>
-                <span className={s.cardNumber}>{e.number}</span>
-                {e.box && (
-                  <Image
-                    src={e.box}
-                    alt=""
-                    width={360}
-                    height={470}
-                    sizes="(max-width: 700px) 46vw, 24vw"
-                    className={s.cardBox}
-                  />
-                )}
+              <Link
+                href={originalesPath(product)}
+                data-chapter-art
+                className={s.chapterArt}
+                aria-label={`${ar ? "اكتشف" : "Discover"} ${edition.name}`}
+              >
+                <span className={s.chapterAtmosphere} />
+                <span className={s.chapterPlinth} />
                 <Image
-                  src={e.bottle ?? product.images[0] ?? "/logo.webp"}
-                  alt={e.name}
-                  width={360}
-                  height={550}
-                  sizes="(max-width:700px) 48vw, 25vw"
-                  className={s.cardBottle}
+                  data-chapter-bottle
+                  src={edition.bottle ?? product.images[0] ?? "/logo.webp"}
+                  alt={edition.name}
+                  width={650}
+                  height={1000}
+                  sizes="(max-width:759px) 67vw, 30vw"
+                  className={s.chapterBottle}
                 />
-              </div>
-              <div className={s.cardInfo}>
-                <h2>{e.name}</h2>
-                <ArrowUpRight size={22} />
-                <p>
-                  {product.notes
-                    .slice(0, 3)
-                    .map((n) => (ar ? (n.nameAr ?? n.name) : n.name))
-                    .join(" / ") || "Originales — MAG Parfum"}
+              </Link>
+              <div className={s.chapterCopy}>
+                <p data-chapter-copy className={s.kicker}>
+                  ORIGINALES — {edition.number}
                 </p>
-                <span>
+                <h2 data-chapter-copy>{edition.name}</h2>
+                {copy && (
+                  <>
+                    <h3 data-chapter-copy>{copy.heading}</h3>
+                    <p data-chapter-copy className={s.chapterProse}>
+                      {copy.body}
+                    </p>
+                  </>
+                )}
+                <Link
+                  data-chapter-copy
+                  className={s.editorialTextLink}
+                  href={originalesPath(product)}
+                >
+                  {ar ? "اكتشف العطر" : "Discover the fragrance"}
+                  <ArrowUpRight size={16} />
+                </Link>
+                <p data-chapter-copy className={s.chapterPrice}>
                   {productAvailable(product)
                     ? formatAED(product.price)
                     : ar
                       ? "نفد المخزون"
                       : "Out of stock"}
-                </span>
+                </p>
               </div>
-            </Link>
+            </section>
           );
         })}
         {!products.length && (
@@ -135,7 +276,12 @@ export function OriginalesGallery({
               : "The collection is being prepared. Return soon."}
           </p>
         )}
+      </div>
+      <section className={s.editorialEpilogue}>
+        <span>O</span>
+        <p>{ar ? "بصمة تشبهك." : "A signature that feels like you."}</p>
+        <small>MAG PARFUM · ORIGINALES</small>
       </section>
-    </>
+    </div>
   );
 }

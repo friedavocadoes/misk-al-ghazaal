@@ -1,69 +1,50 @@
 "use client";
-import { useId } from "react";
+import { useEffect, useRef } from "react";
+import s from "./originales.module.css";
 
-/** Translucent letter faces, refracted edges and specular highlights; no raster heading. */
-export function LiquidName({ name }: { name: string }) {
-  const id = useId().replace(/:/g, "");
+/** One semantic title, with an optional physically rendered material on its letter faces. */
+export function LiquidName({
+  name,
+  backdrop,
+}: {
+  name: string;
+  backdrop: string | null;
+}) {
+  const host = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const node = host.current;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (
+      navigator as Navigator & { connection?: { saveData?: boolean } }
+    ).connection;
+    const memory = (navigator as Navigator & { deviceMemory?: number })
+      .deviceMemory;
+    if (!node || reduced.matches || connection?.saveData || (memory ?? 8) <= 2)
+      return;
+    const controller = new AbortController();
+    let dispose: (() => void) | undefined;
+    import("./glass-name-renderer")
+      .then(async ({ mountGlassName }) => {
+        if (controller.signal.aborted) return;
+        dispose = await mountGlassName(node, name, backdrop, controller.signal);
+      })
+      .catch(() => {
+        /* The same readable title is the fallback. */
+      });
+    const preferenceChanged = () => {
+      if (reduced.matches) controller.abort();
+    };
+    reduced.addEventListener("change", preferenceChanged);
+    return () => {
+      controller.abort();
+      dispose?.();
+      reduced.removeEventListener("change", preferenceChanged);
+    };
+  }, [name, backdrop]);
   return (
-    <svg viewBox="0 0 1200 260" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id={`${id}-glass`} x1="0" y1="0" x2=".2" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".8" />
-          <stop offset=".22" stopColor="#fff" stopOpacity=".08" />
-          <stop offset=".48" stopColor="#fff" stopOpacity=".23" />
-          <stop offset=".52" stopColor="#fff" stopOpacity=".85" />
-          <stop offset=".57" stopColor="#65717a" stopOpacity=".05" />
-          <stop offset="1" stopColor="#fff" stopOpacity=".38" />
-        </linearGradient>
-        <filter
-          id={`${id}-edge`}
-          x="-10%"
-          y="-30%"
-          width="120%"
-          height="160%"
-          colorInterpolationFilters="sRGB"
-        >
-          <feGaussianBlur in="SourceAlpha" stdDeviation="1.2" result="shape" />
-          <feSpecularLighting
-            in="shape"
-            surfaceScale="3"
-            specularConstant=".75"
-            specularExponent="24"
-            lightingColor="#ffffff"
-            result="highlight"
-          >
-            <fePointLight x="-200" y="-170" z="290" />
-          </feSpecularLighting>
-          <feComposite
-            in="highlight"
-            in2="SourceAlpha"
-            operator="in"
-            result="edge"
-          />
-          <feMerge>
-            <feMergeNode in="SourceGraphic" />
-            <feMergeNode in="edge" />
-          </feMerge>
-        </filter>
-      </defs>
-      <text
-        x="600"
-        y="200"
-        textAnchor="middle"
-        fontFamily="Arial, Helvetica, sans-serif"
-        fontSize="230"
-        fontWeight="300"
-        letterSpacing="-12"
-        textLength="1100"
-        lengthAdjust="spacingAndGlyphs"
-        fill={`url(#${id}-glass)`}
-        stroke="#ffffff"
-        strokeOpacity=".55"
-        strokeWidth=".7"
-        filter={`url(#${id}-edge)`}
-      >
-        {name}
-      </text>
-    </svg>
+    <>
+      <span className={s.titleLetters}>{name}</span>
+      <span ref={host} className={s.glassLetters} aria-hidden="true" />
+    </>
   );
 }
