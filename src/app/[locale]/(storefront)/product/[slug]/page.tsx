@@ -1,4 +1,6 @@
 import { FindInStore } from "@/components/product/FindInStore";
+import { redirect } from "@/i18n/navigation";
+import { isOriginales, originalesPath } from "@/features/originales/config";
 import { ProductView } from "@/components/analytics/ProductView";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -64,6 +66,8 @@ export default async function ProductPage(props: PageProps<"/[locale]/product/[s
   const tp = await getTranslations({ locale, namespace: "Product" });
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+
+  if (isOriginales(product)) redirect({ href: originalesPath(product), locale });
 
   const [collection,coupons,seo] = await Promise.all([
     getCollectionBySlug(product.categorySlugs[0]),getPublicCoupons(),getPageSeo("product",slug),

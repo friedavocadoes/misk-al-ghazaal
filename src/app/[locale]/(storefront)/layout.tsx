@@ -14,6 +14,7 @@ import { getNavigationBanners } from "@/lib/store";
 import { SiteHeader } from "@/components/blocks/SiteHeader";
 import { SiteFooter } from "@/components/blocks/SiteFooter";
 import { AdminEditBar } from "@/components/blocks/AdminEditBar";
+import { StorefrontChrome } from "@/features/originales/StorefrontChrome";
 
 export default async function StorefrontLayout(
   props: LayoutProps<"/[locale]">
@@ -34,12 +35,9 @@ export default async function StorefrontLayout(
             in-flow layout exactly, morph included. */}
         <StorefrontHaptics/><CartAbandonmentSurvey/><StorefrontToasts /><ReviewInvitation/>
         <RouteProgress />
-        <SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />
-        <div id="page-content">
-          {editable && <AdminEditBar />}
-          <main className="min-h-[60vh]">{props.children}</main>
-          <Suspense fallback={<div className="h-80 bg-sand/60" />}><SiteFooter locale={locale} /></Suspense>
-        </div>
+        <StorefrontChrome editor={editable ? <AdminEditBar /> : null} header={<SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />} footer={<Suspense fallback={<div className="h-80 bg-sand/60" />}><SiteFooter locale={locale} /></Suspense>}>
+          {props.children}
+        </StorefrontChrome>
       </WishlistProvider>
     </CartProvider>
   );
