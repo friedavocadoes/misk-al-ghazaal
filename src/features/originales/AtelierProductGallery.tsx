@@ -1,8 +1,9 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Check, LoaderCircle } from "lucide-react";
+import { Check, LoaderCircle, X } from "lucide-react";
+import { ProductLens } from "@/components/product/ProductLens";
 import { atelierGsap } from "./atelier-gsap";
 import s from "./atelier.module.css";
 
@@ -13,15 +14,53 @@ export function AtelierProductGallery({
   box,
   name,
   ar,
+  onFocusChange,
 }: {
   images: string[];
   bottle: string;
   box?: string;
   name: string;
   ar: boolean;
+  onFocusChange?: (active: boolean) => void;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
+  const focus = useCallback(
+    (active: boolean) => {
+      setFocused(active);
+      onFocusChange?.(active);
+    },
+    [onFocusChange],
+  );
+  const choose = (src: string | null) => {
+    focus(false);
+    setSelected(src);
+  };
+  useEffect(() => {
+    if (!focused) return;
+    document.body.dataset.originalesPhotoFocus = "true";
+    const leave = () => focus(false);
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") leave();
+    };
+    addEventListener("scroll", leave, { passive: true });
+    addEventListener("blur", leave);
+    addEventListener("keydown", key);
+    return () => {
+      delete document.body.dataset.originalesPhotoFocus;
+      removeEventListener("scroll", leave);
+      removeEventListener("blur", leave);
+      removeEventListener("keydown", key);
+    };
+  }, [focused, focus]);
+  useEffect(
+    () => () => {
+      onFocusChange?.(false);
+      delete document.body.dataset.originalesPhotoFocus;
+    },
+    [onFocusChange],
+  );
   const reduced = useReducedMotion();
   const photos = [...new Set(images)].filter((src) => src && src !== bottle);
   const current = selected && photos.includes(selected) ? selected : null;
@@ -68,14 +107,22 @@ export function AtelierProductGallery({
     <div
       data-product-gallery
       data-photo-active={!!current}
+      data-focused={focused}
       className={s.productGallery}
     >
+      <span className={s.photoFocusName} aria-hidden="true">
+        {name}
+      </span>
       <div className={s.photoAperture}>
         <AnimatePresence mode="sync">
           {current && (
             <motion.div
               key={current}
               className={s.photoPlane}
+              data-focus={focused}
+              onClick={() => {
+                if (matchMedia("(hover:none)").matches) focus(true);
+              }}
               initial={
                 reduced
                   ? false
@@ -113,19 +160,31 @@ export function AtelierProductGallery({
                   aria-label={ar ? "تحميل الصورة" : "Loading image"}
                 />
               )}
-              <Image
-                src={current}
-                alt={`${name} — ${ar ? "صورة المنتج" : "product photograph"}`}
-                fill
-                sizes="(max-width:759px) 88vw, 40vw"
-                className={s.databasePhoto}
-                onLoad={() => setLoaded(current)}
-                onError={() => setLoaded(current)}
-              />
+              <ProductLens onActive={focus}>
+                <Image
+                  src={current}
+                  alt={`${name} — ${ar ? "صورة المنتج" : "product photograph"}`}
+                  fill
+                  sizes="(max-width:759px) 88vw, 40vw"
+                  className={s.databasePhoto}
+                  onLoad={() => setLoaded(current)}
+                  onError={() => setLoaded(current)}
+                />
+              </ProductLens>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+      {focused && (
+        <button
+          type="button"
+          className={s.photoFocusExit}
+          aria-label={ar ? "إغلاق العرض المكبر" : "Exit image focus"}
+          onClick={() => focus(false)}
+        >
+          <X size={16} />
+        </button>
+      )}
       <div className={s.photoCounter} data-static-ink>
         <span>
           {String(current ? photos.indexOf(current) + 2 : 1).padStart(2, "0")} /{" "}
@@ -139,13 +198,14 @@ export function AtelierProductGallery({
         role="group"
         aria-label={ar ? "صور المنتج" : "Product images"}
         data-static-ink
+        inert={focused || undefined}
       >
         <span ref={marker} className={s.thumbIndicator} aria-hidden="true" />
         <button
           type="button"
           aria-pressed={!current}
           aria-label={ar ? "الزجاجة والعلبة" : "Bottle and presentation box"}
-          onClick={() => setSelected(null)}
+          onClick={() => choose(null)}
         >
           {box && (
             <Image
@@ -171,7 +231,7 @@ export function AtelierProductGallery({
             type="button"
             aria-pressed={current === src}
             aria-label={`${ar ? "صورة" : "View photograph"} ${index + 1}`}
-            onClick={() => setSelected(src)}
+            onClick={() => choose(src)}
           >
             <Image
               src={src}

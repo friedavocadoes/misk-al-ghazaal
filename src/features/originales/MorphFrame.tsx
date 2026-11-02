@@ -23,9 +23,20 @@ export function MorphFrame({
     >
       <defs>
         <linearGradient id={`metal-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#d8d8c4" stopOpacity=".12" />
-          <stop offset=".45" stopColor="#9ca6a0" stopOpacity=".025" />
-          <stop offset="1" stopColor="#d2bb80" stopOpacity=".09" />
+          <stop
+            stopColor={kind === "button" ? "#d8d8c4" : "#101813"}
+            stopOpacity={kind === "button" ? ".12" : ".90"}
+          />
+          <stop
+            offset=".45"
+            stopColor={kind === "button" ? "#9ca6a0" : "#101813"}
+            stopOpacity={kind === "button" ? ".025" : ".60"}
+          />
+          <stop
+            offset="1"
+            stopColor={kind === "button" ? "#d2bb80" : "#101813"}
+            stopOpacity={kind === "button" ? ".09" : ".72"}
+          />
         </linearGradient>
       </defs>
       <path

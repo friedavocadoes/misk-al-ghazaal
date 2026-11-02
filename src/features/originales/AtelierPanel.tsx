@@ -8,16 +8,19 @@ export function AtelierPanel({
   art = "fold",
   className = "",
   children,
+  finale = false,
 }: {
   id?: string;
   art?: "fold" | "orbit";
   className?: string;
   children: ReactNode;
+  finale?: boolean;
 }) {
   return (
     <section
       id={id}
       data-snap-panel
+      data-gallery-finale={finale || undefined}
       className={`${s.panel} ${className}`}
       data-panel-tone={art}
     >

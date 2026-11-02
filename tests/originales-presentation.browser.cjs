@@ -89,6 +89,37 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .getByRole("button", { name: "Add to bag", exact: true })
         .isVisible(),
     );
+    await page.locator("[data-gallery-finale]").evaluate((el) =>
+      scrollTo({
+        top: scrollY + el.getBoundingClientRect().top - 200,
+        behavior: "instant",
+      }),
+    );
+    await page.waitForTimeout(2300);
+    assert.equal(
+      await page.locator("[data-gallery-stage]").evaluate((el) => el.inert),
+      true,
+      "all perfumes leave for the full-width closing story",
+    );
+    assert.ok(
+      (await page
+        .locator("[data-gallery-stage]")
+        .evaluate((el) => Number(getComputedStyle(el).opacity))) < 0.05,
+    );
+    const closingWidth = await page
+      .locator("[data-gallery-finale] [class*=panelContent]")
+      .boundingBox();
+    assert.ok(
+      closingWidth.width > 1100,
+      "closing SVG surface expands across the gallery",
+    );
+    assert.equal(
+      await page
+        .locator("[data-gallery-finale] [class*=panelContent]")
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      "rgba(0, 0, 0, 0)",
+      "no rectangular backing leaks outside SVG corners",
+    );
     await page.goto(`${base}/originales/originales-lazvaro`, {
       waitUntil: "networkidle",
     });
@@ -142,7 +173,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       "thumbnail rail clears both bottle and box",
     );
     const initialSeal = await page
-      .locator("[data-purchase] [data-seal-path]")
+      .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
       .getAttribute("d");
     const pricePhotos = page.locator("[data-product-gallery] button");
     await pricePhotos.nth(1).click();
@@ -161,6 +192,48 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.locator("[role=dialog][data-state=open]").count(),
       0,
       "photographs stay in the same stage, no popup",
+    );
+    const initialAperture = await page
+      .locator("[class*=photoAperture]")
+      .boundingBox();
+    await page.mouse.move(
+      initialAperture.x + initialAperture.width / 2,
+      initialAperture.y + initialAperture.height / 2,
+    );
+    await page.waitForTimeout(950);
+    assert.equal(
+      await page
+        .locator("[data-originales-product]")
+        .getAttribute("data-photo-focus"),
+      "true",
+    );
+    const focusedAperture = await page
+      .locator("[class*=photoAperture]")
+      .boundingBox();
+    assert.ok(
+      focusedAperture.width > initialAperture.width * 1.1,
+      "image enlarges seamlessly while inspecting",
+    );
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      true,
+    );
+    assert.ok(
+      await page.locator(".product-lens-window").isVisible(),
+      "same magnifying lens as standard product page",
+    );
+    await page.keyboard.press("Escape");
+    await page.mouse.move(15, 15);
+    await page.waitForTimeout(700);
+    assert.equal(
+      await page
+        .locator("[data-originales-product]")
+        .getAttribute("data-photo-focus"),
+      "false",
+    );
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      false,
     );
     await pricePhotos.first().click();
     await page.waitForTimeout(600);
@@ -189,7 +262,9 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(cart[0].productSlug, "originales-lazvaro");
     assert.equal(await page.locator("button[data-added=true]").count(), 1);
     assert.notEqual(
-      await page.locator("[data-purchase] [data-seal-path]").getAttribute("d"),
+      await page
+        .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
+        .getAttribute("d"),
       initialSeal,
       "GSAP morphs the arrow into the actual confirmation check",
     );
@@ -233,10 +308,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.equal(
       await page
-        .locator('img[src*="sculpture-fold"],img[src*="sculpture-orbit"]')
+        .locator(
+          'img[src*="sculpture-fold"]:not([data-finale-material]),img[src*="sculpture-orbit"]:not([data-finale-material])',
+        )
         .count(),
       0,
-      "no alternating decorative PNGs",
+      "no repeating chapter PNGs outside the closing parallax",
     );
     const idleDraws = await page.evaluate(() => window.__originalesDraws);
     assert.ok(idleDraws > 0, "model is actually rendered");
@@ -416,7 +493,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

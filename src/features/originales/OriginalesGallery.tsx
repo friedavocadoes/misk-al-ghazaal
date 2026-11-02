@@ -17,6 +17,8 @@ import { AtelierBagButton } from "./AtelierControls";
 import { EditionEmblem } from "./EditionEmblem";
 import { SculptureScene } from "./SculptureScene";
 import { MorphFrame } from "./MorphFrame";
+import { FinaleDecor } from "./FinaleDecor";
+import { atelierGsap } from "./atelier-gsap";
 import { AtelierPanel } from "./AtelierPanel";
 import s from "./atelier.module.css";
 
@@ -80,8 +82,8 @@ export function OriginalesGallery({
   useEffect(() => {
     let live = true,
       dispose = () => {};
-    Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
-      .then(([{ default: gsap }, { ScrollTrigger }]) => {
+    Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
+      .then(([{ gsap }, { ScrollTrigger }]) => {
         if (!live || !root.current) return;
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
@@ -99,16 +101,42 @@ export function OriginalesGallery({
                 ...node.querySelectorAll<HTMLElement>("[data-gallery-bottle]"),
               ],
               captions = node.querySelectorAll("[data-bottle-caption]");
+            const chapters = [
+              ...node.querySelectorAll<HTMLElement>("[data-edition-chapter]"),
+            ];
+            const stage = node.querySelector<HTMLElement>(
+              "[data-gallery-stage]",
+            )!;
             const sync = () => {
+              const rects = chapters.map((chapter) =>
+                chapter.getBoundingClientRect(),
+              );
+              const clamp = gsap.utils.clamp(0, 1);
               figures.forEach((figure, index) => {
-                gsap.set(figure, {
-                  opacity:
-                    index === current.current
+                const rect = rects[index];
+                const entered =
+                  index === 0
+                    ? 1
+                    : clamp(
+                        (innerHeight * 0.85 - rect.top) / (innerHeight * 0.3),
+                      );
+                const left = clamp(
+                  (innerHeight * 0.85 - rect.bottom) / (innerHeight * 0.3),
+                );
+                const alpha =
+                  progress.current < 0.99
+                    ? index === current.current
                       ? 1
-                      : 1 - Math.min(1, progress.current * 2.5),
+                      : 1 - Math.min(1, progress.current * 2.5)
+                    : entered * (1 - left);
+                gsap.set(figure, {
+                  opacity: alpha,
+                  y:
+                    progress.current < 0.99 || !motion
+                      ? 0
+                      : (1 - entered - left) * innerHeight * 0.35,
                 });
-                figure.inert =
-                  progress.current > 0.6 && index !== current.current;
+                figure.inert = progress.current > 0.6 && alpha < 0.1;
               });
               gsap.set(captions, {
                 opacity: 1 - Math.min(1, progress.current * 2.5),
@@ -211,11 +239,91 @@ export function OriginalesGallery({
                   onEnterBack: () => choose(index),
                 }),
               );
+            ScrollTrigger.create({
+              trigger: node.querySelector("[data-gallery-sequence]"),
+              start: "top bottom",
+              end: "bottom top",
+              onUpdate: sync,
+            });
+            const finale = node.querySelector<HTMLElement>(
+              "[data-gallery-finale]",
+            )!;
+            const finaleContent = finale.querySelector<HTMLElement>(
+              "[class*=panelContent]",
+            )!;
+            if (motion) {
+              const finish = gsap.timeline({
+                scrollTrigger: {
+                  trigger: finale,
+                  start: "top bottom",
+                  end: "top 22%",
+                  scrub: 0.7,
+                  onUpdate: (self) => {
+                    stage.inert = self.progress > 0.5;
+                  },
+                },
+              });
+              finish
+                .to(
+                  node.querySelector("[class*=sculptureSticky]"),
+                  { autoAlpha: 0, y: -90, duration: 0.8 },
+                  0,
+                )
+                .to(
+                  stage,
+                  {
+                    y: () => -innerHeight * 0.8,
+                    opacity: 0,
+                    duration: 1,
+                    ease: "power2.inOut",
+                  },
+                  0,
+                )
+                .fromTo(
+                  finaleContent,
+                  {
+                    width: mobile ? "100%" : "46%",
+                    marginLeft: mobile ? "0%" : "54%",
+                  },
+                  {
+                    width: "100%",
+                    marginLeft: "0%",
+                    duration: 1,
+                    ease: "power3.inOut",
+                  },
+                  0,
+                )
+                .to(
+                  finaleContent.querySelectorAll(
+                    "[data-morph-frame],[data-frame-trace]",
+                  ),
+                  {
+                    morphSVG: "M4 2H996L998 4V596L996 598H4L2 596V4Z",
+                    duration: 1,
+                    ease: "power3.inOut",
+                  },
+                  0,
+                );
+            } else {
+              ScrollTrigger.create({
+                trigger: finale,
+                start: "top 70%",
+                onEnter: () => {
+                  gsap.set(stage, { autoAlpha: 0 });
+                  stage.inert = true;
+                },
+                onLeaveBack: () => {
+                  gsap.set(stage, { autoAlpha: 1 });
+                  stage.inert = false;
+                },
+              });
+            }
             node.dataset.galleryReady = "true";
             sync();
             ScrollTrigger.refresh();
             return () => {
               delete node.dataset.galleryReady;
+              stage.inert = false;
               figures.forEach((figure) => {
                 figure.inert = false;
               });
@@ -282,8 +390,12 @@ export function OriginalesGallery({
           <ArrowDown size={15} />
         </a>
       </header>
-      <section data-gallery-sequence className={s.gallerySequence}>
-        <div className={s.galleryStage}>
+      <section
+        data-gallery-sequence
+        data-object-sequence
+        className={s.gallerySequence}
+      >
+        <div data-gallery-stage className={s.galleryStage}>
           <div className={s.stageHalo} />
           {products.map((product, index) => {
             const edition = editionFor(product);
@@ -325,11 +437,7 @@ export function OriginalesGallery({
             </div>
           )}
         </div>
-        <div
-          id="the-editions"
-          data-object-sequence
-          className={s.sequenceStories}
-        >
+        <div id="the-editions" className={s.sequenceStories}>
           <SculptureScene />
           {products.map((product) => {
             const edition = editionFor(product),
@@ -378,15 +486,16 @@ export function OriginalesGallery({
               </section>
             );
           })}
-          <AtelierPanel art="orbit">
-            <div className={s.panelCopy}>
-              <p className={s.kicker}>THE ORIGINALES PHILOSOPHY</p>
-              <h2>{story.lead}</h2>
-              <p>{story.body}</p>
-              <p>{story.close}</p>
-            </div>
-          </AtelierPanel>
         </div>
+        <AtelierPanel art="orbit" finale className={s.galleryFinale}>
+          <div className={s.panelCopy}>
+            <p className={s.kicker}>THE ORIGINALES PHILOSOPHY</p>
+            <h2>{story.lead}</h2>
+            <p>{story.body}</p>
+            <p>{story.close}</p>
+          </div>
+          <FinaleDecor />
+        </AtelierPanel>
       </section>
       {!products.length && (
         <p className={s.empty}>

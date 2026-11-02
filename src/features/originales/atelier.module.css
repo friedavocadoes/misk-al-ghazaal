@@ -2929,3 +2929,249 @@
     letter-spacing: 0.08em;
   }
 }
+/* V7: colour is painted by the SVG shape itself; no rectangular corner backing. */
+.productChapters .panelContent,
+.editionCard,
+.sequenceStories > .panel .panelContent,
+.galleryFinale .panelContent {
+  background: none !important;
+  backdrop-filter: none !important;
+  border: 0;
+  box-shadow: none;
+}
+.photoAperture {
+  top: 28%;
+  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.photoCounter {
+  top: 76%;
+}
+.photoRail {
+  top: 80%;
+}
+.purchaseActions {
+  gap: 12px;
+}
+.purchaseActions > .bagMorphTrack {
+  min-width: 0;
+}
+.heroLiquid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  transition: opacity 0.7s;
+}
+.stickyProduct[data-price-ready="true"] .heroLiquid {
+  opacity: 0;
+}
+.photoAperture:has(.product-lens) {
+  pointer-events: auto;
+}
+.photoPlane :global(.product-lens-hint) {
+  display: none;
+}
+.photoFocusExit {
+  position: absolute;
+  top: 27%;
+  left: 48%;
+  z-index: 15;
+  pointer-events: auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d0d5bd50;
+  background: #121b15de;
+  color: #eee9d9;
+}
+.stickyProduct[data-photo-focus="true"] .photoAperture {
+  scale: 1.18;
+  z-index: 11;
+}
+.stickyProduct .photoRail,
+.stickyProduct .photoCounter,
+.purchase :is(.kicker, .signaturePrice, .quantity, .purchaseActions),
+.sceneCaption,
+.productChapters {
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.55s;
+}
+.stickyProduct[data-photo-focus="true"]
+  :is(
+    .photoRail,
+    .photoCounter,
+    .sceneCaption,
+    .signaturePrice,
+    .quantity,
+    .purchaseActions,
+    .purchase .kicker,
+    .couponLogin
+  ) {
+  opacity: 0;
+  filter: blur(5px);
+  pointer-events: none;
+}
+.stickyProduct[data-photo-focus="true"] .productChapters {
+  opacity: 0.08;
+  filter: blur(8px);
+  pointer-events: none;
+}
+.world:has([data-photo-focus="true"]) :is(.header, .rail) {
+  opacity: 0.08;
+  filter: blur(5px);
+  pointer-events: none;
+}
+.header,
+.rail {
+  transition:
+    opacity 0.55s,
+    filter 0.55s;
+}
+.photoPlane[data-focus="false"] :global(.product-lens-window) {
+  opacity: 0;
+}
+.galleryFinale {
+  min-height: 100svh;
+  padding: 13svh 5% 18svh;
+  position: relative;
+  z-index: 9;
+  background: none !important;
+  border: 0;
+}
+.galleryFinale .panelContent {
+  min-height: 65svh;
+  padding: 100px 6%;
+  display: flex;
+  align-items: center;
+}
+.galleryFinale .panelCopy {
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
+  text-align: center;
+}
+.galleryFinale .panel h2,
+.galleryFinale h2 {
+  font-size: clamp(40px, 5.2vw, 78px);
+  letter-spacing: -0.055em;
+  line-height: 1.03;
+}
+.galleryFinale .panelCopy > p:not(.kicker) {
+  max-width: 640px;
+  margin: 28px auto 0;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.panelContent > .finaleDecor {
+  position: absolute;
+  right: -7%;
+  top: -180px;
+  width: min(29vw, 370px);
+  height: 370px;
+  pointer-events: none;
+  z-index: 3;
+}
+.finaleDecor > img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 20px #0005);
+}
+.finaleDecor > svg {
+  position: absolute;
+  width: 58%;
+  height: 58%;
+  left: -35%;
+  bottom: -25%;
+  color: #c9cab1;
+  opacity: 0.5;
+}
+.reviewsPanel {
+  padding-top: 22svh !important;
+}
+.reviewsPanel .panelContent {
+  padding-top: 60px;
+}
+.galleryFinale .panelCopy,
+.reviewsPanel .sharedContent {
+  z-index: 4;
+}
+@media (max-width: 759px) {
+  .stickyProduct .photoAperture {
+    top: 104px;
+  }
+  .stickyProduct .photoRail {
+    top: auto;
+  }
+  .stickyProduct .photoCounter {
+    top: auto;
+  }
+  .stickyProduct[data-photo-focus="true"] .photoAperture {
+    scale: 1.1;
+  }
+  .photoFocusExit {
+    top: 100px;
+    right: 15px;
+    left: auto;
+  }
+  .heroLiquid {
+    height: var(--mobile-stage-height);
+    opacity: 0.4;
+  }
+  .galleryFinale {
+    padding: 110px 20px 90px;
+  }
+  .galleryFinale .panelContent {
+    min-height: 70svh;
+    padding: 65px 26px;
+  }
+  .galleryFinale h2 {
+    font-size: 38px;
+  }
+  .panelContent > .finaleDecor {
+    width: 185px;
+    height: 185px;
+    top: -105px;
+    right: -10px;
+  }
+  .reviewsPanel {
+    padding-top: 150px !important;
+  }
+}
+.photoFocusName {
+  position: absolute;
+  left: 58%;
+  top: 35%;
+  font-size: clamp(30px, 3vw, 43px);
+  letter-spacing: 0.085em;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.5s;
+  color: #eeeae0;
+  pointer-events: none;
+}
+.productGallery[data-focused="true"] .photoFocusName {
+  opacity: 1;
+}
+.stickyProduct[data-photo-focus="true"] :is(.frostedTitle, .compactIdentity) {
+  opacity: 0 !important;
+}
+@media (max-width: 759px) {
+  .photoFocusName {
+    left: 20px;
+    top: calc(var(--mobile-stage-height) + 52px);
+    font-size: 30px;
+  }
+}
+@media (min-width: 760px) {
+  .galleryFinale .panelContent {
+    min-height: max(880px, 80svh);
+  }
+}

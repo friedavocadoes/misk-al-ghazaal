@@ -65,20 +65,21 @@ export function useAtelierMotion(
                     const frame = surface.querySelector("[data-morph-frame]");
                     const trace = surface.querySelector("[data-frame-trace]");
                     const section = surface.closest("[data-snap-panel]")!;
-                    gsap.fromTo(
-                      frame,
-                      { morphSVG: OPEN_FRAME },
-                      {
-                        morphSVG: FRAME_PATH,
-                        ease: "power3.inOut",
-                        scrollTrigger: {
-                          trigger: section,
-                          start: "top 95%",
-                          end: "top 30%",
-                          scrub: 0.45,
+                    if (!section.hasAttribute("data-gallery-finale"))
+                      gsap.fromTo(
+                        frame,
+                        { morphSVG: OPEN_FRAME },
+                        {
+                          morphSVG: FRAME_PATH,
+                          ease: "power3.inOut",
+                          scrollTrigger: {
+                            trigger: section,
+                            start: "top 95%",
+                            end: "top 30%",
+                            scrub: 0.45,
+                          },
                         },
-                      },
-                    );
+                      );
                     gsap.fromTo(
                       trace,
                       { drawSVG: "0% 0%" },
@@ -132,6 +133,7 @@ export function useAtelierMotion(
               snap: {
                 snapTo: (value) => {
                   if (
+                    document.body.hasAttribute("data-originales-photo-focus") ||
                     document.querySelector(
                       '[role="dialog"][data-state="open"],[data-radix-popper-content-wrapper]',
                     ) ||

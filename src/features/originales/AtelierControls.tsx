@@ -110,25 +110,37 @@ export function AtelierBagButton({
   onClick,
   ar = false,
   quantity = 1,
+  action = "bag",
+  pending = false,
 }: {
   added: boolean;
   disabled: boolean;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   ar?: boolean;
   quantity?: number;
+  action?: "bag" | "purchase";
+  pending?: boolean;
 }) {
   const reduced = useReducedMotion(),
-    label = disabled
+    label = pending
       ? ar
-        ? "نفد المخزون"
-        : "Out of stock"
-      : added
+        ? "جارٍ المتابعة…"
+        : "Continuing…"
+      : action === "purchase" && !disabled
         ? ar
-          ? "أضيف إلى الحقيبة"
-          : "Added to your bag"
-        : ar
-          ? "أضف إلى الحقيبة"
-          : "Add to bag";
+          ? "اشتر الآن"
+          : "Purchase now"
+        : disabled
+          ? ar
+            ? "نفد المخزون"
+            : "Out of stock"
+          : added
+            ? ar
+              ? "أضيف إلى الحقيبة"
+              : "Added to your bag"
+            : ar
+              ? "أضف إلى الحقيبة"
+              : "Add to bag";
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let live = true,
@@ -142,7 +154,9 @@ export function AtelierBagButton({
         gsap.to(icon, {
           morphSVG: added
             ? "M5 17 L13 25 L28 8"
-            : "M7 25 L25 7 L7 7 M25 7 L25 25",
+            : action === "purchase"
+              ? "M8 3H24V29L20 26L16 29L12 26L8 29Z M12 10H20 M12 15H20 M12 20H17"
+              : "M8 10H24V27H8Z M12 10V7C12 2 20 2 20 7V10",
           duration: reduced ? 0 : 0.55,
           ease: "power3.inOut",
         });
@@ -189,13 +203,14 @@ export function AtelierBagButton({
       live = false;
       stop();
     };
-  }, [added, reduced]);
+  }, [added, reduced, action]);
   return (
     <div className={s.bagMorphTrack}>
       <motion.button
         ref={button}
         layout={!reduced}
         data-added={added}
+        data-purchase-action={action}
         data-ios-haptic="on"
         type="button"
         disabled={disabled}
@@ -232,9 +247,13 @@ export function AtelierBagButton({
               <small>
                 {added
                   ? `${String(quantity).padStart(2, "0")} · ORIGINALES`
-                  : ar
-                    ? "تعبيرك الخاص"
-                    : "MAKE IT PART OF YOU"}
+                  : action === "purchase"
+                    ? ar
+                      ? "إتمام الطلب"
+                      : "CONTINUE TO CHECKOUT"
+                    : ar
+                      ? "تعبيرك الخاص"
+                      : "MAKE IT PART OF YOU"}
               </small>
               <strong>{label}</strong>
             </motion.span>
@@ -258,7 +277,14 @@ export function AtelierBagButton({
               stroke="currentColor"
               strokeWidth="1.2"
             >
-              <path data-seal-path d="M7 25 L25 7 L7 7 M25 7 L25 25" />
+              <path
+                data-seal-path
+                d={
+                  action === "purchase"
+                    ? "M8 3H24V29L20 26L16 29L12 26L8 29Z M12 10H20 M12 15H20 M12 20H17"
+                    : "M8 10H24V27H8Z M12 10V7C12 2 20 2 20 7V10"
+                }
+              />
             </svg>
           </motion.span>
         </motion.span>
