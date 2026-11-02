@@ -44,20 +44,23 @@ export function AtelierPanel({
       }}
     >
       <div className={s.panelGrain} aria-hidden="true" />
+      <div className={s.panelCurrent} aria-hidden="true" />
       <div
         ref={sculpture}
         className={`${s.sculptureMagnet} ${art === "orbit" ? s.orbitArt : ""}`}
         aria-hidden="true"
       >
-        <Image
-          data-parallax
-          src={`/originales/sculpture-${art}.webp`}
-          alt=""
-          width={1000}
-          height={1000}
-          sizes="(max-width:759px) 80vw, 48vw"
-          className={s.sculpture}
-        />
+        <div data-art-pass className={s.sculpturePass}>
+          <Image
+            data-parallax
+            src={`/originales/sculpture-${art}.webp`}
+            alt=""
+            width={1000}
+            height={1000}
+            sizes="(max-width:759px) 80vw, 48vw"
+            className={s.sculpture}
+          />
+        </div>
       </div>
       <div className={s.panelContent}>{children}</div>
     </section>

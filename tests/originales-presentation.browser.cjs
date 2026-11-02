@@ -88,7 +88,11 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       "liquid renderer and floating notes are gone",
     );
     assert.equal(
-      await page.locator("[data-scene] img").count(),
+      await page
+        .locator(
+          "[data-scene] > [data-bottle] img,[data-scene] > [data-box] img,[data-scene] > div[class*=heroBackdrop] img",
+        )
+        .count(),
       3,
       "backdrop, bottle and box only",
     );
@@ -135,6 +139,68 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
           el.parentElement.getBoundingClientRect().width,
       );
     assert.ok(width < 0.9, "success morph shrinks the button");
+    await page.evaluate(() => {
+      window.__originalesPurchase = document.querySelector("[data-purchase]");
+      window.__originalesBottle = document.querySelector("[data-bottle]");
+      scrollTo({ top: innerHeight * 1.8, behavior: "instant" });
+    });
+    await page.waitForTimeout(1800);
+    assert.equal(await page.locator("[data-docked=true]").count(), 1);
+    assert.equal(
+      await page
+        .locator("[data-purchase]")
+        .evaluate((el) => el === window.__originalesPurchase),
+      true,
+      "same live purchase controls dock under bottle",
+    );
+    assert.equal(
+      await page
+        .locator("[data-bottle]")
+        .evaluate((el) => el === window.__originalesBottle),
+      true,
+    );
+    const fixedPurchase = await page.locator("[data-purchase]").boundingBox();
+    assert.ok(
+      fixedPurchase.x < 720 && fixedPurchase.y + fixedPurchase.height < 1000,
+      "sticky controls stay below the product and inside viewport",
+    );
+    const galleryPhotos = page.locator("[data-product-gallery] button");
+    assert.ok(
+      (await galleryPhotos.count()) > 1,
+      "real uploaded database images are available",
+    );
+    await galleryPhotos.nth(1).click();
+    await page.waitForTimeout(1100);
+    assert.equal(
+      await page
+        .locator("[data-product-gallery][data-photo-active=true]")
+        .count(),
+      1,
+    );
+    assert.ok(
+      await page
+        .getByAltText(/product photograph/)
+        .evaluate((el) => el.complete && el.naturalWidth > 0),
+      "selected uploaded photo decodes",
+    );
+    await galleryPhotos.first().click();
+    await page.waitForTimeout(950);
+    assert.equal(
+      await page
+        .locator("[data-product-gallery][data-photo-active=false]")
+        .count(),
+      1,
+    );
+    await galleryPhotos.nth(1).click();
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(1800);
+    assert.equal(
+      await page
+        .locator("[data-bottle]")
+        .evaluate((el) => Number(getComputedStyle(el).opacity)),
+      1,
+      "scrolling back restores original presentation even with a photo selected",
+    );
     await page.locator("#fragrance-notes").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1300);
     assert.equal(
@@ -164,6 +230,26 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth),
       390,
+    );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 2.1, behavior: "instant" }),
+    );
+    await page.waitForTimeout(1800);
+    assert.equal(await page.locator("[data-docked=true]").count(), 1);
+    const mobileDock = await page.locator("[data-purchase]").boundingBox();
+    assert.ok(
+      mobileDock.x >= 0 &&
+        mobileDock.y > 300 &&
+        mobileDock.y + mobileDock.height < 667,
+      "mobile purchase dock fits without covering upper gallery",
+    );
+    const mobileRail = await page
+      .locator("[data-product-gallery] [role=group]")
+      .boundingBox();
+    assert.ok(
+      mobileRail.x >= 0 &&
+        mobileRail.x + mobileRail.width <= 390 &&
+        mobileRail.y > 70,
     );
     await page.goto(`${base}/originales`, { waitUntil: "networkidle" });
     await page.waitForTimeout(1500);
@@ -212,7 +298,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, touch notes/no plus, short mobile, reduced motion and main-store restoration.",
+      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, persistent purchase/gallery and database photos, reverse-scroll restoration, touch notes/no plus, short mobile, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

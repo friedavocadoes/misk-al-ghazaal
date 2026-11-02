@@ -30,7 +30,9 @@ export function useAtelierMotion(
                     if (
                       seen.has(el) ||
                       !el.textContent?.trim() ||
-              el.closest("svg,[data-static-ink], [aria-hidden=true],[role=alert],.coupon-shake") ||
+                      el.closest(
+                        "svg,[data-static-ink], [aria-hidden=true],[role=alert],.coupon-shake",
+                      ) ||
                       (el.tagName === "SPAN" && el.childElementCount)
                     )
                       return;
@@ -55,6 +57,91 @@ export function useAtelierMotion(
                   .forEach((el) => {
                     if (art.has(el)) return;
                     art.add(el);
+                    const chapter = el.closest<HTMLElement>(
+                      "[data-product-chapters] [data-snap-panel]",
+                    );
+                    if (chapter) {
+                      const sculpture = el.closest<HTMLElement>(
+                        "[class*='sculptureMagnet']",
+                      )!;
+                      const depth = el.closest<HTMLElement>("[data-art-pass]")!;
+                      // Pass in front of the lettering on arrival, settle behind it at the reading frame,
+                      // then lift through the foreground on departure. Only decorative pixels move.
+                      const pass = gsap.timeline({
+                        scrollTrigger: {
+                          trigger: chapter,
+                          start: "top bottom",
+                          end: "bottom top",
+                          scrub: 1,
+                        },
+                      });
+                      pass
+                        .set(sculpture, { zIndex: 3 }, 0)
+                        .set(sculpture, { zIndex: 0 }, 0.4)
+                        .set(sculpture, { zIndex: 3 }, 0.72)
+                        .fromTo(
+                          depth,
+                          {
+                            xPercent: -35,
+                            yPercent: 18,
+                            rotateY: -22,
+                            rotateZ: -8,
+                            scale: 1.22,
+                            opacity: 0.95,
+                          },
+                          {
+                            xPercent: 32,
+                            yPercent: -8,
+                            rotateY: 12,
+                            rotateZ: 4,
+                            scale: 0.72,
+                            opacity: 0.38,
+                            duration: 0.44,
+                            ease: "power2.inOut",
+                          },
+                          0,
+                        )
+                        .to(
+                          depth,
+                          {
+                            xPercent: 36,
+                            yPercent: -10,
+                            duration: 0.23,
+                            ease: "none",
+                          },
+                          0.44,
+                        )
+                        .to(
+                          depth,
+                          {
+                            xPercent: -32,
+                            yPercent: -28,
+                            rotateY: 28,
+                            rotateZ: 12,
+                            scale: 1.18,
+                            opacity: 0.85,
+                            duration: 0.33,
+                            ease: "power2.inOut",
+                          },
+                          0.67,
+                        );
+                      const current = chapter.querySelector(
+                        "[class*='panelCurrent']",
+                      );
+                      if (current)
+                        pass.fromTo(
+                          current,
+                          { xPercent: -15, rotate: -15 },
+                          {
+                            xPercent: 15,
+                            rotate: 15,
+                            duration: 1,
+                            ease: "none",
+                          },
+                          0,
+                        );
+                      return;
+                    }
                     gsap.fromTo(
                       el,
                       { yPercent: 9 },

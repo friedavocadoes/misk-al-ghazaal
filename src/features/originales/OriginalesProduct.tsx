@@ -24,6 +24,7 @@ import { PdpOffers } from "@/components/blocks/PdpOffers";
 import { SamplePicker } from "@/components/blocks/SamplePicker";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
+import { AtelierProductGallery } from "./AtelierProductGallery";
 import { AtelierPanel } from "./AtelierPanel";
 import { AtelierBagButton, AtelierQuantity } from "./AtelierControls";
 import s from "./atelier.module.css";
@@ -143,7 +144,7 @@ export function OriginalesProduct({
               scrollTrigger: {
                 trigger: node.querySelector("[data-runway]"),
                 start: "top top",
-                end: "bottom bottom",
+                end: () => "+=" + innerHeight * 1.46,
                 scrub: 1,
                 invalidateOnRefresh: true,
               },
@@ -209,9 +210,99 @@ export function OriginalesProduct({
               0.63,
             );
             buy.inert = true;
+            // Dock the same live controls beneath the same persistent bottle/box nodes.
+            const compact = gsap.timeline({
+              onUpdate: () => {
+                const docked = compact.progress() > 0.55;
+                node.dataset.docked = docked ? "true" : "false";
+                const details = node.querySelector<HTMLElement>(
+                  "[data-purchase-details]",
+                );
+                if (details) details.inert = docked;
+              },
+            });
+            compact.to(
+              buy,
+              mobile
+                ? { bottom: 12, duration: 1 }
+                : {
+                    left: "6%",
+                    right: "auto",
+                    width: "39%",
+                    top: "70%",
+                    maxWidth: "none",
+                    duration: 1,
+                  },
+              0,
+            );
+            compact.to(
+              node.querySelector("[data-purchase-details]"),
+              {
+                height: 0,
+                opacity: 0,
+                margin: 0,
+                duration: 0.65,
+              },
+              0,
+            );
+            compact.to(title, { opacity: 0, duration: 0.35 }, 0);
+            compact.to(
+              node.querySelector("[data-bottle]"),
+              mobile
+                ? {
+                    y: () => -scene.clientHeight * 0.17,
+                    scale: 0.26,
+                    duration: 1,
+                  }
+                : {
+                    y: () => -scene.clientHeight * 0.13,
+                    scale: 0.62,
+                    duration: 1,
+                  },
+              0,
+            );
+            compact.to(
+              node.querySelector("[data-box]"),
+              mobile
+                ? {
+                    y: () => -scene.clientHeight * 0.17,
+                    scale: 0.26,
+                    duration: 1,
+                  }
+                : {
+                    y: () => -scene.clientHeight * 0.15,
+                    scale: 0.62,
+                    duration: 1,
+                  },
+              0,
+            );
+            compact.fromTo(
+              node.querySelector("[data-product-gallery]"),
+              {
+                autoAlpha: 0,
+                x: mobile ? 0 : 70,
+                filter: "blur(16px)",
+                clipPath: "inset(10% 0 10% 80% round 40%)",
+              },
+              {
+                autoAlpha: 1,
+                x: 0,
+                filter: "blur(0px)",
+                clipPath: "inset(0% 0% 0% 0% round 2px)",
+                duration: 1,
+              },
+              0.2,
+            );
+            compact.timeScale(2.3);
+            tl.add(compact, 1.06);
             ScrollTrigger.refresh();
             return () => {
               buy.inert = false;
+              const details = node.querySelector<HTMLElement>(
+                "[data-purchase-details]",
+              );
+              if (details) details.inert = false;
+              delete node.dataset.docked;
             };
           },
           root.current,
@@ -262,7 +353,7 @@ export function OriginalesProduct({
   return (
     <div
       ref={root}
-      className={s.product}
+      className={`${s.product} ${s.stickyProduct}`}
       style={
         {
           "--edition-accent": edition.accent,
@@ -274,7 +365,7 @@ export function OriginalesProduct({
         <span>O</span>
         <small>MAG PARFUM / ORIGINALES</small>
       </div>
-      <section data-runway className={s.runway}>
+      <section data-runway className={`${s.runway} ${s.fullExperience}`}>
         <section
           ref={stage}
           data-scene
@@ -333,7 +424,7 @@ export function OriginalesProduct({
                 ?.getBoundingClientRect();
               if (r)
                 scrollTo({
-                  top: scrollY + r.bottom - innerHeight,
+                  top: scrollY + r.top + innerHeight * 0.9,
                   behavior: matchMedia("(prefers-reduced-motion:reduce)")
                     .matches
                     ? "instant"
@@ -344,47 +435,65 @@ export function OriginalesProduct({
             {ar ? "اكتشف العطر" : "Scroll to discover"}
             <ArrowDown size={15} />
           </a>
+          <AtelierProductGallery
+            key={variant?.id ?? product.id}
+            images={variant?.images?.length ? variant.images : product.images}
+            bottle={bottle}
+            box={edition.box ?? undefined}
+            name={edition.name}
+            ar={ar}
+          />
           <div id="originales-purchase" data-purchase className={s.purchase}>
-            <p className={s.kicker}>MAG PARFUM · ORIGINALES {edition.number}</p>
-            <div data-title-dock className={s.titleDock} aria-hidden="true" />
-            <div className={s.signaturePrice}>
-              <span>{ar ? "تعبير أصيل" : "YOUR ORIGINAL EXPRESSION"}</span>
-              <p>{formatAED(price)}</p>
+            <div className={s.compactIdentity}>
+              <span>{variant?.nameOverride ?? edition.name}</span>
+              <span>{formatAED(price)}</span>
             </div>
-            <VariantPicker
-              product={product}
-              variant={variant}
-              onSelect={selectVariant}
-              ar={ar}
-            />
+            <div data-purchase-details className={s.purchaseDetails}>
+              <p className={s.kicker}>
+                MAG PARFUM · ORIGINALES {edition.number}
+              </p>
+              <div data-title-dock className={s.titleDock} aria-hidden="true" />
+              <div className={s.signaturePrice}>
+                <span>{ar ? "تعبير أصيل" : "YOUR ORIGINAL EXPRESSION"}</span>
+                <p>{formatAED(price)}</p>
+              </div>
+              <VariantPicker
+                product={product}
+                variant={variant}
+                onSelect={selectVariant}
+                ar={ar}
+              />
+            </div>
             <AtelierQuantity
               value={safeQty}
               max={Math.min(20, stock)}
               onChange={setQty}
               ar={ar}
             />
-            <AtelierBagButton
-              added={added}
-              disabled={stock <= 0}
-              onClick={(e) => void purchase(e)}
-              ar={ar}
-              quantity={safeQty}
-            />
-            <button
-              data-ios-haptic="on"
-              className={s.buyButton}
-              disabled={stock <= 0 || buyPending}
-              onClick={(e) => void purchase(e, true)}
-            >
-              {buyPending
-                ? ar
-                  ? "جارٍ المتابعة…"
-                  : "Continuing…"
-                : ar
-                  ? "اشتر الآن"
-                  : "Purchase now"}
-              <ArrowUpRight size={16} />
-            </button>
+            <div className={s.purchaseActions}>
+              <AtelierBagButton
+                added={added}
+                disabled={stock <= 0}
+                onClick={(e) => void purchase(e)}
+                ar={ar}
+                quantity={safeQty}
+              />
+              <button
+                data-ios-haptic="on"
+                className={s.buyButton}
+                disabled={stock <= 0 || buyPending}
+                onClick={(e) => void purchase(e, true)}
+              >
+                {buyPending
+                  ? ar
+                    ? "جارٍ المتابعة…"
+                    : "Continuing…"
+                  : ar
+                    ? "اشتر الآن"
+                    : "Purchase now"}
+                <ArrowUpRight size={16} />
+              </button>
+            </div>
             {couponLogin && (
               <div className={s.couponLogin} role="status">
                 <p>
@@ -409,102 +518,118 @@ export function OriginalesProduct({
             )}
           </div>
         </section>
-      </section>
-      <AtelierPanel id="originales-story" art="fold">
-        <div className={s.panelCopy}>
-          <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
-          <h2>{narrative?.heading ?? edition.name}</h2>
-          {narrative && <p>{narrative.body}</p>}
-          {product.shortDesc && (
-            <p>{tx(product.shortDesc, product.shortDescAr, locale)}</p>
+        <div className={s.introDistance} aria-hidden="true" />
+        <div data-product-chapters className={s.productChapters}>
+          <AtelierPanel id="originales-story" art="fold">
+            <div className={s.panelCopy}>
+              <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
+              <h2>{narrative?.heading ?? edition.name}</h2>
+              {narrative && <p>{narrative.body}</p>}
+              {product.shortDesc && (
+                <p>{tx(product.shortDesc, product.shortDescAr, locale)}</p>
+              )}
+              <a
+                href={
+                  product.notes.length ? "#fragrance-notes" : "#the-discovery"
+                }
+                className={s.textLink}
+              >
+                {ar ? "اكتشف التفاصيل" : "A closer encounter"}
+                <ArrowDown size={14} />
+              </a>
+            </div>
+          </AtelierPanel>
+          {product.notes.length > 0 && (
+            <AtelierPanel
+              id="fragrance-notes"
+              art="orbit"
+              className={s.compositionPanel}
+            >
+              <div className={s.compositionHeading}>
+                <p className={s.kicker}>
+                  {ar ? "التوليفة" : "THE COMPOSITION"}
+                </p>
+                <h2>
+                  {ar ? "كل نوتة، لها حضور." : "A composition in three acts."}
+                </h2>
+              </div>
+              <div className={s.noteColumns}>
+                {(["top", "heart", "base"] as const).map((kind, index) => {
+                  const notes = product.notes.filter((n) => n.kind === kind);
+                  return notes.length ? (
+                    <section key={kind}>
+                      <header>
+                        <small>0{index + 1}</small>
+                        <h3>
+                          {ar
+                            ? { top: "البداية", heart: "القلب", base: "الأثر" }[
+                                kind
+                              ]
+                            : {
+                                top: "The opening",
+                                heart: "The heart",
+                                base: "The impression",
+                              }[kind]}
+                        </h3>
+                      </header>
+                      <div className={s.noteTiles}>
+                        {notes.map((note) => (
+                          <NoteTooltip
+                            key={note.id}
+                            note={note}
+                            locale={locale}
+                            className={s.noteTile}
+                          >
+                            <NoteGlyph
+                              glyph={note.glyph}
+                              className={s.noteGlyph}
+                            />
+                            <span>{tx(note.name, note.nameAr, locale)}</span>
+                          </NoteTooltip>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null;
+                })}
+              </div>
+            </AtelierPanel>
           )}
-          <a
-            href={product.notes.length ? "#fragrance-notes" : "#the-discovery"}
-            className={s.textLink}
+          <AtelierPanel
+            id="the-discovery"
+            art="orbit"
+            className={s.discoveryPanel}
           >
-            {ar ? "اكتشف التفاصيل" : "A closer encounter"}
-            <ArrowDown size={14} />
-          </a>
+            <div className={s.panelCopy}>
+              <p className={s.kicker}>THE DISCOVERY / ORIGINALES</p>
+              <h2>
+                {ar
+                  ? "مساحة لاكتشاف آخر."
+                  : "There is always more to discover."}
+              </h2>
+              <SamplePicker subtotal={price * safeQty} product />
+            </div>
+          </AtelierPanel>
+          <AtelierPanel art="fold" className={s.offersPanel}>
+            <div className={s.panelCopy}>
+              <p className={s.kicker}>PRIVATE PRIVILEGES</p>
+              <h2>{ar ? "تفصيل خاص بك." : "A considered extra."}</h2>
+              <PdpOffers
+                coupons={coupons}
+                slug={product.slug}
+                price={price * safeQty}
+                quantity={safeQty}
+                locale={locale}
+              />
+            </div>
+          </AtelierPanel>
+          <AtelierPanel art="orbit" className={s.storePanel}>
+            <div className={s.sharedContent}>{stores}</div>
+          </AtelierPanel>
+          <AtelierPanel art="fold" className={s.reviewsPanel}>
+            <div className={s.sharedContent}>{reviews}</div>
+          </AtelierPanel>
         </div>
-      </AtelierPanel>
-      {product.notes.length > 0 && (
-        <AtelierPanel
-          id="fragrance-notes"
-          art="orbit"
-          className={s.compositionPanel}
-        >
-          <div className={s.compositionHeading}>
-            <p className={s.kicker}>{ar ? "التوليفة" : "THE COMPOSITION"}</p>
-            <h2>
-              {ar ? "كل نوتة، لها حضور." : "A composition in three acts."}
-            </h2>
-          </div>
-          <div className={s.noteColumns}>
-            {(["top", "heart", "base"] as const).map((kind, index) => {
-              const notes = product.notes.filter((n) => n.kind === kind);
-              return notes.length ? (
-                <section key={kind}>
-                  <header>
-                    <small>0{index + 1}</small>
-                    <h3>
-                      {ar
-                        ? { top: "البداية", heart: "القلب", base: "الأثر" }[
-                            kind
-                          ]
-                        : {
-                            top: "The opening",
-                            heart: "The heart",
-                            base: "The impression",
-                          }[kind]}
-                    </h3>
-                  </header>
-                  <div className={s.noteTiles}>
-                    {notes.map((note) => (
-                      <NoteTooltip
-                        key={note.id}
-                        note={note}
-                        locale={locale}
-                        className={s.noteTile}
-                      >
-                        <NoteGlyph glyph={note.glyph} className={s.noteGlyph} />
-                        <span>{tx(note.name, note.nameAr, locale)}</span>
-                      </NoteTooltip>
-                    ))}
-                  </div>
-                </section>
-              ) : null;
-            })}
-          </div>
-        </AtelierPanel>
-      )}
-      <AtelierPanel id="the-discovery" art="orbit" className={s.discoveryPanel}>
-        <div className={s.panelCopy}>
-          <p className={s.kicker}>THE DISCOVERY / ORIGINALES</p>
-          <h2>
-            {ar ? "مساحة لاكتشاف آخر." : "There is always more to discover."}
-          </h2>
-          <SamplePicker subtotal={price * safeQty} product />
-        </div>
-      </AtelierPanel>
-      <AtelierPanel art="fold" className={s.offersPanel}>
-        <div className={s.panelCopy}>
-          <p className={s.kicker}>PRIVATE PRIVILEGES</p>
-          <h2>{ar ? "تفصيل خاص بك." : "A considered extra."}</h2>
-          <PdpOffers
-            coupons={coupons}
-            slug={product.slug}
-            price={price * safeQty}
-            quantity={safeQty}
-            locale={locale}
-          />
-        </div>
-      </AtelierPanel>
-      <AtelierPanel art="orbit" className={s.storePanel}>
-        <div className={s.sharedContent}>{stores}</div>
-      </AtelierPanel>
-      <AtelierPanel art="fold" className={s.reviewsPanel}>
-        <div className={s.sharedContent}>{reviews}</div>
-      </AtelierPanel>
+      </section>
     </div>
   );
 }
