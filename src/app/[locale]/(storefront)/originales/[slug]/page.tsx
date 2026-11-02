@@ -81,14 +81,17 @@ export default async function OriginalesProductPage({ params }: Props) {
         product={product}
         coupons={coupons}
         locale={locale}
-      >
-        <Suspense fallback={null}>
-          <FindInStore productId={product.id} locale={locale} />
-        </Suspense>
-        <Suspense fallback={null}>
-          <ReviewsSection product={product} locale={locale} />
-        </Suspense>
-      </OriginalesProduct>
+        stores={
+          <Suspense fallback={null}>
+            <FindInStore productId={product.id} locale={locale} />
+          </Suspense>
+        }
+        reviews={
+          <Suspense fallback={null}>
+            <ReviewsSection product={product} locale={locale} />
+          </Suspense>
+        }
+      />
     </>
   );
 }

@@ -1,0 +1,59 @@
+/* Portal content lives outside .world. The attribute is installed/removed by OriginalesChrome. */
+body[data-originales="true"] {
+  --color-ink: #eeeee4;
+  --color-espresso: #babdb0;
+  --color-fog: #969b8e;
+  --color-gold: #caba92;
+  --color-sand: #252c20;
+  --color-cream: #171c13;
+  --color-gold-wash: #303421;
+}
+body[data-originales="true"] [role="dialog"] {
+  background: #1b2016;
+  color: #efeee4;
+  border-color: #ded2ab33;
+}
+body[data-originales="true"] .sample-drawer {
+  background:
+    radial-gradient(ellipse at 95% 8%, #77603d24, transparent 65%), #191e14;
+  color: #efeee4;
+}
+body[data-originales="true"] .sample-discovery-card {
+  background: #ffffff04;
+  border: 1px solid #d3c29d30;
+  border-radius: 2px;
+  color: inherit;
+}
+body[data-originales="true"] .sample-artwork {
+  background: radial-gradient(ellipse, #a6a87514, transparent 70%);
+}
+body[data-originales="true"] .sample-artwork-halo {
+  background: #9da76e15;
+}
+body[data-originales="true"] .sample-categories button {
+  border-radius: 2px;
+  background: #ffffff06;
+  border-color: #d3c29d2b;
+  color: inherit;
+}
+body[data-originales="true"] .sample-categories button[aria-pressed="true"] {
+  background: #b6a77a20;
+  border-color: #d3c29d66;
+}
+body[data-originales="true"] .sample-drawer .bg-white {
+  background: #23291c;
+}
+body[data-originales="true"] [role="dialog"] .bg-white {
+  background: #23291c;
+}
+body[data-originales="true"] .note-tooltip-inner {
+  background: #242a1e;
+  color: #efeee4;
+  border: 1px solid #d2c39c33;
+}
+body[data-originales="true"] [data-fly-to-bag] {
+  background: #252b1c !important;
+  border-color: #d3bd8566 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 12px 28px -10px #000b !important;
+}

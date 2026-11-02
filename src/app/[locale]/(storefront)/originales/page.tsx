@@ -6,7 +6,7 @@ import { OriginalesGallery } from "@/features/originales/OriginalesGallery";
 import { Suspense } from "react";
 import { getProductRetailStores } from "@/lib/retail-stores";
 import { RetailStoresSection } from "@/components/product/FindInStore";
-import s from "@/features/originales/originales.module.css";
+import s from "@/features/originales/atelier.module.css";
 
 async function CollectionStores({ locale }: { locale: string }) {
   const products = await getOriginalesProducts();

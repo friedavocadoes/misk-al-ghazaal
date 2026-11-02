@@ -4,7 +4,6 @@ import type { Product } from "@/lib/types";
 export const ORIGINALES_ENABLED = true;
 export const ORIGINALES_SLUG = "originales";
 export const RETURN_KEY = "mag-originales-return-v1";
-export const FLUID = { waves: 0.55, viscosity: 0.94, resolution: 0.65 };
 
 export const EDITIONS = {
   ambrato: {

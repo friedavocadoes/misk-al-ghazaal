@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -32,17 +38,28 @@ import {
   RETURN_KEY,
   safeReturnPath,
 } from "./config";
-import s from "./originales.module.css";
+import s from "./atelier.module.css";
+import { useAtelierMotion } from "./useAtelierMotion";
 
 export function OriginalesChrome({
   products,
   children,
+  fontClassName = "",
 }: {
   products: Product[];
   children: ReactNode;
+  fontClassName?: string;
 }) {
   const ar = useLocale() === "ar";
   const path = usePathname();
+  const root = useRef<HTMLDivElement>(null);
+  useAtelierMotion(root, path);
+  useLayoutEffect(() => {
+    document.body.dataset.originales = "true";
+    return () => {
+      delete document.body.dataset.originales;
+    };
+  }, []);
   const collectionPage = path === "/originales" || path === "/originales/";
   const query = useSearchParams();
   const router = useRouter();
@@ -132,7 +149,8 @@ export function OriginalesChrome({
   );
   return (
     <div
-      className={`${s.world} ${collectionPage ? s.collectionWorld : ""}`}
+      ref={root}
+      className={`${s.world} ${fontClassName} ${collectionPage ? s.collectionWorld : ""}`}
       dir={ar ? "rtl" : "ltr"}
     >
       <header className={s.header}>
@@ -199,7 +217,9 @@ export function OriginalesChrome({
             onClick={() => setBag(true)}
           >
             <ShoppingBag />
-            <span className={s.bagCount}>{count}</span>
+            <span key={count} className={s.bagCount}>
+              {count}
+            </span>
           </button>
         </div>
       </header>

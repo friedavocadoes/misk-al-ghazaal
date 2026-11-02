@@ -158,3 +158,17 @@ test("product refresh invalidates the capsule and existing public/en/ar product 
     );
   }
 });
+
+test("shared atelier sculpture files preserve real alpha within the web asset budget", async () => {
+  const sharp = require("sharp");
+  for (const name of ["fold", "orbit"]) {
+    const file = `public/originales/sculpture-${name}.webp`;
+    const metadata = await sharp(file).metadata();
+    const stats = await sharp(file).stats();
+    assert.equal(metadata.hasAlpha, true);
+    assert.ok(metadata.width <= 1100 && metadata.height <= 1100);
+    assert.ok(stats.channels[3].min === 0 && stats.channels[3].max >= 250);
+    assert.ok(fs.statSync(file).size < 350000);
+    assert.ok(fs.existsSync(`public/originales/source/sculpture-${name}.png`));
+  }
+});

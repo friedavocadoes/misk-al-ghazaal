@@ -1,15 +1,65 @@
 "use client";
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import type { Product } from "@/lib/types";
+import { useCart } from "@/lib/cart";
+import { defaultVariant, productAvailable } from "@/lib/product-options";
 import { formatAED } from "@/lib/utils";
-import { productAvailable } from "@/lib/product-options";
+import { flyToBag } from "@/lib/fly-to-bag";
+import type { Product } from "@/lib/types";
+import { tx } from "@/lib/i18n";
+import { NoteGlyph } from "@/components/ui/note-glyphs";
+import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
-import s from "./originales.module.css";
+import { AtelierBagButton } from "./AtelierControls";
+import { AtelierPanel } from "./AtelierPanel";
+import s from "./atelier.module.css";
 
+function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
+  const { add } = useCart(),
+    [added, setAdded] = useState(false),
+    timer = useRef<ReturnType<typeof setTimeout> | null>(null),
+    edition = editionFor(product),
+    variant = defaultVariant(product);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+  return (
+    <div className={s.galleryPurchase}>
+      <div>
+        <p className={s.kicker}>ORIGINALES / {edition.number}</p>
+        <h2>{edition.name}</h2>
+        <p className={s.galleryPrice}>
+          {formatAED(variant?.price ?? product.price)}
+        </p>
+      </div>
+      <AtelierBagButton
+        added={added}
+        disabled={!productAvailable(product)}
+        ar={ar}
+        onClick={(event) => {
+          add(
+            { productSlug: product.slug, variantId: variant?.id, qty: 1 },
+            "flight",
+          );
+          flyToBag(event.currentTarget, edition.bottle ?? product.images[0]);
+          setAdded(true);
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(() => setAdded(false), 2100);
+        }}
+      />
+      <Link className={s.textLink} href={originalesPath(product)}>
+        {ar ? "التجربة كاملة" : "Enter the full experience"}
+        <ArrowUpRight size={14} />
+      </Link>
+    </div>
+  );
+}
 export function OriginalesGallery({
   products,
   locale,
@@ -18,8 +68,12 @@ export function OriginalesGallery({
   locale: string;
 }) {
   const ar = locale === "ar",
-    story = COLLECTION_STORY[ar ? "ar" : "en"];
-  const root = useRef<HTMLDivElement>(null);
+    root = useRef<HTMLDivElement>(null),
+    [active, setActive] = useState(0),
+    [collapsed, setCollapsed] = useState(false);
+  const current = useRef(0),
+    progress = useRef(0),
+    collapsedRef = useRef(false);
   useEffect(() => {
     let live = true,
       dispose = () => {};
@@ -29,100 +83,140 @@ export function OriginalesGallery({
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
         mm.add(
-          "(prefers-reduced-motion: no-preference)",
-          () => {
-            const node = root.current!;
-            gsap.fromTo(
-              node.querySelectorAll("[data-hero-line]"),
-              { yPercent: 105 },
-              {
-                yPercent: 0,
-                stagger: 0.13,
-                duration: 1.5,
-                ease: "power3.out",
-                delay: 0.12,
-              },
-            );
-            gsap.fromTo(
-              node.querySelector("[data-hero-rule]"),
-              { scaleX: 0 },
-              { scaleX: 1, duration: 1.8, ease: "power2.inOut", delay: 0.3 },
-            );
-            gsap.to(node.querySelector("[data-editorial-atmosphere]"), {
-              yPercent: 12,
-              scale: 1.06,
-              ease: "none",
-              scrollTrigger: {
-                trigger: node.querySelector("[data-editorial-hero]"),
-                start: "top top",
-                end: "bottom top",
-                scrub: 1.5,
-              },
+          {
+            motion: "(prefers-reduced-motion:no-preference)",
+            mobile: "(max-width:759px)",
+            desktop: "(min-width:760px)",
+          },
+          (context) => {
+            const node = root.current!,
+              mobile = !!context.conditions?.mobile,
+              motion = !!context.conditions?.motion,
+              figures = [
+                ...node.querySelectorAll<HTMLElement>("[data-gallery-bottle]"),
+              ],
+              captions = node.querySelectorAll("[data-bottle-caption]");
+            const sync = () => {
+              figures.forEach((figure, index) => {
+                gsap.set(figure, {
+                  opacity:
+                    index === current.current
+                      ? 1
+                      : 1 - Math.min(1, progress.current * 2.5),
+                });
+                figure.inert =
+                  progress.current > 0.6 && index !== current.current;
+              });
+              gsap.set(captions, {
+                opacity: 1 - Math.min(1, progress.current * 2.5),
+              });
+              const next = progress.current > 0.55;
+              if (next !== collapsedRef.current) {
+                collapsedRef.current = next;
+                setCollapsed(next);
+              }
+            };
+            const choose = (index: number) => {
+              current.current = index;
+              setActive(index);
+              sync();
+            };
+            gsap.set(figures, {
+              xPercent: -50,
+              yPercent: -50,
+              x: 0,
+              y: 0,
+              left: (index) =>
+                mobile ? (index % 2 ? 75 : 25) + "%" : (index + 0.5) * 25 + "%",
+              top: (index) => (mobile ? (index < 2 ? 24 : 69) + "%" : "44%"),
+              width: mobile ? "43%" : "22%",
+              height: mobile ? "34svh" : "61svh",
             });
-            gsap.fromTo(
-              node.querySelectorAll("[data-story-word]"),
-              { opacity: 0.18 },
-              {
-                opacity: 1,
-                stagger: 0.035,
-                ease: "none",
+            if (motion) {
+              const collapse = gsap.timeline({
                 scrollTrigger: {
-                  trigger: node.querySelector("[data-manifesto]"),
-                  start: "top 75%",
-                  end: "bottom 70%",
-                  scrub: 0.7,
+                  trigger: node.querySelector("[data-gallery-sequence]"),
+                  start: () => `top top+=${mobile ? 150 : 175}`,
+                  end: () => `+=${innerHeight * 0.65}`,
+                  scrub: 1,
+                  onUpdate: (self) => {
+                    progress.current = self.progress;
+                    sync();
+                  },
                 },
-              },
-            );
+              });
+              collapse.to(figures, {
+                left: mobile ? "50%" : "25%",
+                top: mobile ? "18%" : "36%",
+                width: mobile ? "50%" : "34%",
+                height: mobile ? "26svh" : "40svh",
+                duration: 1,
+                ease: "power2.inOut",
+              });
+            } else {
+              ScrollTrigger.create({
+                trigger: node.querySelector("[data-gallery-sequence]"),
+                start: () => `top top+=${mobile ? 150 : 175}`,
+                end: () => `+=${innerHeight * 0.65}`,
+                onUpdate: (self) => {
+                  const next = self.progress > 0.12 ? 1 : 0;
+                  progress.current = next;
+                  gsap.set(figures, {
+                    left: (index: number) =>
+                      next
+                        ? mobile
+                          ? "50%"
+                          : "25%"
+                        : mobile
+                          ? (index % 2 ? 75 : 25) + "%"
+                          : (index + 0.5) * 25 + "%",
+                    top: (index: number) =>
+                      next
+                        ? mobile
+                          ? "18%"
+                          : "36%"
+                        : mobile
+                          ? (index < 2 ? 24 : 69) + "%"
+                          : "44%",
+                    width: next
+                      ? mobile
+                        ? "50%"
+                        : "34%"
+                      : mobile
+                        ? "43%"
+                        : "22%",
+                    height: next
+                      ? mobile
+                        ? "26svh"
+                        : "40svh"
+                      : mobile
+                        ? "34svh"
+                        : "61svh",
+                  });
+                  sync();
+                },
+              });
+            }
             node
               .querySelectorAll<HTMLElement>("[data-edition-chapter]")
-              .forEach((chapter) => {
-                gsap.fromTo(
-                  chapter.querySelector("[data-chapter-art]"),
-                  { clipPath: "inset(8% 0 8% 0)", opacity: 0.5 },
-                  {
-                    clipPath: "inset(0% 0 0% 0)",
-                    opacity: 1,
-                    duration: 1.4,
-                    ease: "power2.out",
-                    scrollTrigger: {
-                      trigger: chapter,
-                      start: "top 78%",
-                      once: true,
-                    },
-                  },
-                );
-                gsap.fromTo(
-                  chapter.querySelector("[data-chapter-bottle]"),
-                  { y: 24 },
-                  {
-                    y: -18,
-                    ease: "none",
-                    scrollTrigger: {
-                      trigger: chapter,
-                      start: "top bottom",
-                      end: "bottom top",
-                      scrub: 1.4,
-                    },
-                  },
-                );
-                gsap.fromTo(
-                  chapter.querySelectorAll("[data-chapter-copy]"),
-                  { opacity: 0, y: 18 },
-                  {
-                    opacity: 1,
-                    y: 0,
-                    stagger: 0.1,
-                    duration: 1.1,
-                    ease: "power2.out",
-                    scrollTrigger: {
-                      trigger: chapter,
-                      start: "top 65%",
-                      once: true,
-                    },
-                  },
-                );
+              .forEach((chapter, index) =>
+                ScrollTrigger.create({
+                  trigger: chapter,
+                  start: mobile ? "top 65%" : "top 55%",
+                  end: mobile ? "bottom 65%" : "bottom 55%",
+                  onEnter: () => choose(index),
+                  onEnterBack: () => choose(index),
+                }),
+              );
+            node.dataset.galleryReady = "true";
+            sync();
+            ScrollTrigger.refresh();
+            return () => {
+              delete node.dataset.galleryReady;
+              figures.forEach((figure) => {
+                figure.inert = false;
               });
+            };
           },
           root.current,
         );
@@ -133,155 +227,184 @@ export function OriginalesGallery({
       live = false;
       dispose();
     };
-  }, []);
+  }, [products.length]);
+  const featured = products[active] ?? products[0],
+    story = COLLECTION_STORY[ar ? "ar" : "en"];
   return (
-    <div ref={root} className={s.editorial}>
-      <section data-editorial-hero className={s.editorialHero}>
-        <div data-editorial-atmosphere className={s.editorialAtmosphere}>
-          <Image
-            src="/originales/ambrato-atmosphere.webp"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-        </div>
-        <p className={s.editorialIssue}>
-          MAG PARFUM
-          <span>{ar ? "مجموعة أوريجينال" : "The Originales collection"}</span>
-        </p>
-        <div className={s.editorialHeadline}>
-          <p>
-            {ar ? "حضور، لا يحتاج إلى تفسير." : "An instinct, made personal."}
-          </p>
-          <h1>
-            <span>
-              <span data-hero-line>Originales</span>
-            </span>
-          </h1>
-          <div className={s.heroClosing}>
-            <span>
-              <span data-hero-line>
-                {ar ? "تعبيرك، كما أنت." : "An expression, entirely your own."}
-              </span>
-            </span>
-          </div>
-        </div>
-        <div className={s.editorialBottom}>
-          <span data-hero-rule className={s.editorialRule} />
-          <span>
-            {ar
-              ? "أربعة عطور. حضور واحد: حضورك."
-              : "Four fragrances. One point of view: yours."}
-          </span>
-          <a href="#the-story">
-            {ar ? "الحكاية" : "The story"}
-            <ArrowDown size={15} />
-          </a>
-        </div>
-      </section>
-      <section id="the-story" data-manifesto className={s.manifesto}>
-        <p className={s.kicker}>
-          {ar ? "روح المجموعة" : "The thought behind the collection"}
-        </p>
-        <h2>
-          {story.lead.split("\n").map((line, i) => (
-            <span key={i}>{line}</span>
-          ))}
-        </h2>
-        <p className={s.manifestoBody}>
-          {story.body.split(" ").map((word, i) => (
-            <span key={i} data-story-word>
-              {word}{" "}
-            </span>
-          ))}
-        </p>
-        <p className={s.manifestoClose}>{story.close}</p>
-        <a href="#the-editions" className={s.editorialTextLink}>
-          {ar ? "اكتشف التعابير الأربعة" : "Discover the four expressions"}
-          <ArrowDown size={14} />
-        </a>
-      </section>
-      <div id="the-editions" className={s.chapters}>
-        {products.map((product) => {
-          const edition = editionFor(product),
-            copy = editionStory(edition.name, ar);
+    <div ref={root} className={s.gallery} data-collapsed={collapsed}>
+      <nav
+        data-originales-nav
+        className={s.silhouetteNav}
+        aria-label={ar ? "عطور أوريجينال" : "Originales fragrances"}
+      >
+        {products.map((product, index) => {
+          const edition = editionFor(product);
           return (
-            <section
+            <Link
               key={product.id}
-              data-edition-chapter
-              className={s.chapter}
+              href={originalesPath(product)}
+              data-active={index === active}
+              aria-label={`${edition.name}${index === active ? (ar ? "، العطر المعروض" : " — currently featured") : ""}`}
               style={
                 {
-                  "--edition-accent": edition.accent,
-                  "--edition-wash": edition.wash,
+                  "--bottle-tone":
+                    (
+                      {
+                        ambrato: "#c69b5d",
+                        sultanic: "#709e83",
+                        lustra: "#bf8096",
+                        lazvaro: "#76a5c8",
+                      } as Record<string, string>
+                    )[edition.name.toLowerCase()] ?? edition.accent,
                 } as CSSProperties
               }
             >
-              <Link
-                href={originalesPath(product)}
-                data-chapter-art
-                className={s.chapterArt}
-                aria-label={`${ar ? "اكتشف" : "Discover"} ${edition.name}`}
-              >
-                <span className={s.chapterAtmosphere} />
-                <span className={s.chapterPlinth} />
-                <Image
-                  data-chapter-bottle
-                  src={edition.bottle ?? product.images[0] ?? "/logo.webp"}
-                  alt={edition.name}
-                  width={650}
-                  height={1000}
-                  sizes="(max-width:759px) 67vw, 30vw"
-                  className={s.chapterBottle}
-                />
-              </Link>
-              <div className={s.chapterCopy}>
-                <p data-chapter-copy className={s.kicker}>
-                  ORIGINALES — {edition.number}
-                </p>
-                <h2 data-chapter-copy>{edition.name}</h2>
-                {copy && (
-                  <>
-                    <h3 data-chapter-copy>{copy.heading}</h3>
-                    <p data-chapter-copy className={s.chapterProse}>
-                      {copy.body}
-                    </p>
-                  </>
-                )}
-                <Link
-                  data-chapter-copy
-                  className={s.editorialTextLink}
-                  href={originalesPath(product)}
-                >
-                  {ar ? "اكتشف العطر" : "Discover the fragrance"}
-                  <ArrowUpRight size={16} />
-                </Link>
-                <p data-chapter-copy className={s.chapterPrice}>
-                  {productAvailable(product)
-                    ? formatAED(product.price)
-                    : ar
-                      ? "نفد المخزون"
-                      : "Out of stock"}
-                </p>
-              </div>
-            </section>
+              <span className={s.silhouette} aria-hidden="true" />
+              <span>{edition.name}</span>
+              <small>0{index + 1}</small>
+            </Link>
           );
         })}
-        {!products.length && (
-          <p className={s.empty}>
-            {ar
-              ? "المجموعة قادمة قريباً."
-              : "The collection is being prepared. Return soon."}
-          </p>
-        )}
-      </div>
-      <section className={s.editorialEpilogue}>
-        <span>O</span>
-        <p>{ar ? "بصمة تشبهك." : "A signature that feels like you."}</p>
-        <small>MAG PARFUM · ORIGINALES</small>
+      </nav>
+      <header className={s.galleryIntro}>
+        <div>
+          <p className={s.kicker}>MAG PARFUM / COLLECTION 01</p>
+          <h1>ORIGINALES</h1>
+        </div>
+        <a href="#the-editions" className={s.galleryScroll}>
+          {ar
+            ? "أربعة تعابير. اختر عالمك."
+            : "Four expressions. Find your own."}
+          <ArrowDown size={15} />
+        </a>
+      </header>
+      <section data-gallery-sequence className={s.gallerySequence}>
+        <div className={s.galleryStage}>
+          <div className={s.stageHalo} />
+          {products.map((product, index) => {
+            const edition = editionFor(product);
+            return (
+              <figure
+                data-gallery-bottle
+                key={product.id}
+                className={s.galleryBottle}
+                style={
+                  {
+                    "--start-left": `${(index + 0.5) * 25}%`,
+                    "--mobile-left": `${index % 2 ? 75 : 25}%`,
+                    "--mobile-top": `${index < 2 ? 24 : 69}%`,
+                  } as CSSProperties
+                }
+              >
+                <Link href={originalesPath(product)}>
+                  <Image
+                    data-chapter-bottle
+                    src={edition.bottle ?? product.images[0] ?? "/logo.webp"}
+                    alt={edition.name}
+                    width={650}
+                    height={1000}
+                    priority
+                    sizes="(max-width:759px) 44vw, 30vw"
+                    className={s.sequenceBottle}
+                  />
+                  <figcaption data-bottle-caption>
+                    <span>{edition.name}</span>
+                    <small>{formatAED(product.price)}</small>
+                  </figcaption>
+                </Link>
+              </figure>
+            );
+          })}
+          {featured && (
+            <div className={s.stickyPurchase} data-visible={collapsed}>
+              <GalleryPurchase key={featured.id} product={featured} ar={ar} />
+            </div>
+          )}
+        </div>
+        <div id="the-editions" className={s.sequenceStories}>
+          {products.map((product) => {
+            const edition = editionFor(product),
+              copy = editionStory(edition.name, ar);
+            return (
+              <section
+                key={product.id}
+                data-edition-chapter
+                data-snap-panel
+                className={s.sequenceChapter}
+                style={{ "--edition-accent": edition.accent } as CSSProperties}
+              >
+                <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
+                <h2>{copy?.heading ?? edition.name}</h2>
+                {copy && <p className={s.chapterProse}>{copy.body}</p>}
+                {product.notes.length > 0 && (
+                  <div className={s.chapterNotes}>
+                    <h3>{ar ? "التوليفة" : "The composition"}</h3>
+                    <div>
+                      {product.notes.map((note) => (
+                        <NoteTooltip
+                          key={`${note.id}-${note.kind}`}
+                          note={note}
+                          locale={ar ? "ar" : "en"}
+                          className={s.galleryNote}
+                        >
+                          <NoteGlyph
+                            glyph={note.glyph}
+                            className={s.galleryNoteGlyph}
+                          />
+                          <span>
+                            {tx(note.name, note.nameAr, ar ? "ar" : "en")}
+                          </span>
+                        </NoteTooltip>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className={s.chapterStillLife}>
+                  <Image
+                    data-parallax
+                    src="/originales/sculpture-fold.webp"
+                    alt=""
+                    width={600}
+                    height={600}
+                    sizes="(max-width:759px) 65vw, 28vw"
+                    className={s.chapterSculpture}
+                  />
+                  {edition.box && (
+                    <Image
+                      src={edition.box}
+                      alt={`${edition.name} presentation box`}
+                      width={350}
+                      height={470}
+                      sizes="(max-width:759px) 42vw, 20vw"
+                      className={s.chapterBox}
+                    />
+                  )}
+                  <span>ORIGINALES / {edition.number}</span>
+                </div>
+                <Link href={originalesPath(product)} className={s.textLink}>
+                  {ar ? "اكتشف العطر" : "Explore the fragrance"}
+                  <ArrowUpRight size={15} />
+                </Link>
+              </section>
+            );
+          })}
+        </div>
       </section>
+      <AtelierPanel art="orbit">
+        <div className={s.panelCopy}>
+          <p className={s.kicker}>THE ORIGINALES PHILOSOPHY</p>
+          <h2>{story.lead}</h2>
+          <p>{story.body}</p>
+          <p>{story.close}</p>
+        </div>
+      </AtelierPanel>
+      {!products.length && (
+        <p className={s.empty}>
+          {ar
+            ? "المجموعة قادمة قريباً."
+            : "The collection is being prepared. Return soon."}
+        </p>
+      )}
     </div>
   );
 }
