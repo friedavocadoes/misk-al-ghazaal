@@ -14,47 +14,66 @@ export function MorphFrame({
 }) {
   const id = useId().replaceAll(":", "");
   return (
-    <svg
-      data-morph-surface={kind}
-      className={s.morphFrame}
-      viewBox="0 0 1000 600"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`metal-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop
-            stopColor={kind === "button" ? "#d8d8c4" : "#101813"}
-            stopOpacity={kind === "button" ? ".12" : ".90"}
-          />
-          <stop
-            offset=".45"
-            stopColor={kind === "button" ? "#9ca6a0" : "#101813"}
-            stopOpacity={kind === "button" ? ".025" : ".60"}
-          />
-          <stop
-            offset="1"
-            stopColor={kind === "button" ? "#d2bb80" : "#101813"}
-            stopOpacity={kind === "button" ? ".09" : ".72"}
-          />
-        </linearGradient>
-      </defs>
-      <path
-        data-morph-frame
-        d={FRAME_PATH}
-        fill={`url(#metal-${id})`}
-        stroke="currentColor"
-        strokeOpacity=".32"
-        vectorEffect="non-scaling-stroke"
-      />
-      <path
-        data-frame-trace
-        d={FRAME_PATH}
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity=".5"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
+    <>
+      {kind !== "button" && (
+        <span
+          className={s.glassBlur}
+          style={{ clipPath: `url(#glass-${id})` }}
+          aria-hidden="true"
+          data-glass-blur
+        />
+      )}
+      <svg
+        data-morph-surface={kind}
+        className={s.morphFrame}
+        viewBox="0 0 1000 600"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <defs>
+          {kind !== "button" && (
+            <clipPath id={`glass-${id}`} clipPathUnits="objectBoundingBox">
+              <path
+                data-morph-clip
+                d={FRAME_PATH}
+                transform="scale(.001 .001666666667)"
+              />
+            </clipPath>
+          )}
+          <linearGradient id={`metal-${id}`} x1="0" y1="0" x2="1" y2="1">
+            <stop
+              stopColor={kind === "button" ? "#d8d8c4" : "#101813"}
+              stopOpacity={kind === "button" ? ".12" : ".90"}
+            />
+            <stop
+              offset=".45"
+              stopColor={kind === "button" ? "#9ca6a0" : "#101813"}
+              stopOpacity={kind === "button" ? ".025" : ".60"}
+            />
+            <stop
+              offset="1"
+              stopColor={kind === "button" ? "#d2bb80" : "#101813"}
+              stopOpacity={kind === "button" ? ".09" : ".72"}
+            />
+          </linearGradient>
+        </defs>
+        <path
+          data-morph-frame
+          d={FRAME_PATH}
+          fill={`url(#metal-${id})`}
+          stroke="currentColor"
+          strokeOpacity=".32"
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          data-frame-trace
+          d={FRAME_PATH}
+          fill="none"
+          stroke="currentColor"
+          strokeOpacity=".5"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </>
   );
 }

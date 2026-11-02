@@ -62,7 +62,9 @@ export function useAtelierMotion(
                   .forEach((surface) => {
                     if (art.has(surface)) return;
                     art.add(surface);
-                    const frame = surface.querySelector("[data-morph-frame]");
+                    const frame = surface.querySelectorAll(
+                      "[data-morph-frame],[data-morph-clip]",
+                    );
                     const trace = surface.querySelector("[data-frame-trace]");
                     const section = surface.closest("[data-snap-panel]")!;
                     if (!section.hasAttribute("data-gallery-finale"))

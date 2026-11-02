@@ -295,7 +295,7 @@ export function OriginalesGallery({
                 )
                 .to(
                   finaleContent.querySelectorAll(
-                    "[data-morph-frame],[data-frame-trace]",
+                    "[data-morph-frame],[data-frame-trace],[data-morph-clip]",
                   ),
                   {
                     morphSVG: "M4 2H996L998 4V596L996 598H4L2 596V4Z",

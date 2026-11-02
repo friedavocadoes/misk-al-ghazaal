@@ -446,7 +446,7 @@ export function OriginalesProduct({
             </div>
           )}
           <div className={s.heroHalo} />
-          <HeroLiquid />
+          <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>

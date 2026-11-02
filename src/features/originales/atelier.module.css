@@ -3175,3 +3175,41 @@
     min-height: max(880px, 80svh);
   }
 }
+/* Optical blur follows the same animated SVG contour; corners remain clear. */
+.panelContent > .glassBlur,
+.editionCard > .glassBlur {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #adb8a408;
+  backdrop-filter: blur(18px) saturate(1.16) brightness(0.92);
+}
+.liquidHost,
+.liquidCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.liquidCanvas {
+  opacity: 0;
+  transition: opacity 0.7s;
+}
+.liquidHost[data-ready="true"] .liquidCanvas {
+  opacity: 1;
+}
+.heroLiquid {
+  mix-blend-mode: normal;
+  opacity: 0.42;
+}
+@media (max-width: 759px) {
+  .panelContent > .glassBlur,
+  .editionCard > .glassBlur {
+    backdrop-filter: blur(12px) saturate(1.1);
+  }
+  .heroLiquid {
+    opacity: 0.32;
+  }
+}

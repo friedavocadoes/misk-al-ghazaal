@@ -126,9 +126,20 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForTimeout(2400);
     assert.equal(await page.locator("h1").count(), 1);
     assert.equal(
-      await page.locator("canvas,[data-ingredient]").count(),
+      await page.locator("[data-ingredient]").count(),
       0,
-      "hero keeps no glass text renderer or flying notes",
+      "hero still has no flying notes",
+    );
+    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      1,
+      "provided liquid engine is mounted only once",
+    );
+    assert.equal(
+      await page.evaluate(() => window.__liquidApp),
+      undefined,
+      "no leaked global singleton",
     );
     assert.equal(
       await page
@@ -175,6 +186,11 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     const initialSeal = await page
       .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
       .getAttribute("d");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      0,
+      "hero water loop/context are released outside the opening",
+    );
     const pricePhotos = page.locator("[data-product-gallery] button");
     await pricePhotos.nth(1).click();
     await page.waitForTimeout(1000);
@@ -315,6 +331,27 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       0,
       "no repeating chapter PNGs outside the closing parallax",
     );
+    const glass = await page
+      .locator("#originales-story [data-glass-blur]")
+      .evaluate((el) => ({
+        blur: getComputedStyle(el).backdropFilter,
+        clip: getComputedStyle(el).clipPath,
+      }));
+    assert.ok(
+      glass.blur.includes("18px") && glass.clip.includes("glass-"),
+      "real blur is clipped to the SVG card contour",
+    );
+    const paths = await page
+      .locator("#originales-story [data-morph-surface]")
+      .evaluate((svg) => [
+        svg.querySelector("[data-morph-frame]").getAttribute("d"),
+        svg.querySelector("[data-morph-clip]").getAttribute("d"),
+      ]);
+    assert.equal(
+      paths[0],
+      paths[1],
+      "visible frame and blur mask morph together",
+    );
     const idleDraws = await page.evaluate(() => window.__originalesDraws);
     assert.ok(idleDraws > 0, "model is actually rendered");
     await page.waitForTimeout(700);
@@ -364,6 +401,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => Number(getComputedStyle(el).opacity)),
       1,
       "scrolling back restores original presentation even with a photo selected",
+    );
+    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      1,
+      "water restarts with a single owned instance on reverse scroll",
     );
     await page.locator("#fragrance-notes").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1300);
@@ -493,7 +536,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS supplied water engine/cleanup/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

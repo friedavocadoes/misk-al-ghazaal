@@ -198,3 +198,59 @@ test("supplied 3D object keeps valid local geometry, a small transparent poster 
     /Object by Tiko/,
   );
 });
+
+test("liquid lifecycle removes exact upstream bound listeners while preserving other listeners", () => {
+  const { captureLiquidListeners } = load(
+    "src/features/originales/liquid-lifecycle.ts",
+  );
+  const target = new EventTarget();
+  const original = target.addEventListener;
+  let owned = 0,
+    unrelated = 0;
+  const retained = () => unrelated++;
+  target.addEventListener("resize", retained);
+  function callback() {
+    owned++;
+  }
+  const wrapped = captureLiquidListeners([target], () => {
+    target.addEventListener("resize", callback.bind(null));
+    return {
+      dispose() {
+        target.removeEventListener("resize", callback.bind(null));
+      },
+    };
+  });
+  assert.equal(
+    target.addEventListener,
+    original,
+    "native method restored immediately after synchronous factory",
+  );
+  target.dispatchEvent(new Event("resize"));
+  assert.equal(owned, 1);
+  wrapped.value.dispose();
+  wrapped.release();
+  wrapped.release();
+  target.dispatchEvent(new Event("resize"));
+  assert.equal(owned, 1, "cleanup handles upstream bind identity bug");
+  assert.equal(unrelated, 2, "other application listeners survive");
+});
+
+test("failed liquid construction still restores methods and removes partial listeners", () => {
+  const { captureLiquidListeners } = load(
+    "src/features/originales/liquid-lifecycle.ts",
+  );
+  const target = new EventTarget();
+  const original = target.addEventListener;
+  let calls = 0;
+  assert.throws(
+    () =>
+      captureLiquidListeners([target], () => {
+        target.addEventListener("click", () => calls++);
+        throw new Error("WebGL unavailable");
+      }),
+    /WebGL unavailable/,
+  );
+  target.dispatchEvent(new Event("click"));
+  assert.equal(calls, 0);
+  assert.equal(target.addEventListener, original);
+});
