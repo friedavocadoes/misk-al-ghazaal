@@ -47,7 +47,7 @@ export function SculptureScene() {
         renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.9;
+        renderer.toneMappingExposure = 0.75;
         renderer.setClearColor(0x000000, 0);
         const scene = new THREE.Scene(),
           camera = new THREE.PerspectiveCamera(36, 1, 0.1, 30);
@@ -65,11 +65,11 @@ export function SculptureScene() {
         light.position.set(-3, 4, 4);
         scene.add(light);
         const material = new THREE.MeshPhysicalMaterial({
-          color: 0xa8afa8,
-          metalness: 0.82,
-          roughness: 0.46,
-          clearcoat: 0.12,
-          clearcoatRoughness: 0.4,
+          color: 0xb8c0ba,
+          metalness: 1,
+          roughness: 0.2,
+          clearcoat: 0.45,
+          clearcoatRoughness: 0.18,
           envMapIntensity: 0.7,
           side: THREE.DoubleSide,
         });

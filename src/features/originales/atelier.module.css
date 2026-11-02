@@ -365,27 +365,25 @@
   margin: 0;
   font-family: var(--font-originales), var(--font-sans), sans-serif;
   font-size: 43px;
-  font-weight: 600;
+  font-weight: 800;
   line-height: 1.12;
-  letter-spacing: 0.085em;
+  letter-spacing: -0.035em;
   text-transform: uppercase;
   white-space: nowrap;
   z-index: 4;
   pointer-events: none;
-  color: #dddcd4;
+  --title-settle: 0%;
+  color: #ecece4;
   background: linear-gradient(
-    140deg,
-    color-mix(in srgb, currentColor 70%, transparent),
-    currentColor 40%,
-    color-mix(in srgb, currentColor 60%, transparent) 52%,
-    currentColor 90%
+    135deg,
+    color-mix(in srgb, #b1a5b9, #ecece4 var(--title-settle)) 5%,
+    color-mix(in srgb, #d9cbd6, #ecece4 var(--title-settle)) 46%,
+    color-mix(in srgb, #999eaa, #ecece4 var(--title-settle)) 100%
   );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow:
-    0 1px 0 #ffffff18,
-    0 0 25px #ffffff0a;
+  text-shadow: none;
   filter: drop-shadow(0 6px 18px #0004);
   will-change: transform, font-size;
 }
@@ -973,6 +971,13 @@
   padding: 80px 30px;
 }
 .silhouetteNav {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-14px);
+  transition:
+    opacity 0.65s ease,
+    transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.65s;
   position: fixed;
   top: 88px;
   left: 0;
@@ -985,6 +990,11 @@
   border-bottom: 1px solid var(--line);
   background: #151711db;
   backdrop-filter: blur(24px);
+}
+.silhouetteNav[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 .silhouetteNav a {
   display: flex;
@@ -3288,4 +3298,16 @@
 }
 .objectPoster {
   opacity: 0.28;
+}
+
+/* The title keeps its semantic identity as the opening colour and weight settle. */
+@media (prefers-reduced-motion: reduce) {
+  .frostedTitle {
+    --title-settle: 100%;
+    font-weight: 400;
+    letter-spacing: 0.025em;
+  }
+  .silhouetteNav {
+    transition: none;
+  }
 }
