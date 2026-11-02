@@ -71,3 +71,27 @@ body[data-originales="true"] .note-tooltip-surface {
 body[data-originales="true"] .note-tooltip-arrow {
   fill: #242a1e;
 }
+
+@keyframes originales-menu-in {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes originales-menu-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0.7;
+  }
+}
+body[data-originales="true"] [role="dialog"] {
+  transition-timing-function: cubic-bezier(0.22, 0.75, 0.18, 1);
+}

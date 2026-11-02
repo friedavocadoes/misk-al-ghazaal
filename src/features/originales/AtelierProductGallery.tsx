@@ -85,7 +85,7 @@ export function AtelierProductGallery({
         if (!reduced)
           animation = Flip.from(state, {
             duration: 0.6,
-            ease: "power3.inOut",
+            ease: "atelier-soft",
             absolute: true,
           });
       };

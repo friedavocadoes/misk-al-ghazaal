@@ -21,6 +21,7 @@ import {
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "next-intl";
+import { haptic } from "@/lib/haptics";
 import { createClient } from "@/lib/supabase/client";
 import { useCart } from "@/lib/cart";
 import type { Product } from "@/lib/types";
@@ -159,6 +160,8 @@ export function OriginalesChrome({
             type="button"
             aria-label={ar ? "المجموعة" : "Explore the collection"}
             onClick={() => setMenu(true)}
+            data-haptic="open"
+            data-ios-haptic="on"
             className={`${s.mobileMenu} ${collectionPage ? s.collectionMenu : ""}`}
           >
             <Menu />
@@ -179,6 +182,7 @@ export function OriginalesChrome({
             type="button"
             aria-label={ar ? "البحث" : "Search fragrances"}
             onClick={() => setSearch(true)}
+            data-haptic="open"
           >
             <Search />
           </button>
@@ -211,6 +215,7 @@ export function OriginalesChrome({
           </button>
           <button
             type="button"
+            data-haptic="open"
             data-bag-target
             data-ios-haptic="on"
             aria-label={`${ar ? "الحقيبة" : "Shopping bag"} (${count})`}
@@ -271,8 +276,17 @@ export function OriginalesChrome({
           </div>
         </SheetContent>
       </Sheet>
-      <Sheet open={menu} onOpenChange={setMenu}>
-        <SheetContent>
+      <Sheet
+        open={menu}
+        onOpenChange={(open) => {
+          setMenu(open);
+          if (!open) haptic("close");
+        }}
+      >
+        <SheetContent
+          data-originales-menu
+          className="!left-0 !right-auto data-[state=open]:!animate-[originales-menu-in_0.6s_cubic-bezier(.22,.75,.18,1)] data-[state=closed]:!animate-[originales-menu-out_0.4s_cubic-bezier(.45,0,.2,1)]"
+        >
           <SheetHeader>
             <SheetTitle>ORIGINALES</SheetTitle>
           </SheetHeader>

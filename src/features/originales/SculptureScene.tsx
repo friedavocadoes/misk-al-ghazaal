@@ -164,17 +164,17 @@ export function SculptureScene() {
             track.to(pose, {
               ...moves[i % moves.length],
               duration: 1,
-              ease: "power2.inOut",
+              ease: "atelier-soft",
             });
         }, el);
         const tiltX = gsap.quickTo(pose, "px", {
           duration: 0.7,
-          ease: "power3.out",
+          ease: "atelier-soft",
           onUpdate: invalidate,
         });
         const tiltY = gsap.quickTo(pose, "py", {
           duration: 0.7,
-          ease: "power3.out",
+          ease: "atelier-soft",
           onUpdate: invalidate,
         });
         const pointer = (event: Event) => {

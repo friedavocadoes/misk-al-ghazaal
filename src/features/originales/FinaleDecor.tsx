@@ -37,7 +37,7 @@ export function FinaleDecor() {
               rotate: 8,
               scale: 1,
               duration: 0.5,
-              ease: "power2.inOut",
+              ease: "atelier-soft",
             },
             0,
           ).to(
@@ -48,7 +48,7 @@ export function FinaleDecor() {
               rotate: 22,
               scale: 1.08,
               duration: 0.5,
-              ease: "none",
+              ease: "atelier-soft",
             },
             0.5,
           );
@@ -64,7 +64,7 @@ export function FinaleDecor() {
               rotation: 70,
               transformOrigin: "50% 50%",
               duration: 1,
-              ease: "none",
+              ease: "atelier-soft",
             },
             0,
           );

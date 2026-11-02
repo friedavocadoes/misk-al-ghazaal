@@ -12,8 +12,19 @@ export function atelierGsap() {
     import("gsap/MorphSVGPlugin"),
     import("gsap/DrawSVGPlugin"),
     import("gsap/Flip"),
-  ]).then(([{ gsap }, { MorphSVGPlugin }, { DrawSVGPlugin }, { Flip }]) => {
-    gsap.registerPlugin(MorphSVGPlugin, DrawSVGPlugin, Flip);
-    return { gsap, Flip };
-  }));
+    import("gsap/CustomEase"),
+  ]).then(
+    ([
+      { gsap },
+      { MorphSVGPlugin },
+      { DrawSVGPlugin },
+      { Flip },
+      { CustomEase },
+    ]) => {
+      gsap.registerPlugin(MorphSVGPlugin, DrawSVGPlugin, Flip, CustomEase);
+      CustomEase.create("atelier-settle", "0.22,0.75,0.18,1");
+      CustomEase.create("atelier-soft", "0.45,0,0.2,1");
+      return { gsap, Flip };
+    },
+  ));
 }
