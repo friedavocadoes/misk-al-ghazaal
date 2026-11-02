@@ -75,7 +75,8 @@ export function OriginalesGallery({
   const ar = locale === "ar",
     root = useRef<HTMLDivElement>(null),
     [active, setActive] = useState(0),
-    [collapsed, setCollapsed] = useState(false);
+    [collapsed, setCollapsed] = useState(false),
+    [navVisible, setNavVisible] = useState(false);
   const current = useRef(0),
     progress = useRef(0),
     collapsedRef = useRef(false);
@@ -107,6 +108,13 @@ export function OriginalesGallery({
             const stage = node.querySelector<HTMLElement>(
               "[data-gallery-stage]",
             )!;
+            ScrollTrigger.create({
+              trigger: chapters[0],
+              start: "top 75%",
+              end: "max",
+              onUpdate: (self) => setNavVisible(self.progress > 0),
+              onRefresh: (self) => setNavVisible(self.progress > 0),
+            });
             const sync = () => {
               const rects = chapters.map((chapter) =>
                 chapter.getBoundingClientRect(),
@@ -345,6 +353,8 @@ export function OriginalesGallery({
     <div ref={root} className={s.gallery} data-collapsed={collapsed}>
       <nav
         data-originales-nav
+        data-visible={navVisible}
+        inert={!navVisible}
         className={s.silhouetteNav}
         aria-label={ar ? "عطور أوريجينال" : "Originales fragrances"}
       >

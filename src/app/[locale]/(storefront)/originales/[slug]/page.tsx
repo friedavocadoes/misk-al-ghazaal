@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { getProductBySlug, getPublicCoupons } from "@/lib/store";
+import { getProductBySlug } from "@/lib/store";
 import { getPageSeo, productJsonLd, stripHtml } from "@/lib/seo";
 import { toLocale } from "@/lib/i18n";
 import { ProductView } from "@/components/analytics/ProductView";
@@ -52,10 +52,7 @@ export default async function OriginalesProductPage({ params }: Props) {
   setRequestLocale(locale);
   const product = await getProductBySlug(slug);
   if (!product || !isOriginales(product)) notFound();
-  const [coupons, seo] = await Promise.all([
-    getPublicCoupons(),
-    getPageSeo("product", slug),
-  ]);
+  const seo = await getPageSeo("product", slug);
   const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/+$/, "");
   const url = `${origin}${locale === "ar" ? "/ar" : ""}${originalesPath(product)}`;
   const schema = productJsonLd(product, seo, locale, origin).map((block) => ({
@@ -79,7 +76,6 @@ export default async function OriginalesProductPage({ params }: Props) {
       <OriginalesProduct
         key={product.slug}
         product={product}
-        coupons={coupons}
         locale={locale}
         stores={
           <Suspense fallback={null}>

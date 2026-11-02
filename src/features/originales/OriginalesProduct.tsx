@@ -11,7 +11,7 @@ import Image from "next/image";
 import { ArrowDown } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Product, Coupon } from "@/lib/types";
+import type { Product } from "@/lib/types";
 import type { Locale } from "@/i18n/routing";
 import { tx } from "@/lib/i18n";
 import { formatAED } from "@/lib/utils";
@@ -21,12 +21,12 @@ import { flyToBag } from "@/lib/fly-to-bag";
 import { VariantPicker } from "@/components/product/VariantPicker";
 import { NoteGlyph } from "@/components/ui/note-glyphs";
 import { NoteTooltip } from "@/components/product/NoteTooltip";
-import { PdpOffers } from "@/components/blocks/PdpOffers";
 import { SamplePicker } from "@/components/blocks/SamplePicker";
 import { PRODUCT_FRAMES } from "./motion-config";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
+import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
 import { HeroLiquid } from "./HeroLiquid";
 import { FinaleDecor } from "./FinaleDecor";
 import { SculptureScene } from "./SculptureScene";
@@ -36,13 +36,11 @@ import s from "./atelier.module.css";
 
 export function OriginalesProduct({
   product,
-  coupons,
   locale,
   stores,
   reviews,
 }: {
   product: Product;
-  coupons: Coupon[];
   locale: Locale;
   stores: ReactNode;
   reviews: ReactNode;
@@ -139,8 +137,32 @@ export function OriginalesProduct({
             desktop: "(min-width:760px)",
           },
           (context) => {
-            if (!context.conditions?.motion || context.conditions.mobile)
+            if (!context.conditions?.motion) return;
+            if (context.conditions.mobile) {
+              const title = root.current!.querySelector(
+                "[data-travelling-title]",
+              )!;
+              gsap.fromTo(
+                title,
+                {
+                  fontWeight: 800,
+                  "--title-settle": "0%",
+                  letterSpacing: "-0.035em",
+                },
+                {
+                  fontWeight: 400,
+                  "--title-settle": "100%",
+                  letterSpacing: "0.025em",
+                  scrollTrigger: {
+                    trigger: title,
+                    start: "top 72%",
+                    end: "top 30%",
+                    scrub: 0.4,
+                  },
+                },
+              );
               return;
+            }
             const node = root.current!,
               mobile = !!context.conditions.mobile,
               scene = node.querySelector<HTMLElement>("[data-scene]")!,
@@ -164,6 +186,9 @@ export function OriginalesProduct({
             gsap.set(title, {
               left: 0,
               top: 0,
+              fontWeight: 800,
+              letterSpacing: "-0.035em",
+              "--title-settle": "0%",
               fontSize: mobile
                 ? scene.clientWidth * 0.118
                 : scene.clientWidth * 0.108,
@@ -228,6 +253,9 @@ export function OriginalesProduct({
                 x: () => destination().x,
                 y: () => destination().y,
                 fontSize: mobile ? 30 : Math.min(43, scene.clientWidth * 0.035),
+                fontWeight: 400,
+                letterSpacing: "0.025em",
+                "--title-settle": "100%",
                 duration: 0.8,
                 ease: "power2.inOut",
               },
@@ -444,7 +472,7 @@ export function OriginalesProduct({
       }
     >
       <div className={s.arrival} data-ready={ready} aria-hidden="true">
-        <span>O</span>
+        {!ready && <OriginalesLoadingMark />}
         <small>MAG PARFUM / ORIGINALES</small>
       </div>
       <section data-runway className={`${s.runway} ${s.fullExperience}`}>
@@ -472,7 +500,7 @@ export function OriginalesProduct({
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
           </div>
-          <h1 data-travelling-title className={s.frostedTitle}>
+          <h1 data-static-ink data-travelling-title className={s.frostedTitle}>
             {variant?.nameOverride ?? edition.name}
           </h1>
           <div data-box className={s.boxObject}>
@@ -690,19 +718,6 @@ export function OriginalesProduct({
                   : "There is always more to discover."}
               </h2>
               <SamplePicker subtotal={price * safeQty} product />
-            </div>
-          </AtelierPanel>
-          <AtelierPanel art="fold" className={s.offersPanel}>
-            <div className={s.panelCopy}>
-              <p className={s.kicker}>PRIVATE PRIVILEGES</p>
-              <h2>{ar ? "تفصيل خاص بك." : "A considered extra."}</h2>
-              <PdpOffers
-                coupons={coupons}
-                slug={product.slug}
-                price={price * safeQty}
-                quantity={safeQty}
-                locale={locale}
-              />
             </div>
           </AtelierPanel>
           <AtelierPanel art="orbit" className={s.storePanel}>

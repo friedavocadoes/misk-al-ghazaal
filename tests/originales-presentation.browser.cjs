@@ -37,6 +37,15 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
     assert.equal(await page.locator("[data-originales-nav] a").count(), 4);
+    assert.equal(
+      await page
+        .locator("[data-originales-nav]")
+        .evaluate(
+          (el) => el.inert && getComputedStyle(el).visibility === "hidden",
+        ),
+      true,
+      "silhouettes stay hidden in the opening",
+    );
     const photos = await page
       .locator("[data-gallery-bottle]")
       .evaluateAll((els) =>
@@ -67,6 +76,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         }),
       );
     await page.waitForTimeout(2200);
+    assert.equal(
+      await page
+        .locator("[data-originales-nav]")
+        .evaluate((el) => !el.inert && getComputedStyle(el).opacity === "1"),
+      true,
+      "silhouettes reveal after entering the perfume chapters",
+    );
     assert.ok(
       (
         await page
@@ -126,6 +142,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForTimeout(2400);
     assert.equal(await page.locator("h1").count(), 1);
     assert.equal(
+      await page.locator(".pdp-offers").count(),
+      0,
+      "premium capsule has no coupon section",
+    );
+    assert.equal(
+      await page
+        .locator("h1")
+        .evaluate((el) => getComputedStyle(el).fontWeight),
+      "800",
+      "opening title is heavier",
+    );
+    assert.equal(
       await page.locator("[data-ingredient]").count(),
       0,
       "hero still has no flying notes",
@@ -156,6 +184,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => getComputedStyle(el).textTransform),
       "uppercase",
     );
+    if (process.env.ORIGINALES_QA_SCREENSHOTS)
+      await page.screenshot({
+        path: `${process.env.ORIGINALES_QA_SCREENSHOTS}/v10-opening.png`,
+      });
     await page.evaluate(() => {
       window.__originalesTitle = document.querySelector("h1");
       scrollTo({ top: innerHeight * 0.7, behavior: "instant" });
@@ -263,9 +295,28 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.locator("[data-purchase]").evaluate((el) => el.inert),
       false,
     );
+    assert.equal(
+      await page
+        .locator("h1")
+        .evaluate((el) => getComputedStyle(el).fontWeight),
+      "400",
+      "the same title settles to regular weight at the price view",
+    );
+    assert.equal(
+      await page
+        .locator("h1")
+        .evaluate((el) =>
+          getComputedStyle(el).getPropertyValue("--title-settle").trim(),
+        ),
+      "100%",
+    );
     const title = await page.locator("h1").boundingBox(),
       dock = await page.locator("[data-title-dock]").boundingBox();
     assert.ok(Math.abs(title.x - dock.x) < 2 && Math.abs(title.y - dock.y) < 2);
+    if (process.env.ORIGINALES_QA_SCREENSHOTS)
+      await page.screenshot({
+        path: `${process.env.ORIGINALES_QA_SCREENSHOTS}/v10-price.png`,
+      });
     await page.getByRole("button", { name: "Increase quantity" }).click();
     await page.getByRole("button", { name: "Increase quantity" }).click();
     await page.getByRole("button", { name: "Add to bag", exact: true }).click();

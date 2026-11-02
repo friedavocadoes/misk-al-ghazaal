@@ -1,3 +1,5 @@
+import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
+
 /** Shared by the capsule, its layout and the parent storefront loading boundary. */
 export function OriginalesLoading() {
   return (
@@ -6,9 +8,7 @@ export function OriginalesLoading() {
       className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#141612] text-[#c8bea2]"
       role="status"
     >
-      <span className="font-serif text-8xl italic" aria-hidden="true">
-        O
-      </span>
+      <OriginalesLoadingMark />
       <span className="text-[10px] tracking-[.3em]">
         MAG PARFUM · ORIGINALES
       </span>
