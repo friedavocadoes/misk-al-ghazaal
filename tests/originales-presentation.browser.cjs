@@ -46,6 +46,16 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       true,
       "silhouettes stay hidden in the opening",
     );
+    await page
+      .getByRole("button", { name: "Explore the collection", exact: true })
+      .click();
+    await page.waitForTimeout(750);
+    assert.ok(
+      (await page.locator("[data-originales-menu]").boundingBox()).x < 1,
+      "collection menu opens from the left",
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
     const photos = await page
       .locator("[data-gallery-bottle]")
       .evaluateAll((els) =>
@@ -82,6 +92,21 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => !el.inert && getComputedStyle(el).opacity === "1"),
       true,
       "silhouettes reveal after entering the perfume chapters",
+    );
+    const alignment = await page.evaluate(() => {
+      const figure = [
+        ...document.querySelectorAll("[data-gallery-bottle]"),
+      ].find((el) => getComputedStyle(el).opacity === "1");
+      return {
+        bottle: figure.getBoundingClientRect().top,
+        card: document
+          .querySelectorAll("[class*=editionCard]")[1]
+          .getBoundingClientRect().top,
+      };
+    });
+    assert.ok(
+      Math.abs(alignment.bottle - alignment.card) < 3,
+      "gallery card locks against the top of the perfume",
     );
     assert.ok(
       (
@@ -489,6 +514,25 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       notesCard.height < 550,
       "three note stages fit in one compact card",
     );
+    const reviewSizing = await page
+      .locator(".review-workspace")
+      .evaluate((el) => {
+        const stars = el.querySelector(".rating-stars");
+        return {
+          stars: stars.scrollWidth,
+          width: stars.clientWidth,
+          columns: getComputedStyle(el).gridTemplateColumns.split(" ").length,
+        };
+      });
+    assert.ok(
+      reviewSizing.stars <= reviewSizing.width,
+      "rating stars fit the populated review surface",
+    );
+    assert.equal(
+      reviewSizing.columns,
+      1,
+      "reviews use the narrow card width rather than the viewport breakpoint",
+    );
     await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 390, height: 667 });
     await page.goto(`${base}/originales/originales-lazvaro`, {
@@ -501,6 +545,17 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => getComputedStyle(el).position),
       "relative",
       "mobile is a stable normal-flow product layout",
+    );
+    assert.equal(
+      await page.locator("[data-hero-liquid],[data-liquid-effect]").count(),
+      0,
+      "mobile never mounts water rendering",
+    );
+    const mobileHero = await page.locator("[data-bottle]").boundingBox();
+    const mobileName = await page.locator("h1").boundingBox();
+    assert.ok(
+      mobileName.y < mobileHero.y + 100,
+      "mobile name and bottle lead the opening",
     );
     const mobileBottleStart = await page.locator("[data-bottle]").boundingBox();
     await page.evaluate(() => scrollTo({ top: 100, behavior: "instant" }));

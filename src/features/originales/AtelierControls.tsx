@@ -28,7 +28,7 @@ export function AtelierQuantity({
         rotation: value * 36,
         transformOrigin: "50% 50%",
         duration: reduced ? 0 : 0.65,
-        ease: "back.out(1.5)",
+        ease: "atelier-soft",
       });
       stop = () => tween.kill();
     });
@@ -81,7 +81,7 @@ export function AtelierQuantity({
               transition={
                 reduced
                   ? { duration: 0 }
-                  : { type: "spring", stiffness: 170, damping: 20 }
+                  : { duration: 0.55, ease: [0.22, 0.75, 0.18, 1] }
               }
             >
               {String(value).padStart(2, "0")}
@@ -164,14 +164,14 @@ export function AtelierBagButton({
               ? "M8 3H24V29L20 26L16 29L12 26L8 29Z M12 10H20 M12 15H20 M12 20H17"
               : "M8 10H24V27H8Z M12 10V7C12 2 20 2 20 7V10",
           duration: reduced ? 0 : 0.55,
-          ease: "power3.inOut",
+          ease: "atelier-soft",
         });
         gsap.to(frame, {
           morphSVG: added
             ? "M45 2 H955 L998 45 V555 L955 598 H45 L2 555 V45 Z"
             : FRAME_PATH,
           duration: reduced ? 0 : 0.65,
-          ease: "power3.inOut",
+          ease: "atelier-soft",
         });
       }, el);
       const enter = () => {
@@ -179,7 +179,7 @@ export function AtelierBagButton({
           gsap.to(frame, {
             morphSVG: OPEN_FRAME,
             duration: 0.5,
-            ease: "power3.out",
+            ease: "atelier-soft",
             overwrite: true,
           });
       };
@@ -188,7 +188,7 @@ export function AtelierBagButton({
           gsap.to(frame, {
             morphSVG: FRAME_PATH,
             duration: 0.65,
-            ease: "elastic.out(1,.65)",
+            ease: "atelier-soft",
             overwrite: true,
           });
       };
@@ -227,7 +227,7 @@ export function AtelierBagButton({
         transition={
           reduced
             ? { duration: 0 }
-            : { type: "spring", stiffness: 170, damping: 23 }
+            : { duration: 0.65, ease: [0.22, 0.75, 0.18, 1] }
         }
       >
         <MorphFrame kind="button" />
@@ -271,7 +271,10 @@ export function AtelierBagButton({
             borderRadius: added ? "50%" : "2px",
             rotate: added ? 90 : 0,
           }}
-          transition={{ duration: reduced ? 0 : 0.6 }}
+          transition={{
+            duration: reduced ? 0 : 0.6,
+            ease: [0.22, 0.75, 0.18, 1],
+          }}
           aria-hidden="true"
         >
           <motion.span animate={{ rotate: added ? -90 : 0 }}>

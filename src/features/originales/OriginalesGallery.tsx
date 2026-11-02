@@ -190,7 +190,7 @@ export function OriginalesGallery({
                 width: mobile ? "50%" : "34%",
                 height: mobile ? "26svh" : "40svh",
                 duration: 1,
-                ease: "power2.inOut",
+                ease: "atelier-soft",
               });
             } else {
               ScrollTrigger.create({
@@ -283,7 +283,7 @@ export function OriginalesGallery({
                     y: () => -innerHeight * 0.8,
                     opacity: 0,
                     duration: 1,
-                    ease: "power2.inOut",
+                    ease: "atelier-soft",
                   },
                   0,
                 )
@@ -297,7 +297,7 @@ export function OriginalesGallery({
                     width: "100%",
                     marginLeft: "0%",
                     duration: 1,
-                    ease: "power3.inOut",
+                    ease: "atelier-soft",
                   },
                   0,
                 )
@@ -308,7 +308,7 @@ export function OriginalesGallery({
                   {
                     morphSVG: "M4 2H996L998 4V596L996 598H4L2 596V4Z",
                     duration: 1,
-                    ease: "power3.inOut",
+                    ease: "atelier-soft",
                   },
                   0,
                 );

@@ -21,7 +21,7 @@ export function EditionEmblem({ index }: { index: number }) {
         duration: matchMedia("(prefers-reduced-motion:reduce)").matches
           ? 0
           : 0.85,
-        ease: "power3.inOut",
+        ease: "atelier-soft",
       });
       stop = () => tween.kill();
     });

@@ -45,7 +45,7 @@ export function useAtelierMotion(
                       { color: "#878981" },
                       {
                         color: "#f3f0e7",
-                        ease: "none",
+                        ease: "atelier-soft",
                         scrollTrigger: {
                           trigger: el,
                           start: "top 94%",
@@ -73,7 +73,7 @@ export function useAtelierMotion(
                         { morphSVG: OPEN_FRAME },
                         {
                           morphSVG: FRAME_PATH,
-                          ease: "power3.inOut",
+                          ease: "atelier-soft",
                           scrollTrigger: {
                             trigger: section,
                             start: "top 95%",
@@ -87,7 +87,7 @@ export function useAtelierMotion(
                       { drawSVG: "0% 0%" },
                       {
                         drawSVG: "0% 100%",
-                        ease: "none",
+                        ease: "atelier-soft",
                         scrollTrigger: {
                           trigger: section,
                           start: "top 85%",
@@ -104,7 +104,7 @@ export function useAtelierMotion(
                         {
                           y: 0,
                           clipPath: "inset(0% 0% 0% 0%)",
-                          ease: "power3.out",
+                          ease: "atelier-settle",
                           scrollTrigger: {
                             trigger: section,
                             start: "top 85%",
@@ -146,13 +146,33 @@ export function useAtelierMotion(
                     return value;
                   const max = ScrollTrigger.maxScroll(window);
                   if (max <= 0) return value;
-                  const offset = node.querySelector("[data-originales-nav]")
-                    ? innerWidth < 760
-                      ? 152
-                      : 176
-                    : innerWidth < 760
-                      ? 88
-                      : 104;
+                  const gallery = node.querySelector<HTMLElement>(
+                    "[data-gallery-stage]",
+                  );
+                  const mobile = innerWidth < 760;
+                  let offset = mobile ? 88 : 104;
+                  if (gallery && !mobile) {
+                    const stage = gallery.getBoundingClientRect();
+                    // Final collapsed bottle pose: top36% of stage, half of40vh high.
+                    offset = Math.max(
+                      176,
+                      stage.top + stage.height * 0.36 - innerHeight * 0.2,
+                    );
+                  } else if (gallery) {
+                    offset = 152 + innerHeight * 0.26;
+                  } else if (!mobile) {
+                    const bottle =
+                      node.querySelector<HTMLElement>("[data-bottle]");
+                    if (bottle)
+                      offset = Math.max(
+                        104,
+                        bottle.getBoundingClientRect().top,
+                      );
+                  }
+                  const readingBox = (panel: HTMLElement) =>
+                    panel.querySelector<HTMLElement>(
+                      "[class*=editionCard],[class*=panelContent]",
+                    ) ?? panel;
                   const product = node.querySelector<HTMLElement>(
                     "[data-product-chapters]",
                   );
@@ -180,7 +200,7 @@ export function useAtelierMotion(
                     for (const panel of product.querySelectorAll<HTMLElement>(
                       "[data-snap-panel]",
                     )) {
-                      const r = panel.getBoundingClientRect();
+                      const r = readingBox(panel).getBoundingClientRect();
                       const start = scrollY + r.top - offset;
                       const end = scrollY + r.bottom - innerHeight + 120;
                       if (
@@ -207,7 +227,9 @@ export function useAtelierMotion(
                         0,
                         Math.min(
                           max,
-                          scrollY + el.getBoundingClientRect().top - offset,
+                          scrollY +
+                            readingBox(el).getBoundingClientRect().top -
+                            offset,
                         ),
                       ),
                     );
@@ -219,14 +241,14 @@ export function useAtelierMotion(
                     Infinity,
                   );
                   return Math.abs(closest - current) <
-                    (desktopProduct
+                    (!mobile
                       ? innerHeight * 0.55
-                      : Math.min(140, innerHeight * 0.15))
+                      : Math.min(100, innerHeight * 0.14))
                     ? closest / max
                     : value;
                 },
                 duration: { min: 0.3, max: 0.85 },
-                ease: "power3.inOut",
+                ease: "atelier-soft",
                 delay: 0.25,
                 inertia: false,
               },

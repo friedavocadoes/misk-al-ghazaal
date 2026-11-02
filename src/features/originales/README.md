@@ -81,6 +81,16 @@ Originales product pages intentionally omit coupon panels and their data fetch. 
 
 The logo veil only waits for top imagery decode, bounded at2.2sec with a CSS escape; reduced motion bypasses it. Actual page content/metadata are server rendered. Product JSON-LD/canonicals, sitemap and public/en/ar invalidation remain integrated. No bot-specific rendering.
 
+## V11 layout and motion corrections
+
+- Reading stops use actual editionCard/panelContent edges instead of padded section wrappers. Desktop gallery cards align to the collapsed bottle top (stage top +36% stage height -20vh). Stronger proximity catches intermediate scrolls; long reading bodies, forms and the footer retain free native scrolling.
+- Opening padding no longer reserves the hidden silhouette strip (116px desktop/94px mobile including the header). Navigation reveals without adding layout space.
+- Reviews use the available card width: narrow surfaces stack composer/reviews with five flexible star targets. A760px container can use two columns. Shared review/auth/moderation logic is unchanged; decorative material is smaller and kept at the corner.
+- The moving title derives colour from each edition's accent/wash, with72% opening opacity resolving to solid regular ivory. Mobile opens with a full-screen bottle/name, then the same semantic H1 moves into normal-flow purchase details. The box is hidden in the mobile hero; uploaded photos remain available from the rail.
+- HeroLiquid checks a760px media query before dynamically importing the water component; mobile never creates/downloads the water engine. Mobile cards use natural content heights and tighter spacing. The supplied 3D scene is visible behind them: the old desktop data-docked visibility rule is explicitly overridden. Reduced-motion/Save-Data poster fallbacks remain.
+- atelierGsap registers CustomEase atelier-soft(.45,0,.2,1) and atelier-settle(.22,.75,.18,1). Capsule GSAP, Motion controls and scoped CSS timing use cubic curves with reduced-motion support. No global GSAP defaults or main-store timing overrides.
+- The collection menu Sheet anchors left with matching keyframes. Shared storefront haptics already cover button ticks; menu/search/bag triggers request the subtle open pattern, menu closing uses close. Preference/device fallbacks remain; no scroll haptics.
+
 ## Local artwork and provenance
 
 Runtime files live under `public/originales`; PNG masters under `public/originales/source`. No runtime references point to Downloads, Temp or Codex directories.

@@ -22,6 +22,7 @@ import { VariantPicker } from "@/components/product/VariantPicker";
 import { NoteGlyph } from "@/components/ui/note-glyphs";
 import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { SamplePicker } from "@/components/blocks/SamplePicker";
+import { atelierGsap } from "./atelier-gsap";
 import { PRODUCT_FRAMES } from "./motion-config";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
@@ -125,8 +126,8 @@ export function OriginalesProduct({
   useEffect(() => {
     let live = true,
       dispose = () => {};
-    Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
-      .then(([{ default: gsap }, { ScrollTrigger }]) => {
+    Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
+      .then(([{ gsap }, { ScrollTrigger }]) => {
         if (!live || !root.current) return;
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
@@ -139,28 +140,54 @@ export function OriginalesProduct({
           (context) => {
             if (!context.conditions?.motion) return;
             if (context.conditions.mobile) {
-              const title = root.current!.querySelector(
+              const node = root.current!;
+              const scene = node.querySelector<HTMLElement>("[data-scene]")!;
+              const title = node.querySelector<HTMLElement>(
                 "[data-travelling-title]",
               )!;
-              gsap.fromTo(
-                title,
-                {
-                  fontWeight: 800,
-                  "--title-settle": "0%",
-                  letterSpacing: "-0.035em",
+              const dock =
+                node.querySelector<HTMLElement>("[data-title-dock]")!;
+              const initialSize = Math.min(84, scene.clientWidth * 0.18);
+              gsap.set(title, {
+                left: 0,
+                top: 0,
+                fontSize: initialSize,
+                fontWeight: 800,
+                x: 0,
+                y: 0,
+              });
+              if (title.offsetWidth > scene.clientWidth - 24) {
+                gsap.set(title, {
+                  fontSize:
+                    (initialSize * (scene.clientWidth - 24)) /
+                    title.offsetWidth,
+                });
+              }
+              gsap.set(title, {
+                x: (scene.clientWidth - title.offsetWidth) / 2,
+                y: innerHeight * 0.23,
+              });
+              gsap.to(title, {
+                x: () =>
+                  dock.getBoundingClientRect().left -
+                  scene.getBoundingClientRect().left,
+                y: () =>
+                  dock.getBoundingClientRect().top -
+                  scene.getBoundingClientRect().top,
+                fontSize: 34,
+                fontWeight: 400,
+                "--title-settle": "100%",
+                "--title-opacity": 1,
+                letterSpacing: ".025em",
+                ease: "atelier-soft",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top top",
+                  end: () => "+=" + innerHeight * 0.65,
+                  scrub: 0.5,
+                  invalidateOnRefresh: true,
                 },
-                {
-                  fontWeight: 400,
-                  "--title-settle": "100%",
-                  letterSpacing: "0.025em",
-                  scrollTrigger: {
-                    trigger: title,
-                    start: "top 72%",
-                    end: "top 30%",
-                    scrub: 0.4,
-                  },
-                },
-              );
+              });
               return;
             }
             const node = root.current!,
@@ -208,6 +235,7 @@ export function OriginalesProduct({
               };
             };
             const tl = gsap.timeline({
+              defaults: { ease: "atelier-soft" },
               onUpdate: () => {
                 node.dataset.priceReady = tl.time() >= 0.95 ? "true" : "false";
               },
@@ -229,7 +257,7 @@ export function OriginalesProduct({
                     : -scene.clientHeight * 0.02,
                 scale: mobile ? 0.66 : 0.68,
                 duration: 0.85,
-                ease: "power2.inOut",
+                ease: "atelier-soft",
               },
               0.05,
             );
@@ -243,7 +271,7 @@ export function OriginalesProduct({
                 y: () => 0,
                 scale: mobile ? 0.64 : 0.68,
                 duration: 0.7,
-                ease: "power2.inOut",
+                ease: "atelier-soft",
               },
               0.23,
             );
@@ -256,15 +284,16 @@ export function OriginalesProduct({
                 fontWeight: 400,
                 letterSpacing: "0.025em",
                 "--title-settle": "100%",
+                "--title-opacity": 1,
                 duration: 0.8,
-                ease: "power2.inOut",
+                ease: "atelier-soft",
               },
               0.15,
             );
             tl.fromTo(
               node.querySelector("[data-hero-liquid]"),
               { opacity: 0.42 },
-              { opacity: 0, duration: 0.72, ease: "sine.inOut" },
+              { opacity: 0, duration: 0.72, ease: "atelier-soft" },
               0.22,
             );
             tl.to(
@@ -530,6 +559,16 @@ export function OriginalesProduct({
             href="#originales-purchase"
             onClick={(e) => {
               e.preventDefault();
+              if (innerWidth < 760) {
+                root.current?.querySelector("[data-purchase]")?.scrollIntoView({
+                  behavior: matchMedia("(prefers-reduced-motion:reduce)")
+                    .matches
+                    ? "instant"
+                    : "smooth",
+                  block: "start",
+                });
+                return;
+              }
               const r = root.current
                 ?.querySelector("[data-runway]")
                 ?.getBoundingClientRect();

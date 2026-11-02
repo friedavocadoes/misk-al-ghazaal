@@ -28,13 +28,13 @@ export function OriginalesLoadingMark() {
         .to(path.current, {
           morphSVG: drop,
           duration: 1.25,
-          ease: "power2.inOut",
+          ease: "atelier-soft",
         })
         .to(path.current, {
           morphSVG: bottle,
           duration: 1.25,
           delay: 0.3,
-          ease: "power2.inOut",
+          ease: "atelier-soft",
         });
       const visibility = () => animation.paused(document.hidden);
       visibility();
