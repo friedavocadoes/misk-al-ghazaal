@@ -1,5 +1,6 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { ORIGINALES_ENABLED } from "@/features/originales/config";
 
 /**
  * On-demand revalidation that actually busts the production cache.
@@ -25,6 +26,7 @@ export function revalidatePagePaths(path: string) {
 }
 
 export function revalidateHome() {
+  if (ORIGINALES_ENABLED) revalidatePagePaths("/originales");
   revalidateTag("catalog-search", {expire:0});
   revalidatePagePaths("/find-your-scent");
   revalidateNavigation();
@@ -32,6 +34,7 @@ export function revalidateHome() {
 }
 
 export function revalidateProductPaths(slug: string) {
+  if (ORIGINALES_ENABLED) revalidatePagePaths(`/originales/${slug}`);
   for (const p of [`/product/${slug}`, `/en/product/${slug}`, `/ar/product/${slug}`]) {
     revalidatePath(p, "page");
   }

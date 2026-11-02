@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getBlogs, blogUrl } from "@/lib/blogs";
 import { getProducts, getCollections } from "@/lib/store";
 import { getSiteUrl } from "@/lib/site-url";
+import { ORIGINALES_ENABLED, isOriginales, originalesPath } from "@/features/originales/config";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, products, collections] = await Promise.all([
     getBlogs(),
@@ -15,7 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/collections",
     "/pages/about",
     "/pages/contact",
-    ...products.map((p) => `/product/${p.slug}`),
+    ...(ORIGINALES_ENABLED ? ["/originales"] : []),
+    ...products.map((p) => isOriginales(p) ? originalesPath(p) : `/product/${p.slug}`),
     ...collections.map((c) => `/collection/${c.slug}`),
   ]
     .flatMap((path) =>

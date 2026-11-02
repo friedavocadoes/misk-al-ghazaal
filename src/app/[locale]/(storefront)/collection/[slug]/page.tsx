@@ -1,4 +1,6 @@
 import { SafeImage } from "@/components/ui/safe-image";
+import { redirect } from "@/i18n/navigation";
+import { ORIGINALES_ENABLED } from "@/features/originales/config";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
@@ -60,6 +62,9 @@ export default async function CollectionPage(
   const t = await getTranslations({ locale, namespace: "Collection" });
   const searchParams = await props.searchParams;
   const slug = ALIASES[raw] ?? raw;
+  if (ORIGINALES_ENABLED && (slug === "originales" || searchParams?.lineup === "originales")) {
+    redirect({ href: "/originales", locale });
+  }
   const isAll = slug === "all";
   const category = isAll ? null : await getCollectionBySlug(slug);
   if (!category && !isAll) notFound();
