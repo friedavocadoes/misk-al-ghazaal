@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check, LoaderCircle } from "lucide-react";
+import { atelierGsap } from "./atelier-gsap";
 import s from "./atelier.module.css";
 
 /** The live bottle/box scene is frame zero; uploaded photography never replaces its DOM nodes. */
@@ -24,6 +25,45 @@ export function AtelierProductGallery({
   const reduced = useReducedMotion();
   const photos = [...new Set(images)].filter((src) => src && src !== bottle);
   const current = selected && photos.includes(selected) ? selected : null;
+  const rail = useRef<HTMLDivElement>(null),
+    marker = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    let live = true,
+      stop = () => {};
+    void atelierGsap().then(({ gsap, Flip }) => {
+      if (!live || !rail.current || !marker.current) return;
+      const indicator = marker.current,
+        buttons = rail.current;
+      let animation: ReturnType<typeof Flip.from> | undefined;
+      const place = () => {
+        const target = buttons.querySelector<HTMLElement>(
+          "[aria-pressed=true]",
+        );
+        if (!target) return;
+        const state = Flip.getState(indicator);
+        Flip.fit(indicator, target, { scale: false });
+        animation?.kill();
+        if (!reduced)
+          animation = Flip.from(state, {
+            duration: 0.6,
+            ease: "power3.inOut",
+            absolute: true,
+          });
+      };
+      place();
+      const resize = new ResizeObserver(place);
+      resize.observe(buttons);
+      stop = () => {
+        animation?.kill();
+        resize.disconnect();
+        gsap.killTweensOf(indicator);
+      };
+    });
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [current, reduced]);
   return (
     <div
       data-product-gallery
@@ -86,12 +126,21 @@ export function AtelierProductGallery({
           )}
         </AnimatePresence>
       </div>
+      <div className={s.photoCounter} data-static-ink>
+        <span>
+          {String(current ? photos.indexOf(current) + 2 : 1).padStart(2, "0")} /{" "}
+          {String(photos.length + 1).padStart(2, "0")}
+        </span>
+        <small>{ar ? "تفاصيل العطر" : "THE OBJECT · EVERY PERSPECTIVE"}</small>
+      </div>
       <div
+        ref={rail}
         className={s.photoRail}
         role="group"
         aria-label={ar ? "صور المنتج" : "Product images"}
         data-static-ink
       >
+        <span ref={marker} className={s.thumbIndicator} aria-hidden="true" />
         <button
           type="button"
           aria-pressed={!current}

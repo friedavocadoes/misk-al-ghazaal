@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, type RefObject } from "react";
+import { atelierGsap } from "./atelier-gsap";
+import { FRAME_PATH, OPEN_FRAME } from "./MorphFrame";
 import { PRODUCT_FRAMES } from "./motion-config";
 
 /** Shared lighting, decorative parallax and proximity-only section settling. Native scroll stays in control. */
@@ -10,8 +12,8 @@ export function useAtelierMotion(
   useEffect(() => {
     let live = true,
       dispose = () => {};
-    Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
-      .then(([{ default: gsap }, { ScrollTrigger }]) => {
+    Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
+      .then(([{ gsap }, { ScrollTrigger }]) => {
         if (!live || !root.current) return;
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
@@ -54,109 +56,60 @@ export function useAtelierMotion(
                     );
                   });
                 node
-                  .querySelectorAll<HTMLElement>("[data-parallax]")
-                  .forEach((el) => {
-                    if (art.has(el)) return;
-                    art.add(el);
-                    const chapter = el.closest<HTMLElement>(
-                      "[data-product-chapters] [data-snap-panel]",
-                    );
-                    if (chapter) {
-                      const sculpture = el.closest<HTMLElement>(
-                        "[class*='sculptureMagnet']",
-                      )!;
-                      const depth = el.closest<HTMLElement>("[data-art-pass]")!;
-                      // Pass in front of the lettering on arrival, settle behind it at the reading frame,
-                      // then lift through the foreground on departure. Only decorative pixels move.
-                      const pass = gsap.timeline({
-                        scrollTrigger: {
-                          trigger: chapter,
-                          start: "top bottom",
-                          end: "bottom top",
-                          scrub: 1,
-                        },
-                      });
-                      pass
-                        .set(sculpture, { zIndex: 3 }, 0)
-                        .set(sculpture, { zIndex: 0 }, 0.4)
-                        .set(sculpture, { zIndex: 3 }, 0.72)
-                        .fromTo(
-                          depth,
-                          {
-                            xPercent: -35,
-                            yPercent: 18,
-                            rotateY: -22,
-                            rotateZ: -8,
-                            scale: 1.22,
-                            opacity: 0.95,
-                          },
-                          {
-                            xPercent: 32,
-                            yPercent: -8,
-                            rotateY: 12,
-                            rotateZ: 4,
-                            scale: 0.72,
-                            opacity: 0.38,
-                            duration: 0.44,
-                            ease: "power2.inOut",
-                          },
-                          0,
-                        )
-                        .to(
-                          depth,
-                          {
-                            xPercent: 36,
-                            yPercent: -10,
-                            duration: 0.23,
-                            ease: "none",
-                          },
-                          0.44,
-                        )
-                        .to(
-                          depth,
-                          {
-                            xPercent: -32,
-                            yPercent: -28,
-                            rotateY: 28,
-                            rotateZ: 12,
-                            scale: 1.18,
-                            opacity: 0.85,
-                            duration: 0.33,
-                            ease: "power2.inOut",
-                          },
-                          0.67,
-                        );
-                      const current = chapter.querySelector(
-                        "[class*='panelCurrent']",
-                      );
-                      if (current)
-                        pass.fromTo(
-                          current,
-                          { xPercent: -15, rotate: -15 },
-                          {
-                            xPercent: 15,
-                            rotate: 15,
-                            duration: 1,
-                            ease: "none",
-                          },
-                          0,
-                        );
-                      return;
-                    }
+                  .querySelectorAll<SVGSVGElement>(
+                    '[data-morph-surface="panel"],[data-morph-surface="edition"]',
+                  )
+                  .forEach((surface) => {
+                    if (art.has(surface)) return;
+                    art.add(surface);
+                    const frame = surface.querySelector("[data-morph-frame]");
+                    const trace = surface.querySelector("[data-frame-trace]");
+                    const section = surface.closest("[data-snap-panel]")!;
                     gsap.fromTo(
-                      el,
-                      { yPercent: 9 },
+                      frame,
+                      { morphSVG: OPEN_FRAME },
                       {
-                        yPercent: -9,
-                        ease: "none",
+                        morphSVG: FRAME_PATH,
+                        ease: "power3.inOut",
                         scrollTrigger: {
-                          trigger: el.closest("[data-snap-panel]") ?? el,
-                          start: "top bottom",
-                          end: "bottom top",
-                          scrub: 1.3,
+                          trigger: section,
+                          start: "top 95%",
+                          end: "top 30%",
+                          scrub: 0.45,
                         },
                       },
                     );
+                    gsap.fromTo(
+                      trace,
+                      { drawSVG: "0% 0%" },
+                      {
+                        drawSVG: "0% 100%",
+                        ease: "none",
+                        scrollTrigger: {
+                          trigger: section,
+                          start: "top 85%",
+                          end: "top 30%",
+                          scrub: 0.35,
+                        },
+                      },
+                    );
+                    const heading = section.querySelector("h2");
+                    if (heading)
+                      gsap.fromTo(
+                        heading,
+                        { y: 24, clipPath: "inset(0% 0% 100% 0%)" },
+                        {
+                          y: 0,
+                          clipPath: "inset(0% 0% 0% 0%)",
+                          ease: "power3.out",
+                          scrollTrigger: {
+                            trigger: section,
+                            start: "top 85%",
+                            end: "top 35%",
+                            scrub: 0.4,
+                          },
+                        },
+                      );
                   });
               });
             scan();

@@ -14,6 +14,9 @@ import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
+import { EditionEmblem } from "./EditionEmblem";
+import { SculptureScene } from "./SculptureScene";
+import { MorphFrame } from "./MorphFrame";
 import { AtelierPanel } from "./AtelierPanel";
 import s from "./atelier.module.css";
 
@@ -267,6 +270,7 @@ export function OriginalesGallery({
         })}
       </nav>
       <header className={s.galleryIntro}>
+        <EditionEmblem index={active} />
         <div>
           <p className={s.kicker}>MAG PARFUM / COLLECTION 01</p>
           <h1>ORIGINALES</h1>
@@ -321,7 +325,12 @@ export function OriginalesGallery({
             </div>
           )}
         </div>
-        <div id="the-editions" className={s.sequenceStories}>
+        <div
+          id="the-editions"
+          data-object-sequence
+          className={s.sequenceStories}
+        >
+          <SculptureScene />
           {products.map((product) => {
             const edition = editionFor(product),
               copy = editionStory(edition.name, ar);
@@ -333,71 +342,52 @@ export function OriginalesGallery({
                 className={s.sequenceChapter}
                 style={{ "--edition-accent": edition.accent } as CSSProperties}
               >
-                <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
-                <h2>{copy?.heading ?? edition.name}</h2>
-                {copy && <p className={s.chapterProse}>{copy.body}</p>}
-                {product.notes.length > 0 && (
-                  <div className={s.chapterNotes}>
-                    <h3>{ar ? "التوليفة" : "The composition"}</h3>
-                    <div>
-                      {product.notes.map((note) => (
-                        <NoteTooltip
-                          key={`${note.id}-${note.kind}`}
-                          note={note}
-                          locale={ar ? "ar" : "en"}
-                          className={s.galleryNote}
-                        >
-                          <NoteGlyph
-                            glyph={note.glyph}
-                            className={s.galleryNoteGlyph}
-                          />
-                          <span>
-                            {tx(note.name, note.nameAr, ar ? "ar" : "en")}
-                          </span>
-                        </NoteTooltip>
-                      ))}
+                <div className={s.editionCard}>
+                  <MorphFrame kind="edition" />
+                  <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
+                  <h2>{copy?.heading ?? edition.name}</h2>
+                  {copy && <p className={s.chapterProse}>{copy.body}</p>}
+                  {product.notes.length > 0 && (
+                    <div className={s.chapterNotes}>
+                      <h3>{ar ? "التوليفة" : "The composition"}</h3>
+                      <div>
+                        {product.notes.map((note) => (
+                          <NoteTooltip
+                            key={`${note.id}-${note.kind}`}
+                            note={note}
+                            locale={ar ? "ar" : "en"}
+                            className={s.galleryNote}
+                          >
+                            <NoteGlyph
+                              glyph={note.glyph}
+                              className={s.galleryNoteGlyph}
+                            />
+                            <span>
+                              {tx(note.name, note.nameAr, ar ? "ar" : "en")}
+                            </span>
+                          </NoteTooltip>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                <div className={s.chapterStillLife}>
-                  <Image
-                    data-parallax
-                    src="/originales/sculpture-fold.webp"
-                    alt=""
-                    width={600}
-                    height={600}
-                    sizes="(max-width:759px) 65vw, 28vw"
-                    className={s.chapterSculpture}
-                  />
-                  {edition.box && (
-                    <Image
-                      src={edition.box}
-                      alt={`${edition.name} presentation box`}
-                      width={350}
-                      height={470}
-                      sizes="(max-width:759px) 42vw, 20vw"
-                      className={s.chapterBox}
-                    />
                   )}
-                  <span>ORIGINALES / {edition.number}</span>
+                  <Link href={originalesPath(product)} className={s.textLink}>
+                    {ar ? "اكتشف العطر" : "Explore the fragrance"}
+                    <ArrowUpRight size={15} />
+                  </Link>
                 </div>
-                <Link href={originalesPath(product)} className={s.textLink}>
-                  {ar ? "اكتشف العطر" : "Explore the fragrance"}
-                  <ArrowUpRight size={15} />
-                </Link>
               </section>
             );
           })}
+          <AtelierPanel art="orbit">
+            <div className={s.panelCopy}>
+              <p className={s.kicker}>THE ORIGINALES PHILOSOPHY</p>
+              <h2>{story.lead}</h2>
+              <p>{story.body}</p>
+              <p>{story.close}</p>
+            </div>
+          </AtelierPanel>
         </div>
       </section>
-      <AtelierPanel art="orbit">
-        <div className={s.panelCopy}>
-          <p className={s.kicker}>THE ORIGINALES PHILOSOPHY</p>
-          <h2>{story.lead}</h2>
-          <p>{story.body}</p>
-          <p>{story.close}</p>
-        </div>
-      </AtelierPanel>
       {!products.length && (
         <p className={s.empty}>
           {ar

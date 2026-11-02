@@ -227,7 +227,17 @@ export function OriginalesChrome({
       <div className={s.content}>
         {children}
         <footer className={s.footer}>
-          <span>MAG PARFUM · ORIGINALES</span>
+          <span>
+            MAG PARFUM · ORIGINALES{" "}
+            <a
+              className={s.objectCredit}
+              href="https://sketchfab.com/3d-models/abstract-shape-b41aecc949d5439ebc1bef604bd9358e"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Object by Tiko · CC BY 4.0
+            </a>
+          </span>
           {back}
           <span>
             {ar

@@ -26,6 +26,7 @@ import { PRODUCT_FRAMES } from "./motion-config";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
+import { SculptureScene } from "./SculptureScene";
 import { AtelierPanel } from "./AtelierPanel";
 import { AtelierBagButton, AtelierQuantity } from "./AtelierControls";
 import s from "./atelier.module.css";
@@ -195,8 +196,8 @@ export function OriginalesProduct({
                 y: () =>
                   mobile
                     ? -scene.clientHeight * 0.16
-                    : scene.clientHeight * 0.025,
-                scale: mobile ? 0.66 : 0.84,
+                    : -scene.clientHeight * 0.12,
+                scale: mobile ? 0.66 : 0.68,
                 duration: 0.85,
                 ease: "power2.inOut",
               },
@@ -209,8 +210,8 @@ export function OriginalesProduct({
                 opacity: 1,
                 x: () =>
                   mobile ? -scene.clientWidth * 0.2 : -scene.clientWidth * 0.35,
-                y: () => (mobile ? -scene.clientHeight * 0.13 : 0),
-                scale: mobile ? 0.64 : 0.84,
+                y: () => -scene.clientHeight * 0.1,
+                scale: mobile ? 0.64 : 0.68,
                 duration: 0.7,
                 ease: "power2.inOut",
               },
@@ -268,7 +269,7 @@ export function OriginalesProduct({
                     left: "6%",
                     right: "auto",
                     width: "39%",
-                    top: "70%",
+                    top: "78%",
                     maxWidth: "none",
                     duration: 1,
                   },
@@ -564,7 +565,12 @@ export function OriginalesProduct({
           </div>
         </section>
         <div className={s.introDistance} aria-hidden="true" />
-        <div data-product-chapters className={s.productChapters}>
+        <div
+          data-product-chapters
+          data-object-sequence
+          className={s.productChapters}
+        >
+          <SculptureScene />
           <AtelierPanel id="originales-story" art="fold">
             <div className={s.panelCopy}>
               <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>

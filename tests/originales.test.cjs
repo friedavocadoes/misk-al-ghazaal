@@ -172,3 +172,29 @@ test("shared atelier sculpture files preserve real alpha within the web asset bu
     assert.ok(fs.existsSync(`public/originales/source/sculpture-${name}.png`));
   }
 });
+
+test("supplied 3D object keeps valid local geometry, a small transparent poster and attribution", async () => {
+  const base = "public/originales/3d/abstract_shape/";
+  const model = JSON.parse(fs.readFileSync(base + "scene.gltf", "utf8"));
+  const binary = fs.readFileSync(base + model.buffers[0].uri);
+  assert.equal(binary.length, model.buffers[0].byteLength);
+  const primitive = model.meshes[0].primitives[0];
+  const positions = model.accessors[primitive.attributes.POSITION];
+  const indices = model.accessors[primitive.indices];
+  assert.ok(positions.count < 10000 && indices.count % 3 === 0);
+  const view = model.bufferViews[indices.bufferView];
+  for (let i = 0; i < indices.count; i++)
+    assert.ok(
+      binary.readUInt32LE(
+        (view.byteOffset || 0) + (indices.byteOffset || 0) + i * 4,
+      ) < positions.count,
+    );
+  const poster = "public/originales/3d/abstract-shape-poster.webp";
+  assert.equal((await require("sharp")(poster).metadata()).hasAlpha, true);
+  assert.ok(fs.statSync(poster).size < 100000);
+  assert.match(fs.readFileSync(base + "license.txt", "utf8"), /CC-BY-4.0/);
+  assert.match(
+    fs.readFileSync("src/features/originales/OriginalesChrome.tsx", "utf8"),
+    /Object by Tiko/,
+  );
+});

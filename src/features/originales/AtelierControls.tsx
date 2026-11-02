@@ -1,6 +1,9 @@
 "use client";
+import { useEffect, useRef } from "react";
+import { MorphFrame, FRAME_PATH, OPEN_FRAME } from "./MorphFrame";
+import { atelierGsap } from "./atelier-gsap";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowUpRight, Check, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import s from "./atelier.module.css";
 
 export function AtelierQuantity({
@@ -15,6 +18,25 @@ export function AtelierQuantity({
   ar?: boolean;
 }) {
   const reduced = useReducedMotion();
+  const dial = useRef<SVGSVGElement>(null);
+  useEffect(() => {
+    let live = true,
+      stop = () => {};
+    void atelierGsap().then(({ gsap }) => {
+      if (!live || !dial.current) return;
+      const tween = gsap.to(dial.current, {
+        rotation: value * 36,
+        transformOrigin: "50% 50%",
+        duration: reduced ? 0 : 0.65,
+        ease: "back.out(1.5)",
+      });
+      stop = () => tween.kill();
+    });
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [value, reduced]);
   return (
     <div className={s.quantity}>
       <span>{ar ? "الكمية" : "Quantity"}</span>
@@ -29,6 +51,20 @@ export function AtelierQuantity({
           <Minus size={15} />
         </button>
         <span className={s.numberWindow} aria-hidden="true">
+          <svg ref={dial} className={s.quantityDial} viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="46"
+              stroke="currentColor"
+              fill="none"
+              strokeDasharray="1 8"
+            />
+            <path
+              d="M50 2V8 M98 50H92 M50 98V92 M2 50H8"
+              stroke="currentColor"
+            />
+          </svg>
           <AnimatePresence initial={false} mode="popLayout">
             <motion.span
               key={value}
@@ -93,9 +129,71 @@ export function AtelierBagButton({
         : ar
           ? "أضف إلى الحقيبة"
           : "Add to bag";
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    let live = true,
+      stop = () => {};
+    void atelierGsap().then(({ gsap }) => {
+      if (!live || !button.current) return;
+      const el = button.current,
+        frame = el.querySelector("[data-morph-frame]"),
+        icon = el.querySelector("[data-seal-path]");
+      const ctx = gsap.context(() => {
+        gsap.to(icon, {
+          morphSVG: added
+            ? "M5 17 L13 25 L28 8"
+            : "M7 25 L25 7 L7 7 M25 7 L25 25",
+          duration: reduced ? 0 : 0.55,
+          ease: "power3.inOut",
+        });
+        gsap.to(frame, {
+          morphSVG: added
+            ? "M45 2 H955 L998 45 V555 L955 598 H45 L2 555 V45 Z"
+            : FRAME_PATH,
+          duration: reduced ? 0 : 0.65,
+          ease: "power3.inOut",
+        });
+      }, el);
+      const enter = () => {
+        if (!reduced && !added)
+          gsap.to(frame, {
+            morphSVG: OPEN_FRAME,
+            duration: 0.5,
+            ease: "power3.out",
+            overwrite: true,
+          });
+      };
+      const leave = () => {
+        if (!reduced && !added)
+          gsap.to(frame, {
+            morphSVG: FRAME_PATH,
+            duration: 0.65,
+            ease: "elastic.out(1,.65)",
+            overwrite: true,
+          });
+      };
+      el.addEventListener("pointerenter", enter);
+      el.addEventListener("pointerleave", leave);
+      el.addEventListener("focus", enter);
+      el.addEventListener("blur", leave);
+      stop = () => {
+        el.removeEventListener("pointerenter", enter);
+        el.removeEventListener("pointerleave", leave);
+        el.removeEventListener("focus", enter);
+        el.removeEventListener("blur", leave);
+        gsap.killTweensOf([frame, icon]);
+        ctx.revert();
+      };
+    });
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [added, reduced]);
   return (
     <div className={s.bagMorphTrack}>
       <motion.button
+        ref={button}
         layout={!reduced}
         data-added={added}
         data-ios-haptic="on"
@@ -111,6 +209,7 @@ export function AtelierBagButton({
             : { type: "spring", stiffness: 170, damping: 23 }
         }
       >
+        <MorphFrame kind="button" />
         <span className={s.bagSweep} aria-hidden="true" />
         <span className={s.bagWords}>
           <AnimatePresence initial={false} mode="popLayout">
@@ -151,7 +250,16 @@ export function AtelierBagButton({
           aria-hidden="true"
         >
           <motion.span animate={{ rotate: added ? -90 : 0 }}>
-            {added ? <Check size={21} /> : <ArrowUpRight size={21} />}
+            <svg
+              viewBox="0 0 32 32"
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.2"
+            >
+              <path data-seal-path d="M7 25 L25 7 L7 7 M25 7 L25 25" />
+            </svg>
           </motion.span>
         </motion.span>
       </motion.button>

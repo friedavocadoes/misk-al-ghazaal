@@ -7,6 +7,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
 (async () => {
   const browser = await chromium.launch({
     headless: true,
+    args: ["--enable-unsafe-swiftshader"],
     executablePath: process.env.ORIGINALES_BROWSER_PATH || undefined,
   });
   try {
@@ -16,6 +17,17 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await context.route("**/api/analytics/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
     );
+    await context.addInitScript(() => {
+      window.__originalesDraws = 0;
+      if (!window.WebGL2RenderingContext) return;
+      for (const name of ["drawElements", "drawArrays"]) {
+        const original = WebGL2RenderingContext.prototype[name];
+        WebGL2RenderingContext.prototype[name] = function (...args) {
+          window.__originalesDraws++;
+          return original.apply(this, args);
+        };
+      }
+    });
     const page = await context.newPage(),
       errors = [];
     page.setDefaultNavigationTimeout(120000);
@@ -85,7 +97,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(
       await page.locator("canvas,[data-ingredient]").count(),
       0,
-      "liquid renderer and floating notes are gone",
+      "hero keeps no glass text renderer or flying notes",
     );
     assert.equal(
       await page
@@ -115,6 +127,23 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       0,
       "magnet lands on the full price view, not the compact view",
     );
+    const railBounds = await page
+      .locator("[data-product-gallery] [role=group]")
+      .boundingBox();
+    const bottleBounds = await page.locator("[data-bottle]").boundingBox(),
+      boxBounds = await page.locator("[data-box]").boundingBox();
+    assert.ok(
+      railBounds.y >
+        Math.max(
+          bottleBounds.y + bottleBounds.height,
+          boxBounds.y + boxBounds.height,
+        ) +
+          12,
+      "thumbnail rail clears both bottle and box",
+    );
+    const initialSeal = await page
+      .locator("[data-purchase] [data-seal-path]")
+      .getAttribute("d");
     const pricePhotos = page.locator("[data-product-gallery] button");
     await pricePhotos.nth(1).click();
     await page.waitForTimeout(1000);
@@ -159,6 +188,11 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(cart[0].qty, 3);
     assert.equal(cart[0].productSlug, "originales-lazvaro");
     assert.equal(await page.locator("button[data-added=true]").count(), 1);
+    assert.notEqual(
+      await page.locator("[data-purchase] [data-seal-path]").getAttribute("d"),
+      initialSeal,
+      "GSAP morphs the arrow into the actual confirmation check",
+    );
     const width = await page
       .locator("button[data-added=true]")
       .evaluate(
@@ -189,6 +223,28 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .locator("[data-bottle]")
         .evaluate((el) => el === window.__originalesBottle),
       true,
+    );
+    await page.waitForSelector("[data-sculpture-scene][data-ready=true]");
+    await page.waitForTimeout(2200);
+    assert.equal(
+      await page.locator("[data-sculpture-scene] canvas").count(),
+      1,
+      "one real 3D scene across all chapters",
+    );
+    assert.equal(
+      await page
+        .locator('img[src*="sculpture-fold"],img[src*="sculpture-orbit"]')
+        .count(),
+      0,
+      "no alternating decorative PNGs",
+    );
+    const idleDraws = await page.evaluate(() => window.__originalesDraws);
+    assert.ok(idleDraws > 0, "model is actually rendered");
+    await page.waitForTimeout(700);
+    assert.equal(
+      await page.evaluate(() => window.__originalesDraws),
+      idleDraws,
+      "no idle WebGL render loop",
     );
     const fixedPurchase = await page.locator("[data-purchase]").boundingBox();
     assert.ok(
@@ -237,6 +293,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
       0,
+    );
+    assert.ok(
+      (await page.evaluate(() => window.__originalesDraws)) > idleDraws,
+      "chapter scrolling updates the 3D pose",
     );
     await page.getByRole("button", { name: "Citrus", exact: true }).click();
     assert.ok(
@@ -356,7 +416,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();
