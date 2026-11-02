@@ -4,7 +4,7 @@
 // instance-local ownership, no module script injection or global canvas identifier.
 import { useEffect, useRef } from "react";
 import type { LiquidApp } from "threejs-components/build/backgrounds/liquid1.min.js";
-import { captureLiquidListeners } from "./liquid-lifecycle";
+import { captureLiquidListeners, liquidDropQueue } from "./liquid-lifecycle";
 import s from "./atelier.module.css";
 
 export function LiquidEffectAnimation({
@@ -90,30 +90,30 @@ export function LiquidEffectAnimation({
             // Keep any already-queued upstream resize callback harmless after disposal.
             const resize = instance.three.resize.bind(instance.three);
             instance.three.resize = () => {
-              if (!instance.three.isDisposed) resize();
+              if (instance.three.isDisposed) return;
+              instance.three.maxPixelRatio = Math.min(
+                1,
+                Math.sqrt(
+                  650_000 / Math.max(1, el.clientWidth * el.clientHeight),
+                ),
+              );
+              resize();
             };
-            instance.three.maxPixelRatio = 1;
             instance.three.resize();
             canvas.style.touchAction = "pan-y";
             instance.liquidPlane.material.metalness = 0.75;
             instance.liquidPlane.material.roughness = 0.25;
             instance.liquidPlane.uniforms.displacementScale.value = 5;
             instance.setRain(false);
-            // The upstream RAF owns scheduling; gate both simulation and draw to30fps.
-            const simulate = instance.three.onBeforeRender.bind(instance.three),
-              draw = instance.three.render.bind(instance.three);
-            let last = 0,
-              renderFrame = false;
+            // Native RAF cadence, but only one pointer injection per frame.
+            const simulate = instance.three.onBeforeRender.bind(instance.three);
+            const drops = liquidDropQueue(
+              instance.liquidPlane.addDrop.bind(instance.liquidPlane),
+            );
+            instance.liquidPlane.addDrop = drops.add;
             instance.three.onBeforeRender = (time) => {
-              const now = performance.now();
-              renderFrame = now - last >= 30;
-              if (renderFrame) {
-                last = now;
-                simulate(time);
-              }
-            };
-            instance.three.render = () => {
-              if (renderFrame) draw();
+              drops.flush();
+              simulate(time);
             };
             const loadedBackdrop = page?.querySelector<HTMLImageElement>(
               '[class*="heroBackdrop"] img',

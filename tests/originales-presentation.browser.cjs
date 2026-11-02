@@ -422,6 +422,22 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.ok(
       await page.locator("[data-radix-popper-content-wrapper]").isVisible(),
     );
+    const tooltipChrome = await page
+      .locator(".note-tooltip-card")
+      .evaluate((el) => ({
+        background: getComputedStyle(el).backgroundColor,
+        clip: getComputedStyle(el.querySelector(".note-tooltip-surface"))
+          .overflow,
+      }));
+    assert.equal(tooltipChrome.background, "rgba(0, 0, 0, 0)");
+    assert.equal(tooltipChrome.clip, "hidden");
+    const notesCard = await page
+      .locator("#fragrance-notes [class*=panelContent]")
+      .boundingBox();
+    assert.ok(
+      notesCard.height < 550,
+      "three note stages fit in one compact card",
+    );
     await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 390, height: 667 });
     await page.goto(`${base}/originales/originales-lazvaro`, {
@@ -534,9 +550,41 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       )[0].qty,
       3,
     );
+    const buyContext = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+    });
+    await buyContext.route("**/api/analytics/**", (r) =>
+      r.fulfill({ status: 200, body: "{}" }),
+    );
+    const buyPage = await buyContext.newPage();
+    await buyPage.goto(`${base}/originales/originales-lazvaro`, {
+      waitUntil: "networkidle",
+    });
+    await buyPage.evaluate(() => scrollTo(0, 1120));
+    await buyPage.waitForTimeout(1800);
+    await buyPage
+      .getByRole("button", { name: "Purchase now", exact: true })
+      .click();
+    await buyPage.waitForURL("**/checkout");
+    await buyPage.goto(`${base}/originales/originales-lazvaro`, {
+      waitUntil: "networkidle",
+    });
+    await buyPage.evaluate(() => {
+      localStorage.setItem("misk-coupon", "SAMPLE");
+      scrollTo(0, 1120);
+    });
+    await buyPage.waitForTimeout(1800);
+    await buyPage
+      .getByRole("button", { name: "Purchase now", exact: true })
+      .click();
+    await buyPage
+      .getByRole("button", { name: "Sign in & continue", exact: true })
+      .click();
+    await buyPage.waitForURL("**/account/login?next=*");
+    await buyContext.close();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS supplied water engine/cleanup/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, supplied water engine/cleanup/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

@@ -47,7 +47,7 @@ export function SculptureScene() {
         renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
+        renderer.toneMappingExposure = 0.9;
         renderer.setClearColor(0x000000, 0);
         const scene = new THREE.Scene(),
           camera = new THREE.PerspectiveCamera(36, 1, 0.1, 30);
@@ -60,17 +60,17 @@ export function SculptureScene() {
         pmrem.dispose();
         const group = new THREE.Group();
         scene.add(group);
-        scene.add(new THREE.HemisphereLight(0xf4f4e9, 0x282f29, 2));
-        const light = new THREE.DirectionalLight(0xffedcc, 3);
+        scene.add(new THREE.HemisphereLight(0xf4f4e9, 0x282f29, 1.4));
+        const light = new THREE.DirectionalLight(0xffedcc, 1.5);
         light.position.set(-3, 4, 4);
         scene.add(light);
         const material = new THREE.MeshPhysicalMaterial({
-          color: 0xc9ceca,
-          metalness: 1,
-          roughness: 0.18,
-          clearcoat: 0.65,
-          clearcoatRoughness: 0.16,
-          envMapIntensity: 1.3,
+          color: 0xa8afa8,
+          metalness: 0.82,
+          roughness: 0.46,
+          clearcoat: 0.12,
+          clearcoatRoughness: 0.4,
+          envMapIntensity: 0.7,
           side: THREE.DoubleSide,
         });
         const resources: { model?: import("three").Object3D } = {};
@@ -238,7 +238,7 @@ export function SculptureScene() {
         model.position.sub(centre);
         const normalizer = new THREE.Group();
         normalizer.add(model);
-        normalizer.scale.setScalar(2.15 / Math.max(size.x, size.y, size.z));
+        normalizer.scale.setScalar(1.95 / Math.max(size.x, size.y, size.z));
         model.traverse((child) => {
           const mesh = child as import("three").Mesh;
           if (!mesh.isMesh) return;

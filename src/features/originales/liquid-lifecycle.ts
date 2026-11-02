@@ -36,3 +36,20 @@ export function captureLiquidListeners<T>(
     restore.forEach((fn) => fn());
   }
 }
+/** One pointer ripple injection per native animation frame; clicks keep priority. */
+export function liquidDropQueue(
+  draw: (x: number, y: number, radius: number, strength: number) => void,
+) {
+  let pending: [number, number, number, number] | undefined;
+  return {
+    add(x: number, y: number, radius: number, strength: number) {
+      if (!pending || strength >= pending[3])
+        pending = [x, y, radius, strength];
+    },
+    flush() {
+      const drop = pending;
+      pending = undefined;
+      if (drop) draw(...drop);
+    },
+  };
+}

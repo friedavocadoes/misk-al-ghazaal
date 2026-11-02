@@ -57,3 +57,17 @@ body[data-originales="true"] [data-fly-to-bag] {
   border-radius: 2px !important;
   box-shadow: 0 12px 28px -10px #000b !important;
 }
+/* Popover.Content is also a dialog: keep its outer rounded surface transparent. */
+body[data-originales="true"] .note-tooltip-card {
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+}
+body[data-originales="true"] .note-tooltip-surface {
+  border-radius: 14px;
+  overflow: hidden;
+  isolation: isolate;
+}
+body[data-originales="true"] .note-tooltip-arrow {
+  fill: #242a1e;
+}

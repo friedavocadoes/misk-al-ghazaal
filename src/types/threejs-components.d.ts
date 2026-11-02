@@ -4,6 +4,7 @@ declare module "threejs-components/build/backgrounds/liquid1.min.js" {
     setRain(enabled: boolean): void;
     dispose(): void;
     liquidPlane: {
+      addDrop(x: number, y: number, radius: number, strength: number): void;
       material: {
         metalness: number;
         roughness: number;

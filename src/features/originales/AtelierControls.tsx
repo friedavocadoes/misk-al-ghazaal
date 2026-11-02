@@ -112,6 +112,7 @@ export function AtelierBagButton({
   quantity = 1,
   action = "bag",
   pending = false,
+  requiresLogin = false,
 }: {
   added: boolean;
   disabled: boolean;
@@ -120,27 +121,32 @@ export function AtelierBagButton({
   quantity?: number;
   action?: "bag" | "purchase";
   pending?: boolean;
+  requiresLogin?: boolean;
 }) {
   const reduced = useReducedMotion(),
     label = pending
       ? ar
         ? "جارٍ المتابعة…"
         : "Continuing…"
-      : action === "purchase" && !disabled
+      : requiresLogin && action === "purchase"
         ? ar
-          ? "اشتر الآن"
-          : "Purchase now"
-        : disabled
+          ? "تسجيل الدخول والمتابعة"
+          : "Sign in & continue"
+        : action === "purchase" && !disabled
           ? ar
-            ? "نفد المخزون"
-            : "Out of stock"
-          : added
+            ? "اشتر الآن"
+            : "Purchase now"
+          : disabled
             ? ar
-              ? "أضيف إلى الحقيبة"
-              : "Added to your bag"
-            : ar
-              ? "أضف إلى الحقيبة"
-              : "Add to bag";
+              ? "نفد المخزون"
+              : "Out of stock"
+            : added
+              ? ar
+                ? "أضيف إلى الحقيبة"
+                : "Added to your bag"
+              : ar
+                ? "أضف إلى الحقيبة"
+                : "Add to bag";
   const button = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let live = true,

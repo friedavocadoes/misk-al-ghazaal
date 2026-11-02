@@ -3213,3 +3213,79 @@
     opacity: 0.32;
   }
 }
+/* Compact composition rows keep glyphs readable without an oversized card. */
+.productChapters .compositionPanel {
+  min-height: 0;
+  padding-block: 80px;
+}
+.compositionPanel .compositionHeading {
+  margin-bottom: 24px;
+}
+.productChapters .compositionPanel h2 {
+  font-size: clamp(27px, 2.6vw, 38px);
+}
+.productChapters .compositionPanel .noteColumns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.productChapters .compositionPanel .noteColumns > section {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 0;
+}
+.compositionPanel .noteColumns header {
+  margin: 0;
+  gap: 8px;
+  align-items: center;
+  flex-direction: row;
+}
+.compositionPanel .noteColumns h3 {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.compositionPanel .noteTiles {
+  gap: 12px 18px;
+}
+.compositionPanel .noteTile {
+  width: 68px;
+  max-width: none;
+  gap: 7px;
+  font-size: 9px;
+}
+.compositionPanel .noteGlyph {
+  width: 54px;
+  height: 56px;
+}
+.objectScene[data-ready="true"] canvas {
+  opacity: 0.5;
+}
+@media (max-width: 759px) {
+  .productChapters .compositionPanel {
+    padding-block: 60px;
+  }
+  .productChapters .compositionPanel .noteColumns > section {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 10px;
+    padding-block: 14px;
+  }
+  .compositionPanel .noteTile {
+    width: 58px;
+  }
+  .compositionPanel .noteTiles {
+    gap: 12px;
+  }
+  .compositionPanel .noteGlyph {
+    width: 48px;
+    height: 50px;
+  }
+}
+/* GSAP owns this fade; a CSS transition would lag behind and expose teardown. */
+.heroLiquid {
+  transition: none;
+}
+.objectPoster {
+  opacity: 0.28;
+}

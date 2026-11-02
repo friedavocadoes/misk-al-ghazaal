@@ -254,3 +254,32 @@ test("failed liquid construction still restores methods and removes partial list
   assert.equal(calls, 0);
   assert.equal(target.addEventListener, original);
 });
+
+test("liquid pointer bursts become one latest ripple per frame", () => {
+  const { liquidDropQueue } = load(
+    "src/features/originales/liquid-lifecycle.ts",
+  );
+  const calls = [];
+  const queue = liquidDropQueue((...args) => calls.push(args));
+  for (let i = 0; i < 1000; i++) queue.add(i, i + 1, 0.025, 0.0025);
+  assert.equal(calls.length, 0);
+  queue.flush();
+  assert.deepEqual(calls, [[999, 1000, 0.025, 0.0025]]);
+  queue.flush();
+  assert.equal(calls.length, 1, "empty frames add no pointer GPU work");
+});
+
+test("liquid click ripple is retained when a movement arrives before the next frame", () => {
+  const { liquidDropQueue } = load(
+    "src/features/originales/liquid-lifecycle.ts",
+  );
+  const calls = [];
+  const queue = liquidDropQueue((...args) => calls.push(args));
+  queue.add(1, 2, 0.025, 0.05);
+  queue.add(3, 4, 0.025, 0.0025);
+  queue.flush();
+  assert.deepEqual(calls, [[1, 2, 0.025, 0.05]]);
+  queue.add(5, 6, 0.025, 0.0025);
+  queue.flush();
+  assert.equal(calls.length, 2, "subsequent movement resumes next frame");
+});

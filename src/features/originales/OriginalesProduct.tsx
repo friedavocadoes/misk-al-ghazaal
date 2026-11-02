@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -61,6 +62,7 @@ export function OriginalesProduct({
     [couponLogin, setCouponLogin] = useState(false),
     [mobileDock, setMobileDock] = useState(false),
     [photoFocus, setPhotoFocus] = useState(false);
+  const [routePending, startPurchaseTransition] = useTransition();
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const variant =
       product.variants.find((v) => v.id === variantId) ??
@@ -231,6 +233,12 @@ export function OriginalesProduct({
               },
               0.15,
             );
+            tl.fromTo(
+              node.querySelector("[data-hero-liquid]"),
+              { opacity: 0.42 },
+              { opacity: 0, duration: 0.72, ease: "sine.inOut" },
+              0.22,
+            );
             tl.to(
               node.querySelector("[data-scroll-cue]"),
               { autoAlpha: 0, duration: 0.2 },
@@ -378,7 +386,19 @@ export function OriginalesProduct({
     event: React.MouseEvent<HTMLButtonElement>,
     now = false,
   ) => {
-    if (stock <= 0 || buyPending || (now && couponLogin)) return;
+    if (stock <= 0 || buyPending || routePending) return;
+    if (now && couponLogin) {
+      let savedCode = "";
+      try {
+        savedCode = localStorage.getItem("misk-coupon") ?? "";
+      } catch {}
+      startPurchaseTransition(() =>
+        router.push(
+          savedCode ? "/account/login?next=%2Fcheckout" : "/checkout",
+        ),
+      );
+      return;
+    }
     add(
       { productSlug: product.slug, variantId: variant?.id, qty: safeQty },
       now ? undefined : "flight",
@@ -392,16 +412,17 @@ export function OriginalesProduct({
       if (code) {
         try {
           const {
-            data: { user },
-          } = await createClient().auth.getUser();
-          if (!user) {
+            data: { session },
+          } = await createClient().auth.getSession();
+          if (!session?.user) {
             setCouponLogin(true);
             setBuyPending(false);
             return;
           }
         } catch {}
       }
-      router.push("/checkout");
+      startPurchaseTransition(() => router.push("/checkout"));
+      setBuyPending(false);
       return;
     }
     flyToBag(event.currentTarget, bottle);
@@ -548,9 +569,10 @@ export function OriginalesProduct({
               />
               <AtelierBagButton
                 action="purchase"
+                requiresLogin={couponLogin}
                 added={false}
-                pending={buyPending}
-                disabled={stock <= 0 || buyPending}
+                pending={buyPending || routePending}
+                disabled={stock <= 0 || buyPending || routePending}
                 onClick={(e) => void purchase(e, true)}
                 ar={ar}
               />
@@ -612,12 +634,7 @@ export function OriginalesProduct({
               className={s.compositionPanel}
             >
               <div className={s.compositionHeading}>
-                <p className={s.kicker}>
-                  {ar ? "التوليفة" : "THE COMPOSITION"}
-                </p>
-                <h2>
-                  {ar ? "كل نوتة، لها حضور." : "A composition in three acts."}
-                </h2>
+                <h2>{ar ? "التوليفة" : "The composition."}</h2>
               </div>
               <div className={s.noteColumns}>
                 {(["top", "heart", "base"] as const).map((kind, index) => {
@@ -716,9 +733,10 @@ export function OriginalesProduct({
             />
             <AtelierBagButton
               action="purchase"
+              requiresLogin={couponLogin}
               added={false}
-              pending={buyPending}
-              disabled={stock <= 0 || buyPending}
+              pending={buyPending || routePending}
+              disabled={stock <= 0 || buyPending || routePending}
               onClick={(e) => void purchase(e, true)}
               ar={ar}
             />
