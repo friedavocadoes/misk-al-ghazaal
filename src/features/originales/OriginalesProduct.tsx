@@ -22,6 +22,7 @@ import { NoteGlyph } from "@/components/ui/note-glyphs";
 import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { PdpOffers } from "@/components/blocks/PdpOffers";
 import { SamplePicker } from "@/components/blocks/SamplePicker";
+import { PRODUCT_FRAMES } from "./motion-config";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
@@ -54,7 +55,8 @@ export function OriginalesProduct({
     [qty, setQty] = useState(1),
     [added, setAdded] = useState(false),
     [buyPending, setBuyPending] = useState(false),
-    [couponLogin, setCouponLogin] = useState(false);
+    [couponLogin, setCouponLogin] = useState(false),
+    [mobileDock, setMobileDock] = useState(false);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const variant =
       product.variants.find((v) => v.id === variantId) ??
@@ -84,6 +86,39 @@ export function OriginalesProduct({
     };
   }, [product.slug]);
   useEffect(() => {
+    let frame = 0;
+    const media = matchMedia("(max-width:759px)");
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!media.matches) {
+          setMobileDock(false);
+          return;
+        }
+        const purchase =
+          root.current?.querySelector<HTMLElement>("[data-purchase]");
+        const bounds = root.current?.getBoundingClientRect();
+        setMobileDock(
+          !!(
+            media.matches &&
+            purchase &&
+            bounds &&
+            purchase.getBoundingClientRect().bottom < 85 &&
+            bounds.bottom > 180
+          ),
+        );
+      });
+    };
+    measure();
+    addEventListener("scroll", measure, { passive: true });
+    addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(frame);
+      removeEventListener("scroll", measure);
+      removeEventListener("resize", measure);
+    };
+  }, [product.slug]);
+  useEffect(() => {
     let live = true,
       dispose = () => {};
     Promise.all([import("gsap"), import("gsap/ScrollTrigger")])
@@ -98,7 +133,8 @@ export function OriginalesProduct({
             desktop: "(min-width:760px)",
           },
           (context) => {
-            if (!context.conditions?.motion) return;
+            if (!context.conditions?.motion || context.conditions.mobile)
+              return;
             const node = root.current!,
               mobile = !!context.conditions.mobile,
               scene = node.querySelector<HTMLElement>("[data-scene]")!,
@@ -141,10 +177,13 @@ export function OriginalesProduct({
               };
             };
             const tl = gsap.timeline({
+              onUpdate: () => {
+                node.dataset.priceReady = tl.time() >= 0.95 ? "true" : "false";
+              },
               scrollTrigger: {
                 trigger: node.querySelector("[data-runway]"),
                 start: "top top",
-                end: () => "+=" + innerHeight * 1.46,
+                end: () => "+=" + innerHeight * PRODUCT_FRAMES.dock,
                 scrub: 1,
                 invalidateOnRefresh: true,
               },
@@ -276,25 +315,25 @@ export function OriginalesProduct({
                   },
               0,
             );
-            compact.fromTo(
+            tl.fromTo(
               node.querySelector("[data-product-gallery]"),
               {
                 autoAlpha: 0,
-                x: mobile ? 0 : 70,
-                filter: "blur(16px)",
-                clipPath: "inset(10% 0 10% 80% round 40%)",
+                x: 32,
+                filter: "blur(8px)",
+                clipPath: "inset(0% 0% 0% 65% round 12px)",
               },
               {
                 autoAlpha: 1,
                 x: 0,
                 filter: "blur(0px)",
                 clipPath: "inset(0% 0% 0% 0% round 2px)",
-                duration: 1,
+                duration: 0.32,
               },
-              0.2,
+              0.63,
             );
             compact.timeScale(2.3);
-            tl.add(compact, 1.06);
+            tl.add(compact, 1.45);
             ScrollTrigger.refresh();
             return () => {
               buy.inert = false;
@@ -303,6 +342,7 @@ export function OriginalesProduct({
               );
               if (details) details.inert = false;
               delete node.dataset.docked;
+              delete node.dataset.priceReady;
             };
           },
           root.current,
@@ -424,7 +464,7 @@ export function OriginalesProduct({
                 ?.getBoundingClientRect();
               if (r)
                 scrollTo({
-                  top: scrollY + r.top + innerHeight * 0.9,
+                  top: scrollY + r.top + innerHeight * PRODUCT_FRAMES.price,
                   behavior: matchMedia("(prefers-reduced-motion:reduce)")
                     .matches
                     ? "instant"
@@ -443,7 +483,12 @@ export function OriginalesProduct({
             name={edition.name}
             ar={ar}
           />
-          <div id="originales-purchase" data-purchase className={s.purchase}>
+          <div
+            id="originales-purchase"
+            data-purchase
+            className={s.purchase}
+            inert={mobileDock || undefined}
+          >
             <div className={s.compactIdentity}>
               <span>{variant?.nameOverride ?? edition.name}</span>
               <span>{formatAED(price)}</span>
@@ -630,6 +675,62 @@ export function OriginalesProduct({
           </AtelierPanel>
         </div>
       </section>
+      {mobileDock && (
+        <div className={s.mobilePurchaseDock} data-mobile-purchase-dock>
+          <div className={s.mobileDockIdentity}>
+            <span>
+              {variant?.nameOverride ?? edition.name}
+              {safeQty > 1 ? ` · ×${safeQty}` : ""}
+            </span>
+            <span>{formatAED(price)}</span>
+          </div>
+          <div className={s.purchaseActions}>
+            <AtelierBagButton
+              added={added}
+              disabled={stock <= 0}
+              onClick={(e) => void purchase(e)}
+              ar={ar}
+              quantity={safeQty}
+            />
+            <button
+              type="button"
+              data-ios-haptic="on"
+              className={s.buyButton}
+              disabled={stock <= 0 || buyPending}
+              onClick={(e) => void purchase(e, true)}
+            >
+              {buyPending
+                ? ar
+                  ? "جارٍ المتابعة…"
+                  : "Continuing…"
+                : ar
+                  ? "اشتر الآن"
+                  : "Purchase now"}
+              <ArrowUpRight size={16} />
+            </button>
+          </div>
+          {couponLogin && (
+            <div className={s.mobileCouponLogin}>
+              <Link href="/account/login?next=%2Fcheckout">
+                {ar
+                  ? "تسجيل الدخول لاسترداد القسيمة"
+                  : "Sign in to redeem your coupon"}
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem("misk-coupon");
+                  } catch {}
+                  router.push("/checkout");
+                }}
+              >
+                {ar ? "المتابعة بدون قسيمة" : "Continue without coupon"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

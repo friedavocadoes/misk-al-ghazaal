@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, type RefObject } from "react";
+import { PRODUCT_FRAMES } from "./motion-config";
 
 /** Shared lighting, decorative parallax and proximity-only section settling. Native scroll stays in control. */
 export function useAtelierMotion(
@@ -179,7 +180,7 @@ export function useAtelierMotion(
                 snapTo: (value) => {
                   if (
                     document.querySelector(
-                      '[role="dialog"][data-state="open"]',
+                      '[role="dialog"][data-state="open"],[data-radix-popper-content-wrapper]',
                     ) ||
                     document.activeElement?.closest(
                       "input,textarea,select,[contenteditable=true]",
@@ -195,6 +196,51 @@ export function useAtelierMotion(
                     : innerWidth < 760
                       ? 88
                       : 104;
+                  const product = node.querySelector<HTMLElement>(
+                    "[data-product-chapters]",
+                  );
+                  const desktopProduct = !!product && innerWidth >= 760;
+                  const current = value * max;
+                  if (desktopProduct) {
+                    const runway =
+                      node.querySelector<HTMLElement>("[data-runway]")!;
+                    const origin = scrollY + runway.getBoundingClientRect().top;
+                    const frames = [
+                      0,
+                      PRODUCT_FRAMES.price,
+                      PRODUCT_FRAMES.dock,
+                    ].map((frame) => origin + frame * innerHeight);
+                    if (current <= frames[2]) {
+                      return (
+                        frames.reduce((best, next) =>
+                          Math.abs(next - current) < Math.abs(best - current)
+                            ? next
+                            : best,
+                        ) / max
+                      );
+                    }
+                    // Long chapters retain free scrolling inside their readable body.
+                    for (const panel of product.querySelectorAll<HTMLElement>(
+                      "[data-snap-panel]",
+                    )) {
+                      const r = panel.getBoundingClientRect();
+                      const start = scrollY + r.top - offset;
+                      const end = scrollY + r.bottom - innerHeight + 120;
+                      if (
+                        end > start + 100 &&
+                        current >= start &&
+                        current <= end
+                      )
+                        return value;
+                    }
+                    const last =
+                      product.lastElementChild?.getBoundingClientRect();
+                    if (
+                      last &&
+                      current > scrollY + last.bottom - innerHeight + 120
+                    )
+                      return value;
+                  }
                   const positions = [
                     ...node.querySelectorAll<HTMLElement>("[data-snap-panel]"),
                   ]
@@ -208,20 +254,22 @@ export function useAtelierMotion(
                         ),
                       ),
                     );
-                  const current = value * max,
-                    closest = positions.reduce(
-                      (best, next) =>
-                        Math.abs(next - current) < Math.abs(best - current)
-                          ? next
-                          : best,
-                      Infinity,
-                    );
+                  const closest = positions.reduce(
+                    (best, next) =>
+                      Math.abs(next - current) < Math.abs(best - current)
+                        ? next
+                        : best,
+                    Infinity,
+                  );
                   return Math.abs(closest - current) <
-                    Math.min(140, innerHeight * 0.15)
+                    (desktopProduct
+                      ? innerHeight * 0.55
+                      : Math.min(140, innerHeight * 0.15))
                     ? closest / max
                     : value;
                 },
-                duration: { min: 0.18, max: 0.5 },
+                duration: { min: 0.3, max: 0.85 },
+                ease: "power3.inOut",
                 delay: 0.25,
                 inertia: false,
               },

@@ -104,9 +104,37 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     await page.evaluate(() => {
       window.__originalesTitle = document.querySelector("h1");
-      scrollTo({ top: innerHeight * 0.9, behavior: "instant" });
+      scrollTo({ top: innerHeight * 0.7, behavior: "instant" });
     });
-    await page.waitForTimeout(1800);
+    await page.waitForFunction(
+      () => Math.abs(scrollY - innerHeight * 1.12) < 3,
+    );
+    await page.waitForTimeout(1400);
+    assert.equal(
+      await page.locator("[data-docked=true]").count(),
+      0,
+      "magnet lands on the full price view, not the compact view",
+    );
+    const pricePhotos = page.locator("[data-product-gallery] button");
+    await pricePhotos.nth(1).click();
+    await page.waitForTimeout(1000);
+    const aperture = await page.locator("[class*=photoAperture]").boundingBox();
+    const fullPrice = await page.locator("[data-purchase]").boundingBox();
+    assert.ok(
+      Math.abs(aperture.width - aperture.height) < 2,
+      "photography uses a square aperture",
+    );
+    assert.ok(
+      aperture.x + aperture.width < fullPrice.x,
+      "gallery stays beside the full price view without overlapping it",
+    );
+    assert.equal(
+      await page.locator("[role=dialog][data-state=open]").count(),
+      0,
+      "photographs stay in the same stage, no popup",
+    );
+    await pricePhotos.first().click();
+    await page.waitForTimeout(600);
     assert.equal(
       await page
         .locator("h1")
@@ -142,9 +170,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.evaluate(() => {
       window.__originalesPurchase = document.querySelector("[data-purchase]");
       window.__originalesBottle = document.querySelector("[data-bottle]");
-      scrollTo({ top: innerHeight * 1.8, behavior: "instant" });
+      scrollTo({ top: innerHeight * 1.7, behavior: "instant" });
     });
-    await page.waitForTimeout(1800);
+    await page.waitForFunction(
+      () => Math.abs(scrollY - innerHeight * 1.82) < 3,
+    );
+    await page.waitForTimeout(1400);
     assert.equal(await page.locator("[data-docked=true]").count(), 1);
     assert.equal(
       await page
@@ -216,10 +247,28 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.goto(`${base}/originales/originales-lazvaro`, {
       waitUntil: "networkidle",
     });
-    await page.evaluate(() =>
-      scrollTo({ top: innerHeight * 0.9, behavior: "instant" }),
+    await page.waitForTimeout(1200);
+    assert.equal(
+      await page
+        .locator("[data-scene]")
+        .evaluate((el) => getComputedStyle(el).position),
+      "relative",
+      "mobile is a stable normal-flow product layout",
     );
-    await page.waitForTimeout(1800);
+    const mobileBottleStart = await page.locator("[data-bottle]").boundingBox();
+    await page.evaluate(() => scrollTo({ top: 100, behavior: "instant" }));
+    await page.waitForTimeout(500);
+    const mobileBottleScrolled = await page
+      .locator("[data-bottle]")
+      .boundingBox();
+    assert.ok(
+      Math.abs(mobileBottleStart.y - mobileBottleScrolled.y - 100) < 3,
+      "mobile bottle scrolls with its composition instead of floating",
+    );
+    await page
+      .locator('[data-purchase] button[aria-label="Add to bag"]')
+      .scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
     const button = await page
       .getByRole("button", { name: "Add to bag", exact: true })
       .boundingBox();
@@ -235,21 +284,30 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       scrollTo({ top: innerHeight * 2.1, behavior: "instant" }),
     );
     await page.waitForTimeout(1800);
-    assert.equal(await page.locator("[data-docked=true]").count(), 1);
-    const mobileDock = await page.locator("[data-purchase]").boundingBox();
+    const mobileDock = await page
+      .locator("[data-mobile-purchase-dock]")
+      .boundingBox();
     assert.ok(
       mobileDock.x >= 0 &&
         mobileDock.y > 300 &&
         mobileDock.y + mobileDock.height < 667,
-      "mobile purchase dock fits without covering upper gallery",
+      "mobile purchase bar stays inside viewport",
     );
-    const mobileRail = await page
-      .locator("[data-product-gallery] [role=group]")
-      .boundingBox();
-    assert.ok(
-      mobileRail.x >= 0 &&
-        mobileRail.x + mobileRail.width <= 390 &&
-        mobileRail.y > 70,
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      true,
+      "offscreen duplicate actions are removed from keyboard navigation",
+    );
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(800);
+    assert.equal(
+      await page.locator("[data-mobile-purchase-dock]").count(),
+      0,
+      "mobile bar disappears when returning to product",
+    );
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      false,
     );
     await page.goto(`${base}/originales`, { waitUntil: "networkidle" });
     await page.waitForTimeout(1500);
@@ -298,7 +356,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.deepEqual(errors, []);
     console.log(
-      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, persistent purchase/gallery and database photos, reverse-scroll restoration, touch notes/no plus, short mobile, reduced motion and main-store restoration.",
+      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

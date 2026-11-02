@@ -30,61 +30,62 @@ export function AtelierProductGallery({
       data-photo-active={!!current}
       className={s.productGallery}
     >
-      <AnimatePresence mode="sync">
-        {current && (
-          <motion.div
-            key={current}
-            className={s.photoPlane}
-            initial={
-              reduced
-                ? false
-                : {
-                    opacity: 0,
-                    x: 65,
-                    rotateY: -16,
-                    scale: 0.92,
-                    filter: "blur(18px)",
-                    borderRadius: "38% 2% 25% 3%",
-                  }
-            }
-            animate={{
-              opacity: 1,
-              x: 0,
-              rotateY: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              borderRadius: "2px",
-            }}
-            exit={{
-              opacity: 0,
-              x: reduced ? 0 : -35,
-              scale: reduced ? 1 : 0.96,
-              filter: reduced ? "none" : "blur(12px)",
-            }}
-            transition={{
-              duration: reduced ? 0 : 0.85,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            {loaded !== current && (
-              <LoaderCircle
-                className={s.photoLoading}
-                aria-label={ar ? "تحميل الصورة" : "Loading image"}
+      <div className={s.photoAperture}>
+        <AnimatePresence mode="sync">
+          {current && (
+            <motion.div
+              key={current}
+              className={s.photoPlane}
+              initial={
+                reduced
+                  ? false
+                  : {
+                      opacity: 0,
+                      x: 8,
+                      rotateY: 0,
+                      scale: 1,
+                      filter: "blur(3px)",
+                      borderRadius: "2px",
+                    }
+              }
+              animate={{
+                opacity: 1,
+                x: 0,
+                rotateY: 0,
+                scale: 1,
+                filter: "blur(0px)",
+                borderRadius: "2px",
+              }}
+              exit={{
+                opacity: 0,
+                x: 0,
+                scale: 1,
+                filter: reduced ? "none" : "blur(3px)",
+              }}
+              transition={{
+                duration: reduced ? 0 : 0.55,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {loaded !== current && (
+                <LoaderCircle
+                  className={s.photoLoading}
+                  aria-label={ar ? "تحميل الصورة" : "Loading image"}
+                />
+              )}
+              <Image
+                src={current}
+                alt={`${name} — ${ar ? "صورة المنتج" : "product photograph"}`}
+                fill
+                sizes="(max-width:759px) 88vw, 40vw"
+                className={s.databasePhoto}
+                onLoad={() => setLoaded(current)}
+                onError={() => setLoaded(current)}
               />
-            )}
-            <Image
-              src={current}
-              alt={`${name} — ${ar ? "صورة المنتج" : "product photograph"}`}
-              fill
-              sizes="(max-width:759px) 88vw, 40vw"
-              className={s.databasePhoto}
-              onLoad={() => setLoaded(current)}
-              onError={() => setLoaded(current)}
-            />
-            <span className={s.photoGlint} aria-hidden="true" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <div
         className={s.photoRail}
         role="group"

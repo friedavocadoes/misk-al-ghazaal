@@ -43,7 +43,14 @@ export function StorefrontChrome({
   return (
     <>
       {!capsule && header}
-      <div id="page-content" style={capsule ? { paddingTop: 0 } : undefined}>
+      <div
+        id="page-content"
+        style={
+          capsule
+            ? { paddingTop: 0, background: "#141612", minHeight: "100svh" }
+            : undefined
+        }
+      >
         {!capsule && editor}
         <main className="min-h-[60vh]">{children}</main>
         {!capsule && footer}
