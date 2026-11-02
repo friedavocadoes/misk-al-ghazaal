@@ -3,11 +3,12 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
   type CSSProperties,
   type ReactNode,
 } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Product, Coupon } from "@/lib/types";
@@ -26,6 +27,9 @@ import { PRODUCT_FRAMES } from "./motion-config";
 import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
+import { HeroLiquid } from "./HeroLiquid";
+import { FinaleDecor } from "./FinaleDecor";
+import { SculptureScene } from "./SculptureScene";
 import { AtelierPanel } from "./AtelierPanel";
 import { AtelierBagButton, AtelierQuantity } from "./AtelierControls";
 import s from "./atelier.module.css";
@@ -56,7 +60,9 @@ export function OriginalesProduct({
     [added, setAdded] = useState(false),
     [buyPending, setBuyPending] = useState(false),
     [couponLogin, setCouponLogin] = useState(false),
-    [mobileDock, setMobileDock] = useState(false);
+    [mobileDock, setMobileDock] = useState(false),
+    [photoFocus, setPhotoFocus] = useState(false);
+  const [routePending, startPurchaseTransition] = useTransition();
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const variant =
       product.variants.find((v) => v.id === variantId) ??
@@ -195,8 +201,8 @@ export function OriginalesProduct({
                 y: () =>
                   mobile
                     ? -scene.clientHeight * 0.16
-                    : scene.clientHeight * 0.025,
-                scale: mobile ? 0.66 : 0.84,
+                    : -scene.clientHeight * 0.02,
+                scale: mobile ? 0.66 : 0.68,
                 duration: 0.85,
                 ease: "power2.inOut",
               },
@@ -209,8 +215,8 @@ export function OriginalesProduct({
                 opacity: 1,
                 x: () =>
                   mobile ? -scene.clientWidth * 0.2 : -scene.clientWidth * 0.35,
-                y: () => (mobile ? -scene.clientHeight * 0.13 : 0),
-                scale: mobile ? 0.64 : 0.84,
+                y: () => 0,
+                scale: mobile ? 0.64 : 0.68,
                 duration: 0.7,
                 ease: "power2.inOut",
               },
@@ -226,6 +232,12 @@ export function OriginalesProduct({
                 ease: "power2.inOut",
               },
               0.15,
+            );
+            tl.fromTo(
+              node.querySelector("[data-hero-liquid]"),
+              { opacity: 0.42 },
+              { opacity: 0, duration: 0.72, ease: "sine.inOut" },
+              0.22,
             );
             tl.to(
               node.querySelector("[data-scroll-cue]"),
@@ -268,7 +280,7 @@ export function OriginalesProduct({
                     left: "6%",
                     right: "auto",
                     width: "39%",
-                    top: "70%",
+                    top: "78%",
                     maxWidth: "none",
                     duration: 1,
                   },
@@ -332,6 +344,21 @@ export function OriginalesProduct({
               },
               0.63,
             );
+            compact.to(
+              node.querySelector("[class*=photoAperture]"),
+              { top: "18%", duration: 1 },
+              0,
+            );
+            compact.to(
+              node.querySelector("[class*=photoRail]"),
+              { top: "68%", duration: 1 },
+              0,
+            );
+            compact.to(
+              node.querySelector("[class*=photoCounter]"),
+              { top: "64.2%", duration: 1 },
+              0,
+            );
             compact.timeScale(2.3);
             tl.add(compact, 1.45);
             ScrollTrigger.refresh();
@@ -359,7 +386,19 @@ export function OriginalesProduct({
     event: React.MouseEvent<HTMLButtonElement>,
     now = false,
   ) => {
-    if (stock <= 0 || buyPending || (now && couponLogin)) return;
+    if (stock <= 0 || buyPending || routePending) return;
+    if (now && couponLogin) {
+      let savedCode = "";
+      try {
+        savedCode = localStorage.getItem("misk-coupon") ?? "";
+      } catch {}
+      startPurchaseTransition(() =>
+        router.push(
+          savedCode ? "/account/login?next=%2Fcheckout" : "/checkout",
+        ),
+      );
+      return;
+    }
     add(
       { productSlug: product.slug, variantId: variant?.id, qty: safeQty },
       now ? undefined : "flight",
@@ -373,16 +412,17 @@ export function OriginalesProduct({
       if (code) {
         try {
           const {
-            data: { user },
-          } = await createClient().auth.getUser();
-          if (!user) {
+            data: { session },
+          } = await createClient().auth.getSession();
+          if (!session?.user) {
             setCouponLogin(true);
             setBuyPending(false);
             return;
           }
         } catch {}
       }
-      router.push("/checkout");
+      startPurchaseTransition(() => router.push("/checkout"));
+      setBuyPending(false);
       return;
     }
     flyToBag(event.currentTarget, bottle);
@@ -393,6 +433,8 @@ export function OriginalesProduct({
   return (
     <div
       ref={root}
+      data-originales-product
+      data-photo-focus={photoFocus}
       className={`${s.product} ${s.stickyProduct}`}
       style={
         {
@@ -425,6 +467,7 @@ export function OriginalesProduct({
             </div>
           )}
           <div className={s.heroHalo} />
+          <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
@@ -480,14 +523,15 @@ export function OriginalesProduct({
             images={variant?.images?.length ? variant.images : product.images}
             bottle={bottle}
             box={edition.box ?? undefined}
-            name={edition.name}
+            name={variant?.nameOverride ?? edition.name}
             ar={ar}
+            onFocusChange={setPhotoFocus}
           />
           <div
             id="originales-purchase"
             data-purchase
             className={s.purchase}
-            inert={mobileDock || undefined}
+            inert={mobileDock || photoFocus || undefined}
           >
             <div className={s.compactIdentity}>
               <span>{variant?.nameOverride ?? edition.name}</span>
@@ -523,21 +567,15 @@ export function OriginalesProduct({
                 ar={ar}
                 quantity={safeQty}
               />
-              <button
-                data-ios-haptic="on"
-                className={s.buyButton}
-                disabled={stock <= 0 || buyPending}
+              <AtelierBagButton
+                action="purchase"
+                requiresLogin={couponLogin}
+                added={false}
+                pending={buyPending || routePending}
+                disabled={stock <= 0 || buyPending || routePending}
                 onClick={(e) => void purchase(e, true)}
-              >
-                {buyPending
-                  ? ar
-                    ? "جارٍ المتابعة…"
-                    : "Continuing…"
-                  : ar
-                    ? "اشتر الآن"
-                    : "Purchase now"}
-                <ArrowUpRight size={16} />
-              </button>
+                ar={ar}
+              />
             </div>
             {couponLogin && (
               <div className={s.couponLogin} role="status">
@@ -564,7 +602,12 @@ export function OriginalesProduct({
           </div>
         </section>
         <div className={s.introDistance} aria-hidden="true" />
-        <div data-product-chapters className={s.productChapters}>
+        <div
+          data-product-chapters
+          data-object-sequence
+          className={s.productChapters}
+        >
+          <SculptureScene />
           <AtelierPanel id="originales-story" art="fold">
             <div className={s.panelCopy}>
               <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
@@ -591,12 +634,7 @@ export function OriginalesProduct({
               className={s.compositionPanel}
             >
               <div className={s.compositionHeading}>
-                <p className={s.kicker}>
-                  {ar ? "التوليفة" : "THE COMPOSITION"}
-                </p>
-                <h2>
-                  {ar ? "كل نوتة، لها حضور." : "A composition in three acts."}
-                </h2>
+                <h2>{ar ? "التوليفة" : "The composition."}</h2>
               </div>
               <div className={s.noteColumns}>
                 {(["top", "heart", "base"] as const).map((kind, index) => {
@@ -672,6 +710,7 @@ export function OriginalesProduct({
           </AtelierPanel>
           <AtelierPanel art="fold" className={s.reviewsPanel}>
             <div className={s.sharedContent}>{reviews}</div>
+            <FinaleDecor />
           </AtelierPanel>
         </div>
       </section>
@@ -692,22 +731,15 @@ export function OriginalesProduct({
               ar={ar}
               quantity={safeQty}
             />
-            <button
-              type="button"
-              data-ios-haptic="on"
-              className={s.buyButton}
-              disabled={stock <= 0 || buyPending}
+            <AtelierBagButton
+              action="purchase"
+              requiresLogin={couponLogin}
+              added={false}
+              pending={buyPending || routePending}
+              disabled={stock <= 0 || buyPending || routePending}
               onClick={(e) => void purchase(e, true)}
-            >
-              {buyPending
-                ? ar
-                  ? "جارٍ المتابعة…"
-                  : "Continuing…"
-                : ar
-                  ? "اشتر الآن"
-                  : "Purchase now"}
-              <ArrowUpRight size={16} />
-            </button>
+              ar={ar}
+            />
           </div>
           {couponLogin && (
             <div className={s.mobileCouponLogin}>

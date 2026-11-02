@@ -7,6 +7,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
 (async () => {
   const browser = await chromium.launch({
     headless: true,
+    args: ["--enable-unsafe-swiftshader"],
     executablePath: process.env.ORIGINALES_BROWSER_PATH || undefined,
   });
   try {
@@ -16,6 +17,17 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await context.route("**/api/analytics/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
     );
+    await context.addInitScript(() => {
+      window.__originalesDraws = 0;
+      if (!window.WebGL2RenderingContext) return;
+      for (const name of ["drawElements", "drawArrays"]) {
+        const original = WebGL2RenderingContext.prototype[name];
+        WebGL2RenderingContext.prototype[name] = function (...args) {
+          window.__originalesDraws++;
+          return original.apply(this, args);
+        };
+      }
+    });
     const page = await context.newPage(),
       errors = [];
     page.setDefaultNavigationTimeout(120000);
@@ -77,15 +89,57 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .getByRole("button", { name: "Add to bag", exact: true })
         .isVisible(),
     );
+    await page.locator("[data-gallery-finale]").evaluate((el) =>
+      scrollTo({
+        top: scrollY + el.getBoundingClientRect().top - 200,
+        behavior: "instant",
+      }),
+    );
+    await page.waitForTimeout(2300);
+    assert.equal(
+      await page.locator("[data-gallery-stage]").evaluate((el) => el.inert),
+      true,
+      "all perfumes leave for the full-width closing story",
+    );
+    assert.ok(
+      (await page
+        .locator("[data-gallery-stage]")
+        .evaluate((el) => Number(getComputedStyle(el).opacity))) < 0.05,
+    );
+    const closingWidth = await page
+      .locator("[data-gallery-finale] [class*=panelContent]")
+      .boundingBox();
+    assert.ok(
+      closingWidth.width > 1100,
+      "closing SVG surface expands across the gallery",
+    );
+    assert.equal(
+      await page
+        .locator("[data-gallery-finale] [class*=panelContent]")
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      "rgba(0, 0, 0, 0)",
+      "no rectangular backing leaks outside SVG corners",
+    );
     await page.goto(`${base}/originales/originales-lazvaro`, {
       waitUntil: "networkidle",
     });
     await page.waitForTimeout(2400);
     assert.equal(await page.locator("h1").count(), 1);
     assert.equal(
-      await page.locator("canvas,[data-ingredient]").count(),
+      await page.locator("[data-ingredient]").count(),
       0,
-      "liquid renderer and floating notes are gone",
+      "hero still has no flying notes",
+    );
+    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      1,
+      "provided liquid engine is mounted only once",
+    );
+    assert.equal(
+      await page.evaluate(() => window.__liquidApp),
+      undefined,
+      "no leaked global singleton",
     );
     assert.equal(
       await page
@@ -115,6 +169,28 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       0,
       "magnet lands on the full price view, not the compact view",
     );
+    const railBounds = await page
+      .locator("[data-product-gallery] [role=group]")
+      .boundingBox();
+    const bottleBounds = await page.locator("[data-bottle]").boundingBox(),
+      boxBounds = await page.locator("[data-box]").boundingBox();
+    assert.ok(
+      railBounds.y >
+        Math.max(
+          bottleBounds.y + bottleBounds.height,
+          boxBounds.y + boxBounds.height,
+        ) +
+          12,
+      "thumbnail rail clears both bottle and box",
+    );
+    const initialSeal = await page
+      .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
+      .getAttribute("d");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      0,
+      "hero water loop/context are released outside the opening",
+    );
     const pricePhotos = page.locator("[data-product-gallery] button");
     await pricePhotos.nth(1).click();
     await page.waitForTimeout(1000);
@@ -132,6 +208,48 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.locator("[role=dialog][data-state=open]").count(),
       0,
       "photographs stay in the same stage, no popup",
+    );
+    const initialAperture = await page
+      .locator("[class*=photoAperture]")
+      .boundingBox();
+    await page.mouse.move(
+      initialAperture.x + initialAperture.width / 2,
+      initialAperture.y + initialAperture.height / 2,
+    );
+    await page.waitForTimeout(950);
+    assert.equal(
+      await page
+        .locator("[data-originales-product]")
+        .getAttribute("data-photo-focus"),
+      "true",
+    );
+    const focusedAperture = await page
+      .locator("[class*=photoAperture]")
+      .boundingBox();
+    assert.ok(
+      focusedAperture.width > initialAperture.width * 1.1,
+      "image enlarges seamlessly while inspecting",
+    );
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      true,
+    );
+    assert.ok(
+      await page.locator(".product-lens-window").isVisible(),
+      "same magnifying lens as standard product page",
+    );
+    await page.keyboard.press("Escape");
+    await page.mouse.move(15, 15);
+    await page.waitForTimeout(700);
+    assert.equal(
+      await page
+        .locator("[data-originales-product]")
+        .getAttribute("data-photo-focus"),
+      "false",
+    );
+    assert.equal(
+      await page.locator("[data-purchase]").evaluate((el) => el.inert),
+      false,
     );
     await pricePhotos.first().click();
     await page.waitForTimeout(600);
@@ -159,6 +277,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(cart[0].qty, 3);
     assert.equal(cart[0].productSlug, "originales-lazvaro");
     assert.equal(await page.locator("button[data-added=true]").count(), 1);
+    assert.notEqual(
+      await page
+        .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
+        .getAttribute("d"),
+      initialSeal,
+      "GSAP morphs the arrow into the actual confirmation check",
+    );
     const width = await page
       .locator("button[data-added=true]")
       .evaluate(
@@ -189,6 +314,51 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .locator("[data-bottle]")
         .evaluate((el) => el === window.__originalesBottle),
       true,
+    );
+    await page.waitForSelector("[data-sculpture-scene][data-ready=true]");
+    await page.waitForTimeout(2200);
+    assert.equal(
+      await page.locator("[data-sculpture-scene] canvas").count(),
+      1,
+      "one real 3D scene across all chapters",
+    );
+    assert.equal(
+      await page
+        .locator(
+          'img[src*="sculpture-fold"]:not([data-finale-material]),img[src*="sculpture-orbit"]:not([data-finale-material])',
+        )
+        .count(),
+      0,
+      "no repeating chapter PNGs outside the closing parallax",
+    );
+    const glass = await page
+      .locator("#originales-story [data-glass-blur]")
+      .evaluate((el) => ({
+        blur: getComputedStyle(el).backdropFilter,
+        clip: getComputedStyle(el).clipPath,
+      }));
+    assert.ok(
+      glass.blur.includes("18px") && glass.clip.includes("glass-"),
+      "real blur is clipped to the SVG card contour",
+    );
+    const paths = await page
+      .locator("#originales-story [data-morph-surface]")
+      .evaluate((svg) => [
+        svg.querySelector("[data-morph-frame]").getAttribute("d"),
+        svg.querySelector("[data-morph-clip]").getAttribute("d"),
+      ]);
+    assert.equal(
+      paths[0],
+      paths[1],
+      "visible frame and blur mask morph together",
+    );
+    const idleDraws = await page.evaluate(() => window.__originalesDraws);
+    assert.ok(idleDraws > 0, "model is actually rendered");
+    await page.waitForTimeout(700);
+    assert.equal(
+      await page.evaluate(() => window.__originalesDraws),
+      idleDraws,
+      "no idle WebGL render loop",
     );
     const fixedPurchase = await page.locator("[data-purchase]").boundingBox();
     assert.ok(
@@ -232,15 +402,41 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       1,
       "scrolling back restores original presentation even with a photo selected",
     );
+    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
+    assert.equal(
+      await page.locator("[data-liquid-effect] canvas").count(),
+      1,
+      "water restarts with a single owned instance on reverse scroll",
+    );
     await page.locator("#fragrance-notes").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1300);
     assert.equal(
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
       0,
     );
+    assert.ok(
+      (await page.evaluate(() => window.__originalesDraws)) > idleDraws,
+      "chapter scrolling updates the 3D pose",
+    );
     await page.getByRole("button", { name: "Citrus", exact: true }).click();
     assert.ok(
       await page.locator("[data-radix-popper-content-wrapper]").isVisible(),
+    );
+    const tooltipChrome = await page
+      .locator(".note-tooltip-card")
+      .evaluate((el) => ({
+        background: getComputedStyle(el).backgroundColor,
+        clip: getComputedStyle(el.querySelector(".note-tooltip-surface"))
+          .overflow,
+      }));
+    assert.equal(tooltipChrome.background, "rgba(0, 0, 0, 0)");
+    assert.equal(tooltipChrome.clip, "hidden");
+    const notesCard = await page
+      .locator("#fragrance-notes [class*=panelContent]")
+      .boundingBox();
+    assert.ok(
+      notesCard.height < 550,
+      "three note stages fit in one compact card",
     );
     await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 390, height: 667 });
@@ -354,9 +550,41 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       )[0].qty,
       3,
     );
+    const buyContext = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+    });
+    await buyContext.route("**/api/analytics/**", (r) =>
+      r.fulfill({ status: 200, body: "{}" }),
+    );
+    const buyPage = await buyContext.newPage();
+    await buyPage.goto(`${base}/originales/originales-lazvaro`, {
+      waitUntil: "networkidle",
+    });
+    await buyPage.evaluate(() => scrollTo(0, 1120));
+    await buyPage.waitForTimeout(1800);
+    await buyPage
+      .getByRole("button", { name: "Purchase now", exact: true })
+      .click();
+    await buyPage.waitForURL("**/checkout");
+    await buyPage.goto(`${base}/originales/originales-lazvaro`, {
+      waitUntil: "networkidle",
+    });
+    await buyPage.evaluate(() => {
+      localStorage.setItem("misk-coupon", "SAMPLE");
+      scrollTo(0, 1120);
+    });
+    await buyPage.waitForTimeout(1800);
+    await buyPage
+      .getByRole("button", { name: "Purchase now", exact: true })
+      .click();
+    await buyPage
+      .getByRole("button", { name: "Sign in & continue", exact: true })
+      .click();
+    await buyPage.waitForURL("**/account/login?next=*");
+    await buyContext.close();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, supplied water engine/cleanup/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

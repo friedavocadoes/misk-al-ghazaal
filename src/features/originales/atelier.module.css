@@ -2515,3 +2515,777 @@
   justify-content: space-between;
   gap: 12px;
 }
+/* V6: chrome object + drawn optical frames. The scene is shared by every chapter. */
+.sculptureSticky {
+  position: sticky;
+  top: 88px;
+  height: calc(100svh - 88px);
+  margin-bottom: calc(-100svh + 88px);
+  z-index: 0;
+  pointer-events: none;
+}
+.objectScene {
+  position: absolute;
+  inset: 0 -9% 0 -8%;
+}
+.objectScene canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.7s;
+}
+.objectPoster {
+  object-fit: contain;
+  opacity: 0.42;
+  transition: opacity 0.7s;
+}
+.objectScene[data-ready="true"] canvas {
+  opacity: 1;
+}
+.objectScene[data-ready="true"] .objectPoster {
+  opacity: 0;
+}
+.objectCaption {
+  position: absolute;
+  top: 35px;
+  left: 8%;
+  right: 7%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  color: #b0b3a4;
+}
+.objectCaption > span {
+  opacity: 0.5;
+}
+.objectCredit {
+  display: block;
+  margin-top: 9px;
+  font-size: 7px;
+  opacity: 0.5;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+.morphFrame {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+  color: #d9d6be;
+}
+.panelContent > :not(svg) {
+  position: relative;
+}
+.bagMorph > .bagSeal {
+  position: relative;
+}
+.productChapters .panelContent {
+  border: 0;
+  background: linear-gradient(115deg, #131b17d4, #131b1733);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+  padding: 38px 34px;
+}
+.productChapters .panelContent::before {
+  display: none;
+}
+.productChapters .panel {
+  min-height: 100svh;
+  padding-block: 15svh;
+}
+.productChapters .panelGrain {
+  opacity: 0.015;
+}
+.productChapters .panelCopy > .kicker {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 28px;
+}
+.productChapters .panelCopy > .kicker::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+.productChapters .panel h2 {
+  font-size: clamp(30px, 3.6vw, 54px);
+  letter-spacing: -0.055em;
+  line-height: 1.06;
+}
+.productChapters .compositionPanel h2 {
+  font-size: clamp(30px, 3.2vw, 48px);
+}
+.panelContent > .morphFrame ~ * {
+  z-index: 1;
+}
+.editionCard {
+  position: relative;
+  padding: 42px 34px;
+  background: linear-gradient(115deg, #121a16db, #121a1644);
+  backdrop-filter: blur(3px);
+}
+.editionCard > :not(svg) {
+  position: relative;
+  z-index: 1;
+}
+.editionCard > h2 {
+  font-size: clamp(30px, 3.5vw, 52px);
+  line-height: 1.08;
+  letter-spacing: -0.05em;
+  margin-top: 28px;
+  font-weight: 400;
+}
+.sequenceChapter {
+  display: flex;
+  align-items: center;
+  border: 0;
+  min-height: 112svh;
+  padding: 80px 0;
+  position: relative;
+  z-index: 1;
+}
+.sequenceStories {
+  padding-right: 4%;
+}
+.sequenceChapter .chapterProse {
+  margin-top: 25px;
+  line-height: 1.95;
+}
+.sequenceChapter .textLink {
+  margin-top: 32px;
+  width: 100%;
+}
+.galleryIntro {
+  position: relative;
+  display: grid;
+  grid-template-columns: 75px 1fr auto;
+  align-items: center;
+  gap: 28px;
+}
+.editionEmblem {
+  width: 72px;
+  height: 72px;
+  color: #cbc8ac;
+  opacity: 0.75;
+}
+.galleryIntro h1 {
+  font-size: clamp(32px, 4.8vw, 74px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+}
+.galleryIntro .kicker {
+  opacity: 0.65;
+}
+.galleryNote {
+  background: #e8ecd90a;
+  padding: 15px 11px;
+  border: 1px solid #e4e9d115;
+}
+.galleryNoteGlyph {
+  transition: transform 0.5s cubic-bezier(0.2, 1, 0.2, 1);
+}
+.galleryNote:hover .galleryNoteGlyph {
+  transform: translateY(-4px);
+}
+.quantityDial {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+}
+.numberWindow {
+  width: 48px;
+  height: 48px;
+  border: 0;
+}
+.numberFace {
+  font-size: 23px;
+}
+.bagMorph,
+.stickyProduct[data-docked="true"] .bagMorph {
+  border: 0;
+  box-shadow: none;
+  background: none;
+  backdrop-filter: none;
+}
+.bagWords,
+.bagSeal {
+  z-index: 1;
+}
+.bagSeal {
+  border: 0;
+  background: #e3e7d60a;
+}
+.bagSweep {
+  opacity: 0.5;
+}
+.bagMorphTrack {
+  isolation: isolate;
+}
+.bagMorph[data-added="true"] {
+  color: #e1dfc8;
+}
+.stickyProduct[data-docked="true"] .bagMorphTrack,
+.stickyProduct[data-docked="true"] .bagMorph {
+  min-height: 66px;
+}
+.stickyProduct[data-docked="true"] .buyButton {
+  min-height: 66px;
+}
+.photoRail {
+  top: 68%;
+  padding: 0;
+  gap: 11px;
+  overflow-y: hidden;
+}
+.photoRail button {
+  flex-basis: 54px;
+  height: 62px;
+  border: 0;
+  background: #e3e8d309;
+  opacity: 0.6;
+}
+.photoRail button[aria-pressed="true"] {
+  background: #e3e8d316;
+}
+.photoAperture {
+  top: 18%;
+  width: min(41%, 44svh);
+}
+.photoPlane {
+  box-shadow: none;
+}
+.thumbIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 54px;
+  height: 62px;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid #d9cba2;
+  box-shadow: inset 0 0 12px #d9cba215;
+}
+.photoSelected {
+  display: none;
+}
+.photoCounter {
+  position: absolute;
+  top: 64.2%;
+  left: 6%;
+  width: 39%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 7px;
+  letter-spacing: 0.17em;
+  opacity: 0.6;
+}
+.photoCounter small {
+  font-size: inherit;
+}
+@media (min-width: 760px) and (max-height: 740px) {
+  .stickyProduct[data-docked="true"] .bagMorphTrack,
+  .stickyProduct[data-docked="true"] .bagMorph,
+  .stickyProduct[data-docked="true"] .buyButton {
+    min-height: 50px;
+  }
+  .stickyProduct[data-docked="true"] .quantity {
+    padding-block: 4px;
+  }
+  .stickyProduct[data-docked="true"] .quantityMechanism button,
+  .stickyProduct[data-docked="true"] .numberWindow {
+    height: 30px;
+  }
+  .photoRail button,
+  .thumbIndicator {
+    height: 44px;
+  }
+}
+@media (max-width: 759px) {
+  .sculptureSticky {
+    top: 70px;
+    height: 70svh;
+    margin-bottom: -70svh;
+  }
+  .objectScene {
+    inset: 0 -3%;
+  }
+  .objectCaption {
+    top: 20px;
+    left: 25px;
+    font-size: 6px;
+  }
+  .productChapters .panel {
+    min-height: 85svh;
+    padding: 90px 20px;
+  }
+  .productChapters .panelContent {
+    padding: 28px 24px;
+    background: linear-gradient(110deg, #121a16e8, #121a1699);
+    backdrop-filter: blur(3px);
+  }
+  .productChapters .panel h2 {
+    font-size: 34px;
+  }
+  .editionCard {
+    padding: 30px 24px;
+  }
+  .sequenceChapter {
+    min-height: 105svh;
+    padding: 70px 0;
+  }
+  .galleryIntro {
+    grid-template-columns: 44px 1fr;
+    gap: 18px;
+  }
+  .editionEmblem {
+    width: 44px;
+    height: 44px;
+  }
+  .galleryIntro h1 {
+    font-size: 30px;
+    letter-spacing: 0.1em;
+  }
+  .galleryScroll {
+    grid-column: 2;
+  }
+  .numberWindow {
+    width: 44px;
+    height: 44px;
+  }
+  .stickyProduct .photoRail {
+    padding: 3px 0;
+  }
+  .stickyProduct .photoRail button,
+  .thumbIndicator {
+    width: 46px;
+    height: 46px;
+  }
+  .photoCounter {
+    top: auto;
+    bottom: 70px;
+    left: 20px;
+    width: calc(100% - 40px);
+  }
+  .photoCounter small {
+    display: none;
+  }
+  .mobilePurchaseDock .bagMorph {
+    background: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .objectScene canvas {
+    display: none;
+  }
+  .objectPoster {
+    opacity: 0.32;
+  }
+  .productChapters .panelContent,
+  .editionCard {
+    backdrop-filter: none;
+  }
+}
+
+.sequenceStories > .panel {
+  position: relative;
+  z-index: 1;
+  background: none;
+  padding: 80px 0;
+  border: 0;
+}
+.sequenceStories > .panel .panelCopy {
+  width: 100%;
+  margin: 0;
+}
+.sequenceStories > .panel .panelContent {
+  padding: 38px 34px;
+  border: 0;
+  background: linear-gradient(115deg, #121a16db, #121a1644);
+  backdrop-filter: blur(3px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stickyProduct:not([data-docked="true"]) .sculptureSticky,
+  .gallery:not([data-collapsed="true"]) .sculptureSticky {
+    opacity: 0;
+  }
+  .sculptureSticky {
+    transition: opacity 0.65s;
+  }
+}
+@media (max-width: 759px) {
+  .galleryIntro h1 {
+    font-size: clamp(24px, 7.6vw, 30px);
+    letter-spacing: 0.08em;
+  }
+}
+/* V7: colour is painted by the SVG shape itself; no rectangular corner backing. */
+.productChapters .panelContent,
+.editionCard,
+.sequenceStories > .panel .panelContent,
+.galleryFinale .panelContent {
+  background: none !important;
+  backdrop-filter: none !important;
+  border: 0;
+  box-shadow: none;
+}
+.photoAperture {
+  top: 28%;
+  transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.photoCounter {
+  top: 76%;
+}
+.photoRail {
+  top: 80%;
+}
+.purchaseActions {
+  gap: 12px;
+}
+.purchaseActions > .bagMorphTrack {
+  min-width: 0;
+}
+.heroLiquid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  transition: opacity 0.7s;
+}
+.stickyProduct[data-price-ready="true"] .heroLiquid {
+  opacity: 0;
+}
+.photoAperture:has(.product-lens) {
+  pointer-events: auto;
+}
+.photoPlane :global(.product-lens-hint) {
+  display: none;
+}
+.photoFocusExit {
+  position: absolute;
+  top: 27%;
+  left: 48%;
+  z-index: 15;
+  pointer-events: auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d0d5bd50;
+  background: #121b15de;
+  color: #eee9d9;
+}
+.stickyProduct[data-photo-focus="true"] .photoAperture {
+  scale: 1.18;
+  z-index: 11;
+}
+.stickyProduct .photoRail,
+.stickyProduct .photoCounter,
+.purchase :is(.kicker, .signaturePrice, .quantity, .purchaseActions),
+.sceneCaption,
+.productChapters {
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.55s;
+}
+.stickyProduct[data-photo-focus="true"]
+  :is(
+    .photoRail,
+    .photoCounter,
+    .sceneCaption,
+    .signaturePrice,
+    .quantity,
+    .purchaseActions,
+    .purchase .kicker,
+    .couponLogin
+  ) {
+  opacity: 0;
+  filter: blur(5px);
+  pointer-events: none;
+}
+.stickyProduct[data-photo-focus="true"] .productChapters {
+  opacity: 0.08;
+  filter: blur(8px);
+  pointer-events: none;
+}
+.world:has([data-photo-focus="true"]) :is(.header, .rail) {
+  opacity: 0.08;
+  filter: blur(5px);
+  pointer-events: none;
+}
+.header,
+.rail {
+  transition:
+    opacity 0.55s,
+    filter 0.55s;
+}
+.photoPlane[data-focus="false"] :global(.product-lens-window) {
+  opacity: 0;
+}
+.galleryFinale {
+  min-height: 100svh;
+  padding: 13svh 5% 18svh;
+  position: relative;
+  z-index: 9;
+  background: none !important;
+  border: 0;
+}
+.galleryFinale .panelContent {
+  min-height: 65svh;
+  padding: 100px 6%;
+  display: flex;
+  align-items: center;
+}
+.galleryFinale .panelCopy {
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
+  text-align: center;
+}
+.galleryFinale .panel h2,
+.galleryFinale h2 {
+  font-size: clamp(40px, 5.2vw, 78px);
+  letter-spacing: -0.055em;
+  line-height: 1.03;
+}
+.galleryFinale .panelCopy > p:not(.kicker) {
+  max-width: 640px;
+  margin: 28px auto 0;
+  font-size: 14px;
+  line-height: 1.9;
+}
+.panelContent > .finaleDecor {
+  position: absolute;
+  right: -7%;
+  top: -180px;
+  width: min(29vw, 370px);
+  height: 370px;
+  pointer-events: none;
+  z-index: 3;
+}
+.finaleDecor > img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 20px 20px #0005);
+}
+.finaleDecor > svg {
+  position: absolute;
+  width: 58%;
+  height: 58%;
+  left: -35%;
+  bottom: -25%;
+  color: #c9cab1;
+  opacity: 0.5;
+}
+.reviewsPanel {
+  padding-top: 22svh !important;
+}
+.reviewsPanel .panelContent {
+  padding-top: 60px;
+}
+.galleryFinale .panelCopy,
+.reviewsPanel .sharedContent {
+  z-index: 4;
+}
+@media (max-width: 759px) {
+  .stickyProduct .photoAperture {
+    top: 104px;
+  }
+  .stickyProduct .photoRail {
+    top: auto;
+  }
+  .stickyProduct .photoCounter {
+    top: auto;
+  }
+  .stickyProduct[data-photo-focus="true"] .photoAperture {
+    scale: 1.1;
+  }
+  .photoFocusExit {
+    top: 100px;
+    right: 15px;
+    left: auto;
+  }
+  .heroLiquid {
+    height: var(--mobile-stage-height);
+    opacity: 0.4;
+  }
+  .galleryFinale {
+    padding: 110px 20px 90px;
+  }
+  .galleryFinale .panelContent {
+    min-height: 70svh;
+    padding: 65px 26px;
+  }
+  .galleryFinale h2 {
+    font-size: 38px;
+  }
+  .panelContent > .finaleDecor {
+    width: 185px;
+    height: 185px;
+    top: -105px;
+    right: -10px;
+  }
+  .reviewsPanel {
+    padding-top: 150px !important;
+  }
+}
+.photoFocusName {
+  position: absolute;
+  left: 58%;
+  top: 35%;
+  font-size: clamp(30px, 3vw, 43px);
+  letter-spacing: 0.085em;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.5s;
+  color: #eeeae0;
+  pointer-events: none;
+}
+.productGallery[data-focused="true"] .photoFocusName {
+  opacity: 1;
+}
+.stickyProduct[data-photo-focus="true"] :is(.frostedTitle, .compactIdentity) {
+  opacity: 0 !important;
+}
+@media (max-width: 759px) {
+  .photoFocusName {
+    left: 20px;
+    top: calc(var(--mobile-stage-height) + 52px);
+    font-size: 30px;
+  }
+}
+@media (min-width: 760px) {
+  .galleryFinale .panelContent {
+    min-height: max(880px, 80svh);
+  }
+}
+/* Optical blur follows the same animated SVG contour; corners remain clear. */
+.panelContent > .glassBlur,
+.editionCard > .glassBlur {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #adb8a408;
+  backdrop-filter: blur(18px) saturate(1.16) brightness(0.92);
+}
+.liquidHost,
+.liquidCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.liquidCanvas {
+  opacity: 0;
+  transition: opacity 0.7s;
+}
+.liquidHost[data-ready="true"] .liquidCanvas {
+  opacity: 1;
+}
+.heroLiquid {
+  mix-blend-mode: normal;
+  opacity: 0.42;
+}
+@media (max-width: 759px) {
+  .panelContent > .glassBlur,
+  .editionCard > .glassBlur {
+    backdrop-filter: blur(12px) saturate(1.1);
+  }
+  .heroLiquid {
+    opacity: 0.32;
+  }
+}
+/* Compact composition rows keep glyphs readable without an oversized card. */
+.productChapters .compositionPanel {
+  min-height: 0;
+  padding-block: 80px;
+}
+.compositionPanel .compositionHeading {
+  margin-bottom: 24px;
+}
+.productChapters .compositionPanel h2 {
+  font-size: clamp(27px, 2.6vw, 38px);
+}
+.productChapters .compositionPanel .noteColumns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.productChapters .compositionPanel .noteColumns > section {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 0;
+}
+.compositionPanel .noteColumns header {
+  margin: 0;
+  gap: 8px;
+  align-items: center;
+  flex-direction: row;
+}
+.compositionPanel .noteColumns h3 {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.compositionPanel .noteTiles {
+  gap: 12px 18px;
+}
+.compositionPanel .noteTile {
+  width: 68px;
+  max-width: none;
+  gap: 7px;
+  font-size: 9px;
+}
+.compositionPanel .noteGlyph {
+  width: 54px;
+  height: 56px;
+}
+.objectScene[data-ready="true"] canvas {
+  opacity: 0.5;
+}
+@media (max-width: 759px) {
+  .productChapters .compositionPanel {
+    padding-block: 60px;
+  }
+  .productChapters .compositionPanel .noteColumns > section {
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 10px;
+    padding-block: 14px;
+  }
+  .compositionPanel .noteTile {
+    width: 58px;
+  }
+  .compositionPanel .noteTiles {
+    gap: 12px;
+  }
+  .compositionPanel .noteGlyph {
+    width: 48px;
+    height: 50px;
+  }
+}
+/* GSAP owns this fade; a CSS transition would lag behind and expose teardown. */
+.heroLiquid {
+  transition: none;
+}
+.objectPoster {
+  opacity: 0.28;
+}
