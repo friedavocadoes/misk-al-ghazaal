@@ -42,18 +42,36 @@ export function MorphFrame({
           )}
           <linearGradient id={`metal-${id}`} x1="0" y1="0" x2="1" y2="1">
             <stop
-              stopColor={kind === "button" ? "#d8d8c4" : "#101813"}
-              stopOpacity={kind === "button" ? ".12" : ".90"}
+              stopColor={
+                kind === "button"
+                  ? "var(--studio-button-highlight, #d8d8c4)"
+                  : "var(--studio-card-light, #101813)"
+              }
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .12)" : ".90"
+              }
             />
             <stop
               offset=".45"
-              stopColor={kind === "button" ? "#9ca6a0" : "#101813"}
-              stopOpacity={kind === "button" ? ".025" : ".60"}
+              stopColor={
+                kind === "button"
+                  ? "var(--studio-button-body, #9ca6a0)"
+                  : "var(--studio-card, #101813)"
+              }
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .025)" : ".60"
+              }
             />
             <stop
               offset="1"
-              stopColor={kind === "button" ? "#d2bb80" : "#101813"}
-              stopOpacity={kind === "button" ? ".09" : ".72"}
+              stopColor={
+                kind === "button"
+                  ? "var(--studio-button-shadow, #d2bb80)"
+                  : "var(--studio-card, #101813)"
+              }
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .09)" : ".72"
+              }
             />
           </linearGradient>
         </defs>

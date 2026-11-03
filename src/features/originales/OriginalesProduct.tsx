@@ -28,7 +28,7 @@ import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
 import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
-import { HeroLiquid } from "./HeroLiquid";
+import { StudioAtmosphere } from "./StudioAtmosphere";
 import { FinaleDecor } from "./FinaleDecor";
 import { SculptureScene } from "./SculptureScene";
 import { AtelierPanel } from "./AtelierPanel";
@@ -90,6 +90,32 @@ export function OriginalesProduct({
       if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
     };
   }, [product.slug]);
+  useEffect(() => {
+    const element = root.current;
+    if (!ready || !element) return;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const finish = () => {
+      if (element.dataset.studioIntro !== "complete")
+        element.dataset.studioIntro = "complete";
+    };
+    if (window.scrollY > 24 || reduced.matches) {
+      finish();
+      return;
+    }
+
+    element.dataset.studioIntro = "playing";
+    const timer = window.setTimeout(finish, 1750);
+    const interrupt = () => {
+      if (window.scrollY > 24 || reduced.matches) finish();
+    };
+    window.addEventListener("scroll", interrupt, { passive: true });
+    reduced.addEventListener("change", interrupt);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", interrupt);
+      reduced.removeEventListener("change", interrupt);
+    };
+  }, [ready, product.slug]);
   useEffect(() => {
     let frame = 0;
     const media = matchMedia("(max-width:759px)");
@@ -170,6 +196,27 @@ export function OriginalesProduct({
               gsap.set(title, {
                 x: (scene.clientWidth - display.offsetWidth) / 2,
                 y: innerHeight * 0.25,
+              });
+              gsap.to(node.querySelectorAll("[data-bottle-reflection]"), {
+                opacity: 0,
+                y: 16,
+                ease: "atelier-soft",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top top",
+                  end: "top -24%",
+                  scrub: 0.35,
+                },
+              });
+              gsap.to(scene, {
+                "--studio-motion-opacity": 0,
+                ease: "atelier-soft",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top top",
+                  end: "top -24%",
+                  scrub: 0.35,
+                },
               });
               gsap.to(title, {
                 x: () =>
@@ -261,6 +308,24 @@ export function OriginalesProduct({
               },
             });
             tl.to(
+              node.querySelectorAll("[data-bottle-reflection]"),
+              {
+                opacity: 0,
+                y: 24,
+                duration: 0.48,
+              },
+              0,
+            );
+            tl.to(
+              scene,
+              {
+                "--studio-dim": 0.76,
+                "--studio-motion-opacity": 0,
+                duration: 0.86,
+              },
+              0,
+            );
+            tl.to(
               node.querySelector("[data-bottle]"),
               {
                 x: () => (mobile ? 0 : -scene.clientWidth * 0.23),
@@ -301,12 +366,6 @@ export function OriginalesProduct({
                 ease: "atelier-soft",
               },
               0.15,
-            );
-            tl.fromTo(
-              node.querySelector("[data-hero-liquid]"),
-              { opacity: 0.42 },
-              { opacity: 0, duration: 0.72, ease: "atelier-soft" },
-              0.22,
             );
             tl.to(
               node.querySelector("[data-scroll-cue]"),
@@ -503,12 +562,15 @@ export function OriginalesProduct({
     <div
       ref={root}
       data-originales-product
+      data-studio-intro="pending"
       data-photo-focus={photoFocus}
       className={`${s.product} ${s.stickyProduct}`}
       style={
         {
           "--edition-accent": edition.accent,
           "--edition-wash": edition.wash,
+          "--edition-ink": edition.ink,
+          "--reflection-seam": edition.reflectionSeam,
         } as CSSProperties
       }
     >
@@ -523,20 +585,12 @@ export function OriginalesProduct({
           className={s.scene}
           aria-label={edition.name}
         >
-          {edition.backdrop && (
-            <div data-arrival className={s.heroBackdrop}>
-              <Image
-                src={edition.backdrop}
-                alt=""
-                fill
-                priority
-                sizes="100vw"
-                className="object-cover"
-              />
-            </div>
-          )}
+          <StudioAtmosphere
+            ink={edition.ink}
+            accent={edition.accent}
+            wash={edition.wash}
+          />
           <div className={s.heroHalo} />
-          <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
@@ -573,6 +627,21 @@ export function OriginalesProduct({
               sizes="(max-width:759px) 65vw, 34vw"
               className="object-contain"
             />
+            {edition.bottle && (
+              <div
+                data-bottle-reflection
+                className={s.bottleReflection}
+                aria-hidden="true"
+              >
+                <Image
+                  src={bottle}
+                  alt=""
+                  fill
+                  sizes="(max-width:759px) 65vw, 34vw"
+                  className="object-contain"
+                />
+              </div>
+            )}
           </div>
           <a
             data-scroll-cue
