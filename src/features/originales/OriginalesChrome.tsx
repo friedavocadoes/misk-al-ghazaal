@@ -10,7 +10,6 @@ import {
 import Image from "next/image";
 import {
   ArrowLeft,
-  ArrowUpRight,
   Globe2,
   MapPin,
   Menu,
@@ -141,7 +140,6 @@ export function OriginalesChrome({
           </Link>
         );
       })}
-      {back}
     </nav>
   );
   return (
@@ -152,16 +150,18 @@ export function OriginalesChrome({
     >
       <header className={s.header}>
         <div className={s.headerLeft}>
-          <button
-            type="button"
-            aria-label={ar ? "المجموعة" : "Explore the collection"}
-            onClick={() => setMenu(true)}
-            data-haptic="open"
-            data-ios-haptic="on"
-            className={`${s.mobileMenu} ${collectionPage ? s.collectionMenu : ""}`}
-          >
-            <Menu />
-          </button>
+          {!collectionPage && (
+            <button
+              type="button"
+              aria-label={ar ? "المجموعة" : "Explore the collection"}
+              onClick={() => setMenu(true)}
+              data-haptic="open"
+              data-ios-haptic="on"
+              className={s.mobileMenu}
+            >
+              <Menu />
+            </button>
+          )}
           <Link
             href="/originales"
             className={s.wordmark}
@@ -170,10 +170,29 @@ export function OriginalesChrome({
             MAG<span>PARFUM</span>
           </Link>
         </div>
-        <Link href="/originales" className={s.headerEdition}>
-          ORIGINALES<span>{ar ? "تعبير أصيل" : "An original expression"}</span>
-        </Link>
+        {collectionPage ? (
+          <a
+            href="#originales-top"
+            data-collection-title-dock
+            className={s.headerEdition}
+          >
+            ORIGINALES
+          </a>
+        ) : (
+          <Link href="/originales" className={s.headerEdition}>
+            ORIGINALES
+            {/* <span>{ar ? "تعبير أصيل" : "An original expression"}</span> */}
+          </Link>
+        )}
         <div className={s.tools}>
+          <a
+            href={returnTo}
+            className={s.collectionReturn}
+            aria-label="Misk Al Ghazaal"
+          >
+            <ArrowLeft aria-hidden="true" />
+            <span aria-hidden="true">Misk Al Ghazaal</span>
+          </a>
           <button
             type="button"
             aria-label={ar ? "البحث" : "Search fragrances"}
@@ -228,17 +247,7 @@ export function OriginalesChrome({
       <div className={s.content}>
         {children}
         <footer className={s.footer}>
-          <span>
-            MAG PARFUM · ORIGINALES{" "}
-            <a
-              className={s.objectCredit}
-              href="https://sketchfab.com/3d-models/abstract-shape-b41aecc949d5439ebc1bef604bd9358e"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Object by Tiko · CC BY 4.0
-            </a>
-          </span>
+          <span>MAG PARFUM · ORIGINALES</span>
           {back}
           <span>
             {ar

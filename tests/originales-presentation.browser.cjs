@@ -17,17 +17,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await context.route("**/api/analytics/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
     );
-    await context.addInitScript(() => {
-      window.__originalesDraws = 0;
-      if (!window.WebGL2RenderingContext) return;
-      for (const name of ["drawElements", "drawArrays"]) {
-        const original = WebGL2RenderingContext.prototype[name];
-        WebGL2RenderingContext.prototype[name] = function (...args) {
-          window.__originalesDraws++;
-          return original.apply(this, args);
-        };
-      }
-    });
+
     const page = await context.newPage(),
       errors = [];
     page.setDefaultNavigationTimeout(120000);
@@ -36,6 +26,17 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForTimeout(1600);
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
+    const masthead = page.locator("[data-collection-masthead]");
+    assert.ok(
+      await masthead.evaluate((el) => {
+        const sequence = document.querySelector("[data-gallery-sequence]");
+        return (
+          Number(getComputedStyle(el).zIndex) <
+          Number(getComputedStyle(sequence).zIndex)
+        );
+      }),
+      "the collection wordmark starts behind the bottles",
+    );
     assert.equal(await page.locator("[data-originales-nav] a").count(), 4);
     assert.equal(
       await page
@@ -46,16 +47,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       true,
       "silhouettes stay hidden in the opening",
     );
-    await page
-      .getByRole("button", { name: "Explore the collection", exact: true })
-      .click();
-    await page.waitForTimeout(750);
-    assert.ok(
-      (await page.locator("[data-originales-menu]").boundingBox()).x < 1,
-      "collection menu opens from the left",
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Explore the collection", exact: true })
+        .count(),
+      0,
     );
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
+    assert.ok(
+      await page
+        .getByRole("link", { name: "Misk Al Ghazaal", exact: true })
+        .first()
+        .isVisible(),
+    );
     const photos = await page
       .locator("[data-gallery-bottle]")
       .evaluateAll((els) =>
@@ -71,6 +74,24 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       ),
       "all four opening bottles fit",
     );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 0.35, behavior: "instant" }),
+    );
+    await page.waitForFunction(
+      () =>
+        Number(
+          getComputedStyle(document.querySelector("[data-collection-masthead]"))
+            .zIndex,
+        ) === 44,
+    );
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForFunction(
+      () =>
+        Number(
+          getComputedStyle(document.querySelector("[data-collection-masthead]"))
+            .zIndex,
+        ) < 8,
+    );
     await page.evaluate(() => {
       window.__originalesBottles = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
@@ -78,21 +99,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     });
     await page
       .locator("[data-edition-chapter]")
-      .nth(1)
-      .evaluate((el) =>
-        scrollTo({
-          top: scrollY + el.getBoundingClientRect().top - 176,
-          behavior: "instant",
-        }),
-      );
+      .first()
+      .scrollIntoViewIfNeeded();
+    const collectionNav = page.locator("[data-originales-nav]");
+    await collectionNav.waitFor({ state: "visible" });
+    await collectionNav.getByRole("link", { name: /Sultanic/i }).click();
+    await page.waitForFunction(() => location.hash.includes("sultanic"));
     await page.waitForTimeout(2200);
-    assert.equal(
-      await page
-        .locator("[data-originales-nav]")
-        .evaluate((el) => !el.inert && getComputedStyle(el).opacity === "1"),
-      true,
-      "silhouettes reveal after entering the perfume chapters",
-    );
     const alignment = await page.evaluate(() => {
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
@@ -100,7 +113,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       return {
         bottle: figure.getBoundingClientRect().top,
         card: document
-          .querySelectorAll("[class*=editionCard]")[1]
+          .querySelector("#edition-originales-sultanic div[class*=editionCard]")
           .getBoundingClientRect().top,
       };
     });
@@ -211,13 +224,37 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => getComputedStyle(el).textTransform),
       "uppercase",
     );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 0.22, behavior: "instant" }),
+    );
+    await page.waitForTimeout(600);
+    assert.ok(
+      await page.evaluate(() => Math.abs(scrollY - innerHeight * 0.22) < 2),
+    );
+    const midFlight = await page
+      .locator("[data-travelling-title]")
+      .evaluate((el) => ({
+        text: el.textContent.trim(),
+        ink: Number(getComputedStyle(el).getPropertyValue("--title-settle")),
+      }));
+    assert.equal(
+      midFlight.text,
+      "Lazvaro",
+      "only one copy of the title is rendered",
+    );
+    assert.ok(
+      midFlight.ink > 0 && midFlight.ink < 1,
+      "the same glyphs tint during the flight",
+    );
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(350);
     if (process.env.ORIGINALES_QA_SCREENSHOTS)
       await page.screenshot({
         path: `${process.env.ORIGINALES_QA_SCREENSHOTS}/v10-opening.png`,
       });
     await page.evaluate(() => {
       window.__originalesTitle = document.querySelector("h1");
-      scrollTo({ top: innerHeight * 0.7, behavior: "instant" });
+      scrollTo({ top: innerHeight * 0.42, behavior: "instant" });
     });
     await page.waitForFunction(
       () => Math.abs(scrollY - innerHeight * 1.12) < 3,
@@ -391,13 +428,6 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => el === window.__originalesBottle),
       true,
     );
-    await page.waitForSelector("[data-sculpture-scene][data-ready=true]");
-    await page.waitForTimeout(2200);
-    assert.equal(
-      await page.locator("[data-sculpture-scene] canvas").count(),
-      1,
-      "one real 3D scene across all chapters",
-    );
     assert.equal(
       await page
         .locator(
@@ -428,14 +458,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       paths[1],
       "visible frame and blur mask morph together",
     );
-    const idleDraws = await page.evaluate(() => window.__originalesDraws);
-    assert.ok(idleDraws > 0, "model is actually rendered");
-    await page.waitForTimeout(700);
-    assert.equal(
-      await page.evaluate(() => window.__originalesDraws),
-      idleDraws,
-      "no idle WebGL render loop",
-    );
+
     const fixedPurchase = await page.locator("[data-purchase]").boundingBox();
     assert.ok(
       fixedPurchase.x < 720 && fixedPurchase.y + fixedPurchase.height < 1000,
@@ -487,10 +510,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
       0,
     );
-    assert.ok(
-      (await page.evaluate(() => window.__originalesDraws)) > idleDraws,
-      "chapter scrolling updates the 3D pose",
-    );
+
     await page.getByRole("button", { name: "Citrus", exact: true }).click();
     assert.ok(
       await page.locator("[data-radix-popper-content-wrapper]").isVisible(),
@@ -687,7 +707,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await buyContext.close();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, shared studio canvas pause/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, shared studio canvas pause/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

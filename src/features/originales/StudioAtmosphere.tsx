@@ -14,7 +14,12 @@ const glints = [
   { x: 92, y: 68, size: 2, delay: -6, duration: 14 },
 ];
 
-export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
+export function StudioAtmosphere({
+  ink,
+  accent,
+  wash,
+  variant,
+}: StudioPalette & { variant: string }) {
   const plate = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const rims = useRef<SVGSVGElement>(null);
@@ -25,7 +30,9 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
     const surface = canvas.current;
     const ctx = surface?.getContext("2d", { alpha: false });
     const scene = element?.parentElement;
-    const product = scene?.closest("[data-originales-product]");
+    const product = scene?.closest(
+      "[data-originales-product], [data-originales-collection]",
+    );
     const vector = rims.current;
     if (!element || !surface || !ctx || !scene || !product || !vector) return;
     const paths = vector.querySelectorAll("path");
@@ -35,6 +42,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
     let visible = false;
     let frame = 0;
     let previous = 0;
+    let lastScrollAt = -Infinity;
     let time = 0;
     let opening = 1;
     let entryStart: number | undefined;
@@ -52,6 +60,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
         x,
         y,
         opening,
+        variant,
         (index, path, highlight) => {
           paths[index].setAttribute("d", path);
           highlights[index].setAttribute("offset", String(highlight));
@@ -61,7 +70,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
     const animate = (now: number) => {
       // Keep the canvas cadence bounded without changing the rate of the animation.
       const delta = now - previous;
-      if (delta >= 1000 / 30) {
+      if (delta >= 1000 / 30 && now - lastScrollAt > 95) {
         if (entryStart !== undefined)
           opening = Math.min(1, (now - entryStart) / 1450);
         time += Math.min(delta, 80) / 1000;
@@ -109,6 +118,13 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
       surface.width = Math.round(width * ratio);
       surface.height = Math.round(height * ratio);
       vector.setAttribute("viewBox", `0 0 ${surface.width} ${surface.height}`);
+      if (variant === "02") {
+        paths.forEach((path) =>
+          path.setAttribute("transform", `matrix(0 1 -1 0 ${surface.width} 0)`),
+        );
+      } else {
+        paths.forEach((path) => path.removeAttribute("transform"));
+      }
       paint();
     };
     const move = (event: PointerEvent) => {
@@ -139,6 +155,10 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
       attributes: true,
       attributeFilter: ["data-price-ready", "data-studio-intro"],
     });
+    const noteScroll = () => {
+      lastScrollAt = performance.now();
+    };
+    window.addEventListener("scroll", noteScroll, { passive: true });
     scene.addEventListener("pointermove", move, { passive: true });
     scene.addEventListener("pointerleave", resetPointer);
     document.addEventListener("visibilitychange", sync);
@@ -148,12 +168,13 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
       sizeObserver.disconnect();
       viewport.disconnect();
       status.disconnect();
+      window.removeEventListener("scroll", noteScroll);
       scene.removeEventListener("pointermove", move);
       scene.removeEventListener("pointerleave", resetPointer);
       document.removeEventListener("visibilitychange", sync);
       reduced.removeEventListener("change", sync);
     };
-  }, [ink, accent, wash]);
+  }, [ink, accent, wash, variant]);
 
   return (
     <>
