@@ -61,7 +61,6 @@ export function editionFor(product: Pick<Product, "slug" | "title">) {
     }),
     bottle: key ? `/originales/${key}-bottle.webp` : null,
     box: key ? `/originales/${key}-box.webp` : null,
-    backdrop: key ? `/originales/${key}-studio.webp` : null,
   };
 }
 export function originalesPath(product: Pick<Product, "slug">) {

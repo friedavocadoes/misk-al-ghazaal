@@ -5,13 +5,10 @@
 import { useEffect, useRef } from "react";
 import type { LiquidApp } from "threejs-components/build/backgrounds/liquid1.min.js";
 import { captureLiquidListeners, liquidDropQueue } from "./liquid-lifecycle";
+import { paintStudio, type StudioPalette } from "./studio-scene";
 import s from "./atelier.module.css";
 
-export function LiquidEffectAnimation({
-  imageSrc = "/originales/lazvaro-atmosphere.webp",
-}: {
-  imageSrc?: string;
-}) {
+export function LiquidEffectAnimation({ ink, accent, wash }: StudioPalette) {
   const host = useRef<HTMLDivElement>(null),
     appRef = useRef<LiquidApp | null>(null);
   useEffect(() => {
@@ -115,10 +112,18 @@ export function LiquidEffectAnimation({
               drops.flush();
               simulate(time);
             };
-            const loadedBackdrop = page?.querySelector<HTMLImageElement>(
-              '[class*="heroBackdrop"] img',
-            )?.currentSrc;
-            await instance.loadImage(loadedBackdrop || imageSrc);
+            // Build the water texture from the same procedural scene, with no asset request.
+            const texture = document.createElement("canvas");
+            texture.width = Math.max(1, Math.round(el.clientWidth * 0.55));
+            texture.height = Math.max(1, Math.round(el.clientHeight * 0.55));
+            const context = texture.getContext("2d");
+            if (!context) throw new Error("Studio texture is unavailable");
+            paintStudio(context, texture.width, texture.height, {
+              ink,
+              accent,
+              wash,
+            });
+            await instance.loadImage(texture.toDataURL());
             if (disposed || token !== generation) {
               instance.liquidPlane.material.map?.dispose();
               release();
@@ -163,7 +168,7 @@ export function LiquidEffectAnimation({
       stop();
       appRef.current = null;
     };
-  }, [imageSrc]);
+  }, [ink, accent, wash]);
   return (
     <div
       ref={host}

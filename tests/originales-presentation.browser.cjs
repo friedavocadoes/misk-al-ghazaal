@@ -197,11 +197,16 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(
       await page
         .locator(
-          "[data-scene] > [data-bottle] > img,[data-scene] > [data-box] img,[data-scene] > div[class*=heroBackdrop] img",
+          "[data-scene] > [data-bottle] > img,[data-scene] > [data-box] img",
         )
         .count(),
-      3,
-      "backdrop, bottle and box only",
+      2,
+      "the bottle and box remain live product images",
+    );
+    assert.equal(await page.locator("[data-studio-canvas]").count(), 1);
+    assert.equal(
+      await page.locator("[data-scene] > div[class*=heroBackdrop] img").count(),
+      0,
     );
     assert.equal(
       await page

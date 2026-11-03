@@ -29,6 +29,7 @@ import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
 import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
 import { HeroLiquid } from "./HeroLiquid";
+import { StudioAtmosphere } from "./StudioAtmosphere";
 import { FinaleDecor } from "./FinaleDecor";
 import { SculptureScene } from "./SculptureScene";
 import { AtelierPanel } from "./AtelierPanel";
@@ -182,6 +183,16 @@ export function OriginalesProduct({
                   scrub: 0.35,
                 },
               });
+              gsap.to(scene, {
+                "--studio-motion-opacity": 0,
+                ease: "atelier-soft",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top top",
+                  end: "top -24%",
+                  scrub: 0.35,
+                },
+              });
               gsap.to(title, {
                 x: () =>
                   dock.getBoundingClientRect().left -
@@ -280,7 +291,15 @@ export function OriginalesProduct({
               },
               0,
             );
-            tl.to(scene, { "--studio-dim": 0.76, duration: 0.86 }, 0);
+            tl.to(
+              scene,
+              {
+                "--studio-dim": 0.76,
+                "--studio-motion-opacity": 0,
+                duration: 0.86,
+              },
+              0,
+            );
             tl.to(
               node.querySelector("[data-bottle]"),
               {
@@ -546,21 +565,18 @@ export function OriginalesProduct({
           className={s.scene}
           aria-label={edition.name}
         >
-          {edition.backdrop && (
-            <div data-arrival className={s.heroBackdrop}>
-              <Image
-                src={edition.backdrop}
-                alt=""
-                fill
-                priority
-                sizes="100vw"
-                className="object-cover"
-              />
-            </div>
-          )}
+          <StudioAtmosphere
+            ink={edition.ink}
+            accent={edition.accent}
+            wash={edition.wash}
+          />
           <div className={s.heroHalo} />
           {edition.number === "04" && (
-            <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
+            <HeroLiquid
+              ink={edition.ink}
+              accent={edition.accent}
+              wash={edition.wash}
+            />
           )}
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
