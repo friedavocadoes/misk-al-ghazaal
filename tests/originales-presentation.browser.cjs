@@ -17,17 +17,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await context.route("**/api/analytics/**", (r) =>
       r.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
     );
-    await context.addInitScript(() => {
-      window.__originalesDraws = 0;
-      if (!window.WebGL2RenderingContext) return;
-      for (const name of ["drawElements", "drawArrays"]) {
-        const original = WebGL2RenderingContext.prototype[name];
-        WebGL2RenderingContext.prototype[name] = function (...args) {
-          window.__originalesDraws++;
-          return original.apply(this, args);
-        };
-      }
-    });
+
     const page = await context.newPage(),
       errors = [];
     page.setDefaultNavigationTimeout(120000);
@@ -385,13 +375,6 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => el === window.__originalesBottle),
       true,
     );
-    await page.waitForSelector("[data-sculpture-scene][data-ready=true]");
-    await page.waitForTimeout(2200);
-    assert.equal(
-      await page.locator("[data-sculpture-scene] canvas").count(),
-      1,
-      "one real 3D scene across all chapters",
-    );
     assert.equal(
       await page
         .locator(
@@ -422,14 +405,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       paths[1],
       "visible frame and blur mask morph together",
     );
-    const idleDraws = await page.evaluate(() => window.__originalesDraws);
-    assert.ok(idleDraws > 0, "model is actually rendered");
-    await page.waitForTimeout(700);
-    assert.equal(
-      await page.evaluate(() => window.__originalesDraws),
-      idleDraws,
-      "no idle WebGL render loop",
-    );
+
     const fixedPurchase = await page.locator("[data-purchase]").boundingBox();
     assert.ok(
       fixedPurchase.x < 720 && fixedPurchase.y + fixedPurchase.height < 1000,
@@ -481,10 +457,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
       0,
     );
-    assert.ok(
-      (await page.evaluate(() => window.__originalesDraws)) > idleDraws,
-      "chapter scrolling updates the 3D pose",
-    );
+
     await page.getByRole("button", { name: "Citrus", exact: true }).click();
     assert.ok(
       await page.locator("[data-radix-popper-content-wrapper]").isVisible(),
@@ -681,7 +654,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await buyContext.close();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, shared studio canvas pause/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, shared studio canvas pause/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

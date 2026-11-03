@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, type RefObject } from "react";
 import { atelierGsap } from "./atelier-gsap";
-import { FRAME_PATH, OPEN_FRAME } from "./MorphFrame";
 import { PRODUCT_FRAMES } from "./motion-config";
 
 /** Shared lighting, decorative parallax and proximity-only section settling. Native scroll stays in control. */
@@ -24,108 +23,32 @@ export function useAtelierMotion(
           },
           (context) => {
             if (!context.conditions?.motion) return;
-            const node = root.current!,
-              seen = new WeakSet<Element>(),
-              art = new WeakSet<Element>();
+            const node = root.current!;
+            const seen = new WeakSet<Element>();
             const scan = () =>
               context.add(() => {
-                node
-                  .querySelectorAll<HTMLElement>(
-                    "h1,h2,h3,h4,p,legend,label,a,button,small,span",
-                  )
-                  .forEach((el) => {
-                    if (
-                      seen.has(el) ||
-                      (context.conditions?.mobile &&
-                        el.closest("[data-originales-product]")) ||
-                      !el.textContent?.trim() ||
-                      el.closest(
-                        "svg,[data-static-ink], [aria-hidden=true],[role=alert],.coupon-shake",
-                      ) ||
-                      (el.tagName === "SPAN" && el.childElementCount)
-                    )
-                      return;
-                    seen.add(el);
-                    gsap.fromTo(
-                      el,
-                      { color: "#878981" },
-                      {
-                        color: "#f3f0e7",
-                        ease: "atelier-soft",
-                        scrollTrigger: {
-                          trigger: el,
-                          start: "top 94%",
-                          end: "top 52%",
-                          scrub: 0.6,
-                        },
+                if (context.conditions?.mobile) return;
+                node.querySelectorAll("[data-snap-panel]").forEach((panel) => {
+                  if (seen.has(panel)) return;
+                  const heading = panel.querySelector("[class*=editionCard] h2, [class*=panelContent] h2");
+                  if (!heading) return;
+                  seen.add(panel);
+                  gsap.fromTo(
+                    heading,
+                    { y: 12, opacity: 0.7 },
+                    {
+                      y: 0,
+                      opacity: 1,
+                      ease: "atelier-soft",
+                      scrollTrigger: {
+                        trigger: panel,
+                        start: "top 90%",
+                        end: "top 45%",
+                        scrub: 0.4,
                       },
-                    );
-                  });
-                node
-                  .querySelectorAll<SVGSVGElement>(
-                    '[data-morph-surface="panel"],[data-morph-surface="edition"]',
-                  )
-                  .forEach((surface) => {
-                    if (art.has(surface)) return;
-                    art.add(surface);
-                    const frame = surface.querySelectorAll(
-                      "[data-morph-frame],[data-morph-clip]",
-                    );
-                    const trace = surface.querySelector("[data-frame-trace]");
-                    const section = surface.closest("[data-snap-panel]")!;
-                    if (!section.hasAttribute("data-gallery-finale"))
-                      gsap.fromTo(
-                        frame,
-                        { morphSVG: OPEN_FRAME },
-                        {
-                          morphSVG: FRAME_PATH,
-                          ease: "atelier-soft",
-                          scrollTrigger: {
-                            trigger: section,
-                            start: "top 95%",
-                            end: "top 30%",
-                            scrub: 0.45,
-                          },
-                        },
-                      );
-                    gsap.fromTo(
-                      trace,
-                      { drawSVG: "0% 0%" },
-                      {
-                        drawSVG: "0% 100%",
-                        ease: "atelier-soft",
-                        scrollTrigger: {
-                          trigger: section,
-                          start: "top 85%",
-                          end: "top 30%",
-                          scrub: 0.35,
-                        },
-                      },
-                    );
-                    const heading = section.querySelector("h2");
-                    if (
-                      heading &&
-                      !(
-                        context.conditions?.mobile &&
-                        section.closest("[data-originales-product]")
-                      )
-                    )
-                      gsap.fromTo(
-                        heading,
-                        { y: 24, clipPath: "inset(0% 0% 100% 0%)" },
-                        {
-                          y: 0,
-                          clipPath: "inset(0% 0% 0% 0%)",
-                          ease: "atelier-settle",
-                          scrollTrigger: {
-                            trigger: section,
-                            start: "top 85%",
-                            end: "top 35%",
-                            scrub: 0.4,
-                          },
-                        },
-                      );
-                  });
+                    },
+                  );
+                });
               });
             scan();
             let frame = 0,
@@ -178,16 +101,10 @@ export function useAtelierMotion(
               if (mobile) return;
               const desktopProduct = !mobile && !!runway;
               const stage = gallery?.getBoundingClientRect();
-              const imageFrame = runway?.querySelector<HTMLElement>(
-                "[class*=photoAperture]",
-              );
+              const scene = runway?.querySelector<HTMLElement>("[data-scene]");
               const offset = stage
-                ? mobile
-                  ? 152 + innerHeight * 0.26
-                  : Math.max(176, stage.top + 16)
-                : mobile
-                  ? 88
-                  : Math.max(104, imageFrame?.offsetTop ?? 0);
+                ? Math.max(176, stage.top + 16)
+                : Math.max(104, (scene?.clientHeight ?? 0) * 0.12);
 
               const origin = runway
                 ? current + runway.getBoundingClientRect().top
@@ -214,7 +131,6 @@ export function useAtelierMotion(
                   current + card.top - offset,
                 );
                 stops.push(start);
-                if (!desktopProduct) continue;
 
                 // A card taller than the reading area gets a continuous reading range.
                 const end = current + card.bottom - innerHeight + 32;
@@ -225,32 +141,35 @@ export function useAtelierMotion(
               }
               if (desktopProduct && current > Math.max(...stops) + 24) return;
 
-              const ordered = stops
-                .map((stop) => gsap.utils.clamp(0, max, stop))
-                .sort((a, b) => a - b);
+              const ordered = [
+                ...new Set(
+                  stops.map((stop) =>
+                    Math.round(gsap.utils.clamp(0, max, stop)),
+                  ),
+                ),
+              ].sort((a, b) => a - b);
               const upperIndex = ordered.findIndex((stop) => stop >= current);
-              if (
-                upperIndex <= 0 ||
-                Math.abs(ordered[upperIndex] - current) < 2
-              )
+              if (upperIndex < 0 || Math.abs(ordered[upperIndex] - current) < 2)
                 return;
+              if (upperIndex === 0 && (desktopProduct || direction < 0)) return;
 
-              const lower = ordered[upperIndex - 1];
               const upper = ordered[upperIndex];
+              const lower =
+                ordered[upperIndex - 1] ?? upper - innerHeight * 0.65;
               const target = direction > 0 ? upper : lower;
               const distance = Math.abs(target - current);
               const progress = 1 - distance / (upper - lower);
               if (
                 distance < 2 ||
                 progress < 0.4 ||
-                distance > innerHeight * (mobile ? 0.2 : 0.7)
+                distance > innerHeight * 0.7
               )
                 return;
 
               const position = { y: current };
               settleTween = gsap.to(position, {
                 y: target,
-                duration: gsap.utils.clamp(0.42, 0.85, distance / 900),
+                duration: gsap.utils.clamp(0.3, 0.65, distance / 1150),
                 ease: "sine.inOut",
                 // The site sets CSS smooth scrolling on html. Each tween write must be instant.
                 onUpdate: () =>

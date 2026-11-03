@@ -30,7 +30,6 @@ import { AtelierProductGallery } from "./AtelierProductGallery";
 import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
 import { StudioAtmosphere } from "./StudioAtmosphere";
 import { FinaleDecor } from "./FinaleDecor";
-import { SculptureScene } from "./SculptureScene";
 import { AtelierPanel } from "./AtelierPanel";
 import { AtelierBagButton, AtelierQuantity } from "./AtelierControls";
 import s from "./atelier.module.css";
@@ -249,9 +248,12 @@ export function OriginalesProduct({
             const tl = gsap.timeline({
               defaults: { ease: "atelier-soft" },
               onUpdate: () => {
-                node.dataset.priceReady = tl.time() >= 0.95 ? "true" : "false";
-                node.dataset.galleryVisible =
-                  tl.time() >= 0.63 ? "true" : "false";
+                const priceReady = String(tl.time() >= 0.95);
+                const galleryVisible = String(tl.time() >= 0.63);
+                if (node.dataset.priceReady !== priceReady)
+                  node.dataset.priceReady = priceReady;
+                if (node.dataset.galleryVisible !== galleryVisible)
+                  node.dataset.galleryVisible = galleryVisible;
               },
               scrollTrigger: {
                 trigger: node.querySelector("[data-runway]"),
@@ -351,7 +353,8 @@ export function OriginalesProduct({
             const compact = gsap.timeline({
               onUpdate: () => {
                 const docked = compact.progress() > 0.55;
-                node.dataset.docked = docked ? "true" : "false";
+                if (node.dataset.docked === String(docked)) return;
+                node.dataset.docked = String(docked);
                 const details = node.querySelector<HTMLElement>(
                   "[data-purchase-details]",
                 );
@@ -397,14 +400,10 @@ export function OriginalesProduct({
               {
                 autoAlpha: 0,
                 x: 32,
-                filter: "blur(8px)",
-                clipPath: "inset(0% 0% 0% 65% round 12px)",
               },
               {
                 autoAlpha: 1,
                 x: 0,
-                filter: "blur(0px)",
-                clipPath: "inset(0% 0% 0% 0% round 2px)",
                 duration: 0.32,
               },
               0.63,
@@ -678,12 +677,7 @@ export function OriginalesProduct({
           </div>
         </section>
         <div className={s.introDistance} aria-hidden="true" />
-        <div
-          data-product-chapters
-          data-object-sequence
-          className={s.productChapters}
-        >
-          <SculptureScene />
+        <div data-product-chapters className={s.productChapters}>
           <AtelierPanel id="originales-story" art="fold">
             <div className={s.panelCopy}>
               <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>

@@ -42,6 +42,7 @@ export function StudioAtmosphere({
     let visible = false;
     let frame = 0;
     let previous = 0;
+    let lastScrollAt = -Infinity;
     let time = 0;
     let opening = 1;
     let entryStart: number | undefined;
@@ -69,7 +70,7 @@ export function StudioAtmosphere({
     const animate = (now: number) => {
       // Keep the canvas cadence bounded without changing the rate of the animation.
       const delta = now - previous;
-      if (delta >= 1000 / 30) {
+      if (delta >= 1000 / 30 && now - lastScrollAt > 95) {
         if (entryStart !== undefined)
           opening = Math.min(1, (now - entryStart) / 1450);
         time += Math.min(delta, 80) / 1000;
@@ -154,6 +155,10 @@ export function StudioAtmosphere({
       attributes: true,
       attributeFilter: ["data-price-ready", "data-studio-intro"],
     });
+    const noteScroll = () => {
+      lastScrollAt = performance.now();
+    };
+    window.addEventListener("scroll", noteScroll, { passive: true });
     scene.addEventListener("pointermove", move, { passive: true });
     scene.addEventListener("pointerleave", resetPointer);
     document.addEventListener("visibilitychange", sync);
@@ -163,6 +168,7 @@ export function StudioAtmosphere({
       sizeObserver.disconnect();
       viewport.disconnect();
       status.disconnect();
+      window.removeEventListener("scroll", noteScroll);
       scene.removeEventListener("pointermove", move);
       scene.removeEventListener("pointerleave", resetPointer);
       document.removeEventListener("visibilitychange", sync);

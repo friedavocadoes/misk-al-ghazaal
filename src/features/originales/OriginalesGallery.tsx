@@ -15,7 +15,6 @@ import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
 import { StudioAtmosphere } from "./StudioAtmosphere";
-import { SculptureScene } from "./SculptureScene";
 import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
 import { atelierGsap } from "./atelier-gsap";
@@ -114,36 +113,40 @@ export function OriginalesGallery({
               .closest("[class*=collectionWorld]")
               ?.querySelector<HTMLElement>("[data-collection-title-dock]");
             if (motion && dock) {
-              gsap.fromTo(
+              const titleFlight = gsap.timeline({
+                scrollTrigger: {
+                  start: 0,
+                  end: () => innerHeight * 0.43,
+                  scrub: 0.38,
+                  invalidateOnRefresh: true,
+                },
+              });
+              titleFlight.fromTo(
                 masthead,
-                { y: 0, scale: 1 },
+                { x: 0, y: 0, scale: 1 },
                 {
+                  x: () => {
+                    const destination = dock.getBoundingClientRect();
+                    return (
+                      destination.left + destination.width / 2 - innerWidth / 2
+                    );
+                  },
                   y: () =>
                     dock.getBoundingClientRect().top +
                     dock.offsetHeight / 2 -
                     (masthead.offsetTop + masthead.offsetHeight / 2),
                   scale: () => dock.offsetWidth / masthead.offsetWidth,
-                  opacity: 0,
+                  duration: 1,
                   ease: "atelier-soft",
-                  scrollTrigger: {
-                    start: 0,
-                    end: () => innerHeight * 0.43,
-                    scrub: 0.55,
-                    invalidateOnRefresh: true,
-                  },
                 },
+                0,
               );
-              gsap.fromTo(
+              titleFlight.to(masthead, { autoAlpha: 0, duration: 0.12 }, 0.88);
+              titleFlight.fromTo(
                 dock,
                 { autoAlpha: 0 },
-                {
-                  autoAlpha: 1,
-                  scrollTrigger: {
-                    start: () => innerHeight * 0.3,
-                    end: () => innerHeight * 0.43,
-                    scrub: 0.55,
-                  },
-                },
+                { autoAlpha: 1, duration: 0.12 },
+                0.88,
               );
             }
             if (chapters.length)
@@ -154,21 +157,37 @@ export function OriginalesGallery({
                 onUpdate: (self) => setNavVisible(self.progress > 0),
                 onRefresh: (self) => setNavVisible(self.progress > 0),
               });
+            let bounds: { top: number; bottom: number }[] = [];
+            const measure = () => {
+              const scroll = window.scrollY;
+              bounds = chapters.map((chapter) => {
+                const rect = chapter.getBoundingClientRect();
+                return { top: rect.top + scroll, bottom: rect.bottom + scroll };
+              });
+            };
+            const setBottle = figures.map((figure) => ({
+              opacity: gsap.quickSetter(figure, "opacity"),
+              y: gsap.quickSetter(figure, "y", "px"),
+            }));
+            const setCaption = gsap.quickSetter(captions, "opacity");
+            measure();
             const sync = () => {
-              const rects = chapters.map((chapter) =>
-                chapter.getBoundingClientRect(),
-              );
+              if (mobile) return;
+              const scroll = window.scrollY;
               const clamp = gsap.utils.clamp(0, 1);
               figures.forEach((figure, index) => {
-                const rect = rects[index];
+                const rect = bounds[index];
+                if (!rect) return;
                 const entered =
                   index === 0
                     ? 1
                     : clamp(
-                        (innerHeight * 0.85 - rect.top) / (innerHeight * 0.3),
+                        (innerHeight * 0.85 - (rect.top - scroll)) /
+                          (innerHeight * 0.3),
                       );
                 const left = clamp(
-                  (innerHeight * 0.85 - rect.bottom) / (innerHeight * 0.3),
+                  (innerHeight * 0.85 - (rect.bottom - scroll)) /
+                    (innerHeight * 0.3),
                 );
                 const alpha =
                   progress.current < 0.99
@@ -176,18 +195,16 @@ export function OriginalesGallery({
                       ? 1
                       : 1 - Math.min(1, progress.current * 2.5)
                     : entered * (1 - left);
-                gsap.set(figure, {
-                  opacity: alpha,
-                  y:
-                    progress.current < 0.99 || !motion
-                      ? 0
-                      : (1 - entered - left) * innerHeight * 0.35,
-                });
-                figure.inert = progress.current > 0.6 && alpha < 0.1;
+                setBottle[index].opacity(alpha);
+                setBottle[index].y(
+                  progress.current < 0.99 || !motion
+                    ? 0
+                    : (1 - entered - left) * innerHeight * 0.35,
+                );
+                const inert = progress.current > 0.6 && alpha < 0.1;
+                if (figure.inert !== inert) figure.inert = inert;
               });
-              gsap.set(captions, {
-                opacity: 1 - Math.min(1, progress.current * 2.5),
-              });
+              setCaption(1 - Math.min(1, progress.current * 2.5));
               const next = progress.current > 0.55;
               if (next !== collapsedRef.current) {
                 collapsedRef.current = next;
@@ -266,6 +283,10 @@ export function OriginalesGallery({
               start: "top bottom",
               end: "bottom top",
               onUpdate: sync,
+              onRefresh: () => {
+                measure();
+                sync();
+              },
             });
             const finale = node.querySelector<HTMLElement>(
               "[data-gallery-finale]",
@@ -286,11 +307,6 @@ export function OriginalesGallery({
                 },
               });
               finish
-                .to(
-                  node.querySelector("[class*=sculptureSticky]"),
-                  { autoAlpha: 0, y: -90, duration: 0.8 },
-                  0,
-                )
                 .to(
                   stage,
                   {
@@ -423,11 +439,7 @@ export function OriginalesGallery({
           <ArrowDown size={15} />
         </a>
       </header>
-      <section
-        data-gallery-sequence
-        data-object-sequence
-        className={s.gallerySequence}
-      >
+      <section data-gallery-sequence className={s.gallerySequence}>
         <div data-gallery-stage className={s.galleryStage}>
           <div className={s.stageHalo} />
           {products.map((product, index) => {
@@ -471,7 +483,6 @@ export function OriginalesGallery({
           )}
         </div>
         <div id="the-editions" className={s.sequenceStories}>
-          <SculptureScene />
           {products.map((product) => {
             const edition = editionFor(product),
               copy = editionStory(edition.name, ar);
