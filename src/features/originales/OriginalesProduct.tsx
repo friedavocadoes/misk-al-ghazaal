@@ -171,6 +171,17 @@ export function OriginalesProduct({
                 x: (scene.clientWidth - display.offsetWidth) / 2,
                 y: innerHeight * 0.25,
               });
+              gsap.to(node.querySelectorAll("[data-bottle-reflection]"), {
+                opacity: 0,
+                y: 16,
+                ease: "atelier-soft",
+                scrollTrigger: {
+                  trigger: scene,
+                  start: "top top",
+                  end: "top -24%",
+                  scrub: 0.35,
+                },
+              });
               gsap.to(title, {
                 x: () =>
                   dock.getBoundingClientRect().left -
@@ -260,6 +271,16 @@ export function OriginalesProduct({
                 invalidateOnRefresh: true,
               },
             });
+            tl.to(
+              node.querySelectorAll("[data-bottle-reflection]"),
+              {
+                opacity: 0,
+                y: 24,
+                duration: 0.48,
+              },
+              0,
+            );
+            tl.to(scene, { "--studio-dim": 0.76, duration: 0.86 }, 0);
             tl.to(
               node.querySelector("[data-bottle]"),
               {
@@ -509,6 +530,8 @@ export function OriginalesProduct({
         {
           "--edition-accent": edition.accent,
           "--edition-wash": edition.wash,
+          "--edition-ink": edition.ink,
+          "--reflection-seam": edition.reflectionSeam,
         } as CSSProperties
       }
     >
@@ -536,7 +559,9 @@ export function OriginalesProduct({
             </div>
           )}
           <div className={s.heroHalo} />
-          <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
+          {edition.number === "04" && (
+            <HeroLiquid imageSrc={edition.backdrop ?? undefined} />
+          )}
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
@@ -573,6 +598,21 @@ export function OriginalesProduct({
               sizes="(max-width:759px) 65vw, 34vw"
               className="object-contain"
             />
+            {edition.bottle && (
+              <div
+                data-bottle-reflection
+                className={s.bottleReflection}
+                aria-hidden="true"
+              >
+                <Image
+                  src={bottle}
+                  alt=""
+                  fill
+                  sizes="(max-width:759px) 65vw, 34vw"
+                  className="object-contain"
+                />
+              </div>
+            )}
           </div>
           <a
             data-scroll-cue

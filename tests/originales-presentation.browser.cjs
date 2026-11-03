@@ -197,7 +197,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(
       await page
         .locator(
-          "[data-scene] > [data-bottle] img,[data-scene] > [data-box] img,[data-scene] > div[class*=heroBackdrop] img",
+          "[data-scene] > [data-bottle] > img,[data-scene] > [data-box] img,[data-scene] > div[class*=heroBackdrop] img",
         )
         .count(),
       3,

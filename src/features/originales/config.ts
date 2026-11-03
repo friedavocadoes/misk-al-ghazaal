@@ -12,6 +12,7 @@ export const EDITIONS = {
     wash: "#e4cbae",
     ink: "#47301f",
     number: "01",
+    reflectionSeam: "9.3%",
   },
   sultanic: {
     name: "Sultanic",
@@ -19,6 +20,7 @@ export const EDITIONS = {
     wash: "#c7d2bf",
     ink: "#233e32",
     number: "02",
+    reflectionSeam: "8.9%",
   },
   lustra: {
     name: "Lustra",
@@ -26,6 +28,7 @@ export const EDITIONS = {
     wash: "#e0c3cc",
     ink: "#572c3a",
     number: "03",
+    reflectionSeam: "10.5%",
   },
   lazvaro: {
     name: "Lazvaro",
@@ -33,6 +36,7 @@ export const EDITIONS = {
     wash: "#becfdc",
     ink: "#243e55",
     number: "04",
+    reflectionSeam: "1.1%",
   },
 } as const;
 
@@ -53,10 +57,11 @@ export function editionFor(product: Pick<Product, "slug" | "title">) {
       wash: "#ddd4c8",
       ink: "#40392f",
       number: "O",
+      reflectionSeam: "0%",
     }),
     bottle: key ? `/originales/${key}-bottle.webp` : null,
     box: key ? `/originales/${key}-box.webp` : null,
-    backdrop: key ? `/originales/${key}-atmosphere.webp` : null,
+    backdrop: key ? `/originales/${key}-studio.webp` : null,
   };
 }
 export function originalesPath(product: Pick<Product, "slug">) {

@@ -3621,3 +3621,106 @@
     padding-top: 36px !important;
   }
 }
+
+/* Originales studio palette, shared by the opening plate and the reading surfaces. */
+.stickyProduct {
+  --studio-card: color-mix(in srgb, var(--edition-ink) 58%, #111316);
+  --studio-card-light: color-mix(
+    in srgb,
+    var(--edition-ink) 72%,
+    var(--edition-accent)
+  );
+  --studio-rim: color-mix(in srgb, var(--edition-wash) 78%, white);
+  background: radial-gradient(
+    ellipse at 75% 55%,
+    var(--studio-card),
+    #151417 75%
+  );
+}
+.stickyProduct .scene {
+  --studio-dim: 0.18;
+  background: var(--studio-card);
+}
+.stickyProduct .heroBackdrop {
+  opacity: 1;
+  mask-image: none;
+}
+.stickyProduct .heroBackdrop img {
+  filter: none;
+}
+.stickyProduct .heroHalo {
+  background: linear-gradient(
+    180deg,
+    rgb(10 9 12 / var(--studio-dim)),
+    rgb(10 9 12 / calc(var(--studio-dim) + 0.1))
+  );
+}
+.stickyProduct .displayTitle > span {
+  background:
+    radial-gradient(
+      ellipse at 13% 85%,
+      color-mix(in srgb, var(--studio-rim) 85%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      ellipse at 87% 22%,
+      color-mix(in srgb, var(--studio-rim) 80%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      153deg,
+      color-mix(in srgb, var(--studio-rim) 88%, transparent),
+      color-mix(in srgb, var(--edition-wash) 66%, transparent) 48%,
+      color-mix(in srgb, var(--edition-accent) 36%, var(--edition-wash) 50%)
+    );
+  background-clip: text;
+  filter: drop-shadow(
+    0 0 0.045em color-mix(in srgb, var(--edition-wash) 32%, transparent)
+  );
+}
+.stickyProduct .bottleObject img {
+  object-position: center bottom;
+}
+.stickyProduct .bottleObject > img {
+  z-index: 1;
+}
+.bottleReflection {
+  position: absolute;
+  inset: calc(100% - var(--reflection-seam)) 0 auto;
+  height: 34%;
+  opacity: 0.38;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(#000, #0008 35%, transparent 92%);
+}
+.bottleReflection img {
+  height: 294.12% !important;
+  transform: translateY(-100%) scaleY(-1);
+  transform-origin: center bottom;
+  filter: blur(1.6px) saturate(0.85);
+}
+.stickyProduct .panelContent > .glassBlur {
+  background: color-mix(in srgb, var(--edition-accent) 17%, transparent);
+}
+.stickyProduct .morphFrame {
+  color: var(--studio-rim);
+}
+.stickyProduct :global(.pdp-review-card) {
+  background: color-mix(in srgb, var(--studio-card) 86%, var(--edition-wash));
+}
+.stickyProduct .signaturePrice {
+  border-color: color-mix(in srgb, var(--edition-wash) 26%, transparent);
+}
+@media (max-width: 759px) {
+  .stickyProduct .scene {
+    background: var(--studio-card);
+  }
+  .stickyProduct .heroHalo {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bottleReflection {
+    display: none;
+  }
+}
