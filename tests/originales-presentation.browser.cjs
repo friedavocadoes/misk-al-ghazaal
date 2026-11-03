@@ -173,10 +173,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     );
     assert.equal(
       await page
-        .locator("h1")
+        .locator("[data-display-title]")
         .evaluate((el) => getComputedStyle(el).fontWeight),
       "800",
-      "opening title is heavier",
+      "opening title uses the heavier display weight",
     );
     assert.equal(
       await page.locator("[data-ingredient]").count(),
@@ -333,7 +333,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) =>
           getComputedStyle(el).getPropertyValue("--title-settle").trim(),
         ),
-      "100%",
+      "1",
     );
     const title = await page.locator("h1").boundingBox(),
       dock = await page.locator("[data-title-dock]").boundingBox();

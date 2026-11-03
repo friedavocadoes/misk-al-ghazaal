@@ -128,132 +128,182 @@ export function useAtelierMotion(
               refresh = setTimeout(() => ScrollTrigger.refresh(), 220);
             });
             resize.observe(node);
-            ScrollTrigger.create({
-              start: 0,
-              end: () => ScrollTrigger.maxScroll(window),
-              invalidateOnRefresh: true,
-              snap: {
-                snapTo: (value) => {
-                  if (
-                    document.body.hasAttribute("data-originales-photo-focus") ||
-                    document.querySelector(
-                      '[role="dialog"][data-state="open"],[data-radix-popper-content-wrapper]',
-                    ) ||
-                    document.activeElement?.closest(
-                      "input,textarea,select,[contenteditable=true]",
-                    )
-                  )
-                    return value;
-                  const max = ScrollTrigger.maxScroll(window);
-                  if (max <= 0) return value;
-                  const gallery = node.querySelector<HTMLElement>(
-                    "[data-gallery-stage]",
-                  );
-                  const mobile = innerWidth < 760;
-                  let offset = mobile ? 88 : 104;
-                  if (gallery && !mobile) {
-                    const stage = gallery.getBoundingClientRect();
-                    // Final collapsed bottle pose: top36% of stage, half of40vh high.
-                    offset = Math.max(
+            let settleTimer: ReturnType<typeof setTimeout> | undefined;
+            let settleTween: ReturnType<typeof gsap.to> | undefined;
+            let pointerHeld = false;
+            let touchHeld = false;
+
+            const cancelSettle = () => {
+              clearTimeout(settleTimer);
+              settleTween?.kill();
+              settleTween = undefined;
+            };
+
+            const settle = () => {
+              if (
+                pointerHeld ||
+                touchHeld ||
+                document.body.hasAttribute("data-originales-photo-focus") ||
+                document.querySelector(
+                  '[role="dialog"][data-state="open"],[data-radix-popper-content-wrapper]',
+                ) ||
+                document.activeElement?.closest(
+                  "input,textarea,select,[contenteditable=true]",
+                )
+              )
+                return;
+
+              const current = window.scrollY;
+              const max = ScrollTrigger.maxScroll(window);
+              const mobile = innerWidth < 760;
+              const gallery = node.querySelector("[data-gallery-stage]");
+              const runway = node.querySelector("[data-runway]");
+              const desktopProduct = !mobile && !!runway;
+              const stage = gallery?.getBoundingClientRect();
+              const bottle = node
+                .querySelector("[data-bottle]")
+                ?.getBoundingClientRect();
+              const offset = stage
+                ? mobile
+                  ? 152 + innerHeight * 0.26
+                  : Math.max(
                       176,
                       stage.top + stage.height * 0.36 - innerHeight * 0.2,
-                    );
-                  } else if (gallery) {
-                    offset = 152 + innerHeight * 0.26;
-                  } else if (!mobile) {
-                    const bottle =
-                      node.querySelector<HTMLElement>("[data-bottle]");
-                    if (bottle)
-                      offset = Math.max(
-                        104,
-                        bottle.getBoundingClientRect().top,
-                      );
-                  }
-                  const readingBox = (panel: HTMLElement) =>
-                    panel.querySelector<HTMLElement>(
-                      "[class*=editionCard],[class*=panelContent]",
-                    ) ?? panel;
-                  const product = node.querySelector<HTMLElement>(
-                    "[data-product-chapters]",
-                  );
-                  const desktopProduct = !!product && innerWidth >= 760;
-                  const current = value * max;
-                  if (desktopProduct) {
-                    const runway =
-                      node.querySelector<HTMLElement>("[data-runway]")!;
-                    const origin = scrollY + runway.getBoundingClientRect().top;
-                    const frames = [
-                      0,
-                      PRODUCT_FRAMES.price,
-                      PRODUCT_FRAMES.dock,
-                    ].map((frame) => origin + frame * innerHeight);
-                    if (current <= frames[2]) {
-                      return (
-                        frames.reduce((best, next) =>
-                          Math.abs(next - current) < Math.abs(best - current)
-                            ? next
-                            : best,
-                        ) / max
-                      );
-                    }
-                    // Long chapters retain free scrolling inside their readable body.
-                    for (const panel of product.querySelectorAll<HTMLElement>(
-                      "[data-snap-panel]",
-                    )) {
-                      const r = readingBox(panel).getBoundingClientRect();
-                      const start = scrollY + r.top - offset;
-                      const end = scrollY + r.bottom - innerHeight + 120;
-                      if (
-                        end > start + 100 &&
-                        current >= start &&
-                        current <= end
-                      )
-                        return value;
-                    }
-                    const last =
-                      product.lastElementChild?.getBoundingClientRect();
-                    if (
-                      last &&
-                      current > scrollY + last.bottom - innerHeight + 120
                     )
-                      return value;
-                  }
-                  const positions = [
-                    ...node.querySelectorAll<HTMLElement>("[data-snap-panel]"),
-                  ]
-                    .filter((el) => el.offsetHeight > 0)
-                    .map((el) =>
-                      Math.max(
-                        0,
-                        Math.min(
-                          max,
-                          scrollY +
-                            readingBox(el).getBoundingClientRect().top -
-                            offset,
-                        ),
-                      ),
-                    );
-                  const closest = positions.reduce(
-                    (best, next) =>
-                      Math.abs(next - current) < Math.abs(best - current)
-                        ? next
-                        : best,
-                    Infinity,
-                  );
-                  return Math.abs(closest - current) <
-                    (!mobile
-                      ? innerHeight * 0.55
-                      : Math.min(100, innerHeight * 0.14))
-                    ? closest / max
-                    : value;
+                : mobile
+                  ? 88
+                  : Math.max(104, bottle?.top ?? 0);
+
+              const origin = runway
+                ? current + runway.getBoundingClientRect().top
+                : 0;
+              const dock = origin + PRODUCT_FRAMES.dock * innerHeight;
+              const stops = desktopProduct
+                ? [origin, origin + PRODUCT_FRAMES.price * innerHeight, dock]
+                : [];
+              const cards = [
+                ...node.querySelectorAll<HTMLElement>("[data-snap-panel]"),
+              ]
+                .filter((panel) => panel.offsetHeight > 0)
+                .map((panel) =>
+                  (
+                    panel.querySelector(
+                      "[class*=editionCard],[class*=panelContent]",
+                    ) ?? panel
+                  ).getBoundingClientRect(),
+                );
+
+              for (const card of cards) {
+                const start = Math.max(
+                  desktopProduct ? dock : 0,
+                  current + card.top - offset,
+                );
+                stops.push(start);
+                if (!desktopProduct) continue;
+
+                // A card taller than the reading area gets a continuous reading range.
+                const end = current + card.bottom - innerHeight + 32;
+                if (end > start) {
+                  if (current >= start && current <= end) return;
+                  stops.push(end);
+                }
+              }
+              if (desktopProduct && current > Math.max(...stops) + 24) return;
+
+              const target = stops
+                .map((stop) => gsap.utils.clamp(0, max, stop))
+                .reduce(
+                  (best, stop) =>
+                    Math.abs(stop - current) < Math.abs(best - current)
+                      ? stop
+                      : best,
+                  Infinity,
+                );
+              const distance = Math.abs(target - current);
+              if (!Number.isFinite(distance) || distance < 2) return;
+              if (
+                !desktopProduct &&
+                distance >
+                  (mobile
+                    ? Math.min(100, innerHeight * 0.14)
+                    : innerHeight * 0.55)
+              )
+                return;
+
+              const position = { y: current };
+              settleTween = gsap.to(position, {
+                y: target,
+                duration: gsap.utils.clamp(0.3, 0.65, distance / 1150),
+                ease: "atelier-settle",
+                // The site sets CSS smooth scrolling on html. Each tween write must be instant.
+                onUpdate: () =>
+                  window.scrollTo({ top: position.y, behavior: "instant" }),
+                onComplete: () => {
+                  settleTween = undefined;
                 },
-                duration: { min: 0.3, max: 0.85 },
-                ease: "atelier-soft",
-                delay: 0.25,
-                inertia: false,
-              },
+              });
+            };
+            const scheduleSettle = () => {
+              if (settleTween) return;
+              clearTimeout(settleTimer);
+              settleTimer = setTimeout(settle, 180);
+            };
+            const holdPointer = () => {
+              pointerHeld = true;
+              cancelSettle();
+            };
+            const releasePointer = () => {
+              pointerHeld = false;
+              scheduleSettle();
+            };
+            const holdTouch = () => {
+              touchHeld = true;
+              cancelSettle();
+            };
+            const releaseTouch = () => {
+              touchHeld = false;
+              scheduleSettle();
+            };
+            const interruptByKey = (event: KeyboardEvent) => {
+              if (
+                [
+                  "ArrowUp",
+                  "ArrowDown",
+                  "PageUp",
+                  "PageDown",
+                  "Home",
+                  "End",
+                  " ",
+                ].includes(event.key)
+              )
+                cancelSettle();
+            };
+            window.addEventListener("scroll", scheduleSettle, {
+              passive: true,
             });
+            window.addEventListener("wheel", cancelSettle, { passive: true });
+            window.addEventListener("pointerdown", holdPointer);
+            window.addEventListener("pointerup", releasePointer);
+            window.addEventListener("pointercancel", releasePointer);
+            window.addEventListener("touchstart", holdTouch, { passive: true });
+            window.addEventListener("touchend", releaseTouch, {
+              passive: true,
+            });
+            window.addEventListener("touchcancel", releaseTouch, {
+              passive: true,
+            });
+            window.addEventListener("keydown", interruptByKey);
             return () => {
+              cancelSettle();
+              window.removeEventListener("scroll", scheduleSettle);
+              window.removeEventListener("wheel", cancelSettle);
+              window.removeEventListener("pointerdown", holdPointer);
+              window.removeEventListener("pointerup", releasePointer);
+              window.removeEventListener("pointercancel", releasePointer);
+              window.removeEventListener("touchstart", holdTouch);
+              window.removeEventListener("touchend", releaseTouch);
+              window.removeEventListener("touchcancel", releaseTouch);
+              window.removeEventListener("keydown", interruptByKey);
               observer.disconnect();
               resize.disconnect();
               cancelAnimationFrame(frame);

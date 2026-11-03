@@ -1,6 +1,7 @@
 "use client";
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   useTransition,
@@ -46,6 +47,7 @@ export function OriginalesProduct({
   stores: ReactNode;
   reviews: ReactNode;
 }) {
+  const titleLightId = useId();
   const ar = locale === "ar",
     edition = editionFor(product),
     narrative = editionStory(edition.name, ar);
@@ -127,7 +129,8 @@ export function OriginalesProduct({
     let live = true,
       dispose = () => {};
     Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
-      .then(([{ gsap }, { ScrollTrigger }]) => {
+      .then(async ([{ gsap }, { ScrollTrigger }]) => {
+        await document.fonts.ready;
         if (!live || !root.current) return;
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
@@ -152,19 +155,22 @@ export function OriginalesProduct({
                 left: 0,
                 top: 0,
                 fontSize: initialSize,
-                fontWeight: 800,
+
                 x: 0,
                 y: 0,
               });
-              if (title.offsetWidth > scene.clientWidth - 24) {
+              const display = title.querySelector<HTMLElement>(
+                "[data-display-title]",
+              )!;
+              if (display.offsetWidth > scene.clientWidth - 24) {
                 gsap.set(title, {
                   fontSize:
                     (initialSize * (scene.clientWidth - 24)) /
-                    title.offsetWidth,
+                    display.offsetWidth,
                 });
               }
               gsap.set(title, {
-                x: (scene.clientWidth - title.offsetWidth) / 2,
+                x: (scene.clientWidth - display.offsetWidth) / 2,
                 y: innerHeight * 0.23,
               });
               gsap.to(title, {
@@ -176,8 +182,7 @@ export function OriginalesProduct({
                   scene.getBoundingClientRect().top,
                 fontSize: 34,
                 fontWeight: 400,
-                "--title-settle": "100%",
-                "--title-opacity": 1,
+                "--title-settle": 1,
                 letterSpacing: ".025em",
                 ease: "atelier-soft",
                 scrollTrigger: {
@@ -213,18 +218,28 @@ export function OriginalesProduct({
             gsap.set(title, {
               left: 0,
               top: 0,
-              fontWeight: 800,
-              letterSpacing: "-0.035em",
-              "--title-settle": "0%",
-              fontSize: mobile
-                ? scene.clientWidth * 0.118
-                : scene.clientWidth * 0.108,
+              "--title-settle": 0,
+              fontSize: Math.min(
+                scene.clientWidth * 0.22,
+                scene.clientHeight * 0.32,
+              ),
               x: 0,
               y: 0,
             });
+            const display = title.querySelector<HTMLElement>(
+              "[data-display-title]",
+            )!;
+            if (display.offsetWidth > scene.clientWidth * 0.86) {
+              gsap.set(title, {
+                fontSize:
+                  (Number(gsap.getProperty(title, "fontSize")) *
+                    (scene.clientWidth * 0.86)) /
+                  display.offsetWidth,
+              });
+            }
             gsap.set(title, {
-              x: () => (scene.clientWidth - title.offsetWidth) / 2,
-              y: () => scene.clientHeight * 0.24,
+              x: () => (scene.clientWidth - display.offsetWidth) / 2,
+              y: () => scene.clientHeight * 0.105,
             });
             const destination = () => {
               const d = dock.getBoundingClientRect(),
@@ -283,8 +298,7 @@ export function OriginalesProduct({
                 fontSize: mobile ? 30 : Math.min(43, scene.clientWidth * 0.035),
                 fontWeight: 400,
                 letterSpacing: "0.025em",
-                "--title-settle": "100%",
-                "--title-opacity": 1,
+                "--title-settle": 1,
                 duration: 0.8,
                 ease: "atelier-soft",
               },
@@ -529,8 +543,58 @@ export function OriginalesProduct({
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
           </div>
+          <svg
+            aria-hidden="true"
+            className="absolute size-0 pointer-events-none"
+          >
+            <defs>
+              <filter
+                id={titleLightId}
+                x="-10%"
+                y="-25%"
+                width="120%"
+                height="150%"
+                colorInterpolationFilters="sRGB"
+              >
+                <feGaussianBlur
+                  in="SourceAlpha"
+                  stdDeviation="3.2"
+                  result="bevel"
+                />
+                <feSpecularLighting
+                  in="bevel"
+                  surfaceScale="5"
+                  specularConstant="1.05"
+                  specularExponent="13"
+                  lightingColor="#fff6e7"
+                  result="light"
+                >
+                  <feDistantLight azimuth="235" elevation="46" />
+                </feSpecularLighting>
+                <feComposite
+                  in="light"
+                  in2="SourceAlpha"
+                  operator="in"
+                  result="rim"
+                />
+                <feBlend in="SourceGraphic" in2="rim" mode="screen" />
+              </filter>
+            </defs>
+          </svg>
           <h1 data-static-ink data-travelling-title className={s.frostedTitle}>
-            {variant?.nameOverride ?? edition.name}
+            <span
+              aria-hidden="true"
+              data-display-title
+              className={s.displayTitle}
+              style={
+                { "--title-light": `url("#${titleLightId}")` } as CSSProperties
+              }
+            >
+              <span>{variant?.nameOverride ?? edition.name}</span>
+            </span>
+            <span className={s.dockTitle}>
+              {variant?.nameOverride ?? edition.name}
+            </span>
           </h1>
           <div data-box className={s.boxObject}>
             {edition.box && (
