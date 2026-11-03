@@ -132,15 +132,20 @@ export function useAtelierMotion(
             let settleTween: ReturnType<typeof gsap.to> | undefined;
             let pointerHeld = false;
             let touchHeld = false;
+            let lastScroll = window.scrollY;
+            let direction = 0;
 
             const cancelSettle = () => {
               clearTimeout(settleTimer);
               settleTween?.kill();
               settleTween = undefined;
+              lastScroll = window.scrollY;
+              direction = 0;
             };
 
             const settle = () => {
               if (
+                direction === 0 ||
                 pointerHeld ||
                 touchHeld ||
                 document.body.hasAttribute("data-originales-photo-focus") ||
@@ -210,43 +215,55 @@ export function useAtelierMotion(
               }
               if (desktopProduct && current > Math.max(...stops) + 24) return;
 
-              const target = stops
+              const ordered = stops
                 .map((stop) => gsap.utils.clamp(0, max, stop))
-                .reduce(
-                  (best, stop) =>
-                    Math.abs(stop - current) < Math.abs(best - current)
-                      ? stop
-                      : best,
-                  Infinity,
-                );
-              const distance = Math.abs(target - current);
-              if (!Number.isFinite(distance) || distance < 2) return;
+                .sort((a, b) => a - b);
+              const upperIndex = ordered.findIndex((stop) => stop >= current);
               if (
-                !desktopProduct &&
-                distance >
-                  (mobile
-                    ? Math.min(100, innerHeight * 0.14)
-                    : innerHeight * 0.55)
+                upperIndex <= 0 ||
+                Math.abs(ordered[upperIndex] - current) < 2
+              )
+                return;
+
+              const lower = ordered[upperIndex - 1];
+              const upper = ordered[upperIndex];
+              const target = direction > 0 ? upper : lower;
+              const distance = Math.abs(target - current);
+              const progress = 1 - distance / (upper - lower);
+              if (
+                distance < 2 ||
+                progress < 0.4 ||
+                distance > innerHeight * (mobile ? 0.2 : 0.7)
               )
                 return;
 
               const position = { y: current };
               settleTween = gsap.to(position, {
                 y: target,
-                duration: gsap.utils.clamp(0.3, 0.65, distance / 1150),
-                ease: "atelier-settle",
+                duration: gsap.utils.clamp(0.42, 0.85, distance / 900),
+                ease: "sine.inOut",
                 // The site sets CSS smooth scrolling on html. Each tween write must be instant.
                 onUpdate: () =>
                   window.scrollTo({ top: position.y, behavior: "instant" }),
                 onComplete: () => {
                   settleTween = undefined;
+                  lastScroll = window.scrollY;
+                  direction = 0;
                 },
               });
             };
             const scheduleSettle = () => {
-              if (settleTween) return;
+              if (settleTween || direction === 0) return;
               clearTimeout(settleTimer);
-              settleTimer = setTimeout(settle, 180);
+              settleTimer = setTimeout(settle, 240);
+            };
+            const trackScroll = () => {
+              if (settleTween) return;
+              const current = window.scrollY;
+              if (current === lastScroll) return;
+              direction = Math.sign(current - lastScroll);
+              lastScroll = current;
+              scheduleSettle();
             };
             const holdPointer = () => {
               pointerHeld = true;
@@ -278,7 +295,7 @@ export function useAtelierMotion(
               )
                 cancelSettle();
             };
-            window.addEventListener("scroll", scheduleSettle, {
+            window.addEventListener("scroll", trackScroll, {
               passive: true,
             });
             window.addEventListener("wheel", cancelSettle, { passive: true });
@@ -295,7 +312,7 @@ export function useAtelierMotion(
             window.addEventListener("keydown", interruptByKey);
             return () => {
               cancelSettle();
-              window.removeEventListener("scroll", scheduleSettle);
+              window.removeEventListener("scroll", trackScroll);
               window.removeEventListener("wheel", cancelSettle);
               window.removeEventListener("pointerdown", holdPointer);
               window.removeEventListener("pointerup", releasePointer);
