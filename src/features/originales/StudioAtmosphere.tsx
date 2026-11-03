@@ -91,10 +91,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
         intro !== "pending" &&
         product.getAttribute("data-price-ready") !== "true";
       element.dataset.studioActive = String(active);
-      const waterReady = scene.querySelector(
-        '[data-liquid-effect][data-ready="true"]',
-      );
-      if (active && !waterReady) {
+      if (active) {
         if (!frame) {
           previous = performance.now();
           frame = requestAnimationFrame(animate);
@@ -140,7 +137,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
     status.observe(product, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-price-ready", "data-ready", "data-studio-intro"],
+      attributeFilter: ["data-price-ready", "data-studio-intro"],
     });
     scene.addEventListener("pointermove", move, { passive: true });
     scene.addEventListener("pointerleave", resetPointer);

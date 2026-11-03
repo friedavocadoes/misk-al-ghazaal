@@ -183,16 +183,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       0,
       "hero still has no flying notes",
     );
-    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
+    await page.waitForSelector('[data-studio-active="true"]', {
+      state: "attached",
+    });
     assert.equal(
-      await page.locator("[data-liquid-effect] canvas").count(),
+      await page.locator("[data-scene] canvas").count(),
       1,
-      "provided liquid engine is mounted only once",
-    );
-    assert.equal(
-      await page.evaluate(() => window.__liquidApp),
-      undefined,
-      "no leaked global singleton",
+      "Lazvaro uses only the shared studio canvas",
     );
     assert.equal(
       await page
@@ -248,11 +245,9 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     const initialSeal = await page
       .locator("[data-purchase] [data-purchase-action=bag] [data-seal-path]")
       .getAttribute("d");
-    assert.equal(
-      await page.locator("[data-liquid-effect] canvas").count(),
-      0,
-      "hero water loop/context are released outside the opening",
-    );
+    await page.waitForSelector('[data-studio-active="false"]', {
+      state: "attached",
+    });
     const pricePhotos = page.locator("[data-product-gallery] button");
     await pricePhotos.nth(1).click();
     await page.waitForTimeout(1000);
@@ -483,12 +478,9 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       1,
       "scrolling back restores original presentation even with a photo selected",
     );
-    await page.waitForSelector("[data-liquid-effect][data-ready=true]");
-    assert.equal(
-      await page.locator("[data-liquid-effect] canvas").count(),
-      1,
-      "water restarts with a single owned instance on reverse scroll",
-    );
+    await page.waitForSelector('[data-studio-active="true"]', {
+      state: "attached",
+    });
     await page.locator("#fragrance-notes").scrollIntoViewIfNeeded();
     await page.waitForTimeout(1300);
     assert.equal(
@@ -552,9 +544,9 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       "mobile is a stable normal-flow product layout",
     );
     assert.equal(
-      await page.locator("[data-hero-liquid],[data-liquid-effect]").count(),
-      0,
-      "mobile never mounts water rendering",
+      await page.locator("[data-scene] canvas").count(),
+      1,
+      "mobile uses the shared studio canvas",
     );
     const mobileHero = await page.locator("[data-bottle]").boundingBox();
     const mobileName = await page.locator("h1").boundingBox();
@@ -695,7 +687,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await buyContext.close();
     assert.deepEqual(errors, []);
     console.log(
-      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, supplied water engine/cleanup/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
+      "PASS buy-now checkout/coupon sign-in, compact notes/rounded tooltip, shared studio canvas pause/re-entry, clipped glass blur, wide closing story/perfumes exit, image lens/focus/escape, transparent SVG corners, real 3D object/demand rendering, GSAP SVG seal morph, gallery clearance, four-bottle opening, persistent sticky scene, active silhouettes, frosted title/no flying notes, docking, rapid quantity changes, cart/morph, magnetic price/dock stops, seamless square photo stage at full price, database photos, reverse-scroll restoration, touch notes/no plus, stable mobile composition and conditional purchase bar, reduced motion and main-store restoration.",
     );
   } finally {
     await browser.close();

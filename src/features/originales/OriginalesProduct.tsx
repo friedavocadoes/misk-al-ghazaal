@@ -28,7 +28,6 @@ import { editionFor } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
 import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
-import { HeroLiquid } from "./HeroLiquid";
 import { StudioAtmosphere } from "./StudioAtmosphere";
 import { FinaleDecor } from "./FinaleDecor";
 import { SculptureScene } from "./SculptureScene";
@@ -368,12 +367,6 @@ export function OriginalesProduct({
               },
               0.15,
             );
-            tl.fromTo(
-              node.querySelector("[data-hero-liquid]"),
-              { opacity: 0.42 },
-              { opacity: 0, duration: 0.72, ease: "atelier-soft" },
-              0.22,
-            );
             tl.to(
               node.querySelector("[data-scroll-cue]"),
               { autoAlpha: 0, duration: 0.2 },
@@ -598,13 +591,6 @@ export function OriginalesProduct({
             wash={edition.wash}
           />
           <div className={s.heroHalo} />
-          {edition.number === "04" && (
-            <HeroLiquid
-              ink={edition.ink}
-              accent={edition.accent}
-              wash={edition.wash}
-            />
-          )}
           <div className={s.sceneCaption}>
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
