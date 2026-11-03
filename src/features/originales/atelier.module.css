@@ -1909,7 +1909,7 @@
 @media (max-width: 759px) {
   .galleryBottle {
     left: var(--mobile-left, 25%);
-    top: var(--mobile-top, 24%);
+    top: calc(var(--mobile-row, 0.24) * 100%);
   }
   .sequenceStories {
     scroll-margin-top: 152px;
@@ -4414,7 +4414,6 @@
 @media (max-width: 759px) {
   .collectionWorld .headerEdition {
     display: block;
-    left: 50%;
     font-size: 8px;
   }
   .collectionWorld .wordmark {
@@ -4429,9 +4428,6 @@
     width: 11px;
     flex-shrink: 0;
   }
-  .collectionWorld .headerEdition {
-    left: 47%;
-  }
   .collectionWorld .tools {
     gap: 0;
   }
@@ -4439,11 +4435,11 @@
     min-width: 27px;
   }
   .collectionWorld .galleryIntro {
-    height: 135px;
+    height: 124px;
   }
   .collectionWorld .galleryIntro h1 {
-    top: 86px;
-    font-size: clamp(42px, 13vw, 90px);
+    top: 83px;
+    font-size: clamp(37px, 11.8vw, 76px);
   }
   .collectionWorld .galleryScroll {
     top: auto;
@@ -4612,11 +4608,129 @@
 }
 @media (max-width: 759px) {
   .collectionWorld .headerEdition {
-    left: 22px;
-    transform: none;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .collectionWorld .header {
+    padding-inline: 8px;
+  }
+  .collectionWorld .tools {
+    margin-inline-start: auto;
+  }
+  .collectionWorld .header .tools > :is(a, button) {
+    min-width: 28px;
+  }
+  .collectionWorld .tools > :is(.collectionReturn, button:first-of-type) {
+    position: absolute;
+    inset-inline-start: 8px;
+    width: 40px;
+  }
+  .collectionWorld .tools > button:first-of-type {
+    inset-inline-start: 48px;
   }
   .world .tools .collectionReturn {
     min-width: 24px;
+  }
+
+  .collectionWorld .gallery {
+    --exhibit-top: 120px;
+    --exhibit-height: clamp(150px, 35svh, 292px);
+  }
+  .collectionWorld .silhouetteNav {
+    height: 48px;
+  }
+  .collectionWorld .silhouetteNav a {
+    padding-block: 4px;
+  }
+  .collectionWorld .silhouette {
+    height: 28px;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .galleryScroll {
+    display: flex;
+    top: calc(100svh - 42px);
+    bottom: auto;
+    max-width: none;
+    min-height: 36px;
+    font-size: 10px;
+  }
+  .collectionWorld .gallery[data-mobile-featured="true"] .galleryScroll {
+    visibility: hidden;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .galleryStage {
+    position: sticky;
+    top: var(--exhibit-top);
+    height: var(--exhibit-height);
+    overflow: visible;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .stageHalo {
+    inset: 0 0 -12px;
+    opacity: 0;
+    background: linear-gradient(#13151a calc(100% - 10px), transparent);
+    transition: opacity 0.38s;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .stageHalo::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse at center,
+      color-mix(in srgb, var(--featured-accent) 28%, transparent),
+      transparent 66%
+    );
+  }
+  .collectionWorld .gallery[data-mobile-featured="true"] .stageHalo {
+    opacity: 1;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .galleryBottle {
+    top: calc(var(--mobile-row) * (100svh - 146px));
+    width: 43%;
+    height: min(27svh, 231px);
+    will-change: transform, opacity;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .sequenceStories {
+    padding-block-start: max(
+      184px,
+      calc(100svh - 124px - var(--exhibit-height))
+    );
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .editionPlate {
+    scroll-margin-top: calc(var(--exhibit-top) + var(--exhibit-height) + 12px);
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .sequenceChapter {
+    display: block;
+    padding: 0 0 28px;
+  }
+  .collectionWorld .gallery[data-mobile-exhibit="true"] .mobileChapterProduct {
+    margin-bottom: 12px;
+  }
+  .collectionWorld
+    .gallery[data-mobile-exhibit="true"]
+    .mobileChapterProduct
+    > a {
+    display: none;
+  }
+  .collectionWorld
+    .gallery[data-mobile-exhibit="true"]
+    .mobileChapterProduct
+    .galleryPurchase {
+    padding: 8px 0 10px;
+  }
+  .collectionWorld
+    .gallery[data-mobile-exhibit="true"]
+    :is(.mobileChapterProduct, .editionCard) {
+    transition:
+      transform 0.48s,
+      opacity 0.48s;
+  }
+  .collectionWorld
+    .gallery[data-mobile-exhibit="true"]:not([data-mobile-featured="true"])
+    :is(.mobileChapterProduct, .editionCard),
+  .collectionWorld
+    .gallery[data-mobile-exhibit="true"]
+    [data-featured="false"]
+    :is(.mobileChapterProduct, .editionCard) {
+    transform: translateY(14px);
+    opacity: 0.74;
   }
 }
 
