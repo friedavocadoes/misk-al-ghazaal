@@ -1,7 +1,6 @@
 "use client";
 import {
   useEffect,
-  useId,
   useRef,
   useState,
   useTransition,
@@ -47,7 +46,6 @@ export function OriginalesProduct({
   stores: ReactNode;
   reviews: ReactNode;
 }) {
-  const titleLightId = useId();
   const ar = locale === "ar",
     edition = editionFor(product),
     narrative = editionStory(edition.name, ar);
@@ -171,7 +169,7 @@ export function OriginalesProduct({
               }
               gsap.set(title, {
                 x: (scene.clientWidth - display.offsetWidth) / 2,
-                y: innerHeight * 0.23,
+                y: innerHeight * 0.25,
               });
               gsap.to(title, {
                 x: () =>
@@ -207,7 +205,7 @@ export function OriginalesProduct({
               xPercent: -50,
               yPercent: -45,
               x: 0,
-              y: 0,
+              y: () => scene.clientHeight * 0.05,
             });
             gsap.set(node.querySelector("[data-box]"), {
               xPercent: -50,
@@ -239,7 +237,7 @@ export function OriginalesProduct({
             }
             gsap.set(title, {
               x: () => (scene.clientWidth - display.offsetWidth) / 2,
-              y: () => scene.clientHeight * 0.105,
+              y: () => scene.clientHeight * 0.155,
             });
             const destination = () => {
               const d = dock.getBoundingClientRect(),
@@ -543,52 +541,11 @@ export function OriginalesProduct({
             <span>ORIGINALES / {edition.number}</span>
             <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
           </div>
-          <svg
-            aria-hidden="true"
-            className="absolute size-0 pointer-events-none"
-          >
-            <defs>
-              <filter
-                id={titleLightId}
-                x="-10%"
-                y="-25%"
-                width="120%"
-                height="150%"
-                colorInterpolationFilters="sRGB"
-              >
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="3.2"
-                  result="bevel"
-                />
-                <feSpecularLighting
-                  in="bevel"
-                  surfaceScale="5"
-                  specularConstant="1.05"
-                  specularExponent="13"
-                  lightingColor="#fff6e7"
-                  result="light"
-                >
-                  <feDistantLight azimuth="235" elevation="46" />
-                </feSpecularLighting>
-                <feComposite
-                  in="light"
-                  in2="SourceAlpha"
-                  operator="in"
-                  result="rim"
-                />
-                <feBlend in="SourceGraphic" in2="rim" mode="screen" />
-              </filter>
-            </defs>
-          </svg>
           <h1 data-static-ink data-travelling-title className={s.frostedTitle}>
             <span
               aria-hidden="true"
               data-display-title
               className={s.displayTitle}
-              style={
-                { "--title-light": `url("#${titleLightId}")` } as CSSProperties
-              }
             >
               <span>{variant?.nameOverride ?? edition.name}</span>
             </span>

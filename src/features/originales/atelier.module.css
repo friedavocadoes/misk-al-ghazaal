@@ -385,24 +385,17 @@
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1.03;
-  filter: var(--title-light) drop-shadow(0 5px 7px #160d0b45)
-    drop-shadow(
-      0 0 10px color-mix(in srgb, var(--edition-wash) 32%, transparent)
-    );
-  opacity: calc(0.97 * (1 - var(--title-settle)));
+  opacity: calc(1 - var(--title-settle));
 }
 .displayTitle > span {
-  background:
-    radial-gradient(ellipse at 8% 81%, #fff3cf 0%, transparent 19%),
-    radial-gradient(ellipse at 43% 21%, #fff6e6 0%, transparent 18%),
-    radial-gradient(ellipse at 95% 28%, #fff8ed 0%, transparent 20%),
-    linear-gradient(
-      160deg,
-      var(--edition-wash) 10%,
-      color-mix(in srgb, var(--edition-accent) 67%, var(--edition-wash)) 38%,
-      var(--edition-wash) 62%,
-      color-mix(in srgb, var(--edition-accent) 60%, var(--edition-wash)) 92%
-    );
+  /* Keep the gradient behind glyphs that extend past the negative tracking. */
+  padding-inline: 0.06em;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--edition-wash) 72%, transparent),
+    color-mix(in srgb, var(--edition-wash) 54%, transparent) 46%,
+    color-mix(in srgb, var(--edition-accent) 25%, var(--edition-wash) 38%) 100%
+  );
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -3430,7 +3423,7 @@
     opacity: 0.3;
   }
   .stickyProduct .bottleObject {
-    top: 50svh;
+    top: 52svh;
     left: 50%;
     height: 58svh;
     width: 74%;
