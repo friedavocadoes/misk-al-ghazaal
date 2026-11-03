@@ -44,26 +44,34 @@ export function MorphFrame({
             <stop
               stopColor={
                 kind === "button"
-                  ? "var(--studio-rim, #d8d8c4)"
+                  ? "var(--studio-button-highlight, #d8d8c4)"
                   : "var(--studio-card-light, #101813)"
               }
-              stopOpacity={kind === "button" ? ".12" : ".90"}
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .12)" : ".90"
+              }
             />
             <stop
               offset=".45"
               stopColor={
-                kind === "button" ? "#9ca6a0" : "var(--studio-card, #101813)"
+                kind === "button"
+                  ? "var(--studio-button-body, #9ca6a0)"
+                  : "var(--studio-card, #101813)"
               }
-              stopOpacity={kind === "button" ? ".025" : ".60"}
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .025)" : ".60"
+              }
             />
             <stop
               offset="1"
               stopColor={
                 kind === "button"
-                  ? "var(--studio-rim, #d2bb80)"
+                  ? "var(--studio-button-shadow, #d2bb80)"
                   : "var(--studio-card, #101813)"
               }
-              stopOpacity={kind === "button" ? ".09" : ".72"}
+              stopOpacity={
+                kind === "button" ? "var(--studio-button-opacity, .09)" : ".72"
+              }
             />
           </linearGradient>
         </defs>

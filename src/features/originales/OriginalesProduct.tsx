@@ -92,6 +92,32 @@ export function OriginalesProduct({
     };
   }, [product.slug]);
   useEffect(() => {
+    const element = root.current;
+    if (!ready || !element) return;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+    const finish = () => {
+      if (element.dataset.studioIntro !== "complete")
+        element.dataset.studioIntro = "complete";
+    };
+    if (window.scrollY > 24 || reduced.matches) {
+      finish();
+      return;
+    }
+
+    element.dataset.studioIntro = "playing";
+    const timer = window.setTimeout(finish, 1750);
+    const interrupt = () => {
+      if (window.scrollY > 24 || reduced.matches) finish();
+    };
+    window.addEventListener("scroll", interrupt, { passive: true });
+    reduced.addEventListener("change", interrupt);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", interrupt);
+      reduced.removeEventListener("change", interrupt);
+    };
+  }, [ready, product.slug]);
+  useEffect(() => {
     let frame = 0;
     const media = matchMedia("(max-width:759px)");
     const measure = () => {
@@ -543,6 +569,7 @@ export function OriginalesProduct({
     <div
       ref={root}
       data-originales-product
+      data-studio-intro="pending"
       data-photo-focus={photoFocus}
       className={`${s.product} ${s.stickyProduct}`}
       style={

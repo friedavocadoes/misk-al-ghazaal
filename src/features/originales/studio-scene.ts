@@ -15,6 +15,8 @@ export function paintStudio(
   time = 0,
   pointerX = 0,
   pointerY = 0,
+  opening = 1,
+  trace?: (index: number, path: string, highlight: number) => void,
 ) {
   const backdrop = ctx.createLinearGradient(0, 0, width, height);
   backdrop.addColorStop(0, ink);
@@ -37,15 +39,22 @@ export function paintStudio(
   ctx.fillStyle = light;
   ctx.fillRect(0, 0, width, height);
 
-  for (const { start, end, bend, depth, phase } of sheets) {
+  for (const [index, { start, end, bend, depth, phase }] of sheets.entries()) {
+    const entry =
+      1 -
+      Math.pow(
+        1 - Math.max(0, (opening - index * 0.09) / (1 - index * 0.09)),
+        3,
+      );
+    const fold = (1 - entry) * (index === 1 ? -0.37 : 0.46);
     const drift = Math.sin(time * 0.38 + phase) * 0.038;
     const sway = Math.cos(time * 0.29 + phase) * 0.055;
     const x1 = width * (0.25 + pointerX * 0.07);
     const x2 = width * (0.75 + pointerX * 0.09);
-    const y1 = height * (start + bend + drift + pointerY * 0.08);
-    const y2 = height * (end - bend * 0.55 + sway + pointerY * 0.11);
-    const left = height * (start + sway * 0.4);
-    const right = height * (end - drift * 0.5);
+    const y1 = height * (start + bend + drift + pointerY * 0.08 + fold);
+    const y2 = height * (end - bend * 0.55 + sway + pointerY * 0.11 - fold);
+    const left = height * (start + sway * 0.4 + fold);
+    const right = height * (end - drift * 0.5 - fold);
     const thickness = height * depth;
 
     const surface = ctx.createLinearGradient(0, left, width, right + thickness);
@@ -67,6 +76,7 @@ export function paintStudio(
       left + thickness,
     );
     ctx.closePath();
+    ctx.globalAlpha = 0.18 + entry * 0.82;
     ctx.fillStyle = surface;
     ctx.fill();
 
@@ -104,11 +114,19 @@ export function paintStudio(
     ctx.bezierCurveTo(x1, y1, x2, y2, width + 4, right);
     ctx.strokeStyle = rim;
     ctx.lineWidth = Math.max(2, height * 0.008);
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = entry * 0.2;
     ctx.stroke();
     ctx.globalAlpha = 1;
-    ctx.lineWidth = Math.max(0.75, height * 0.0016);
-    ctx.stroke();
+    if (trace) {
+      trace(
+        index,
+        `M-4 ${left} C${x1} ${y1} ${x2} ${y2} ${width + 4} ${right}`,
+        glint,
+      );
+    } else {
+      ctx.lineWidth = Math.max(0.75, height * 0.0016);
+      ctx.stroke();
+    }
   }
 
   const floor = ctx.createLinearGradient(0, height * 0.76, 0, height);

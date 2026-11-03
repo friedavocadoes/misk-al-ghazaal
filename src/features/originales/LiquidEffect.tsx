@@ -31,6 +31,7 @@ export function LiquidEffectAnimation({ ink, accent, wash }: StudioPalette) {
         !document.hidden &&
         !reduced.matches &&
         !connection?.saveData &&
+        page?.getAttribute("data-studio-intro") === "complete" &&
         page?.getAttribute("data-price-ready") !== "true";
       if (!allowed) {
         generation++;
@@ -154,7 +155,7 @@ export function LiquidEffectAnimation({ ink, accent, wash }: StudioPalette) {
     if (page)
       attrs.observe(page, {
         attributes: true,
-        attributeFilter: ["data-price-ready"],
+        attributeFilter: ["data-price-ready", "data-studio-intro"],
       });
     document.addEventListener("visibilitychange", update);
     reduced.addEventListener("change", update);
