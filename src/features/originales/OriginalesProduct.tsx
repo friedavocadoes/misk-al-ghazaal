@@ -169,34 +169,6 @@ export function OriginalesProduct({
             if (context.conditions.mobile) {
               const node = root.current!;
               const scene = node.querySelector<HTMLElement>("[data-scene]")!;
-              const title = node.querySelector<HTMLElement>(
-                "[data-travelling-title]",
-              )!;
-              const dock =
-                node.querySelector<HTMLElement>("[data-title-dock]")!;
-              const initialSize = Math.min(84, scene.clientWidth * 0.18);
-              gsap.set(title, {
-                left: 0,
-                top: 0,
-                fontSize: initialSize,
-
-                x: 0,
-                y: 0,
-              });
-              const display = title.querySelector<HTMLElement>(
-                "[data-display-title]",
-              )!;
-              if (display.offsetWidth > scene.clientWidth - 24) {
-                gsap.set(title, {
-                  fontSize:
-                    (initialSize * (scene.clientWidth - 24)) /
-                    display.offsetWidth,
-                });
-              }
-              gsap.set(title, {
-                x: (scene.clientWidth - display.offsetWidth) / 2,
-                y: innerHeight * 0.25,
-              });
               gsap.to(node.querySelectorAll("[data-bottle-reflection]"), {
                 opacity: 0,
                 y: 16,
@@ -216,26 +188,6 @@ export function OriginalesProduct({
                   start: "top top",
                   end: "top -24%",
                   scrub: 0.35,
-                },
-              });
-              gsap.to(title, {
-                x: () =>
-                  dock.getBoundingClientRect().left -
-                  scene.getBoundingClientRect().left,
-                y: () =>
-                  dock.getBoundingClientRect().top -
-                  scene.getBoundingClientRect().top,
-                fontSize: 34,
-                fontWeight: 400,
-                "--title-settle": 1,
-                letterSpacing: ".025em",
-                ease: "atelier-soft",
-                scrollTrigger: {
-                  trigger: scene,
-                  start: "top top",
-                  end: () => "+=" + innerHeight * 0.65,
-                  scrub: 0.5,
-                  invalidateOnRefresh: true,
                 },
               });
               return;
@@ -298,6 +250,8 @@ export function OriginalesProduct({
               defaults: { ease: "atelier-soft" },
               onUpdate: () => {
                 node.dataset.priceReady = tl.time() >= 0.95 ? "true" : "false";
+                node.dataset.galleryVisible =
+                  tl.time() >= 0.63 ? "true" : "false";
               },
               scrollTrigger: {
                 trigger: node.querySelector("[data-runway]"),
@@ -325,32 +279,29 @@ export function OriginalesProduct({
               },
               0,
             );
-            tl.to(
-              node.querySelector("[data-bottle]"),
-              {
-                x: () => (mobile ? 0 : -scene.clientWidth * 0.23),
-                y: () =>
-                  mobile
-                    ? -scene.clientHeight * 0.16
-                    : -scene.clientHeight * 0.02,
-                scale: mobile ? 0.66 : 0.68,
-                duration: 0.85,
-                ease: "atelier-soft",
+            const bottleNode =
+              node.querySelector<HTMLElement>("[data-bottle]")!;
+            const boxNode = node.querySelector<HTMLElement>("[data-box]")!;
+            const galleryPose = (
+              object: HTMLElement,
+              side: number,
+              scale: number,
+            ) => ({
+              x: () => {
+                const lane = scene.clientWidth - 100;
+                return (
+                  100 + lane * (0.26 + side * 0.075) - scene.clientWidth / 2
+                );
               },
-              0.05,
-            );
+              y: () => scene.clientHeight * -0.09 - object.offsetHeight * 0.05,
+              scale,
+              duration: 0.85,
+            });
+            tl.to(bottleNode, galleryPose(bottleNode, 1, 0.96), 0.05);
             tl.fromTo(
-              node.querySelector("[data-box]"),
-              { opacity: 0, x: mobile ? -160 : -360, scale: 0.82 },
-              {
-                opacity: 1,
-                x: () =>
-                  mobile ? -scene.clientWidth * 0.2 : -scene.clientWidth * 0.35,
-                y: () => 0,
-                scale: mobile ? 0.64 : 0.68,
-                duration: 0.7,
-                ease: "atelier-soft",
-              },
+              boxNode,
+              { opacity: 0, x: -scene.clientWidth * 0.36, scale: 0.76 },
+              { ...galleryPose(boxNode, -1, 0.94), opacity: 1, duration: 0.7 },
               0.23,
             );
             tl.to(
@@ -389,6 +340,11 @@ export function OriginalesProduct({
               0.63,
             );
             buy.inert = true;
+            gsap.set(buy, {
+              width: () => Math.min(scene.clientWidth * 0.36, 485),
+              right: "auto",
+              maxWidth: "none",
+            });
             // Dock the same live controls beneath the same persistent bottle/box nodes.
             const compact = gsap.timeline({
               onUpdate: () => {
@@ -402,16 +358,14 @@ export function OriginalesProduct({
             });
             compact.to(
               buy,
-              mobile
-                ? { bottom: 12, duration: 1 }
-                : {
-                    left: "6%",
-                    right: "auto",
-                    width: "39%",
-                    top: "78%",
-                    maxWidth: "none",
-                    duration: 1,
-                  },
+              {
+                left: () => 100 + (scene.clientWidth - 100) * 0.045,
+                width: () => (scene.clientWidth - 100) * 0.43,
+                top: "72%",
+                paddingTop: 32,
+                "--dock-progress": 1,
+                duration: 1,
+              },
               0,
             );
             compact.to(
@@ -425,36 +379,6 @@ export function OriginalesProduct({
               0,
             );
             compact.to(title, { opacity: 0, duration: 0.35 }, 0);
-            compact.to(
-              node.querySelector("[data-bottle]"),
-              mobile
-                ? {
-                    y: () => -scene.clientHeight * 0.17,
-                    scale: 0.26,
-                    duration: 1,
-                  }
-                : {
-                    y: () => -scene.clientHeight * 0.13,
-                    scale: 0.62,
-                    duration: 1,
-                  },
-              0,
-            );
-            compact.to(
-              node.querySelector("[data-box]"),
-              mobile
-                ? {
-                    y: () => -scene.clientHeight * 0.17,
-                    scale: 0.26,
-                    duration: 1,
-                  }
-                : {
-                    y: () => -scene.clientHeight * 0.15,
-                    scale: 0.62,
-                    duration: 1,
-                  },
-              0,
-            );
             tl.fromTo(
               node.querySelector("[data-product-gallery]"),
               {
@@ -472,21 +396,6 @@ export function OriginalesProduct({
               },
               0.63,
             );
-            compact.to(
-              node.querySelector("[class*=photoAperture]"),
-              { top: "18%", duration: 1 },
-              0,
-            );
-            compact.to(
-              node.querySelector("[class*=photoRail]"),
-              { top: "68%", duration: 1 },
-              0,
-            );
-            compact.to(
-              node.querySelector("[class*=photoCounter]"),
-              { top: "64.2%", duration: 1 },
-              0,
-            );
             compact.timeScale(2.3);
             tl.add(compact, 1.45);
             ScrollTrigger.refresh();
@@ -498,6 +407,7 @@ export function OriginalesProduct({
               if (details) details.inert = false;
               delete node.dataset.docked;
               delete node.dataset.priceReady;
+              delete node.dataset.galleryVisible;
             };
           },
           root.current,
@@ -591,10 +501,6 @@ export function OriginalesProduct({
             wash={edition.wash}
           />
           <div className={s.heroHalo} />
-          <div className={s.sceneCaption}>
-            <span>ORIGINALES / {edition.number}</span>
-            <span>{ar ? "تعبيرك الخاص" : "AN EXPRESSION OF YOU"}</span>
-          </div>
           <h1 data-static-ink data-travelling-title className={s.frostedTitle}>
             <span
               aria-hidden="true"
@@ -687,6 +593,7 @@ export function OriginalesProduct({
           <div
             id="originales-purchase"
             data-purchase
+            data-static-ink
             className={s.purchase}
             inert={mobileDock || photoFocus || undefined}
           >
@@ -695,9 +602,7 @@ export function OriginalesProduct({
               <span>{formatAED(price)}</span>
             </div>
             <div data-purchase-details className={s.purchaseDetails}>
-              <p className={s.kicker}>
-                MAG PARFUM · ORIGINALES {edition.number}
-              </p>
+              <p className={s.kicker}>MAG PARFUM</p>
               <div data-title-dock className={s.titleDock} aria-hidden="true" />
               <div className={s.signaturePrice}>
                 <span>{ar ? "تعبير أصيل" : "YOUR ORIGINAL EXPRESSION"}</span>
