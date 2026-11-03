@@ -175,7 +175,7 @@ export function useAtelierMotion(
               const mobile = innerWidth < 760;
               const gallery = node.querySelector("[data-gallery-stage]");
               const runway = node.querySelector("[data-runway]");
-              if (mobile && runway) return;
+              if (mobile) return;
               const desktopProduct = !mobile && !!runway;
               const stage = gallery?.getBoundingClientRect();
               const imageFrame = runway?.querySelector<HTMLElement>(
@@ -184,10 +184,7 @@ export function useAtelierMotion(
               const offset = stage
                 ? mobile
                   ? 152 + innerHeight * 0.26
-                  : Math.max(
-                      176,
-                      stage.top + stage.height * 0.36 - innerHeight * 0.2,
-                    )
+                  : Math.max(176, stage.top + 16)
                 : mobile
                   ? 88
                   : Math.max(104, imageFrame?.offsetTop ?? 0);

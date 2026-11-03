@@ -4254,3 +4254,299 @@
 .stickyProduct .purchaseActions .bagMorph:disabled {
   opacity: 0.5;
 }
+
+/* The collection borrows the product studio, with one large title docking into the header. */
+.collectionWorld .header {
+  background: linear-gradient(180deg, #161217d6, #16121710);
+  border-color: transparent;
+  backdrop-filter: none;
+}
+.collectionReturn {
+  position: absolute;
+  inset-inline-start: 225px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  padding: 10px 0;
+  color: #d9cfc1;
+}
+.collectionReturn:hover {
+  color: #fff7eb;
+}
+.collectionWorld .gallery {
+  position: relative;
+  --studio-rim: #ead6bb;
+  --edition-wash: #dfc9ae;
+  --studio-motion-opacity: 1;
+  background: radial-gradient(ellipse at 18% 33%, #25201b, #131315 65%);
+}
+.collectionWorld .gallery > .heroBackdrop {
+  z-index: 0;
+  height: 100svh;
+  opacity: 0.76;
+  mask-image: linear-gradient(#000 62%, transparent);
+}
+.collectionWorld .gallery > .studioGlints {
+  top: 25svh;
+  bottom: auto;
+  height: 50svh;
+}
+.collectionWorld .galleryIntro {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: clamp(160px, 23svh, 255px);
+  padding: 0;
+}
+.collectionWorld .galleryIntro h1 {
+  position: fixed;
+  top: clamp(82px, 11svh, 130px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 7;
+  margin: 0;
+  font-size: clamp(52px, 11vw, 185px);
+  line-height: 0.96;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.054em;
+  white-space: nowrap;
+}
+.collectionWorld .galleryIntro h1 a {
+  display: block;
+  padding-inline: 0.065em;
+  background: linear-gradient(140deg, #f5e6d5dd, #ccae8faa 49%, #ead6b7db 82%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0.045em 0.09em #100b0a76);
+}
+.collectionWorld .galleryScroll {
+  position: absolute;
+  z-index: 10;
+  top: 89svh;
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+}
+.collectionWorld .gallerySequence {
+  z-index: 8;
+}
+.collectionWorld .galleryStage {
+  background: none;
+}
+.collectionWorld .gallery[data-collapsed="true"] .galleryStage {
+  background: linear-gradient(90deg, #15131578, #15131524 47%, transparent 53%);
+}
+.collectionWorld .galleryBottle a {
+  transition: filter 0.35s;
+}
+.collectionWorld .galleryBottle a:is(:hover, :focus-visible) {
+  filter: brightness(1.13);
+}
+.collectionWorld .stickyPurchase {
+  left: 25%;
+  translate: -50% 0;
+  width: min(38%, 420px);
+  bottom: 12px;
+}
+.galleryIdentity {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.galleryIdentity:hover h2 {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.collectionWorld .galleryPurchase .bagMorphTrack {
+  min-height: 48px;
+}
+.collectionWorld .galleryPurchase .bagMorph {
+  min-height: 48px;
+  padding: 0 15px;
+  border-radius: 999px;
+  color: #201916;
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--edition-wash) 76%, white),
+    var(--edition-wash)
+  );
+  border: 1px solid #fff6;
+}
+.collectionWorld .galleryPurchase .bagMorph > .morphFrame,
+.collectionWorld .galleryPurchase .bagWords small {
+  display: none;
+}
+.collectionWorld .galleryPurchase .bagWords {
+  min-height: 0;
+}
+.collectionWorld .galleryPurchase .bagSeal {
+  background: none;
+  border: 0;
+  color: currentColor;
+}
+.collectionWorld .editionCard {
+  position: relative;
+  scroll-margin-top: max(176px, calc(160px + 1svh));
+  padding-right: clamp(52px, 6vw, 100px);
+}
+.editionCard > .editionCardLink {
+  position: static;
+  color: var(--edition-wash);
+}
+.editionCardLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+.collectionWorld .editionCardLink > svg {
+  position: absolute;
+  inset-block-start: 25px;
+  inset-inline-end: 24px;
+  box-sizing: content-box;
+  padding: 9px;
+  border: 1px solid #f6e2c94a;
+  border-radius: 50%;
+  transition:
+    background 0.3s,
+    color 0.3s;
+}
+.collectionWorld .editionCardLink:is(:hover, :focus-visible) > svg {
+  background: var(--edition-wash);
+  color: #201916;
+}
+.collectionWorld .editionCard > .chapterNotes {
+  z-index: 4;
+  pointer-events: none;
+}
+.collectionWorld .chapterNotes button {
+  pointer-events: auto;
+}
+@media (max-width: 759px) {
+  .collectionWorld .headerEdition {
+    display: block;
+    left: 50%;
+    font-size: 8px;
+  }
+  .collectionWorld .wordmark {
+    display: none;
+  }
+  .collectionReturn {
+    inset-inline-start: 14px;
+    max-width: 90px;
+    font-size: 9px;
+  }
+  .collectionReturn svg {
+    width: 11px;
+    flex-shrink: 0;
+  }
+  .collectionWorld .headerEdition {
+    left: 47%;
+  }
+  .collectionWorld .tools {
+    gap: 0;
+  }
+  .collectionWorld .tools > :is(a, button) {
+    min-width: 27px;
+  }
+  .collectionWorld .galleryIntro {
+    height: 135px;
+  }
+  .collectionWorld .galleryIntro h1 {
+    top: 86px;
+    font-size: clamp(42px, 13vw, 90px);
+  }
+  .collectionWorld .galleryScroll {
+    top: auto;
+    bottom: 0;
+    display: none;
+  }
+  .collectionWorld .gallery[data-collapsed="true"] .galleryStage {
+    background: linear-gradient(#151315 0%, #151315e8 44%, transparent 59%);
+  }
+  .collectionWorld .stickyPurchase {
+    left: 15px;
+    right: 15px;
+    translate: none;
+    width: auto;
+    top: 31svh;
+    bottom: auto;
+  }
+  .collectionWorld .galleryIdentity {
+    display: block;
+  }
+  .collectionWorld .galleryIdentity h2 {
+    font-size: 16px;
+  }
+  .collectionWorld .galleryIdentity p {
+    font-size: 12px;
+  }
+  .collectionWorld .editionCard {
+    scroll-margin-top: calc(152px + 38svh);
+    padding-inline-end: 52px;
+  }
+  .collectionWorld .editionCardLink > svg {
+    inset-inline-end: 12px;
+    padding: 6px;
+    width: 17px;
+    height: 17px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .collectionWorld .galleryIntro h1 {
+    position: absolute;
+  }
+}
+
+.editionPlate {
+  width: 100%;
+  scroll-margin-top: 176px;
+}
+.mobileChapterProduct {
+  display: none;
+}
+@media (max-width: 759px) {
+  .collectionWorld .galleryStage {
+    position: relative;
+    top: 0;
+  }
+  .collectionWorld .stickyPurchase {
+    display: none;
+  }
+  .collectionWorld .editionPlate {
+    scroll-margin-top: 152px;
+  }
+  .collectionWorld .sequenceChapter {
+    padding-block: 25px 42px;
+  }
+  .collectionWorld .mobileChapterProduct {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .collectionWorld .mobileChapterProduct > a {
+    display: grid;
+    place-items: center;
+    height: clamp(240px, 37svh, 340px);
+  }
+  .collectionWorld .mobileChapterProduct > a img {
+    width: auto;
+    height: 100%;
+    max-width: 85%;
+    object-fit: contain;
+    filter: drop-shadow(0 16px 18px #0008);
+  }
+  .collectionWorld .mobileChapterProduct .galleryPurchase {
+    padding: 8px 0;
+  }
+  .collectionWorld .mobileChapterProduct .bagWords strong {
+    font-size: 10px;
+  }
+  .collectionWorld .header {
+    background: linear-gradient(180deg, #161217ed, #16121791);
+    backdrop-filter: blur(10px);
+  }
+}

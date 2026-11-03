@@ -25,7 +25,9 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
     const surface = canvas.current;
     const ctx = surface?.getContext("2d", { alpha: false });
     const scene = element?.parentElement;
-    const product = scene?.closest("[data-originales-product]");
+    const product = scene?.closest(
+      "[data-originales-product], [data-originales-collection]",
+    );
     const vector = rims.current;
     if (!element || !surface || !ctx || !scene || !product || !vector) return;
     const paths = vector.querySelectorAll("path");

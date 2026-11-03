@@ -46,16 +46,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       true,
       "silhouettes stay hidden in the opening",
     );
-    await page
-      .getByRole("button", { name: "Explore the collection", exact: true })
-      .click();
-    await page.waitForTimeout(750);
-    assert.ok(
-      (await page.locator("[data-originales-menu]").boundingBox()).x < 1,
-      "collection menu opens from the left",
+    assert.equal(
+      await page
+        .getByRole("button", { name: "Explore the collection", exact: true })
+        .count(),
+      0,
     );
-    await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
+    assert.ok(
+      await page
+        .getByRole("link", { name: "Misk Al Ghazaal", exact: true })
+        .first()
+        .isVisible(),
+    );
     const photos = await page
       .locator("[data-gallery-bottle]")
       .evaluateAll((els) =>
@@ -78,21 +80,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     });
     await page
       .locator("[data-edition-chapter]")
-      .nth(1)
-      .evaluate((el) =>
-        scrollTo({
-          top: scrollY + el.getBoundingClientRect().top - 176,
-          behavior: "instant",
-        }),
-      );
+      .first()
+      .scrollIntoViewIfNeeded();
+    const collectionNav = page.locator("[data-originales-nav]");
+    await collectionNav.waitFor({ state: "visible" });
+    await collectionNav.getByRole("link", { name: /Sultanic/i }).click();
+    await page.waitForFunction(() => location.hash.includes("sultanic"));
     await page.waitForTimeout(2200);
-    assert.equal(
-      await page
-        .locator("[data-originales-nav]")
-        .evaluate((el) => !el.inert && getComputedStyle(el).opacity === "1"),
-      true,
-      "silhouettes reveal after entering the perfume chapters",
-    );
     const alignment = await page.evaluate(() => {
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
@@ -100,7 +94,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       return {
         bottle: figure.getBoundingClientRect().top,
         card: document
-          .querySelectorAll("[class*=editionCard]")[1]
+          .querySelector("#edition-originales-sultanic div[class*=editionCard]")
           .getBoundingClientRect().top,
       };
     });

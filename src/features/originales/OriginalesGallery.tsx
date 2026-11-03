@@ -14,7 +14,7 @@ import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
-import { EditionEmblem } from "./EditionEmblem";
+import { StudioAtmosphere } from "./StudioAtmosphere";
 import { SculptureScene } from "./SculptureScene";
 import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
@@ -35,14 +35,17 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
     [],
   );
   return (
-    <div className={s.galleryPurchase}>
-      <div>
-        <p className={s.kicker}>ORIGINALES / {edition.number}</p>
+    <div
+      data-static-ink
+      className={s.galleryPurchase}
+      style={{ "--edition-wash": edition.wash } as CSSProperties}
+    >
+      <Link href={originalesPath(product)} className={s.galleryIdentity}>
         <h2>{edition.name}</h2>
         <p className={s.galleryPrice}>
           {formatAED(variant?.price ?? product.price)}
         </p>
-      </div>
+      </Link>
       <AtelierBagButton
         added={added}
         disabled={!productAvailable(product)}
@@ -58,10 +61,6 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
           timer.current = setTimeout(() => setAdded(false), 2100);
         }}
       />
-      <Link className={s.textLink} href={originalesPath(product)}>
-        {ar ? "التجربة كاملة" : "Enter the full experience"}
-        <ArrowUpRight size={14} />
-      </Link>
     </div>
   );
 }
@@ -108,13 +107,53 @@ export function OriginalesGallery({
             const stage = node.querySelector<HTMLElement>(
               "[data-gallery-stage]",
             )!;
-            ScrollTrigger.create({
-              trigger: chapters[0],
-              start: "top 75%",
-              end: "max",
-              onUpdate: (self) => setNavVisible(self.progress > 0),
-              onRefresh: (self) => setNavVisible(self.progress > 0),
-            });
+            const masthead = node.querySelector<HTMLElement>(
+              "[data-collection-masthead]",
+            )!;
+            const dock = node
+              .closest("[class*=collectionWorld]")
+              ?.querySelector<HTMLElement>("[data-collection-title-dock]");
+            if (motion && dock) {
+              gsap.fromTo(
+                masthead,
+                { y: 0, scale: 1 },
+                {
+                  y: () =>
+                    dock.getBoundingClientRect().top +
+                    dock.offsetHeight / 2 -
+                    (masthead.offsetTop + masthead.offsetHeight / 2),
+                  scale: () => dock.offsetWidth / masthead.offsetWidth,
+                  opacity: 0,
+                  ease: "atelier-soft",
+                  scrollTrigger: {
+                    start: 0,
+                    end: () => innerHeight * 0.43,
+                    scrub: 0.55,
+                    invalidateOnRefresh: true,
+                  },
+                },
+              );
+              gsap.fromTo(
+                dock,
+                { opacity: 0.65 },
+                {
+                  opacity: 1,
+                  scrollTrigger: {
+                    start: () => innerHeight * 0.3,
+                    end: () => innerHeight * 0.43,
+                    scrub: 0.55,
+                  },
+                },
+              );
+            }
+            if (chapters.length)
+              ScrollTrigger.create({
+                trigger: chapters[0],
+                start: "top 75%",
+                end: "max",
+                onUpdate: (self) => setNavVisible(self.progress > 0),
+                onRefresh: (self) => setNavVisible(self.progress > 0),
+              });
             const sync = () => {
               const rects = chapters.map((chapter) =>
                 chapter.getBoundingClientRect(),
@@ -171,7 +210,7 @@ export function OriginalesGallery({
               width: mobile ? "43%" : "22%",
               height: mobile ? "34svh" : "61svh",
             });
-            if (motion) {
+            if (!mobile && motion) {
               const collapse = gsap.timeline({
                 scrollTrigger: {
                   trigger: node.querySelector("[data-gallery-sequence]"),
@@ -185,14 +224,14 @@ export function OriginalesGallery({
                 },
               });
               collapse.to(figures, {
-                left: mobile ? "50%" : "25%",
-                top: mobile ? "18%" : "36%",
-                width: mobile ? "50%" : "34%",
-                height: mobile ? "26svh" : "40svh",
+                left: "25%",
+                top: () => 16 + innerHeight * 0.275,
+                width: "43%",
+                height: "55svh",
                 duration: 1,
                 ease: "atelier-soft",
               });
-            } else {
+            } else if (!mobile) {
               ScrollTrigger.create({
                 trigger: node.querySelector("[data-gallery-sequence]"),
                 start: () => `top top+=${mobile ? 150 : 175}`,
@@ -202,35 +241,10 @@ export function OriginalesGallery({
                   progress.current = next;
                   gsap.set(figures, {
                     left: (index: number) =>
-                      next
-                        ? mobile
-                          ? "50%"
-                          : "25%"
-                        : mobile
-                          ? (index % 2 ? 75 : 25) + "%"
-                          : (index + 0.5) * 25 + "%",
-                    top: (index: number) =>
-                      next
-                        ? mobile
-                          ? "18%"
-                          : "36%"
-                        : mobile
-                          ? (index < 2 ? 24 : 69) + "%"
-                          : "44%",
-                    width: next
-                      ? mobile
-                        ? "50%"
-                        : "34%"
-                      : mobile
-                        ? "43%"
-                        : "22%",
-                    height: next
-                      ? mobile
-                        ? "26svh"
-                        : "40svh"
-                      : mobile
-                        ? "34svh"
-                        : "61svh",
+                      next ? "25%" : (index + 0.5) * 25 + "%",
+                    top: next ? `${16 + innerHeight * 0.275}px` : "44%",
+                    width: next ? "43%" : "22%",
+                    height: next ? "55svh" : "61svh",
                   });
                   sync();
                 },
@@ -259,7 +273,7 @@ export function OriginalesGallery({
             const finaleContent = finale.querySelector<HTMLElement>(
               "[class*=panelContent]",
             )!;
-            if (motion) {
+            if (!mobile && motion) {
               const finish = gsap.timeline({
                 scrollTrigger: {
                   trigger: finale,
@@ -312,7 +326,7 @@ export function OriginalesGallery({
                   },
                   0,
                 );
-            } else {
+            } else if (!mobile) {
               ScrollTrigger.create({
                 trigger: finale,
                 start: "top 70%",
@@ -350,7 +364,14 @@ export function OriginalesGallery({
   const featured = products[active] ?? products[0],
     story = COLLECTION_STORY[ar ? "ar" : "en"];
   return (
-    <div ref={root} className={s.gallery} data-collapsed={collapsed}>
+    <div
+      id="originales-top"
+      ref={root}
+      className={s.gallery}
+      data-originales-collection
+      data-collapsed={collapsed}
+    >
+      <StudioAtmosphere ink="#302520" accent="#8d6948" wash="#dfc9ae" />
       <nav
         data-originales-nav
         data-visible={navVisible}
@@ -361,9 +382,9 @@ export function OriginalesGallery({
         {products.map((product, index) => {
           const edition = editionFor(product);
           return (
-            <Link
+            <a
               key={product.id}
-              href={originalesPath(product)}
+              href={`#edition-${product.slug}`}
               data-active={index === active}
               aria-label={`${edition.name}${index === active ? (ar ? "، العطر المعروض" : " — currently featured") : ""}`}
               style={
@@ -382,17 +403,14 @@ export function OriginalesGallery({
             >
               <span className={s.silhouette} aria-hidden="true" />
               <span>{edition.name}</span>
-              <small>0{index + 1}</small>
-            </Link>
+            </a>
           );
         })}
       </nav>
       <header className={s.galleryIntro}>
-        <EditionEmblem index={active} />
-        <div>
-          <p className={s.kicker}>MAG PARFUM / COLLECTION 01</p>
-          <h1>ORIGINALES</h1>
-        </div>
+        <h1 data-collection-masthead data-static-ink>
+          <a href="#originales-top">Originales</a>
+        </h1>
         <a href="#the-editions" className={s.galleryScroll}>
           {ar
             ? "أربعة تعابير. اختر عالمك."
@@ -458,40 +476,70 @@ export function OriginalesGallery({
                 data-edition-chapter
                 data-snap-panel
                 className={s.sequenceChapter}
-                style={{ "--edition-accent": edition.accent } as CSSProperties}
+                style={
+                  {
+                    "--edition-accent": edition.accent,
+                    "--edition-wash": edition.wash,
+                    "--studio-card": edition.ink,
+                    "--studio-card-light": `color-mix(in srgb, ${edition.ink} 74%, ${edition.accent})`,
+                  } as CSSProperties
+                }
               >
-                <div className={s.editionCard}>
-                  <MorphFrame kind="edition" />
-                  <p className={s.kicker}>THE EXPRESSION / {edition.number}</p>
-                  <h2>{copy?.heading ?? edition.name}</h2>
-                  {copy && <p className={s.chapterProse}>{copy.body}</p>}
-                  {product.notes.length > 0 && (
-                    <div className={s.chapterNotes}>
-                      <h3>{ar ? "التوليفة" : "The composition"}</h3>
-                      <div>
-                        {product.notes.map((note) => (
-                          <NoteTooltip
-                            key={`${note.id}-${note.kind}`}
-                            note={note}
-                            locale={ar ? "ar" : "en"}
-                            className={s.galleryNote}
-                          >
-                            <NoteGlyph
-                              glyph={note.glyph}
-                              className={s.galleryNoteGlyph}
-                            />
-                            <span>
-                              {tx(note.name, note.nameAr, ar ? "ar" : "en")}
-                            </span>
-                          </NoteTooltip>
-                        ))}
+                <div id={`edition-${product.slug}`} className={s.editionPlate}>
+                  <div className={s.mobileChapterProduct}>
+                    <Link href={originalesPath(product)}>
+                      <Image
+                        src={
+                          edition.bottle ?? product.images[0] ?? "/logo.webp"
+                        }
+                        alt={edition.name}
+                        width={360}
+                        height={470}
+                        sizes="60vw"
+                      />
+                    </Link>
+                    <GalleryPurchase product={product} ar={ar} />
+                  </div>
+                  <div className={s.editionCard}>
+                    <MorphFrame kind="edition" />
+                    <p className={s.kicker}>
+                      THE EXPRESSION / {edition.number}
+                    </p>
+                    <h2>{copy?.heading ?? edition.name}</h2>
+                    {copy && <p className={s.chapterProse}>{copy.body}</p>}
+                    {product.notes.length > 0 && (
+                      <div className={s.chapterNotes}>
+                        <h3>{ar ? "التوليفة" : "The composition"}</h3>
+                        <div>
+                          {product.notes.map((note) => (
+                            <NoteTooltip
+                              key={`${note.id}-${note.kind}`}
+                              note={note}
+                              locale={ar ? "ar" : "en"}
+                              className={s.galleryNote}
+                            >
+                              <NoteGlyph
+                                glyph={note.glyph}
+                                className={s.galleryNoteGlyph}
+                              />
+                              <span>
+                                {tx(note.name, note.nameAr, ar ? "ar" : "en")}
+                              </span>
+                            </NoteTooltip>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  <Link href={originalesPath(product)} className={s.textLink}>
-                    {ar ? "اكتشف العطر" : "Explore the fragrance"}
-                    <ArrowUpRight size={15} />
-                  </Link>
+                    )}
+                    <Link
+                      href={originalesPath(product)}
+                      className={s.editionCardLink}
+                      aria-label={
+                        ar ? `اكتشف ${edition.name}` : `Explore ${edition.name}`
+                      }
+                    >
+                      <ArrowUpRight size={21} />
+                    </Link>
+                  </div>
                 </div>
               </section>
             );

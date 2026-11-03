@@ -10,7 +10,6 @@ import {
 import Image from "next/image";
 import {
   ArrowLeft,
-  ArrowUpRight,
   Globe2,
   MapPin,
   Menu,
@@ -152,16 +151,18 @@ export function OriginalesChrome({
     >
       <header className={s.header}>
         <div className={s.headerLeft}>
-          <button
-            type="button"
-            aria-label={ar ? "المجموعة" : "Explore the collection"}
-            onClick={() => setMenu(true)}
-            data-haptic="open"
-            data-ios-haptic="on"
-            className={`${s.mobileMenu} ${collectionPage ? s.collectionMenu : ""}`}
-          >
-            <Menu />
-          </button>
+          {!collectionPage && (
+            <button
+              type="button"
+              aria-label={ar ? "المجموعة" : "Explore the collection"}
+              onClick={() => setMenu(true)}
+              data-haptic="open"
+              data-ios-haptic="on"
+              className={s.mobileMenu}
+            >
+              <Menu />
+            </button>
+          )}
           <Link
             href="/originales"
             className={s.wordmark}
@@ -170,9 +171,25 @@ export function OriginalesChrome({
             MAG<span>PARFUM</span>
           </Link>
         </div>
-        <Link href="/originales" className={s.headerEdition}>
-          ORIGINALES<span>{ar ? "تعبير أصيل" : "An original expression"}</span>
-        </Link>
+        {collectionPage ? (
+          <>
+            <a href={returnTo} className={s.collectionReturn}>
+              <ArrowLeft size={14} /> <span>Misk Al Ghazaal</span>
+            </a>
+            <a
+              href="#originales-top"
+              data-collection-title-dock
+              className={s.headerEdition}
+            >
+              ORIGINALES
+            </a>
+          </>
+        ) : (
+          <Link href="/originales" className={s.headerEdition}>
+            ORIGINALES
+            <span>{ar ? "تعبير أصيل" : "An original expression"}</span>
+          </Link>
+        )}
         <div className={s.tools}>
           <button
             type="button"
