@@ -282,6 +282,8 @@ export function OriginalesProduct({
             const bottleNode =
               node.querySelector<HTMLElement>("[data-bottle]")!;
             const boxNode = node.querySelector<HTMLElement>("[data-box]")!;
+            const dockedImageY = (object: HTMLElement) =>
+              scene.clientHeight * -0.09 - object.offsetHeight * 0.05;
             const galleryPose = (
               object: HTMLElement,
               side: number,
@@ -293,7 +295,7 @@ export function OriginalesProduct({
                   100 + lane * (0.26 + side * 0.075) - scene.clientWidth / 2
                 );
               },
-              y: () => scene.clientHeight * -0.09 - object.offsetHeight * 0.05,
+              y: () => dockedImageY(object) + scene.clientHeight * 0.1,
               scale,
               duration: 0.85,
             });
@@ -379,6 +381,17 @@ export function OriginalesProduct({
               0,
             );
             compact.to(title, { opacity: 0, duration: 0.35 }, 0);
+            compact.to(
+              bottleNode,
+              { y: () => dockedImageY(bottleNode), duration: 1 },
+              0,
+            );
+            compact.to(
+              boxNode,
+              { y: () => dockedImageY(boxNode), duration: 1 },
+              0,
+            );
+            compact.to(scene, { "--gallery-drop": "0%", duration: 1 }, 0);
             tl.fromTo(
               node.querySelector("[data-product-gallery]"),
               {

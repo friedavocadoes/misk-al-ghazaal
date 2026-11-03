@@ -3914,20 +3914,20 @@
   }
   .stickyProduct .photoAperture {
     left: calc(100px + (100% - 100px) * 0.26);
-    top: 12%;
+    top: calc(12% + var(--gallery-drop));
     width: min(calc((100% - 100px) * 0.45), 58svh);
     height: auto;
     aspect-ratio: 1;
   }
   .stickyProduct .photoRail {
     left: calc(100px + (100% - 100px) * 0.045);
-    top: 72%;
+    top: calc(72% + var(--gallery-drop));
     width: calc((100% - 100px) * 0.43);
     justify-content: safe center;
     padding: 4px;
   }
   .stickyProduct[data-docked="true"] .photoRail {
-    top: calc(72% + 32px);
+    top: calc(72% + var(--gallery-drop) + 32px);
     width: calc((100% - 100px) * 0.215);
     padding-inline-end: 12px;
   }
@@ -4186,4 +4186,71 @@
     position: absolute;
     inset: 0;
   }
+}
+
+@media (min-width: 760px) {
+  .stickyProduct .scene {
+    --gallery-drop: 10%;
+  }
+}
+
+/* A single clean label and an unboxed icon keep both actions compact. */
+.stickyProduct .purchaseActions :is(.bagMorphTrack, .bagMorph) {
+  min-height: calc(52px - 6px * var(--dock-progress, 0));
+}
+.stickyProduct .purchaseActions .bagMorph {
+  padding: 0 clamp(10px, 1.2vw, 18px);
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--studio-rim) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--studio-card) 58%, transparent);
+  box-shadow: inset 0 1px #ffffff0b;
+}
+.stickyProduct .purchaseActions .bagMorph[data-purchase-action="bag"] {
+  color: #201916;
+  background: linear-gradient(115deg, var(--studio-rim), var(--edition-wash));
+  border-color: color-mix(in srgb, var(--studio-rim) 80%, white);
+}
+.stickyProduct .purchaseActions .bagMorph > .morphFrame {
+  display: none;
+}
+.stickyProduct .purchaseActions .bagWords {
+  min-height: 0;
+}
+.stickyProduct .purchaseActions .bagWords small {
+  display: none;
+}
+.stickyProduct .purchaseActions .bagWords strong {
+  font-size: clamp(9px, 0.78vw, 12px);
+  letter-spacing: 0.075em;
+  font-weight: 700;
+}
+.stickyProduct .purchaseActions .bagSeal {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  background: none;
+  border: 0;
+  color: currentColor;
+  transition: translate 0.35s;
+}
+.stickyProduct .purchaseActions .bagSeal svg {
+  width: 21px;
+  height: 21px;
+}
+.stickyProduct
+  .purchaseActions
+  [data-purchase-action="purchase"]:hover
+  .bagSeal {
+  translate: 3px 0;
+}
+.world[dir="rtl"]
+  .stickyProduct
+  .purchaseActions
+  [data-purchase-action="purchase"]:hover
+  .bagSeal {
+  translate: -3px 0;
+}
+.stickyProduct .purchaseActions .bagMorph:disabled {
+  opacity: 0.5;
 }
