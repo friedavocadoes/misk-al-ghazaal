@@ -140,7 +140,6 @@ export function OriginalesChrome({
           </Link>
         );
       })}
-      {back}
     </nav>
   );
   return (
@@ -172,18 +171,13 @@ export function OriginalesChrome({
           </Link>
         </div>
         {collectionPage ? (
-          <>
-            <a href={returnTo} className={s.collectionReturn}>
-              <ArrowLeft size={14} /> <span>Misk Al Ghazaal</span>
-            </a>
-            <a
-              href="#originales-top"
-              data-collection-title-dock
-              className={s.headerEdition}
-            >
-              ORIGINALES
-            </a>
-          </>
+          <a
+            href="#originales-top"
+            data-collection-title-dock
+            className={s.headerEdition}
+          >
+            ORIGINALES
+          </a>
         ) : (
           <Link href="/originales" className={s.headerEdition}>
             ORIGINALES
@@ -191,6 +185,14 @@ export function OriginalesChrome({
           </Link>
         )}
         <div className={s.tools}>
+          <a
+            href={returnTo}
+            className={s.collectionReturn}
+            aria-label="Misk Al Ghazaal"
+          >
+            <ArrowLeft aria-hidden="true" />
+            <span aria-hidden="true">Misk Al Ghazaal</span>
+          </a>
           <button
             type="button"
             aria-label={ar ? "البحث" : "Search fragrances"}

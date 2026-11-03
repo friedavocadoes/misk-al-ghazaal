@@ -7,6 +7,27 @@ const sheets = [
   { start: 0.86, end: 0.38, bend: 0.19, depth: 0.15, phase: 3.9 },
 ];
 
+const forms: Record<string, typeof sheets> = {
+  // Tall green folds, crossing rose silk, and low, parallel sapphire currents.
+  "02": [
+    { start: -0.02, end: 0.22, bend: 0.32, depth: 0.12, phase: 1.7 },
+    { start: 0.32, end: 0.53, bend: 0.38, depth: 0.16, phase: 2.4 },
+    { start: 0.64, end: 0.89, bend: 0.24, depth: 0.21, phase: 3.3 },
+  ],
+  "03": [
+    { start: 0.07, end: 0.82, bend: -0.37, depth: 0.25, phase: 1.2 },
+    { start: 0.74, end: 0.14, bend: -0.57, depth: 0.33, phase: 3.1 },
+    { start: 0.96, end: 0.66, bend: 0.29, depth: 0.18, phase: 4.8 },
+  ],
+  "04": [
+    { start: 0.26, end: 0.34, bend: 0.22, depth: 0.1, phase: 0.3 },
+    { start: 0.53, end: 0.58, bend: 0.32, depth: 0.14, phase: 1.8 },
+    { start: 0.79, end: 0.83, bend: 0.29, depth: 0.15, phase: 3.5 },
+  ],
+};
+
+const collectionLights = ["#bb8757", "#5a9b79", "#b5698b", "#628bb8"];
+
 export function paintStudio(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -16,6 +37,7 @@ export function paintStudio(
   pointerX = 0,
   pointerY = 0,
   opening = 1,
+  variant = "01",
   trace?: (index: number, path: string, highlight: number) => void,
 ) {
   const backdrop = ctx.createLinearGradient(0, 0, width, height);
@@ -24,6 +46,31 @@ export function paintStudio(
   backdrop.addColorStop(1, ink);
   ctx.fillStyle = backdrop;
   ctx.fillRect(0, 0, width, height);
+
+  if (variant === "collection") {
+    // Four pools of light share a graphite stage, one for each bottle.
+    for (const [index, color] of collectionLights.entries()) {
+      const x =
+        width *
+        ((index + 0.5) / 4 +
+          Math.sin(time * 0.21 + index) * 0.024 +
+          pointerX * 0.025);
+      const y = height * (0.55 + pointerY * 0.05);
+      const radius = Math.max(width * 0.24, height * 0.27);
+      const pool = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      pool.addColorStop(0, `${color}67`);
+      pool.addColorStop(0.5, `${color}2c`);
+      pool.addColorStop(1, `${color}00`);
+      ctx.fillStyle = pool;
+      ctx.fillRect(0, 0, width, height);
+    }
+    const ground = ctx.createLinearGradient(0, height * 0.68, 0, height);
+    ground.addColorStop(0, "#11131a00");
+    ground.addColorStop(1, "#11131add");
+    ctx.fillStyle = ground;
+    ctx.fillRect(0, height * 0.68, width, height * 0.32);
+    return;
+  }
 
   const light = ctx.createRadialGradient(
     width * (0.33 + pointerX * 0.07),
@@ -39,7 +86,16 @@ export function paintStudio(
   ctx.fillStyle = light;
   ctx.fillRect(0, 0, width, height);
 
-  for (const [index, { start, end, bend, depth, phase }] of sheets.entries()) {
+  const stageWidth = width;
+  const stageHeight = height;
+  ctx.save();
+  if (variant === "02") {
+    ctx.transform(0, 1, -1, 0, width, 0);
+    [width, height] = [height, width];
+  }
+  for (const [index, { start, end, bend, depth, phase }] of (
+    forms[variant] ?? sheets
+  ).entries()) {
     const entry =
       1 -
       Math.pow(
@@ -129,11 +185,12 @@ export function paintStudio(
     }
   }
 
-  const floor = ctx.createLinearGradient(0, height * 0.76, 0, height);
+  ctx.restore();
+  const floor = ctx.createLinearGradient(0, stageHeight * 0.76, 0, stageHeight);
   floor.addColorStop(0, `${ink}00`);
   floor.addColorStop(0.54, `${ink}8c`);
   floor.addColorStop(0.66, `${accent}58`);
   floor.addColorStop(1, ink);
   ctx.fillStyle = floor;
-  ctx.fillRect(0, height * 0.76, width, height * 0.24);
+  ctx.fillRect(0, stageHeight * 0.76, stageWidth, stageHeight * 0.24);
 }

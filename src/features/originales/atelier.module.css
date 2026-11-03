@@ -4550,3 +4550,86 @@
     backdrop-filter: blur(10px);
   }
 }
+
+/* The two collection navigation rows share one material when the chapter rail opens. */
+.collectionWorld:has(.silhouetteNav[data-visible="true"])
+  :is(.header, .silhouetteNav) {
+  background: #0c0c0dde;
+  backdrop-filter: blur(22px) saturate(1.15);
+}
+.collectionWorld:has(.silhouetteNav[data-visible="true"]) .header {
+  border-bottom-color: transparent;
+}
+.collectionWorld [data-collection-title-dock] {
+  opacity: 0;
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .collectionWorld:has(.silhouetteNav[data-visible="true"])
+    [data-collection-title-dock] {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+.collectionWorld .gallery {
+  background: radial-gradient(ellipse at 50% 28%, #242731, #111317 66%);
+}
+.collectionWorld .galleryIntro h1 a {
+  background-image: linear-gradient(
+    140deg,
+    #eef0f5e6,
+    #a9b1c1b5 49%,
+    #d9dce5df 82%
+  );
+}
+.world .tools .collectionReturn {
+  position: relative;
+  inset: auto;
+  min-width: 28px;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  color: inherit;
+}
+.world .tools .collectionReturn svg {
+  width: 17px;
+}
+.collectionReturn > span {
+  display: none;
+}
+@media (hover: hover) and (min-width: 760px) {
+  .collectionReturn > span {
+    display: block;
+    position: absolute;
+    top: calc(100% + 9px);
+    inset-inline-end: 0;
+    width: max-content;
+    padding: 8px 12px;
+    background: #101015eb;
+    border: 1px solid #ffffff25;
+    border-radius: 3px;
+    color: #f8eee4;
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -4px;
+    transition:
+      opacity 0.25s,
+      translate 0.25s,
+      visibility 0.25s;
+    pointer-events: none;
+  }
+  .collectionReturn:is(:hover, :focus-visible) > span {
+    opacity: 1;
+    visibility: visible;
+    translate: 0;
+  }
+}
+@media (max-width: 759px) {
+  .collectionWorld .headerEdition {
+    left: 22px;
+    transform: none;
+  }
+  .world .tools .collectionReturn {
+    min-width: 24px;
+  }
+}

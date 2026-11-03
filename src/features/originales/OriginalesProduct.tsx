@@ -509,6 +509,7 @@ export function OriginalesProduct({
           aria-label={edition.name}
         >
           <StudioAtmosphere
+            variant={edition.number}
             ink={edition.ink}
             accent={edition.accent}
             wash={edition.wash}

@@ -135,9 +135,9 @@ export function OriginalesGallery({
               );
               gsap.fromTo(
                 dock,
-                { opacity: 0.65 },
+                { autoAlpha: 0 },
                 {
-                  opacity: 1,
+                  autoAlpha: 1,
                   scrollTrigger: {
                     start: () => innerHeight * 0.3,
                     end: () => innerHeight * 0.43,
@@ -371,7 +371,12 @@ export function OriginalesGallery({
       data-originales-collection
       data-collapsed={collapsed}
     >
-      <StudioAtmosphere ink="#302520" accent="#8d6948" wash="#dfc9ae" />
+      <StudioAtmosphere
+        variant="collection"
+        ink="#1b2028"
+        accent="#646e85"
+        wash="#dce3eb"
+      />
       <nav
         data-originales-nav
         data-visible={navVisible}

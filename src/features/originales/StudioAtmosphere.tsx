@@ -14,7 +14,12 @@ const glints = [
   { x: 92, y: 68, size: 2, delay: -6, duration: 14 },
 ];
 
-export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
+export function StudioAtmosphere({
+  ink,
+  accent,
+  wash,
+  variant,
+}: StudioPalette & { variant: string }) {
   const plate = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const rims = useRef<SVGSVGElement>(null);
@@ -54,6 +59,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
         x,
         y,
         opening,
+        variant,
         (index, path, highlight) => {
           paths[index].setAttribute("d", path);
           highlights[index].setAttribute("offset", String(highlight));
@@ -111,6 +117,13 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
       surface.width = Math.round(width * ratio);
       surface.height = Math.round(height * ratio);
       vector.setAttribute("viewBox", `0 0 ${surface.width} ${surface.height}`);
+      if (variant === "02") {
+        paths.forEach((path) =>
+          path.setAttribute("transform", `matrix(0 1 -1 0 ${surface.width} 0)`),
+        );
+      } else {
+        paths.forEach((path) => path.removeAttribute("transform"));
+      }
       paint();
     };
     const move = (event: PointerEvent) => {
@@ -155,7 +168,7 @@ export function StudioAtmosphere({ ink, accent, wash }: StudioPalette) {
       document.removeEventListener("visibilitychange", sync);
       reduced.removeEventListener("change", sync);
     };
-  }, [ink, accent, wash]);
+  }, [ink, accent, wash, variant]);
 
   return (
     <>
