@@ -372,37 +372,38 @@
   white-space: nowrap;
   z-index: 4;
   pointer-events: none;
-  --title-settle: 0%;
+  --title-settle: 0;
   color: #ecece4;
-  background: linear-gradient(
-    135deg,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--edition-accent) 48%, #dad4ce),
-        #ecece4 var(--title-settle)
-      )
-      5%,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--edition-wash) 80%, #eee7dd),
-        #ecece4 var(--title-settle)
-      )
-      46%,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--edition-accent) 50%, #acaeb3),
-        #ecece4 var(--title-settle)
-      )
-      100%
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: none;
-  opacity: calc(0.72 + 0.28 * var(--title-opacity, 0));
-  filter: drop-shadow(0 3px 20px #ffffff08);
   will-change: transform, font-size;
 }
+.displayTitle {
+  position: absolute;
+  inset-block-start: 0;
+  left: 0;
+  width: max-content;
+  font-family: var(--font-originales), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.03;
+  opacity: calc(1 - var(--title-settle));
+}
+.displayTitle > span {
+  /* Keep the gradient behind glyphs that extend past the negative tracking. */
+  padding-inline: 0.06em;
+  background: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--edition-wash) 72%, transparent),
+    color-mix(in srgb, var(--edition-wash) 54%, transparent) 46%,
+    color-mix(in srgb, var(--edition-accent) 25%, var(--edition-wash) 38%) 100%
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dockTitle {
+  opacity: var(--title-settle);
+}
+
 .bottleObject,
 .boxObject {
   position: absolute;
@@ -3319,7 +3320,7 @@
 /* The title keeps its semantic identity as the opening colour and weight settle. */
 @media (prefers-reduced-motion: reduce) {
   .frostedTitle {
-    --title-settle: 100%;
+    --title-settle: 1;
     font-weight: 400;
     letter-spacing: 0.025em;
   }
@@ -3422,7 +3423,7 @@
     opacity: 0.3;
   }
   .stickyProduct .bottleObject {
-    top: 50svh;
+    top: 52svh;
     left: 50%;
     height: 58svh;
     width: 74%;
@@ -3607,5 +3608,16 @@
   }
   .headerLeft {
     gap: 2px;
+  }
+}
+
+@media (min-width: 760px) {
+  .productChapters .panel,
+  .productChapters .compositionPanel {
+    min-height: 0;
+    padding-block: 24px;
+  }
+  .productChapters .reviewsPanel {
+    padding-top: 36px !important;
   }
 }
