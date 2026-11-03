@@ -192,7 +192,6 @@ export function OriginalesProduct({
               return;
             }
             const node = root.current!,
-              mobile = !!context.conditions.mobile,
               scene = node.querySelector<HTMLElement>("[data-scene]")!,
               buy = node.querySelector<HTMLElement>("[data-purchase]")!,
               title = node.querySelector<HTMLElement>(
@@ -215,28 +214,27 @@ export function OriginalesProduct({
               left: 0,
               top: 0,
               "--title-settle": 0,
-              fontSize: Math.min(
-                scene.clientWidth * 0.22,
-                scene.clientHeight * 0.32,
-              ),
+              fontSize: "min(22vw, 32svh)",
+              transformOrigin: "top left",
               x: 0,
               y: 0,
             });
             const display = title.querySelector<HTMLElement>(
               "[data-display-title]",
             )!;
-            if (display.offsetWidth > scene.clientWidth * 0.86) {
-              gsap.set(title, {
-                fontSize:
-                  (Number(gsap.getProperty(title, "fontSize")) *
-                    (scene.clientWidth * 0.86)) /
-                  display.offsetWidth,
-              });
-            }
+            const titleFontSize = () =>
+              parseFloat(getComputedStyle(title).fontSize);
+            const openingWidthPerEm = display.offsetWidth / titleFontSize();
             gsap.set(title, {
-              x: () => (scene.clientWidth - display.offsetWidth) / 2,
-              y: () => scene.clientHeight * 0.155,
+              fontSize: `min(22vw, 32svh, ${86 / openingWidthPerEm}vw)`,
             });
+            const openingPose = {
+              x: () =>
+                (scene.clientWidth - openingWidthPerEm * titleFontSize()) / 2,
+              y: () => scene.clientHeight * 0.155,
+              scale: 1,
+            };
+            gsap.set(title, openingPose);
             const destination = () => {
               const d = dock.getBoundingClientRect(),
                 r = scene.getBoundingClientRect();
@@ -259,7 +257,7 @@ export function OriginalesProduct({
                 trigger: node.querySelector("[data-runway]"),
                 start: "top top",
                 end: () => "+=" + innerHeight * PRODUCT_FRAMES.dock,
-                scrub: 1,
+                scrub: 0.28,
                 invalidateOnRefresh: true,
               },
             });
@@ -308,19 +306,28 @@ export function OriginalesProduct({
               { ...galleryPose(boxNode, -1, 0.94), opacity: 1, duration: 0.7 },
               0.23,
             );
-            tl.to(
+            tl.fromTo(
               title,
+              openingPose,
               {
                 x: () => destination().x,
                 y: () => destination().y,
-                fontSize: mobile ? 30 : Math.min(43, scene.clientWidth * 0.035),
-                fontWeight: 400,
-                letterSpacing: "0.025em",
+                scale: () =>
+                  Math.min(43, scene.clientWidth * 0.035) / titleFontSize(),
                 "--title-settle": 1,
                 duration: 0.8,
-                ease: "atelier-soft",
               },
               0.15,
+            );
+            tl.fromTo(
+              title,
+              { fontWeight: 800, letterSpacing: "-0.045em" },
+              {
+                fontWeight: 400,
+                letterSpacing: "0.025em",
+                duration: 0.22,
+              },
+              0.73,
             );
             tl.to(
               node.querySelector("[data-scroll-cue]"),
@@ -515,15 +522,8 @@ export function OriginalesProduct({
           />
           <div className={s.heroHalo} />
           <h1 data-static-ink data-travelling-title className={s.frostedTitle}>
-            <span
-              aria-hidden="true"
-              data-display-title
-              className={s.displayTitle}
-            >
+            <span data-display-title className={s.displayTitle}>
               <span>{variant?.nameOverride ?? edition.name}</span>
-            </span>
-            <span className={s.dockTitle}>
-              {variant?.nameOverride ?? edition.name}
             </span>
           </h1>
           <div data-box className={s.boxObject}>

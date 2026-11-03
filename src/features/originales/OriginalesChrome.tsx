@@ -181,7 +181,7 @@ export function OriginalesChrome({
         ) : (
           <Link href="/originales" className={s.headerEdition}>
             ORIGINALES
-            <span>{ar ? "تعبير أصيل" : "An original expression"}</span>
+            {/* <span>{ar ? "تعبير أصيل" : "An original expression"}</span> */}
           </Link>
         )}
         <div className={s.tools}>

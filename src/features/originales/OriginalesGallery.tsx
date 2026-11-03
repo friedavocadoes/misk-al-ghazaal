@@ -141,6 +141,8 @@ export function OriginalesGallery({
                 },
                 0,
               );
+              // Lift the mark over the navbar once it has cleared the bottles.
+              titleFlight.set(masthead, { zIndex: 44 }, 0.74);
               titleFlight.to(masthead, { autoAlpha: 0, duration: 0.12 }, 0.88);
               titleFlight.fromTo(
                 dock,

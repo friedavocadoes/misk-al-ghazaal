@@ -26,6 +26,17 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForTimeout(1600);
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
+    const masthead = page.locator("[data-collection-masthead]");
+    assert.ok(
+      await masthead.evaluate((el) => {
+        const sequence = document.querySelector("[data-gallery-sequence]");
+        return (
+          Number(getComputedStyle(el).zIndex) <
+          Number(getComputedStyle(sequence).zIndex)
+        );
+      }),
+      "the collection wordmark starts behind the bottles",
+    );
     assert.equal(await page.locator("[data-originales-nav] a").count(), 4);
     assert.equal(
       await page
@@ -62,6 +73,24 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         (photo) => photo.x >= 0 && photo.right <= 1440 && photo.opacity === "1",
       ),
       "all four opening bottles fit",
+    );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 0.35, behavior: "instant" }),
+    );
+    await page.waitForFunction(
+      () =>
+        Number(
+          getComputedStyle(document.querySelector("[data-collection-masthead]"))
+            .zIndex,
+        ) === 44,
+    );
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForFunction(
+      () =>
+        Number(
+          getComputedStyle(document.querySelector("[data-collection-masthead]"))
+            .zIndex,
+        ) < 8,
     );
     await page.evaluate(() => {
       window.__originalesBottles = [
@@ -195,13 +224,37 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
         .evaluate((el) => getComputedStyle(el).textTransform),
       "uppercase",
     );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 0.22, behavior: "instant" }),
+    );
+    await page.waitForTimeout(600);
+    assert.ok(
+      await page.evaluate(() => Math.abs(scrollY - innerHeight * 0.22) < 2),
+    );
+    const midFlight = await page
+      .locator("[data-travelling-title]")
+      .evaluate((el) => ({
+        text: el.textContent.trim(),
+        ink: Number(getComputedStyle(el).getPropertyValue("--title-settle")),
+      }));
+    assert.equal(
+      midFlight.text,
+      "Lazvaro",
+      "only one copy of the title is rendered",
+    );
+    assert.ok(
+      midFlight.ink > 0 && midFlight.ink < 1,
+      "the same glyphs tint during the flight",
+    );
+    await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
+    await page.waitForTimeout(350);
     if (process.env.ORIGINALES_QA_SCREENSHOTS)
       await page.screenshot({
         path: `${process.env.ORIGINALES_QA_SCREENSHOTS}/v10-opening.png`,
       });
     await page.evaluate(() => {
       window.__originalesTitle = document.querySelector("h1");
-      scrollTo({ top: innerHeight * 0.7, behavior: "instant" });
+      scrollTo({ top: innerHeight * 0.42, behavior: "instant" });
     });
     await page.waitForFunction(
       () => Math.abs(scrollY - innerHeight * 1.12) < 3,

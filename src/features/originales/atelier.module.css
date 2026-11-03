@@ -367,41 +367,23 @@
   font-size: 43px;
   font-weight: 800;
   line-height: 1.12;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
   text-transform: uppercase;
   white-space: nowrap;
   z-index: 4;
   pointer-events: none;
   --title-settle: 0;
   color: #ecece4;
-  will-change: transform, font-size;
 }
 .displayTitle {
-  position: absolute;
-  inset-block-start: 0;
-  left: 0;
+  position: relative;
+  display: block;
   width: max-content;
-  font-family: var(--font-originales), sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.03;
-  opacity: calc(1 - var(--title-settle));
 }
 .displayTitle > span {
+  display: inline-block;
   /* Keep the gradient behind glyphs that extend past the negative tracking. */
   padding-inline: 0.06em;
-  background: linear-gradient(
-    155deg,
-    color-mix(in srgb, var(--edition-wash) 72%, transparent),
-    color-mix(in srgb, var(--edition-wash) 54%, transparent) 46%,
-    color-mix(in srgb, var(--edition-accent) 25%, var(--edition-wash) 38%) 100%
-  );
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.dockTitle {
-  opacity: var(--title-settle);
 }
 
 .bottleObject,
@@ -3730,28 +3712,40 @@
   );
 }
 .stickyProduct .displayTitle > span {
-  display: inline-block;
+  --settled-ink: calc(var(--title-settle) * 100%);
+  --rim-strength: calc((1 - var(--title-settle)) * 82%);
   background:
     radial-gradient(
       ellipse at 13% 85%,
-      color-mix(in srgb, var(--studio-rim) 85%, transparent),
+      color-mix(in srgb, var(--studio-rim) var(--rim-strength), transparent),
       transparent 28%
     ),
     radial-gradient(
       ellipse at 87% 22%,
-      color-mix(in srgb, var(--studio-rim) 80%, transparent),
+      color-mix(in srgb, var(--studio-rim) var(--rim-strength), transparent),
       transparent 34%
     ),
     linear-gradient(
       153deg,
-      color-mix(in srgb, var(--studio-rim) 88%, transparent),
-      color-mix(in srgb, var(--edition-wash) 66%, transparent) 48%,
-      color-mix(in srgb, var(--edition-accent) 36%, var(--edition-wash) 50%)
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--studio-rim) 88%, transparent),
+        #ecece4 var(--settled-ink)
+      ),
+      color-mix(
+          in srgb,
+          color-mix(in srgb, var(--edition-wash) 66%, transparent),
+          #ecece4 var(--settled-ink)
+        )
+        48%,
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--edition-accent) 36%, var(--edition-wash) 50%),
+        #ecece4 var(--settled-ink)
+      )
     );
   background-clip: text;
-  filter: drop-shadow(
-    0 0 0.045em color-mix(in srgb, var(--edition-wash) 32%, transparent)
-  );
+  -webkit-text-fill-color: transparent;
 }
 .stickyProduct .bottleObject img {
   object-position: center bottom;
@@ -4177,14 +4171,6 @@
   .world:not(.collectionWorld) .header::before {
     backdrop-filter: blur(12px);
     mask-image: linear-gradient(#000 55%, transparent);
-  }
-  .stickyProduct .frostedTitle > .displayTitle {
-    position: relative;
-    display: block;
-  }
-  .stickyProduct .frostedTitle > .dockTitle {
-    position: absolute;
-    inset: 0;
   }
 }
 
@@ -4634,10 +4620,6 @@
   }
 }
 
-/* Keep the travelling wordmark above the navigation until its final crossfade. */
-.collectionWorld .galleryIntro h1 {
-  z-index: 44;
-}
 @media (prefers-reduced-motion: no-preference) {
   .collectionWorld .gallery[data-gallery-ready="true"] .galleryIntro h1 > a {
     animation: collection-title-enter 0.95s cubic-bezier(0.22, 0.75, 0.18, 1)

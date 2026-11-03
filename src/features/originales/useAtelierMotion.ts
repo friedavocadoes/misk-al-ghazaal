@@ -159,10 +159,11 @@ export function useAtelierMotion(
               const target = direction > 0 ? upper : lower;
               const distance = Math.abs(target - current);
               const progress = 1 - distance / (upper - lower);
+              const openingFlight = desktopProduct && upperIndex === 1;
               if (
                 distance < 2 ||
-                progress < 0.4 ||
-                distance > innerHeight * 0.7
+                progress < (openingFlight ? 0.22 : 0.4) ||
+                distance > innerHeight * (openingFlight ? 0.88 : 0.7)
               )
                 return;
 
