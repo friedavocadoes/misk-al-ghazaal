@@ -86,6 +86,7 @@ export function OriginalesGallery({
         if (!live || !root.current) return;
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
+        let restoredMobileAnchor = false;
         mm.add(
           {
             motion: "(prefers-reduced-motion:no-preference)",
@@ -150,6 +151,149 @@ export function OriginalesGallery({
                 { autoAlpha: 1, duration: 0.12 },
                 0.88,
               );
+            }
+            if (mobile && motion && chapters.length) {
+              node.dataset.mobileExhibit = "true";
+              const finale = node.querySelector<HTMLElement>(
+                "[data-gallery-finale]",
+              )!;
+              const clamp = gsap.utils.clamp(0, 1);
+              const ease = gsap.parseEase("atelier-soft");
+              const setters = figures.map((figure) => ({
+                x: gsap.quickSetter(figure, "x", "px"),
+                y: gsap.quickSetter(figure, "y", "px"),
+                scale: gsap.quickSetter(figure, "scale"),
+                opacity: gsap.quickSetter(figure, "opacity"),
+                visible: true,
+              }));
+              const captionOpacity = gsap.quickSetter(captions, "opacity");
+              const stageOpacity = gsap.quickSetter(stage, "opacity");
+              const playhead = { progress: 0 };
+              let openingEnd = 1;
+              let readingStops: number[] = [];
+              let closingStart = 0;
+              let travel = 0;
+              let flight: { x: number; y: number }[] = [];
+
+              const measureMobile = () => {
+                const stageTop = parseFloat(getComputedStyle(stage).top);
+                const stageBottom = stageTop + stage.offsetHeight;
+                readingStops = chapters.map(
+                  (chapter) =>
+                    chapter.getBoundingClientRect().top +
+                    scrollY -
+                    stageBottom -
+                    12,
+                );
+                openingEnd = Math.max(1, readingStops[0] - 42);
+                closingStart =
+                  finale.getBoundingClientRect().top + scrollY - stageBottom;
+                travel = Math.min(112, stage.offsetHeight * 0.45);
+                flight = figures.map((figure) => ({
+                  x: stage.clientWidth / 2 - figure.offsetLeft,
+                  y: stage.offsetHeight * 0.55 - figure.offsetTop,
+                }));
+              };
+              gsap.set(figures, { xPercent: -50, yPercent: -50 });
+              measureMobile();
+              let shown = -1;
+              let railShown = false;
+              const render = (scroll: number) => {
+                const opening = clamp(scroll / openingEnd);
+                const focus = ease(opening);
+                const closing = ease(clamp((scroll - closingStart) / travel));
+                let chapter = 0;
+                // Begin the handoff as the next story approaches the reading line.
+                let handoff = 0;
+                while (chapter + 1 < readingStops.length) {
+                  const next = clamp(
+                    1 + (scroll - readingStops[chapter + 1]) / travel,
+                  );
+                  if (next < 1) {
+                    handoff = ease(next);
+                    break;
+                  }
+                  chapter++;
+                }
+                const selected = chapter + (handoff >= 0.5 ? 1 : 0);
+                if (selected !== shown) {
+                  shown = selected;
+                  setActive(selected);
+                }
+                const showRail = opening >= 0.76;
+                if (showRail !== railShown) {
+                  railShown = showRail;
+                  setNavVisible(showRail);
+                  node.dataset.mobileFeatured = String(showRail);
+                }
+                figures.forEach((figure, index) => {
+                  let alpha: number;
+                  let slide = 0;
+                  if (opening < 1) {
+                    alpha = index === 0 ? 1 : 1 - ease(clamp(opening / 0.68));
+                  } else if (index === chapter) {
+                    alpha = (1 - handoff) * (1 - closing);
+                    slide = -(handoff + closing) * travel;
+                  } else if (index === chapter + 1) {
+                    alpha = handoff;
+                    slide = (1 - handoff) * travel;
+                  } else {
+                    alpha = 0;
+                  }
+                  const setter = setters[index];
+                  if (!setter.visible && alpha === 0) return;
+                  setter.visible = alpha > 0;
+                  const { x, y } = flight[index];
+                  setter.x(x * focus);
+                  setter.y(y * focus + slide);
+                  setter.scale(1 + focus * 0.42);
+                  setter.opacity(alpha);
+                  const inert = alpha < 0.5;
+                  if (figure.inert !== inert) figure.inert = inert;
+                });
+                captionOpacity(1 - clamp(opening * 2.7));
+                stageOpacity(1 - closing);
+                stage.inert = closing > 0.5;
+              };
+              const scroll = gsap.to(playhead, {
+                progress: 1,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: stage,
+                  start: 0,
+                  end: () => Math.max(openingEnd + 1, closingStart + travel),
+                  scrub: 0.24,
+                  onRefreshInit: measureMobile,
+                  onRefresh: () => {
+                    render(window.scrollY);
+                  },
+                },
+                onUpdate: () =>
+                  render(playhead.progress * (closingStart + travel)),
+              });
+              node.dataset.galleryReady = "true";
+              scroll.scrollTrigger?.refresh();
+              if (!restoredMobileAnchor) {
+                restoredMobileAnchor = true;
+                // The streamed page may mount after the browser's first hash lookup.
+                const anchor = chapters
+                  .map((chapter) => chapter.firstElementChild)
+                  .find((plate) => plate && `#${plate.id}` === location.hash);
+                anchor?.scrollIntoView({ behavior: "instant", block: "start" });
+              }
+              return () => {
+                delete node.dataset.mobileExhibit;
+                delete node.dataset.mobileFeatured;
+                delete node.dataset.galleryReady;
+                stage.inert = false;
+                stage.style.removeProperty("opacity");
+                gsap.set(figures, { clearProps: "opacity,transform" });
+                gsap.set(captions, { clearProps: "opacity" });
+                figures.forEach((figure) => {
+                  figure.inert = false;
+                });
+                setNavVisible(false);
+              };
             }
             if (chapters.length)
               ScrollTrigger.create({
@@ -409,6 +553,7 @@ export function OriginalesGallery({
               key={product.id}
               href={`#edition-${product.slug}`}
               data-active={index === active}
+              aria-current={index === active ? "location" : undefined}
               aria-label={`${edition.name}${index === active ? (ar ? "، العطر المعروض" : " — currently featured") : ""}`}
               style={
                 {
@@ -434,7 +579,10 @@ export function OriginalesGallery({
         <h1 data-collection-masthead data-static-ink>
           <a href="#originales-top">Originales</a>
         </h1>
-        <a href="#the-editions" className={s.galleryScroll}>
+        <a
+          href={products[0] ? `#edition-${products[0].slug}` : "#the-editions"}
+          className={s.galleryScroll}
+        >
           {ar
             ? "أربعة تعابير. اختر عالمك."
             : "Four expressions. Find your own."}
@@ -442,7 +590,17 @@ export function OriginalesGallery({
         </a>
       </header>
       <section data-gallery-sequence className={s.gallerySequence}>
-        <div data-gallery-stage className={s.galleryStage}>
+        <div
+          data-gallery-stage
+          className={s.galleryStage}
+          style={
+            {
+              "--featured-accent": featured
+                ? editionFor(featured).accent
+                : "transparent",
+            } as CSSProperties
+          }
+        >
           <div className={s.stageHalo} />
           {products.map((product, index) => {
             const edition = editionFor(product);
@@ -455,7 +613,7 @@ export function OriginalesGallery({
                   {
                     "--start-left": `${(index + 0.5) * 25}%`,
                     "--mobile-left": `${index % 2 ? 75 : 25}%`,
-                    "--mobile-top": `${index < 2 ? 24 : 69}%`,
+                    "--mobile-row": index < 2 ? 0.24 : 0.69,
                   } as CSSProperties
                 }
               >
@@ -467,7 +625,7 @@ export function OriginalesGallery({
                     width={650}
                     height={1000}
                     priority
-                    sizes="(max-width:759px) 44vw, 30vw"
+                    sizes="(max-width:759px) 50vw, 30vw"
                     className={s.sequenceBottle}
                   />
                   <figcaption data-bottle-caption>
@@ -485,7 +643,7 @@ export function OriginalesGallery({
           )}
         </div>
         <div id="the-editions" className={s.sequenceStories}>
-          {products.map((product) => {
+          {products.map((product, index) => {
             const edition = editionFor(product),
               copy = editionStory(edition.name, ar);
             return (
@@ -493,6 +651,7 @@ export function OriginalesGallery({
                 key={product.id}
                 data-edition-chapter
                 data-snap-panel
+                data-featured={active === index}
                 className={s.sequenceChapter}
                 style={
                   {

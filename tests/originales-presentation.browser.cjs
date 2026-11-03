@@ -634,22 +634,55 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page.evaluate(() => document.documentElement.scrollWidth),
       390,
     );
-    await page
-      .locator("[data-edition-chapter]")
-      .nth(2)
-      .evaluate((el) =>
-        scrollTo({
-          top: scrollY + el.getBoundingClientRect().top - 152,
-          behavior: "instant",
-        }),
+    const openingWordmark = await page
+      .locator("[data-collection-masthead]")
+      .boundingBox();
+    assert.ok(
+      Math.abs(openingWordmark.x + openingWordmark.width / 2 - 195) < 2,
+    );
+    await page.locator("[data-collection-masthead] + a").click();
+    await page.waitForFunction(() => {
+      const bottles = document.querySelectorAll("[data-gallery-bottle]");
+      const first = bottles[0].getBoundingClientRect();
+      return (
+        Math.abs(first.left + first.width / 2 - innerWidth / 2) < 2 &&
+        [...bottles].slice(1).every((bottle) => bottle.inert)
       );
-    await page.waitForTimeout(1800);
+    });
+    await page.waitForFunction(() => {
+      const stage = document
+        .querySelector("[data-gallery-stage]")
+        .getBoundingClientRect();
+      const info = document
+        .querySelector("[data-featured=true] [class*=galleryPurchase]")
+        .getBoundingClientRect();
+      return info.top >= stage.bottom && info.bottom < innerHeight;
+    });
+    const dockedWordmark = await page
+      .locator("[data-collection-title-dock]")
+      .boundingBox();
+    assert.ok(Math.abs(dockedWordmark.x + dockedWordmark.width / 2 - 195) < 2);
+    await page
+      .locator("[data-originales-nav]")
+      .getByRole("link", { name: /Lustra/i })
+      .click();
+    await page.waitForFunction(() => {
+      const bottle = document.querySelectorAll("[data-gallery-bottle]")[2];
+      return Number(getComputedStyle(bottle).opacity) > 0.99;
+    });
     assert.ok(
       (
         await page
           .locator("[data-originales-nav] [data-active=true]")
           .innerText()
       ).includes("LUSTRA"),
+    );
+    await page.locator("[data-collection-title-dock]").click();
+    await page.waitForFunction(() => scrollY < 2);
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll("[data-gallery-bottle]")].every(
+        (bottle) => !bottle.inert,
+      ),
     );
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`${base}/originales/originales-lazvaro`, {
