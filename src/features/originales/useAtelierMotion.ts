@@ -18,8 +18,12 @@ export function useAtelierMotion(
         gsap.registerPlugin(ScrollTrigger);
         const mm = gsap.matchMedia();
         mm.add(
-          "(prefers-reduced-motion: no-preference)",
+          {
+            motion: "(prefers-reduced-motion: no-preference)",
+            mobile: "(max-width: 759px)",
+          },
           (context) => {
+            if (!context.conditions?.motion) return;
             const node = root.current!,
               seen = new WeakSet<Element>(),
               art = new WeakSet<Element>();
@@ -32,6 +36,8 @@ export function useAtelierMotion(
                   .forEach((el) => {
                     if (
                       seen.has(el) ||
+                      (context.conditions?.mobile &&
+                        el.closest("[data-originales-product]")) ||
                       !el.textContent?.trim() ||
                       el.closest(
                         "svg,[data-static-ink], [aria-hidden=true],[role=alert],.coupon-shake",
@@ -97,7 +103,13 @@ export function useAtelierMotion(
                       },
                     );
                     const heading = section.querySelector("h2");
-                    if (heading)
+                    if (
+                      heading &&
+                      !(
+                        context.conditions?.mobile &&
+                        section.closest("[data-originales-product]")
+                      )
+                    )
                       gsap.fromTo(
                         heading,
                         { y: 24, clipPath: "inset(0% 0% 100% 0%)" },
@@ -163,11 +175,12 @@ export function useAtelierMotion(
               const mobile = innerWidth < 760;
               const gallery = node.querySelector("[data-gallery-stage]");
               const runway = node.querySelector("[data-runway]");
+              if (mobile && runway) return;
               const desktopProduct = !mobile && !!runway;
               const stage = gallery?.getBoundingClientRect();
-              const bottle = node
-                .querySelector("[data-bottle]")
-                ?.getBoundingClientRect();
+              const imageFrame = runway?.querySelector<HTMLElement>(
+                "[class*=photoAperture]",
+              );
               const offset = stage
                 ? mobile
                   ? 152 + innerHeight * 0.26
@@ -177,7 +190,7 @@ export function useAtelierMotion(
                     )
                 : mobile
                   ? 88
-                  : Math.max(104, bottle?.top ?? 0);
+                  : Math.max(104, imageFrame?.offsetTop ?? 0);
 
               const origin = runway
                 ? current + runway.getBoundingClientRect().top

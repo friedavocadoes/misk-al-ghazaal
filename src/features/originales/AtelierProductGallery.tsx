@@ -103,6 +103,25 @@ export function AtelierProductGallery({
       stop();
     };
   }, [current, reduced]);
+  useEffect(() => {
+    const element = rail.current;
+    if (!element) return;
+    const measure = () => {
+      const overflow = element.scrollWidth - element.clientWidth;
+      element.dataset.overflow = String(overflow > 2);
+      element.dataset.more = String(
+        overflow - Math.abs(element.scrollLeft) > 2,
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    element.addEventListener("scroll", measure, { passive: true });
+    measure();
+    return () => {
+      observer.disconnect();
+      element.removeEventListener("scroll", measure);
+    };
+  }, [photos.length]);
   return (
     <div
       data-product-gallery
@@ -185,13 +204,6 @@ export function AtelierProductGallery({
           <X size={16} />
         </button>
       )}
-      <div className={s.photoCounter} data-static-ink>
-        <span>
-          {String(current ? photos.indexOf(current) + 2 : 1).padStart(2, "0")} /{" "}
-          {String(photos.length + 1).padStart(2, "0")}
-        </span>
-        <small>{ar ? "تفاصيل العطر" : "THE OBJECT · EVERY PERSPECTIVE"}</small>
-      </div>
       <div
         ref={rail}
         className={s.photoRail}

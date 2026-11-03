@@ -115,10 +115,6 @@ export function OriginalesChrome({
       aria-label={ar ? "عطور أوريجينال" : "The Originales collection"}
       className={s.editionNav}
     >
-      <Link className={s.indexLink} href="/originales">
-        {ar ? "المجموعة" : "The collection"}
-        <ArrowUpRight size={13} />
-      </Link>
       {products.map((product) => {
         const edition = editionFor(product);
         const active = path === originalesPath(product);

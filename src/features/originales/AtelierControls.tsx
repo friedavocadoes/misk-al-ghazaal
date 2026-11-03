@@ -161,7 +161,9 @@ export function AtelierBagButton({
           morphSVG: added
             ? "M5 17 L13 25 L28 8"
             : action === "purchase"
-              ? "M8 3H24V29L20 26L16 29L12 26L8 29Z M12 10H20 M12 15H20 M12 20H17"
+              ? ar
+                ? "M25 16H7 M14 9L7 16L14 23"
+                : "M7 16H25 M18 9L25 16L18 23"
               : "M8 10H24V27H8Z M12 10V7C12 2 20 2 20 7V10",
           duration: reduced ? 0 : 0.55,
           ease: "atelier-soft",
@@ -209,7 +211,7 @@ export function AtelierBagButton({
       live = false;
       stop();
     };
-  }, [added, reduced, action]);
+  }, [added, reduced, action, ar]);
   return (
     <div className={s.bagMorphTrack}>
       <motion.button
@@ -284,13 +286,17 @@ export function AtelierBagButton({
               height="24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.2"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
               <path
                 data-seal-path
                 d={
                   action === "purchase"
-                    ? "M8 3H24V29L20 26L16 29L12 26L8 29Z M12 10H20 M12 15H20 M12 20H17"
+                    ? ar
+                      ? "M25 16H7 M14 9L7 16L14 23"
+                      : "M7 16H25 M18 9L25 16L18 23"
                     : "M8 10H24V27H8Z M12 10V7C12 2 20 2 20 7V10"
                 }
               />

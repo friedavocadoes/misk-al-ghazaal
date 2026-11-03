@@ -49,7 +49,7 @@
   padding: 0 35px;
   background: #151711dc;
   backdrop-filter: blur(25px);
-  border-bottom: 1px solid var(--line);
+  /* border-bottom: 1px solid var(--line); */
 }
 .headerLeft {
   display: flex;
@@ -2158,11 +2158,6 @@
   background: #1a211e;
   color: #e7ddbd;
 }
-.stickyProduct[data-docked="true"] .purchaseActions {
-  grid-template-columns: 1.25fr 1fr;
-  align-items: stretch;
-  gap: 10px;
-}
 .stickyProduct[data-docked="true"] .buyButton {
   padding: 12px;
   border: 1px solid #ffffff25;
@@ -3866,4 +3861,396 @@
   .bottleReflection {
     display: none;
   }
+}
+
+/* Product chrome floats above the scene. Focus gets the same contrast as hover. */
+.world:not(.collectionWorld) .header {
+  background: linear-gradient(180deg, #100e13a0, #100e1300);
+  border-color: transparent;
+  backdrop-filter: none;
+  transition:
+    background 0.35s,
+    border-color 0.35s,
+    opacity 0.55s,
+    filter 0.55s;
+}
+.world:not(.collectionWorld) .header:is(:hover, :focus-within) {
+  background: linear-gradient(180deg, #101014d9, #10101465);
+  border-color: transparent;
+}
+.rail {
+  background: transparent;
+  border-color: #ffffff12;
+  backdrop-filter: blur(9px) saturate(1.15);
+  transition:
+    background 0.35s,
+    opacity 0.55s,
+    filter 0.55s;
+}
+.rail:is(:hover, :focus-within) {
+  background: #10130f80;
+}
+
+@media (min-width: 760px) {
+  .world:not(.collectionWorld) .content {
+    margin-inline: 0;
+  }
+  .world:not(.collectionWorld) .header {
+    padding-left: 0;
+  }
+  .world:not(.collectionWorld) .headerLeft {
+    width: 100px;
+    justify-content: center;
+  }
+  .world:not(.collectionWorld) .wordmark {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 29px;
+    align-items: center;
+  }
+  /* The dock, image frame and first reading stop share the same scene coordinates. */
+  .stickyProduct .introDistance {
+    height: calc(94svh - 24px);
+  }
+  .stickyProduct .photoAperture {
+    left: calc(100px + (100% - 100px) * 0.26);
+    top: calc(12% + var(--gallery-drop));
+    width: min(calc((100% - 100px) * 0.45), 58svh);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .stickyProduct .photoRail {
+    left: calc(100px + (100% - 100px) * 0.045);
+    top: calc(72% + var(--gallery-drop));
+    width: calc((100% - 100px) * 0.43);
+    justify-content: safe center;
+    padding: 4px;
+  }
+  .stickyProduct[data-docked="true"] .photoRail {
+    top: calc(72% + var(--gallery-drop) + 32px);
+    width: calc((100% - 100px) * 0.215);
+    padding-inline-end: 12px;
+  }
+  .stickyProduct[data-docked="true"] .photoRail button {
+    flex-basis: 38px;
+    height: 39px;
+  }
+  .stickyProduct[data-docked="true"]
+    .photoRail[data-more="true"]:not(:hover, :focus-within) {
+    mask-image: linear-gradient(to right, #000 78%, transparent);
+  }
+  .world[dir="rtl"]
+    .stickyProduct[data-docked="true"]
+    .photoRail[data-more="true"]:not(:hover, :focus-within) {
+    mask-image: linear-gradient(to left, #000 78%, transparent);
+  }
+  .stickyProduct .purchase {
+    --dock-progress: 0;
+    pointer-events: none;
+  }
+  .stickyProduct .purchase > * {
+    pointer-events: auto;
+  }
+  .stickyProduct .purchaseActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: calc(13px * var(--dock-progress));
+  }
+  .stickyProduct .purchaseActions :is(.bagMorphTrack, .bagMorph) {
+    min-height: calc(68px - 20px * var(--dock-progress));
+  }
+  .stickyProduct .purchaseActions .bagMorph {
+    padding: 9px 10px;
+    gap: 6px;
+  }
+  .stickyProduct .purchaseActions .bagWords {
+    min-height: 26px;
+  }
+  .stickyProduct .purchaseActions .bagWords strong {
+    font-size: clamp(8px, 0.78vw, 12px);
+  }
+  .stickyProduct .purchaseActions .bagSeal {
+    width: 27px;
+    height: 27px;
+  }
+  .stickyProduct .purchaseActions .bagSeal svg {
+    width: 15px;
+  }
+  .stickyProduct .compactIdentity {
+    position: absolute;
+    inset: 0 0 auto;
+    padding: 0;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  .stickyProduct .compactIdentity > span:first-child {
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .stickyProduct .purchase > .quantity {
+    width: calc(100% - 50% * var(--dock-progress));
+    min-height: 46px;
+    margin: 0 0 0 auto;
+    justify-content: space-between;
+    padding-block: calc(15px * (1 - var(--dock-progress)));
+  }
+  .stickyProduct[data-docked="true"] .purchase > .quantity {
+    justify-content: flex-end;
+  }
+  .stickyProduct .purchase > .quantity > span:first-child {
+    max-width: calc(72px * (1 - var(--dock-progress)));
+    opacity: calc(1 - var(--dock-progress));
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .stickyProduct .purchaseActions .bagWords small {
+    max-height: calc(12px * (1 - var(--dock-progress)));
+    opacity: calc(1 - var(--dock-progress));
+    overflow: hidden;
+  }
+  .stickyProduct[data-gallery-visible="true"]
+    .scene:has([data-photo-active="true"])
+    :is(.bottleObject, .boxObject) {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+@media (max-width: 759px) {
+  .stickyProduct .photoRail {
+    justify-content: safe center;
+  }
+  .stickyProduct
+    .scene:has([data-photo-active="true"])
+    :is(.bottleObject, .boxObject) {
+    visibility: hidden;
+  }
+}
+
+.world:not(.collectionWorld) .header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+  mask-image: linear-gradient(#000, transparent);
+  transition: backdrop-filter 0.35s;
+}
+.world:not(.collectionWorld) .header:is(:hover, :focus-within)::before {
+  backdrop-filter: blur(18px);
+  mask-image: linear-gradient(#000 42%, transparent);
+}
+
+@media (max-width: 759px) {
+  .stickyProduct {
+    --mobile-stage-height: clamp(420px, 73svh, 610px);
+  }
+  .stickyProduct .scene {
+    padding-top: var(--mobile-stage-height);
+  }
+  .stickyProduct .frostedTitle {
+    top: calc(var(--mobile-stage-height) * 0.21);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(34px, 16vw, 78px);
+  }
+  .stickyProduct .bottleObject {
+    top: calc(var(--mobile-stage-height) * 0.54);
+    width: 70%;
+    height: calc(var(--mobile-stage-height) * 0.57);
+  }
+  .stickyProduct .bottleReflection {
+    opacity: 0.23;
+  }
+  .stickyProduct .scrollCue {
+    display: none;
+  }
+  .stickyProduct .scene:has([data-photo-active="true"]) .frostedTitle {
+    opacity: 0;
+  }
+  .stickyProduct .photoAperture {
+    top: 84px;
+    left: 50%;
+    width: min(88vw, 440px);
+    height: calc(var(--mobile-stage-height) - 154px);
+    aspect-ratio: auto;
+  }
+  .stickyProduct .photoRail {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    min-height: 62px;
+    gap: 8px;
+    padding: 8px 16px;
+    background: linear-gradient(0deg, var(--studio-card), transparent);
+  }
+  .stickyProduct .photoRail button {
+    flex-basis: 44px;
+    height: 44px;
+  }
+  .stickyProduct .purchase {
+    width: auto;
+    margin: 0 14px;
+    padding: 19px 16px 16px;
+    border: 1px solid color-mix(in srgb, var(--studio-rim) 21%, transparent);
+    background: linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--studio-card-light) 52%, var(--studio-card)),
+      var(--studio-card) 72%
+    );
+    border-radius: 3px;
+  }
+  .stickyProduct .purchase > .compactIdentity {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+    color: #fff8ee;
+  }
+  .stickyProduct .compactIdentity > span:first-child {
+    font-size: clamp(21px, 6vw, 29px);
+    letter-spacing: -0.045em;
+    font-weight: 600;
+  }
+  .stickyProduct .compactIdentity > span:last-child {
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stickyProduct .purchaseDetails > :is(.kicker, .titleDock, .signaturePrice) {
+    display: none;
+  }
+  .stickyProduct .purchase > .quantity {
+    border-top: 1px solid #ffffff22;
+    padding-block: 10px;
+    font-size: 11px;
+  }
+  .stickyProduct .purchaseActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .stickyProduct .purchaseActions :is(.bagMorphTrack, .bagMorph) {
+    min-height: 49px;
+  }
+  .stickyProduct .purchaseActions .bagMorph {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .stickyProduct .purchaseActions .bagWords {
+    min-height: 0;
+  }
+  .stickyProduct .purchaseActions .bagWords small {
+    display: none;
+  }
+  .stickyProduct .purchaseActions .bagWords strong {
+    font-size: 9px;
+  }
+  .stickyProduct .purchaseActions .bagSeal {
+    width: 24px;
+    height: 24px;
+  }
+  .stickyProduct .purchaseActions .bagSeal svg {
+    width: 13px;
+  }
+  .stickyProduct .productChapters .panel {
+    padding-block: 17px;
+  }
+  .stickyProduct .productChapters .panelContent {
+    padding: 25px 20px;
+  }
+  .stickyProduct .productChapters .panel h2 {
+    font-size: clamp(26px, 7vw, 33px);
+  }
+}
+@media (max-width: 759px) and (prefers-reduced-motion: reduce) {
+  .stickyProduct .frostedTitle {
+    --title-settle: 0;
+  }
+}
+
+@media (max-width: 759px) {
+  .world:not(.collectionWorld) .header {
+    background: linear-gradient(180deg, #100e13e6, #100e1370);
+  }
+  .world:not(.collectionWorld) .header::before {
+    backdrop-filter: blur(12px);
+    mask-image: linear-gradient(#000 55%, transparent);
+  }
+  .stickyProduct .frostedTitle > .displayTitle {
+    position: relative;
+    display: block;
+  }
+  .stickyProduct .frostedTitle > .dockTitle {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+@media (min-width: 760px) {
+  .stickyProduct .scene {
+    --gallery-drop: 10%;
+  }
+}
+
+/* A single clean label and an unboxed icon keep both actions compact. */
+.stickyProduct .purchaseActions :is(.bagMorphTrack, .bagMorph) {
+  min-height: calc(52px - 6px * var(--dock-progress, 0));
+}
+.stickyProduct .purchaseActions .bagMorph {
+  padding: 0 clamp(10px, 1.2vw, 18px);
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--studio-rim) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--studio-card) 58%, transparent);
+  box-shadow: inset 0 1px #ffffff0b;
+}
+.stickyProduct .purchaseActions .bagMorph[data-purchase-action="bag"] {
+  color: #201916;
+  background: linear-gradient(115deg, var(--studio-rim), var(--edition-wash));
+  border-color: color-mix(in srgb, var(--studio-rim) 80%, white);
+}
+.stickyProduct .purchaseActions .bagMorph > .morphFrame {
+  display: none;
+}
+.stickyProduct .purchaseActions .bagWords {
+  min-height: 0;
+}
+.stickyProduct .purchaseActions .bagWords small {
+  display: none;
+}
+.stickyProduct .purchaseActions .bagWords strong {
+  font-size: clamp(9px, 0.78vw, 12px);
+  letter-spacing: 0.075em;
+  font-weight: 700;
+}
+.stickyProduct .purchaseActions .bagSeal {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  background: none;
+  border: 0;
+  color: currentColor;
+  transition: translate 0.35s;
+}
+.stickyProduct .purchaseActions .bagSeal svg {
+  width: 21px;
+  height: 21px;
+}
+.stickyProduct
+  .purchaseActions
+  [data-purchase-action="purchase"]:hover
+  .bagSeal {
+  translate: 3px 0;
+}
+.world[dir="rtl"]
+  .stickyProduct
+  .purchaseActions
+  [data-purchase-action="purchase"]:hover
+  .bagSeal {
+  translate: -3px 0;
+}
+.stickyProduct .purchaseActions .bagMorph:disabled {
+  opacity: 0.5;
 }
