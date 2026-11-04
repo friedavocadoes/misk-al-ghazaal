@@ -29,6 +29,7 @@ import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
 import { OriginalesLoading } from "./OriginalesLoading";
 import { StudioAtmosphere } from "./StudioAtmosphere";
+import { useAtelierScroll } from "./atelier-scroll";
 import { FinaleDecor } from "./FinaleDecor";
 import { AtelierPanel } from "./AtelierPanel";
 import { AtelierBagButton, AtelierQuantity } from "./AtelierControls";
@@ -48,6 +49,7 @@ export function OriginalesProduct({
   const ar = locale === "ar",
     edition = editionFor(product),
     narrative = editionStory(edition.name, ar);
+  const smoother = useAtelierScroll();
   const router = useRouter(),
     { add } = useCart(),
     root = useRef<HTMLDivElement>(null),
@@ -149,6 +151,7 @@ export function OriginalesProduct({
     };
   }, [product.slug]);
   useEffect(() => {
+    if (smoother === null) return;
     let live = true,
       dispose = () => {};
     Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
@@ -438,7 +441,7 @@ export function OriginalesProduct({
       live = false;
       dispose();
     };
-  }, [product.slug]);
+  }, [product.slug, smoother]);
   const purchase = async (
     event: React.MouseEvent<HTMLButtonElement>,
     now = false,
@@ -582,7 +585,10 @@ export function OriginalesProduct({
                 ?.getBoundingClientRect();
               if (r)
                 scrollTo({
-                  top: scrollY + r.top + innerHeight * PRODUCT_FRAMES.price,
+                  top:
+                    (smoother ? smoother.scrollTop() : scrollY) +
+                    r.top +
+                    innerHeight * PRODUCT_FRAMES.price,
                   behavior: matchMedia("(prefers-reduced-motion:reduce)")
                     .matches
                     ? "instant"

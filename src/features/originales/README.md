@@ -12,6 +12,8 @@ Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivor
 
 ## Presentation files
 
+- `atelier-scroll.ts` owns the capsule’s GSAP ScrollSmoother instance (0.18s catch-up, desktop fine pointers only). It keeps the existing stage geometry and section links in the smoothed viewport and releases wrapper-bound triggers on exit. Touch and reduced-motion browsing use native scrolling.
+
 - `atelier.module.css`: the complete capsule theme, dark mineral palette, frosted all-caps Manrope typography, scene geometry, sculpture surfaces, counter and purchase controls. `Manrope` is loaded only by the Originales layout via next/font. The old `originales.module.css` was removed.
 - `portal.css`: attribute-gated styles for dialogs/sample picker/note tooltips which render outside the capsule DOM. OriginalesChrome sets `body[data-originales=true]` in a layout effect and clears it before the main store paints again. Never make these styles global without that attribute.
 - `OriginalesGallery`: **one persistent image element per bottle**. Four figures open as a desktop row/mobile grid. Scroll converges them into the sticky stage and shows the active product's price/add button. At a chapter boundary the outgoing bottle rises/fades away while the incoming bottle arrives from below; both use the same original image nodes. The closing philosophy is a separate full-width surface: the whole product stage exits and its SVG frame widens with scroll. Right-side stories, actual note glyphs and SVG edition cards scroll over one continuous chrome-object scene. Mobile uses a compact sticky band above the story. No fixed cloning screenshots or extra bottle grids.
