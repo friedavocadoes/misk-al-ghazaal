@@ -75,7 +75,7 @@ export function ContactLetter({
               <span>DUBAI</span>
             </div>
             <Image
-              src="/logo.webp"
+              src="/mag.webp"
               width={42}
               height={42}
               alt=""
