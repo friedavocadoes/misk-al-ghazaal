@@ -5,6 +5,10 @@ import s from "./atelier.module.css";
 export const FRAME_PATH = "M22 2 H978 L998 22 V578 L978 598 H22 L2 578 V22 Z";
 export const OPEN_FRAME =
   "M95 24 Q500 -28 905 24 L977 95 Q1020 300 977 505 L905 576 Q500 628 95 576 L23 505 Q-20 300 23 95 Z";
+export const PANEL_FRAME =
+  "M35 2H941Q955 2 966 14L989 38Q998 47 998 58V563Q998 598 963 598H59Q45 598 34 586L11 562Q2 553 2 542V37Q2 2 35 2Z";
+export const PANEL_ARRIVAL =
+  "M108 29Q528 122 897 12Q945 1 972 47L994 89Q998 101 998 123V525Q998 583 940 590Q544 609 87 588Q48 584 28 548L10 512Q2 495 2 474V92Q2 14 108 29Z";
 
 /** Real SVG path morphs; foreground text/controls never scale with the optical frame. */
 export function MorphFrame({
@@ -13,6 +17,8 @@ export function MorphFrame({
   kind?: "panel" | "button" | "edition";
 }) {
   const id = useId().replaceAll(":", "");
+  const button = kind === "button";
+  const outline = button ? FRAME_PATH : PANEL_FRAME;
   return (
     <>
       {kind !== "button" && (
@@ -35,7 +41,7 @@ export function MorphFrame({
             <clipPath id={`glass-${id}`} clipPathUnits="objectBoundingBox">
               <path
                 data-morph-clip
-                d={FRAME_PATH}
+                d={outline}
                 transform="scale(.001 .001666666667)"
               />
             </clipPath>
@@ -48,7 +54,7 @@ export function MorphFrame({
                   : "var(--studio-card-light, #101813)"
               }
               stopOpacity={
-                kind === "button" ? "var(--studio-button-opacity, .12)" : ".90"
+                kind === "button" ? "var(--studio-button-opacity, .12)" : ".70"
               }
             />
             <stop
@@ -59,7 +65,7 @@ export function MorphFrame({
                   : "var(--studio-card, #101813)"
               }
               stopOpacity={
-                kind === "button" ? "var(--studio-button-opacity, .025)" : ".60"
+                kind === "button" ? "var(--studio-button-opacity, .025)" : ".48"
               }
             />
             <stop
@@ -70,28 +76,37 @@ export function MorphFrame({
                   : "var(--studio-card, #101813)"
               }
               stopOpacity={
-                kind === "button" ? "var(--studio-button-opacity, .09)" : ".72"
+                kind === "button" ? "var(--studio-button-opacity, .09)" : ".52"
               }
             />
           </linearGradient>
         </defs>
         <path
           data-morph-frame
-          d={FRAME_PATH}
+          d={outline}
           fill={`url(#metal-${id})`}
           stroke="currentColor"
-          strokeOpacity=".32"
+          strokeOpacity={button ? ".32" : ".21"}
           vectorEffect="non-scaling-stroke"
         />
         <path
           data-frame-trace
-          d={FRAME_PATH}
+          d={outline}
           fill="none"
           stroke="currentColor"
-          strokeOpacity=".5"
+          strokeOpacity={button ? ".5" : ".26"}
           vectorEffect="non-scaling-stroke"
         />
       </svg>
+      {!button && (
+        <span
+          className={s.panelSheen}
+          style={{ clipPath: `url(#glass-${id})` }}
+          aria-hidden="true"
+        >
+          <span data-panel-light />
+        </span>
+      )}
     </>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { isOriginales, ORIGINALES_NAVIGATION_EVENT, storefrontProductPath } from "@/features/originales/config";
 
 import { productAvailable, defaultVariant } from "@/lib/product-options";
 import { useState } from "react";
@@ -42,12 +43,20 @@ export function ProductCard({
   const firstVariant=defaultVariant(product);
   const variantLabel = firstVariant?.title;
   const previewNotes = product.notes?.slice(0, 3) ?? [];
+  const productPath = storefrontProductPath(product);
+  const chooseVariant = () => {
+    haptic("selection");
+    if (isOriginales(product)) {
+      window.dispatchEvent(new CustomEvent(ORIGINALES_NAVIGATION_EVENT, { detail: productPath }));
+    }
+    router.push(productPath);
+  };
 
   const addToBag = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if(!available)return;
-    if(multiple){haptic("selection");router.push(`/product/${product.slug}`);return;}
+    if(multiple){chooseVariant();return;}
     add({
       productSlug: product.slug,
       variantId: firstVariant?.id,
@@ -64,7 +73,7 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     if(!available)return;
-    if(multiple){haptic("selection");router.push(`/product/${product.slug}`);return;}
+    if(multiple){chooseVariant();return;}
     add({
       productSlug: product.slug,
       variantId: firstVariant?.id,
@@ -76,7 +85,7 @@ export function ProductCard({
   const onWish = async () => {
     const r = await toggle(product.slug);
     if (r === "login")
-      router.push(`/account/login?next=/product/${product.slug}`);
+      router.push(`/account/login?next=${encodeURIComponent(productPath)}`);
     return r;
   };
 
@@ -171,7 +180,7 @@ export function ProductCard({
     return (
       <div className={cn("flex gap-5 bg-transparent", className)}>
         <Link
-          href={`/product/${product.slug}`}
+          href={productPath}
           className="flacon-pedestal relative h-32 w-24 shrink-0 overflow-hidden border border-ink/10"
         >
           <Image
@@ -184,7 +193,7 @@ export function ProductCard({
         </Link>
         <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
           <Link
-            href={`/product/${product.slug}`}
+            href={productPath}
             className="truncate font-display text-[15px] uppercase tracking-wider text-ink transition-colors hover:text-gold"
           >
             {title}
@@ -231,7 +240,7 @@ export function ProductCard({
       {/* Museum Plinth Image Frame */}
       <div className="flacon-pedestal relative aspect-[3/4] overflow-hidden border border-ink/[0.08] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:border-gold/45 group-hover:shadow-[0_24px_48px_-24px_rgba(28,25,23,0.16)]">
         <Link
-          href={`/product/${product.slug}`}
+          href={productPath}
           aria-label={title}
           className="absolute inset-0"
         >
@@ -290,7 +299,7 @@ export function ProductCard({
         )}
 
         <Link
-          href={`/product/${product.slug}`}
+          href={productPath}
           className="block font-display text-[16px] leading-snug tracking-wide text-ink transition-colors duration-300 hover:text-gold"
         >
           <h3 className="line-clamp-1">{title}</h3>

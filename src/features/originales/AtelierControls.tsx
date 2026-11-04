@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { MorphFrame, FRAME_PATH, OPEN_FRAME } from "./MorphFrame";
 import { atelierGsap } from "./atelier-gsap";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Minus, Plus } from "lucide-react";
+import { ArrowRight, Minus, Plus } from "lucide-react";
 import s from "./atelier.module.css";
 
 export function AtelierQuantity({
@@ -177,7 +177,7 @@ export function AtelierBagButton({
         });
       }, el);
       const enter = () => {
-        if (!reduced && !added)
+        if (!reduced && !added && !el.disabled)
           gsap.to(frame, {
             morphSVG: OPEN_FRAME,
             duration: 0.5,
@@ -186,7 +186,7 @@ export function AtelierBagButton({
           });
       };
       const leave = () => {
-        if (!reduced && !added)
+        if (!reduced && !added && !el.disabled)
           gsap.to(frame, {
             morphSVG: FRAME_PATH,
             duration: 0.65,
@@ -234,6 +234,7 @@ export function AtelierBagButton({
       >
         <MorphFrame kind="button" />
         <span className={s.bagSweep} aria-hidden="true" />
+        {action === "bag" && <span className={s.bagBloom} aria-hidden="true" />}
         <span className={s.bagWords}>
           <AnimatePresence initial={false} mode="popLayout">
             <motion.span
@@ -303,6 +304,12 @@ export function AtelierBagButton({
             </svg>
           </motion.span>
         </motion.span>
+        {action === "bag" && !added && !disabled && (
+          <span className={s.bagHoverFace} aria-hidden="true">
+            <strong>{label}</strong>
+            <ArrowRight size={19} strokeWidth={1.4} />
+          </span>
+        )}
       </motion.button>
     </div>
   );

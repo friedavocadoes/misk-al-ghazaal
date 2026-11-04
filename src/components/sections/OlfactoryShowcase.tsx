@@ -1,4 +1,5 @@
 "use client";
+import { storefrontProductPath } from "@/features/originales/config";
 import { productAvailable, defaultVariant } from "@/lib/product-options";
 
 import { useMemo, useState } from "react";
@@ -125,12 +126,12 @@ export function OlfactoryShowcase({ products, notes = [], eyebrow, title, prompt
               </div>}
             </div>
             {product ? <div key={product.slug} className="atelier-result">
-              <Link href={`/product/${product.slug}`} className="group relative block aspect-[5/4] overflow-hidden bg-[#f7f4ed]" aria-label={tx(product.title, product.titleAr, locale)}>
+              <Link href={storefrontProductPath(product)} className="group relative block aspect-[5/4] overflow-hidden bg-[#f7f4ed]" aria-label={tx(product.title, product.titleAr, locale)}>
                 {product.images[0] && <Image src={product.images[0]} alt={tx(product.title, product.titleAr, locale)} fill sizes="(min-width: 1024px) 450px, 90vw" className="object-cover transition-transform duration-1000 ease-out group-hover:scale-[1.035]" />}
                 {selected.length > 0 && <span className="absolute bottom-4 start-4 bg-cream px-3 py-2 text-[10px] text-ink">{t("accords", { hits: entry.hits, count: selected.length })}</span>}
               </Link>
               <div className="mt-5 flex items-start justify-between gap-4">
-                <Link href={`/product/${product.slug}`} className="font-display text-2xl leading-snug text-ink hover:text-gold">{tx(product.title, product.titleAr, locale)}</Link>
+                <Link href={storefrontProductPath(product)} className="font-display text-2xl leading-snug text-ink hover:text-gold">{tx(product.title, product.titleAr, locale)}</Link>
                 <p className="shrink-0 pt-1 text-xs text-espresso">{formatAED(variant?.price ?? product.price)}</p>
               </div>
               <p className="mt-2 min-h-5 text-[11px] leading-relaxed text-fog">{product.notes.slice(0, 3).map((n) => tx(n.name, n.nameAr, locale)).join(" · ")}</p>

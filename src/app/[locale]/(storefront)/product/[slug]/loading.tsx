@@ -4,7 +4,7 @@ import { Sk } from "@/components/ui/skeleton";
 // grid, then the About / notes / ritual / accordion / reviews bands.
 export default function ProductLoading() {
   return (
-    <div className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
+    <div data-storefront-skeleton className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
       <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
         <Sk className="h-3 w-64 max-w-full" />
         <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:gap-16">

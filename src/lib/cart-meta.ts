@@ -6,6 +6,7 @@ export interface CartMeta {
   slug: string;
   title: string;
   titleAr?: string;
+  lineupSlug?: string;
   price: number;
   image: string;
   variants?: CartVariant[];
@@ -32,13 +33,14 @@ export function useCartMeta(slugs: string[]): { meta: Record<string, CartMeta>; 
     let live = true;
     fetch(`/api/products?slugs=${encodeURIComponent(key)}`)
       .then((r) => r.json())
-      .then((j: { products?: { slug: string; title: string; title_ar?: string; price: number; variants?: CartVariant[]; images?: string[] }[] }) => {
+      .then((j: { products?: { slug: string; title: string; title_ar?: string; lineup?: { slug: string } | null; price: number; variants?: CartVariant[]; images?: string[] }[] }) => {
         if (!live) return;
         const map: Record<string, CartMeta> = {};
         for (const p of j.products ?? []) {
           map[p.slug] = {
             slug: p.slug,
             title: p.title,
+            lineupSlug: p.lineup?.slug,
             ...(p.title_ar ? { titleAr: p.title_ar } : {}),
             price: Number(p.price),
             variants: p.variants,

@@ -1,4 +1,5 @@
 "use client";
+import { storefrontProductPath } from "@/features/originales/config";
 import { haptic } from "@/lib/haptics";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -803,7 +804,7 @@ export function SiteHeader({ locale, campaigns = [], shopMenu }: { locale: Local
                     recentKey="misk-search-recents"
                     placeholder={t("searchPlaceholder")}
                     inputClassName="w-full bg-transparent font-display text-2xl text-ink placeholder:text-fog/70 focus:outline-none md:text-[28px]"
-                    pickHref={(it) => `/product/${it.slug}`}
+                    pickHref={storefrontProductPath}
                     submitLabel={(term) => `${t("searchAll")} “${term}”`}
                     onSubmitTerm={(term) => {
                       setSearchOpen(false);

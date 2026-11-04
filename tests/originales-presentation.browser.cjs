@@ -381,7 +381,27 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       });
     await page.getByRole("button", { name: "Increase quantity" }).click();
     await page.getByRole("button", { name: "Increase quantity" }).click();
-    await page.getByRole("button", { name: "Add to bag", exact: true }).click();
+    const add = page.getByRole("button", { name: "Add to bag", exact: true });
+    const bloom = add.locator("[class*=bagBloom]");
+    const restingClip = await bloom.evaluate(
+      (el) => getComputedStyle(el).clipPath,
+    );
+    await add.hover();
+    await page.waitForFunction(() => {
+      const bloom = document.querySelector("[data-purchase] [class*=bagBloom]");
+      const face = document.querySelector(
+        "[data-purchase] [class*=bagHoverFace]",
+      );
+      return (
+        getComputedStyle(bloom).clipPath.includes("145%") &&
+        getComputedStyle(face).opacity === "1"
+      );
+    });
+    assert.notEqual(
+      await bloom.evaluate((el) => getComputedStyle(el).clipPath),
+      restingClip,
+    );
+    await add.click();
     await page.waitForTimeout(700);
     const cart = await page.evaluate(() =>
       JSON.parse(localStorage.getItem("misk-cart-v1")),
@@ -405,6 +425,16 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
           el.parentElement.getBoundingClientRect().width,
       );
     assert.ok(width < 0.9, "success morph shrinks the button");
+    await page.locator("[data-bag-target]").first().click();
+    const viewBag = page.locator("[data-originales-bag-action=primary]");
+    await viewBag.waitFor();
+    assert.equal(
+      await viewBag.evaluate((el) => getComputedStyle(el).color),
+      "rgb(19, 18, 21)",
+      "the capsule bag action uses dark ink on the light edition tint",
+    );
+    await page.keyboard.press("Escape");
+    await viewBag.waitFor({ state: "hidden" });
     await page.evaluate(() => {
       window.__originalesPurchase = document.querySelector("[data-purchase]");
       window.__originalesBottle = document.querySelector("[data-bottle]");
@@ -706,6 +736,51 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       )[0].qty,
       3,
     );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto(`${base}/search?q=lazvaro`, { waitUntil: "networkidle" });
+    const entry = page
+      .locator('a[href="/originales/originales-lazvaro"]')
+      .first();
+    await page.route("**/originales/originales-lazvaro*", async (route) => {
+      if (route.request().headers().rsc === "1")
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      await route.continue();
+    });
+    await entry.click();
+    await page.locator('[data-loading-phase="entering"]').waitFor();
+    assert.equal(
+      await page.locator('[data-loading-journey="threshold"]').count(),
+      1,
+    );
+    assert.equal(
+      await page.locator("[data-originales-loading]:visible").count(),
+      1,
+    );
+    await page.waitForURL("**/originales/originales-lazvaro");
+    await page
+      .locator(
+        '[data-loading-phase="entering"], [data-loading-phase="leaving"]',
+      )
+      .waitFor({ state: "detached" });
+    assert.equal(
+      await page.locator("[data-originales-loading]:visible").count(),
+      0,
+    );
+    await page.getByRole("button", { name: "Search fragrances" }).click();
+    const search = page.locator('[data-originales-drawer="search"]');
+    await search.getByRole("link", { name: "Sultanic" }).waitFor();
+    const input = search.getByRole("combobox");
+    await input.fill("sultanic");
+    await search
+      .locator('[role=option] a[href="/originales/originales-sultanic"]')
+      .waitFor();
+    await input.press("ArrowDown");
+    await input.press("Enter");
+    assert.equal(
+      await page.locator('[data-loading-journey="threshold"]').count(),
+      0,
+    );
+    await page.waitForURL("**/originales/originales-sultanic");
     const buyContext = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
     });

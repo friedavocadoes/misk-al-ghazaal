@@ -1,4 +1,5 @@
 "use client";
+import { storefrontProductPath } from "@/features/originales/config";
 import {CartStockNotice, StockCheckoutGuard} from "./CartStockNotice";
 import type {CartStockIssue} from "@/lib/pricing";
 
@@ -55,7 +56,7 @@ export function BagView() {
         {rows.map((l) => (
           <li key={`${l.productSlug}-${l.variantId ?? ""}`} className="flex gap-5 p-5">
             <Link
-              href={`/product/${l.productSlug}`}
+              href={storefrontProductPath(l.product ?? { slug: l.productSlug })}
               className="relative block h-28 w-24 shrink-0 overflow-hidden bg-sand"
             >
               {l.product?.image && (
@@ -64,7 +65,7 @@ export function BagView() {
             </Link>
             <div className="flex min-w-0 flex-1 flex-col">
               <Link
-                href={`/product/${l.productSlug}`}
+                href={storefrontProductPath(l.product ?? { slug: l.productSlug })}
                 className="truncate text-sm font-medium text-ink hover:text-gold"
               >
                 {tx(l.product?.title ?? "", l.product?.titleAr, locale)}

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
+import { storefrontProductPath } from "@/features/originales/config";
 export async function POST(req: Request) {
   if (req.headers.get("origin") !== new URL(req.url).origin)
     return Response.json({}, { status: 403 });
@@ -47,11 +48,11 @@ export async function POST(req: Request) {
         .maybeSingle();
       if (readError) throw readError;
       if (prior) continue;
-      const items: { id: string; slug: string; title: string }[] = [];
+      const items: { id: string; slug: string; title: string; href: string }[] = [];
       for (const item of order.order_items || []) {
         const { data: product } = await admin
           .from("products")
-          .select("id,slug,title")
+          .select("id,slug,title,lineup:lineups(slug)")
           .eq("slug", item.product_slug)
           .is("deleted_at", null)
           .maybeSingle();
@@ -66,8 +67,11 @@ export async function POST(req: Request) {
         if (
           !review?.body?.trim() &&
           !items.some((i) => i.slug === product.slug)
-        )
-          items.push(product);
+        ) {
+          const lineup = Array.isArray(product.lineup) ? product.lineup[0] : product.lineup;
+          const { id, slug, title } = product;
+          items.push({ id, slug, title, href: storefrontProductPath({ slug, lineupSlug: lineup?.slug }) });
+        }
       }
       if (!items.length) continue;
       const { data: claimed, error: claim } = await admin.rpc(

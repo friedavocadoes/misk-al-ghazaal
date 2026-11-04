@@ -4,7 +4,7 @@ import { Sk } from "@/components/ui/skeleton";
 // refine sidebar + product grid.
 export default function CollectionLoading() {
   return (
-    <div className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
+    <div data-storefront-skeleton className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
       <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
         <Sk className="h-3 w-56 max-w-full" />
         <div className="border-b border-ink/10 pb-8 pt-6 text-center">

@@ -275,42 +275,6 @@
   text-transform: uppercase;
   font-weight: 500;
 }
-.arrival {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 22px;
-  background: #141612;
-  pointer-events: none;
-  transition:
-    opacity 0.8s,
-    visibility 0.8s;
-  animation: arrival-exit 0.8s 2.6s forwards;
-}
-.arrival > span {
-  font:
-    italic 100px Georgia,
-    serif;
-  color: #bcb697;
-}
-.arrival small {
-  font-size: 8px;
-  letter-spacing: 0.23em;
-}
-.arrival[data-ready="true"] {
-  opacity: 0;
-  visibility: hidden;
-}
-@keyframes arrival-exit {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
 .runway {
   height: 190svh;
 }
@@ -1834,9 +1798,6 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-  .arrival {
-    display: none;
   }
   .runway {
     height: auto;
@@ -3784,9 +3745,6 @@
 .stickyProduct .morphFrame {
   color: var(--studio-rim);
 }
-.stickyProduct .arrival[data-ready="true"] {
-  transition-duration: 0.42s;
-}
 .stickyProduct .panelContent > .morphFrame {
   filter: drop-shadow(0 14px 25px #08060838);
 }
@@ -4772,6 +4730,160 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* The dot expands into a contrasting face while the label trades places. */
+.bagMorph[data-purchase-action="bag"] {
+  --bag-reveal: 0;
+  --bag-origin: 18px;
+  --bag-shift: 12px;
+}
+.world[dir="rtl"] .bagMorph[data-purchase-action="bag"] {
+  --bag-origin: calc(100% - 18px);
+  --bag-shift: -12px;
+}
+.bagMorph[data-purchase-action="bag"]:not(:disabled):is(
+    :focus-visible,
+    :active
+  ),
+.bagMorph[data-purchase-action="bag"][data-added="true"] {
+  --bag-reveal: 1;
+}
+@media (hover: hover) {
+  .bagMorph[data-purchase-action="bag"]:not(:disabled):hover {
+    --bag-reveal: 1;
+  }
+}
+.bagBloom {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    color-mix(in srgb, var(--edition-wash) 29%, #141018),
+    color-mix(in srgb, var(--edition-wash) 10%, #101014) 75%
+  );
+  clip-path: circle(
+    calc(4px + var(--bag-reveal) * 145%) at var(--bag-origin) 50%
+  );
+  transition: clip-path 0.56s;
+}
+.bagMorph[data-purchase-action="bag"]:not(:disabled) .bagWords {
+  margin-inline-start: 17px;
+}
+.bagMorph[data-purchase-action="bag"][data-added="false"]
+  :is(.bagWords, .bagSeal) {
+  opacity: calc(1 - var(--bag-reveal));
+  translate: calc(var(--bag-reveal) * var(--bag-shift)) 0;
+  transition:
+    opacity 0.24s,
+    translate 0.44s;
+}
+.bagHoverFace {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: clamp(12px, 1.25vw, 18px);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  color: #fff8ee;
+  opacity: var(--bag-reveal);
+  translate: calc((1 - var(--bag-reveal)) * var(--bag-shift)) 0;
+  pointer-events: none;
+  transition:
+    opacity 0.36s,
+    translate 0.52s;
+}
+.bagHoverFace strong {
+  text-transform: uppercase;
+  letter-spacing: 0.075em;
+  font-size: clamp(9px, 0.78vw, 12px);
+  font-weight: 700;
+}
+.bagHoverFace svg {
+  flex-shrink: 0;
+}
+.world[dir="rtl"] .bagHoverFace svg {
+  scale: -1 1;
+}
+.bagMorph[data-purchase-action="bag"][data-added="true"]
+  :is(.bagWords, .bagSeal) {
+  color: #fff8ee;
+}
+.bagMorph:disabled .bagBloom {
+  display: none;
+}
+
+/* Dark lacquer with one illuminated edge per chapter. The glass stays inside the SVG. */
+.world :is(.editionCard, .productChapters .panelContent) > .glassBlur {
+  background:
+    radial-gradient(
+      ellipse at 12% 0%,
+      color-mix(in srgb, var(--edition-accent) 29%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(155deg, #141216a6, #0d0e12dc);
+}
+.world :is(.editionCard, .productChapters .panelContent) > .morphFrame {
+  color: color-mix(in srgb, var(--edition-wash) 72%, transparent);
+  filter: none;
+}
+.world :is(.editionCard, .panelContent) > .panelSheen {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.48s;
+}
+.world [data-panel-lit] > .panelSheen {
+  opacity: 1;
+}
+.panelSheen > span {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: min(460px, 100%);
+  height: 280px;
+  translate: -50% -50%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--edition-wash) 27%, transparent),
+    color-mix(in srgb, var(--edition-accent, #8a7962) 21%, transparent) 36%,
+    transparent 72%
+  );
+}
+.world :is(.editionCard, .productChapters .panelContent) .kicker {
+  color: var(--edition-wash);
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+}
+.world :is(.editionCard, .productChapters .panelContent) h2 {
+  text-wrap: balance;
+  letter-spacing: -0.047em;
+}
+.world
+  :is(.editionCard, .productChapters .panelContent)
+  :is(.chapterProse, .panelCopy > p:not(.kicker)) {
+  max-width: 49ch;
+  color: #e6ddd3;
+}
+.world .editionCardLink > svg {
+  color: var(--edition-wash);
+  background: #ffffff05;
+  border-color: color-mix(in srgb, var(--edition-wash) 34%, transparent);
+}
+.world .editionCardLink:is(:hover, :focus-visible) > svg {
+  color: #201916;
+  background: var(--edition-wash);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bagMorph .bagWords {
+    translate: none !important;
   }
 }
 @media (hover: hover) and (min-width: 760px) {

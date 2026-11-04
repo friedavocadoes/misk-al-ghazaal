@@ -86,7 +86,11 @@ export function SuggestRow({
         )}
         <span className="block truncate font-display text-[15px] text-ink">
           {title}
-          {item.outOfStock && <span className="ms-2 text-[10px] text-red-700">{locale==="ar"?"نفد المخزون":"Out of stock"}</span>}
+          {item.outOfStock && (
+            <span className="ms-2 text-[10px] text-red-700">
+              {locale === "ar" ? "نفد المخزون" : "Out of stock"}
+            </span>
+          )}
           {item.isActive === false && (
             <span className="ms-2 border border-gold/50 bg-gold-wash/60 px-1.5 py-px align-middle font-sans text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">
               Paused
@@ -141,6 +145,7 @@ export const SearchSuggest = forwardRef<
     onSubmitTerm: (q: string) => void;
     onNavigate?: () => void;
     inputClassName?: string;
+    resultsClassName?: string;
   }
 >(function SearchSuggest(
   {
@@ -153,6 +158,7 @@ export const SearchSuggest = forwardRef<
     onSubmitTerm,
     onNavigate,
     inputClassName,
+    resultsClassName,
   },
   ref,
 ) {
@@ -252,7 +258,10 @@ export const SearchSuggest = forwardRef<
         <div
           id={listId}
           role="listbox"
-          className="absolute inset-x-0 top-full z-[80] mt-2 animate-[account-in_0.22s_cubic-bezier(0.22,1,0.36,1)] overflow-hidden border border-ink/10 bg-white text-start shadow-[0_28px_56px_-24px_rgba(28,25,23,0.45)]"
+          className={cn(
+            "absolute inset-x-0 top-full z-[80] mt-2 animate-[account-in_0.22s_cubic-bezier(0.22,1,0.36,1)] overflow-hidden border border-ink/10 bg-white text-start shadow-[0_28px_56px_-24px_rgba(28,25,23,0.45)]",
+            resultsClassName,
+          )}
         >
           {showRecents && (
             <ul className="max-h-64 overflow-y-auto py-2">

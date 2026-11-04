@@ -531,6 +531,8 @@ export function OriginalesGallery({
       ref={root}
       className={s.gallery}
       data-originales-collection
+      data-originales-route="/originales"
+      data-originales-ready="true"
       data-collapsed={collapsed}
     >
       <StudioAtmosphere
@@ -677,7 +679,7 @@ export function OriginalesGallery({
                     </Link>
                     <GalleryPurchase product={product} ar={ar} />
                   </div>
-                  <div className={s.editionCard}>
+                  <div data-atelier-surface className={s.editionCard}>
                     <MorphFrame kind="edition" />
                     <p className={s.kicker}>
                       THE EXPRESSION / {edition.number}

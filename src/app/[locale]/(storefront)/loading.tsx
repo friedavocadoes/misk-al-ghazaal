@@ -8,7 +8,7 @@ import { OriginalesLoadingBoundary } from "@/features/originales/OriginalesLoadi
 export default function StorefrontLoading() {
   return (
     <OriginalesLoadingBoundary>
-      <div className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
+      <div data-storefront-skeleton className="animate-[loading-fade_0.4s_ease-out]" aria-hidden>
         <div className="relative h-[72svh] min-h-[480px] bg-sand">
           <Sk className="absolute inset-0" />
           <div className="absolute inset-x-0 bottom-12 mx-auto max-w-xl space-y-4 px-5 text-center">
