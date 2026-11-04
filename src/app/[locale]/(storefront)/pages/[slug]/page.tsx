@@ -1,3 +1,4 @@
+import { LegalContent } from "@/components/blocks/LegalContent";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
@@ -59,7 +60,7 @@ export const PAGES: Record<
     titleAr: "قصتنا",
     eyebrow: "Maison Misk Al Ghazaal",
     eyebrowAr: "دار مسك الغزال",
-    html: "<p>Misk Al Ghazaal perfumes and dukhoon — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates, and cash on delivery.</p>",
+    html: "<p>Misk Al Ghazaal perfumes and dukhoon — crafted for the UAE. Direct from manufacturer: authentic, sealed at origin, and long-lasting.</p><p>Every order carries complimentary samples, 2–3 day delivery within the Emirates.</p>",
   },
   brands: {
     title: "Our Brands",
@@ -82,12 +83,19 @@ export const PAGES: Record<
     eyebrowAr: "مختارات",
     html: "<p>The latest seasonal drops from the maison.</p>",
   },
-  terms: {
-    title: "Returns & Terms",
-    titleAr: "الإرجاع والشروط",
+  privacy: {
+    title: "Privacy Policy",
+    titleAr: "سياسة الخصوصية",
     eyebrow: "Client Care",
     eyebrowAr: "خدمة العملاء",
-    html: "<p>30-day returns on unopened items with receipt. Refunds return to the original payment method within 10–45 days depending on the issuing bank.</p><p>Damaged or incorrect items are always made right — write to support@miskalghazaalperfumes.com.</p>",
+    html: "",
+  },
+  terms: {
+    title: "Terms & Conditions",
+    titleAr: "الشروط والأحكام",
+    eyebrow: "Client Care",
+    eyebrowAr: "خدمة العملاء",
+    html: "",
   },
   sitemap: {
     title: "Sitemap",
@@ -194,7 +202,7 @@ export default async function StaticInfoPage(
       <div className="mt-10">
         {slug === "faq" && <FaqAccordion items={getFaqs(locale)} />}
         {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}
-        {slug !== "contact" && slug !== "faq" && slug !== "wishlist" && (
+        {slug === "privacy" || slug === "terms" ? <LegalContent locale={locale} policy={slug} /> : slug !== "faq" && slug !== "wishlist" && (
           <div
             className="prose max-w-none text-espresso"
             dangerouslySetInnerHTML={{ __html: page.html }}

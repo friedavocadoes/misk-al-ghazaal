@@ -13,9 +13,8 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "login" }, { status: 401 });
-  const { ref, promoOptIn } = ((await req.json().catch(() => ({}))) as {
+  const { ref } = ((await req.json().catch(() => ({}))) as {
     ref?: string;
-    promoOptIn?: boolean;
   });
   const admin = await createAdminClient();
   const { created } = await ensureProfile(
@@ -23,7 +22,7 @@ export async function POST(req: Request) {
     user.id,
     user.email ?? null,
     ref,
-    promoOptIn,
+    user.app_metadata.provider === "email" && user.user_metadata.signup_promo_opt_in === true,
   );
   if (user.email) await claimGuestOrders(admin, user.id, user.email);
   if (created && user.email) {

@@ -1,5 +1,7 @@
 "use client";
 
+import { PrivacySettingsButton } from "@/components/analytics/PrivacyNotice";
+
 import {
   useEffect,
   useLayoutEffect,
@@ -273,6 +275,11 @@ export function OriginalesChrome({
             <footer className={s.footer}>
               <span>MAG PARFUM · ORIGINALES</span>
               {back}
+              <nav aria-label={ar ? "روابط قانونية" : "Legal"} className="flex flex-wrap gap-x-4 gap-y-2">
+                <Link href="/pages/terms">{ar ? "الشروط والأحكام" : "Terms & Conditions"}</Link>
+                <Link href="/pages/privacy">{ar ? "سياسة الخصوصية" : "Privacy Policy"}</Link>
+                <PrivacySettingsButton />
+              </nav>
               <span>
                 {ar
                   ? "فن العطر. تعبيرك الخاص."

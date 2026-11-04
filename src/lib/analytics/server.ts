@@ -1,4 +1,5 @@
 import "server-only";
+import { PRIVACY_COOKIE, privacyChoice } from "./consent";
 import { refreshDemandRanking } from "@/lib/demand-ranking";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/service";
@@ -8,6 +9,7 @@ import { resolveAnalyticsLocation } from "./ip-location";
 
 export async function analyticsSession(req: Request, clientBot = false, activeSeconds = 0, userId?: string | null) {
   const jar = await cookies();
+  if (privacyChoice(jar.get(PRIVACY_COOKIE)?.value) === "essential") return null;
   const parse = (key: string) => { try { return cleanAttribution(JSON.parse(decodeURIComponent(jar.get(key)?.value ?? "{}"))); } catch { return {}; } };
   const sid = jar.get("_as_id")?.value; const vid = jar.get("_av_id")?.value;
   if (!uuid(sid) || !uuid(vid)) return null;

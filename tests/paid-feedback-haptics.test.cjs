@@ -10,8 +10,9 @@ test('feedback suppresses checkout, account, recent orders and repeated invitati
 test('purchase suppression survives denied storage and still broadcasts closure',()=>{
  const jar=new Map(),events=[];const document={referrer:''};Object.defineProperty(document,'cookie',{get:()=>[...jar].map(([k,v])=>k+'='+v).join('; '),set:s=>{const [pair]=s.split(';');const at=pair.indexOf('=');jar.set(pair.slice(0,at),pair.slice(at+1));}});
  const globals={document,location:{href:'https://store.test/checkout',pathname:'/checkout',protocol:'https:'},localStorage:{getItem:()=>{throw Error('denied')},setItem:()=>{throw Error('denied')}},sessionStorage:{getItem:()=>{throw Error('denied')},setItem:()=>{throw Error('denied')}},window:{dispatchEvent:e=>events.push(e.type)}};
- const memory=load('src/lib/analytics/survey-memory.ts',{},globals);
- const client=load('src/lib/analytics/client.ts',{'./shared':load('src/lib/analytics/shared.ts'),'./survey-memory':memory},globals);
+ const consent={'./consent-client':{browserPrivacyChoice:()=> 'allow'}};
+ const memory=load('src/lib/analytics/survey-memory.ts',consent,globals);
+ const client=load('src/lib/analytics/client.ts',{'./shared':load('src/lib/analytics/shared.ts'),'./survey-memory':memory,...consent},globals);
  client.markPurchase('MG-TEST');assert.ok(jar.has('misk-feedback-purchase'));assert.ok(memory.feedbackHistory().purchasedAt>0);assert.deepEqual(events,['analytics-purchased']);
 });
 test('haptic motifs are restrained, varied, flight-aligned and optional',()=>{

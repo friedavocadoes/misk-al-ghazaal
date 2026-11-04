@@ -1,4 +1,5 @@
 "use client";
+import { LegalLinks } from "./LegalLinks";
 import { haptic } from "@/lib/haptics";
 
 import { useState } from "react";
@@ -33,7 +34,6 @@ function LoginPane({ next }: { next: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [promo, setPromo] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,8 +41,6 @@ function LoginPane({ next }: { next: string }) {
     try {
       await fetch("/api/auth/ensure", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ promoOptIn: promo }),
       });
     } catch {
       /* profile backfills on next visit */
@@ -95,15 +93,6 @@ function LoginPane({ next }: { next: string }) {
           </Link>
         </div>
         {error && <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
-        <label className="flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-fog">
-          <input
-            type="checkbox"
-            checked={promo}
-            onChange={(e) => setPromo(e.target.checked)}
-            className="mt-0.5 size-3 shrink-0 cursor-pointer accent-[#8a6d2f]"
-          />
-          <span>{t("promoOpt")}</span>
-        </label>
         <Button data-ios-haptic="on" type="submit" disabled={busy}>
           {t("signIn")}
         </Button>
@@ -119,7 +108,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referral, setReferral] = useState(initialRef);
-  const [promo, setPromo] = useState(true);
+  const [promo, setPromo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [checkMail, setCheckMail] = useState(false);
@@ -134,7 +123,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
       email,
       password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, signup_promo_opt_in: promo },
         emailRedirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
       },
     });
@@ -150,7 +139,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
         await fetch("/api/auth/ensure", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ref: ref || undefined, promoOptIn: promo }),
+          body: JSON.stringify({ ref: ref || undefined }),
         });
       } catch {
         /* backfills later */
@@ -239,6 +228,7 @@ export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
       <TabsContent value="register">
         <RegisterPane next={next} initialRef={ref} />
       </TabsContent>
+      <LegalLinks context="account" />
     </Tabs>
   );
 }

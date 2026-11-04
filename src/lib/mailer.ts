@@ -295,7 +295,7 @@ ${p.image ? `<img src="${p.image.startsWith("http") ? p.image : `${opts.origin}$
     bodyHtml: `<div style="text-align:center;padding:8px 0 4px;font-size:42px;line-height:1">✦</div>
 ${opts.bodyHtml}
 ${cards ? `<h3 style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8a6d2f;margin-top:24px">Begin with the icons</h3><table style="width:100%;border-collapse:collapse"><tr>${cards}</tr></table>` : ""}
-<p style="margin-top:24px">Every order leaves with complimentary samples — cash on delivery across the UAE.</p>`,
+<p style="margin-top:24px">Explore our fragrances, dukhoon and bakhoor.</p>`,
   };
 }
 

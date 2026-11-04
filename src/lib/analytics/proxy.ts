@@ -1,3 +1,4 @@
+import { ANALYTICS_COOKIES, PRIVACY_COOKIE, privacyChoice } from "./consent";
 import type { NextRequest, NextResponse } from "next/server";
 import { privateOrderPath, attributionCookie, attributionFromUrl, botReason, uuid } from "./shared";
 
@@ -7,6 +8,10 @@ export function analyticsCookies(req: NextRequest, response: NextResponse): Next
   if (req.headers.has("next-router-prefetch") || /prefetch/i.test(req.headers.get("purpose") ?? "")) return response;
   const options = { path: "/", sameSite: "lax" as const, secure: req.nextUrl.protocol === "https:" };
   const set = (key: string, value: string, maxAge: number) => response.cookies.set(key, value, {...options,maxAge});
+  if (privacyChoice(req.cookies.get(PRIVACY_COOKIE)?.value) === "essential") {
+    for (const key of ANALYTICS_COOKIES) if (req.cookies.has(key)) set(key, "", 0);
+    return response;
+  }
   if (!uuid(req.cookies.get("_av_id")?.value)) set("_av_id",crypto.randomUUID(),31536000);
   const session = req.cookies.get("_as_id")?.value;
   set("_as_id",uuid(session) ? session : crypto.randomUUID(),1800);

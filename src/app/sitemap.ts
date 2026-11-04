@@ -16,6 +16,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/collections",
     "/pages/about",
     "/pages/contact",
+    "/pages/privacy",
+    "/pages/terms",
     ...(ORIGINALES_ENABLED ? ["/originales"] : []),
     ...products.map((p) => isOriginales(p) ? originalesPath(p) : `/product/${p.slug}`),
     ...collections.map((c) => `/collection/${c.slug}`),
