@@ -1,9 +1,11 @@
 import { ANALYTICS_COOKIES, PRIVACY_COOKIE, privacyChoice } from "./consent";
+import { analyticsCollectionEnabled } from "./environment";
 import type { NextRequest, NextResponse } from "next/server";
-import { privateOrderPath, attributionCookie, attributionFromUrl, botReason, uuid } from "./shared";
+import { privateOrderPath, attributionCookie, attributionFromUrl, uuid } from "./shared";
 
 /** Extend the existing locale/auth response without replacing its cookies. */
 export function analyticsCookies(req: NextRequest, response: NextResponse): NextResponse {
+  if (!analyticsCollectionEnabled(req.nextUrl.hostname)) return response;
   if(privateOrderPath(req.nextUrl.pathname))return response;
   if (req.headers.has("next-router-prefetch") || /prefetch/i.test(req.headers.get("purpose") ?? "")) return response;
   const options = { path: "/", sameSite: "lax" as const, secure: req.nextUrl.protocol === "https:" };
@@ -20,6 +22,5 @@ export function analyticsCookies(req: NextRequest, response: NextResponse): Next
   const external = !!touch.referrer;
   if (!req.cookies.has("_utm_last") || campaign || external) set("_utm_last",attributionCookie(touch),2592000);
   if (!req.cookies.has("_utm_first")) set("_utm_first",attributionCookie(touch),31536000);
-  if (botReason(req.headers.get("user-agent") ?? "")) set("_is_bot","1",1800);
   return response;
 }

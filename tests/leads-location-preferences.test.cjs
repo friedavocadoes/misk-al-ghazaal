@@ -333,7 +333,7 @@ test("IP lookup ignores spoofed/untrusted headers, rejects private IPs, caches t
     "../supabase/service": { createAdminClient: () => db },
     "./location": location,
   };
-  const env = { VERCEL: "1", COMMUNICATION_PREFERENCES_SECRET: "qa-secret" };
+  const env = { VERCEL: "1", ANALYTICS_IP_LOOKUP: "1", COMMUNICATION_PREFERENCES_SECRET: "qa-secret" };
   const geo = load("src/lib/analytics/ip-location.ts", mocks, {
     process: { env },
     fetch: async (url) => {
@@ -368,6 +368,12 @@ test("IP lookup ignores spoofed/untrusted headers, rejects private IPs, caches t
     },
   });
   let r = await geo.resolveAnalyticsLocation(req);
+  assert.equal(r.country, "US");
+  assert.equal(r.location_source, "vercel");
+  assert.equal(calls, 0);
+  r = await geo.resolveAnalyticsLocation(new Request("https://shop.test", {
+    headers: { "x-vercel-forwarded-for": "8.8.4.4" },
+  }));
   assert.equal(r.country, "AE");
   assert.equal(r.location_source, "ipwhois");
   assert.equal(calls, 1);

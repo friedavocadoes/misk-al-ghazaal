@@ -27,7 +27,7 @@ export function ensureAnalyticsIdentity(): string {
   if (!cookieValue("_utm_last")) setCookie("_utm_last",touch,2592000);
   return sid;
 }
-function clientBot() { return navigator.webdriver === true || (window.outerWidth === 0 && window.outerHeight === 0) || /HeadlessChrome/i.test(navigator.userAgent); }
+function clientBot() { return navigator.webdriver === true; }
 export function trackEvent(type: AnalyticsEventType | "heartbeat",data: EventInput & {active_seconds?:number} = {}) {
   try {
     if(privateOrderPath(location.pathname))return;

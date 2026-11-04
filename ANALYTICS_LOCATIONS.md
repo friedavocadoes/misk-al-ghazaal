@@ -30,9 +30,9 @@ On Vercel, capture reads `x-vercel-ip-country`, `x-vercel-ip-country-region`, an
 
 For a Cloudflare-proxied origin, it supports `cf-ipcountry`, `cf-region-code`/`cf-region`, and `cf-ipcity`. Country-only geolocation is insufficient for city reporting; enable **Add visitor location headers** in Cloudflare's Managed Transforms if using that provider. See [Cloudflare location headers](https://developers.cloudflare.com/rules/transform/managed-transforms/reference/).
 
-Fields from different providers are not combined. Vercel's set takes precedence when its country header exists. The production edge/proxy must supply trustworthy headers and correctly identify the original client; a custom origin exposed directly to arbitrary clients should not blindly trust client-injected headers.
+Fields from different providers are not combined. Third-party IP lookup is off by default. Set ANALYTICS_IP_LOOKUP=1 to allow it only when the trusted edge supplies no country. Vercel's set takes precedence when its country header exists. The production edge/proxy must supply trustworthy headers and correctly identify the original client; a custom origin exposed directly to arbitrary clients should not blindly trust client-injected headers.
 
-Normal localhost requests have no hosting geolocation and display Unknown. Missing or unsupported data also stays Unknown. Old session records are not retrospectively assigned cities/emirates.
+Collection runs in production by default. Local and preview requests skip analytics ingestion unless ANALYTICS_ENABLE_NON_PRODUCTION=1 is explicitly configured. Use a separate Supabase project for test data. Missing or unsupported data also stays Unknown. Old session records are not retrospectively assigned cities/emirates.
 
 ### UAE mapping
 

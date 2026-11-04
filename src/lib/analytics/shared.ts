@@ -9,8 +9,8 @@ export interface EventInput {
 }
 export const uuid = (value: unknown): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 export function botReason(ua: string): string | null {
-  if (/headless/i.test(ua)) return "headless";
-  return /bot|crawler|spider|crawling|lighthouse|gtmetrix|pingdom|python|curl|wget|axios|facebookexternalhit|whatsapp|slackbot|gptbot|claudebot|bytespider/i.test(ua) ? "ua_crawler" : null;
+  if (/\b(?:HeadlessChrome|HeadlessFirefox|PhantomJS)\b/i.test(ua)) return "headless";
+  return /\b(?:bot|crawler|spider|lighthouse|gtmetrix|pingdom|python-requests|python-urllib|curl|wget|axios|facebookexternalhit|whatsapp|slackbot|gptbot|chatgpt-user|oai-searchbot|claudebot|bytespider|googlebot|bingbot|duckduckbot|yandexbot|applebot|petalbot|ahrefsbot|semrushbot)\b/i.test(ua) ? "ua_crawler" : null;
 }
 export function cleanAttribution(value: unknown): Attribution {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};

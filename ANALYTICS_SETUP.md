@@ -11,7 +11,7 @@ For the detailed explanation of tracking, bot detection, abandonment, surveys, m
 1. Run **`supabase/migration_analytics.sql`** in the Supabase SQL editor after the existing project migrations. It is safe to rerun. The application uses the existing Supabase environment variables; no analytics account, keys, or third-party SDK is required.
 2. Deploy the code. Open **Admin → Workspace → Analytics** (`/admin/analytics`).
 3. Super admins and content editors can view aggregate analytics. Only super admins can open **Customer data & export**. The orders role cannot access analytics. Exports are recorded in the audit log.
-4. Make an ordinary storefront visit. `/api/analytics/collect` responds with 204, and data should appear on dashboard refresh. Automated/headless tests appear in **Include bots / Bots only**, not the default real-user view.
+4. Make an ordinary production storefront visit while signed out or using a shopper account. `/api/analytics/collect` responds with 204, and data should appear on dashboard refresh. Automated/headless tests appear in **Include flagged automation / Flagged automation only**. Local and Vercel Preview collection is disabled by default.
 
 The live strip refreshes every 30 seconds while the admin tab is visible. Live visitors means unique non-bot visitors active in the last 90 seconds. Monthly conversion uses tracked sessions; total orders comes from the orders table, excluding deleted orders. Total visitors begins when tracking is installed, not when the shop was originally created.
 
@@ -19,7 +19,7 @@ The live strip refreshes every 30 seconds while the admin tab is visible. Live v
 
 - `_av_id`: random visitor UUID, one year; `_as_id`: random session UUID, rolling 30-minute inactivity expiry. Logging out or switching accounts starts a new session. Guest activity can become associated with the account when the shopper logs in.
 - `_utm_first`: original attribution, one year; `_utm_last`: latest campaign/external referrer, 30 days. Capture includes source, medium, campaign, content, term, referral code, landing path and referrer domain. Cookie sizes are bounded for non-Latin text. Full referrer URLs and ordinary query strings are not collected as page paths.
-- `_is_bot`: server user-agent classification, supplemented by webdriver/headless checks. A session once classified as automated stays automated. Detection is heuristic; bot traffic is recorded and filterable, not blocked from shopping.
+- Automation flags come from recognised user-agent signatures and the browser WebDriver signal. A session once flagged stays flagged. Unflagged traffic can include automation that does not identify itself. Signed-in staff sessions are excluded from new collection.
 - Page/product views, user-triggered cart adds/removals/quantity changes, checkout entry and server-verified purchases. Hydration, account cart reconciliation and refresh do not count as cart actions. StrictMode does not duplicate initial views.
 - Foreground activity heartbeats approximately every 30 seconds, with idle/background tabs excluded. Active seconds are capped by elapsed server time. This is an interaction estimate, not exact attention measurement.
 - An optional, dismissible abandonment question. It displays once per tab/session and does not display after purchase. Responses use a unique session constraint. It supports removing the last item, leaving cart/checkout, desktop exit intent and mobile cart/checkout idle. A checkout submission pauses its idle prompt.

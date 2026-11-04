@@ -1,4 +1,5 @@
 import "server-only";
+import { analyticsCollectionEnabled } from "./environment";
 import { PRIVACY_COOKIE, privacyChoice } from "./consent";
 import { refreshDemandRanking } from "@/lib/demand-ranking";
 import { cookies } from "next/headers";
@@ -8,6 +9,7 @@ import { botReason, cleanAttribution, uuid, type AnalyticsItem } from "./shared"
 import { resolveAnalyticsLocation } from "./ip-location";
 
 export async function analyticsSession(req: Request, clientBot = false, activeSeconds = 0, userId?: string | null) {
+  if (!analyticsCollectionEnabled(new URL(req.url).hostname)) return null;
   const jar = await cookies();
   if (privacyChoice(jar.get(PRIVACY_COOKIE)?.value) === "essential") return null;
   const parse = (key: string) => { try { return cleanAttribution(JSON.parse(decodeURIComponent(jar.get(key)?.value ?? "{}"))); } catch { return {}; } };
@@ -15,10 +17,16 @@ export async function analyticsSession(req: Request, clientBot = false, activeSe
   if (!uuid(sid) || !uuid(vid)) return null;
   const first = parse("_utm_first"), last = parse("_utm_last");
   const ua = req.headers.get("user-agent") ?? "";
-  const reason = botReason(ua) ?? (clientBot ? "webdriver_detected" : jar.get("_is_bot")?.value === "1" ? "ua_crawler" : null);
+  const reason = botReason(ua) ?? (clientBot ? "webdriver_detected" : null);
   let owner = userId;
-  if (owner === undefined) {
-    const {data:{user}} = await (await createClient()).auth.getUser(); owner = user?.id ?? null;
+  const auth = owner !== null ? await createClient() : null;
+  if (owner === undefined && auth) {
+    const { data: { user } } = await auth.auth.getUser();
+    owner = user?.id ?? null;
+  }
+  if (owner && auth) {
+    const { data: profile } = await auth.from("profiles").select("role").eq("id", owner).maybeSingle();
+    if (profile?.role && profile.role !== "customer") return null;
   }
   return { id:sid, visitor_id:vid, user_id:owner, is_bot:!!reason, bot_reason:reason,
     first_touch_utm:first, last_touch_utm:last, referrer_domain:first.referrer ?? "direct",
