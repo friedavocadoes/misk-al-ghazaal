@@ -14,7 +14,10 @@ export type AtelierScroll = Smoother | false | null;
 export const AtelierScrollContext = createContext<AtelierScroll>(null);
 export const useAtelierScroll = () => useContext(AtelierScrollContext);
 
-export function useOriginalesSmoother(root: RefObject<HTMLDivElement | null>) {
+export function useOriginalesSmoother(
+  root: RefObject<HTMLDivElement | null>,
+  collectionPage: boolean,
+) {
   const [scroll, setScroll] = useState<AtelierScroll>(null);
   useEffect(() => {
     const world = root.current;
@@ -185,5 +188,8 @@ export function useOriginalesSmoother(root: RefObject<HTMLDivElement | null>) {
       stop();
     };
   }, [root]);
+  useEffect(() => {
+    if (scroll) scroll.smooth(collectionPage ? 0.24 : 0.18);
+  }, [collectionPage, scroll]);
   return scroll;
 }

@@ -28,6 +28,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
     assert.equal(await page.locator("[data-gallery-reflection]").count(), 4);
+    assert.equal(
+      await page
+        .locator("footer")
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      "rgb(20, 19, 22)",
+    );
     const masthead = page.locator("[data-collection-masthead]");
     assert.match(
       await masthead.evaluate((el) => getComputedStyle(el).fontFamily),
@@ -89,6 +95,29 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
           getComputedStyle(document.querySelector("[data-collection-masthead]"))
             .zIndex,
         ) === 44,
+    );
+    assert.equal(
+      await page
+        .locator("[data-collection-header-backdrop]")
+        .evaluate((el) => getComputedStyle(el).opacity),
+      "0",
+      "the header stays clear during the wordmark handoff",
+    );
+    await page.evaluate(() =>
+      scrollTo({ top: innerHeight * 0.45, behavior: "instant" }),
+    );
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(
+          document.querySelector("[data-collection-header-backdrop]"),
+        ).opacity === "1",
+    );
+    assert.equal(
+      await page
+        .locator("[data-collection-title-dock]")
+        .evaluate((el) => getComputedStyle(el).opacity),
+      "1",
+      "the wordmark is docked before the header darkens",
     );
     await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
     await page.waitForFunction(
@@ -545,14 +574,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForSelector('[data-studio-active="true"]', {
       state: "attached",
     });
-    await page
-      .locator("#fragrance-notes")
-      .evaluate((el) =>
-        scrollTo({
-          top: scrollY + el.getBoundingClientRect().top - 110,
-          behavior: "instant",
-        }),
-      );
+    await page.locator("#fragrance-notes").evaluate((el) =>
+      scrollTo({
+        top: scrollY + el.getBoundingClientRect().top - 110,
+        behavior: "instant",
+      }),
+    );
     await page.waitForTimeout(1300);
     assert.equal(
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
@@ -688,7 +715,9 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.ok(
       Math.abs(openingWordmark.x + openingWordmark.width / 2 - 195) < 2,
     );
-    await page.getByRole("link", { name: "Four expressions. Find your own." }).click();
+    await page
+      .getByRole("link", { name: "Four expressions. Find your own." })
+      .click();
     await page.waitForFunction(() => {
       const bottles = document.querySelectorAll("[data-gallery-bottle]");
       const first = bottles[0].getBoundingClientRect();

@@ -56,8 +56,9 @@ export function OriginalesChrome({
 }) {
   const ar = useLocale() === "ar";
   const path = usePathname();
+  const collectionPage = path === "/originales" || path === "/originales/";
   const root = useRef<HTMLDivElement>(null);
-  const atelierScroll = useOriginalesSmoother(root);
+  const atelierScroll = useOriginalesSmoother(root, collectionPage);
   useAtelierMotion(root, path, atelierScroll);
   useLayoutEffect(() => {
     document.body.dataset.originales = "true";
@@ -65,7 +66,6 @@ export function OriginalesChrome({
       delete document.body.dataset.originales;
     };
   }, []);
-  const collectionPage = path === "/originales" || path === "/originales/";
   const selectedEdition = products.find(
     (product) => originalesPath(product) === path,
   );
@@ -160,6 +160,13 @@ export function OriginalesChrome({
       dir={ar ? "rtl" : "ltr"}
     >
       <header className={s.header}>
+        {collectionPage && (
+          <span
+            data-collection-header-backdrop
+            className={s.collectionHeaderBackdrop}
+            aria-hidden="true"
+          />
+        )}
         <div className={s.headerLeft}>
           {!collectionPage && (
             <button

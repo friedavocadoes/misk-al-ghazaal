@@ -12,7 +12,7 @@ Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivor
 
 ## Presentation files
 
-- `atelier-scroll.ts` owns the capsule’s GSAP ScrollSmoother instance (0.18s catch-up, desktop fine pointers only). It keeps the existing stage geometry and section links in the smoothed viewport and releases wrapper-bound triggers on exit. Touch and reduced-motion browsing use native scrolling.
+- `atelier-scroll.ts` owns the capsule’s GSAP ScrollSmoother instance (0.24s catch-up on the collection and 0.18s on product pages, desktop fine pointers only). It keeps the existing stage geometry and section links in the smoothed viewport and releases wrapper-bound triggers on exit. Touch and reduced-motion browsing use native scrolling.
 
 - `atelier.module.css`: the complete capsule theme, dark mineral palette, frosted all-caps Manrope typography, scene geometry, sculpture surfaces, counter and purchase controls. `Manrope` is loaded only by the Originales layout via next/font. The old `originales.module.css` was removed.
 - `portal.css`: attribute-gated styles for dialogs/sample picker/note tooltips which render outside the capsule DOM. OriginalesChrome sets `body[data-originales=true]` in a layout effect and clears it before the main store paints again. Never make these styles global without that attribute.
