@@ -335,6 +335,7 @@
     "signIn": "Sign in",
     "create": "Create account",
     "google": "Continue with Google",
+    "googleUnavailable": "Google sign-in is unavailable. Try again or continue with email.",
     "or": "or",
     "noAccount": "New to the maison?",
     "hasAccount": "Already one of us?",

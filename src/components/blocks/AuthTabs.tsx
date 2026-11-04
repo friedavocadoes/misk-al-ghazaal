@@ -1,4 +1,5 @@
 "use client";
+import { GoogleIdentityButton } from "./GoogleIdentityButton";
 import { LegalLinks } from "./LegalLinks";
 import { haptic } from "@/lib/haptics";
 
@@ -13,13 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 
-function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean }) {
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+function GoogleButton({ onClick, onSignIn, busy }: { onClick: () => void; onSignIn: () => Promise<void>; busy: boolean }) {
   const t = useTranslations("Account");
   return (
     <>
-      <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
+      {googleClientId ? <GoogleIdentityButton clientId={googleClientId} onSignIn={onSignIn} /> : <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
         <GoogleGlyph className="size-[18px]" /> {t("google")}
-      </Button>
+      </Button>}
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-fog">
         <span className="h-px flex-1 bg-ink/10" />
         {t("or")}
@@ -27,6 +30,20 @@ function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean })
       </div>
     </>
   );
+}
+
+async function finishShopperSignIn(router: ReturnType<typeof useRouter>, next: string, ref?: string) {
+  try {
+    await fetch("/api/auth/ensure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ref }),
+    });
+  } catch {
+    /* Profile backfills on next visit. */
+  }
+  router.push(next);
+  router.refresh();
 }
 
 function LoginPane({ next }: { next: string }) {
@@ -37,17 +54,7 @@ function LoginPane({ next }: { next: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const afterAuth = async () => {
-    try {
-      await fetch("/api/auth/ensure", {
-        method: "POST",
-      });
-    } catch {
-      /* profile backfills on next visit */
-    }
-    router.push(next);
-    router.refresh();
-  };
+  const afterAuth = () => finishShopperSignIn(router, next);
 
   const emailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +90,7 @@ function LoginPane({ next }: { next: string }) {
 
   return (
     <>
-      <GoogleButton onClick={googleLogin} busy={busy} />
+      <GoogleButton onClick={googleLogin} onSignIn={afterAuth} busy={busy} />
       <form onSubmit={emailLogin} className="grid gap-3">
         <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input placeholder={t("password")} type="password" required aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} />
@@ -135,17 +142,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
     }
     haptic("success");
     if (data.session) {
-      try {
-        await fetch("/api/auth/ensure", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ref: ref || undefined }),
-        });
-      } catch {
-        /* backfills later */
-      }
-      router.push(next);
-      router.refresh();
+      await finishShopperSignIn(router, next, ref);
     } else {
       setBusy(false);
       setCheckMail(true);
@@ -177,7 +174,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 
   return (
     <>
-      <GoogleButton onClick={googleSignup} busy={busy} />
+      <GoogleButton onClick={googleSignup} onSignIn={() => finishShopperSignIn(router, next, referral.trim())} busy={busy} />
       <form onSubmit={submit} className="grid gap-3">
         <Input placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} />
         <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -214,7 +211,7 @@ export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
   const params = useSearchParams();
   const rawNext = params.get("next") ?? "/account";
   // Internal paths only — never bounce shoppers to an external URL.
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !/[\\\u0000-\u001f]/.test(rawNext) ? rawNext : "/account";
   const ref = params.get("ref") ?? "";
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
