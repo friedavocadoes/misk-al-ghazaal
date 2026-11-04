@@ -713,7 +713,7 @@ export function OriginalesGallery({
           <div className={s.stageHalo} />
           {products.map((product, index) => {
             const edition = editionFor(product);
-            const bottle = edition.bottle ?? product.images[0] ?? "/logo.webp";
+            const bottle = edition.bottle ?? product.images[0] ?? "/mag.webp";
             const sizes = "(max-width:759px) 50vw, 30vw";
             return (
               <figure
@@ -795,9 +795,7 @@ export function OriginalesGallery({
                   <div className={s.mobileChapterProduct}>
                     <Link href={originalesPath(product)}>
                       <Image
-                        src={
-                          edition.bottle ?? product.images[0] ?? "/logo.webp"
-                        }
+                        src={edition.bottle ?? product.images[0] ?? "/mag.webp"}
                         alt={edition.name}
                         width={360}
                         height={470}

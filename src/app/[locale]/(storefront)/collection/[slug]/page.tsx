@@ -8,7 +8,14 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { CollectionFilters } from "@/components/blocks/CollectionFilters";
 import { CatalogInfinite } from "@/components/blocks/CatalogInfinite";
-import { getCollectionBySlug, getCollections, getLineups, getRituals, getNotes, getProductsByCollection } from "@/lib/store";
+import {
+  getCollectionBySlug,
+  getCollections,
+  getLineups,
+  getRituals,
+  getNotes,
+  getProductsByCollection,
+} from "@/lib/store";
 import { toLocale } from "@/lib/i18n";
 import { tx } from "@/lib/i18n";
 import { SeoJsonLd } from "@/components/blocks/SeoJsonLd";
@@ -40,7 +47,9 @@ export async function generateMetadata(
     slug === "all" ? null : getCollectionBySlug(slug),
     getPageSeo("collection", slug),
   ]);
-  const title = category ? tx(category.title, category.titleAr, locale) : "Shop All";
+  const title = category
+    ? tx(category.title, category.titleAr, locale)
+    : "Shop All";
   return seoMetadata(
     seo,
     {
@@ -54,7 +63,7 @@ export async function generateMetadata(
 }
 
 export default async function CollectionPage(
-  props: PageProps<"/[locale]/collection/[slug]">
+  props: PageProps<"/[locale]/collection/[slug]">,
 ) {
   const { slug: raw, locale: rawLocale } = await props.params;
   const locale = toLocale(rawLocale);
@@ -62,7 +71,10 @@ export default async function CollectionPage(
   const t = await getTranslations({ locale, namespace: "Collection" });
   const searchParams = await props.searchParams;
   const slug = ALIASES[raw] ?? raw;
-  if (ORIGINALES_ENABLED && (slug === "originales" || searchParams?.lineup === "originales")) {
+  if (
+    ORIGINALES_ENABLED &&
+    (slug === "originales" || searchParams?.lineup === "originales")
+  ) {
     redirect({ href: "/originales", locale });
   }
   const isAll = slug === "all";
@@ -82,18 +94,34 @@ export default async function CollectionPage(
     onSaleOnly: searchParams?.sale === "1",
     minRating: num(searchParams?.rating),
     note: typeof searchParams?.note === "string" ? searchParams.note : null,
-    ritual: typeof searchParams?.ritual === "string" ? searchParams.ritual : null,
-    lineup: typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
+    ritual:
+      typeof searchParams?.ritual === "string" ? searchParams.ritual : null,
+    lineup:
+      typeof searchParams?.lineup === "string" ? searchParams.lineup : null,
   };
-  const [items, bounds, collections, lineups, rituals] = await Promise.all([getProductsByCollection(slug, opts), getProductsByCollection(slug), getCollections(), getLineups(), getRituals()]);
+  const [items, bounds, collections, lineups, rituals] = await Promise.all([
+    getProductsByCollection(slug, opts),
+    getProductsByCollection(slug),
+    getCollections(),
+    getLineups(),
+    getRituals(),
+  ]);
   const prices = bounds.map((p) => p.price);
   const floor = Math.min(...prices, 0);
   const ceiling = Math.max(...prices, 200);
 
-  const activeNote = opts.note ? (await getNotes()).find(n => n.slug === opts.note) : undefined;
-  const title = activeNote ? (locale === "ar" ? `عطور ${tx(activeNote.name, activeNote.nameAr, locale)}` : `${activeNote.name} perfumes`) : isAll
-    ? locale === "ar" ? "تسوّق الكل" : "Shop All"
-    : tx(category!.title, category!.titleAr, locale);
+  const activeNote = opts.note
+    ? (await getNotes()).find((n) => n.slug === opts.note)
+    : undefined;
+  const title = activeNote
+    ? locale === "ar"
+      ? `عطور ${tx(activeNote.name, activeNote.nameAr, locale)}`
+      : `${activeNote.name} perfumes`
+    : isAll
+      ? locale === "ar"
+        ? "تسوّق الكل"
+        : "Shop All"
+      : tx(category!.title, category!.titleAr, locale);
   const desc = isAll
     ? ""
     : tx(category!.description ?? "", category!.descriptionAr, locale);
@@ -116,67 +144,124 @@ export default async function CollectionPage(
       <SeoJsonLd blocks={customJsonLd(seo)} />
 
       <div className="collection-experience mx-auto max-w-[1440px] px-5 py-8 md:px-10">
-      <nav aria-label="Breadcrumb" className="text-[11px] uppercase tracking-[0.18em] text-fog">
-        <Link href="/" className="hover:text-gold">{t("home")}</Link>
-        <span className="mx-2">/</span>
-        <Link href="/collections" className="hover:text-gold">{t("collections")}</Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">{title}</span>
-      </nav>
+        <nav
+          aria-label="Breadcrumb"
+          className="text-[11px] uppercase tracking-[0.18em] text-fog"
+        >
+          <Link href="/" className="hover:text-gold">
+            {t("home")}
+          </Link>
+          <span className="mx-2">/</span>
+          <Link href="/collections" className="hover:text-gold">
+            {t("collections")}
+          </Link>
+          <span className="mx-2">/</span>
+          <span className="text-ink">{title}</span>
+        </nav>
 
-      <div className="collection-heading border-b border-ink/10 pb-10 pt-10 text-start">
-        <div>
-        <p className="eyebrow text-gold">{t("eyebrow")}</p>
-        <h1 className="mt-3 font-display text-5xl text-ink md:text-7xl">
-          {h1}
-        </h1>
-        {desc && (
-          <p className="mt-5 max-w-xl text-sm text-espresso">
-            {desc}
-          </p>
-        )}
-        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-fog">
-          {items.length} {t("pieces")}
-        </p>
-        </div>
-        {category?.image && <div className="collection-cover"><SafeImage src={category.image} fallback="/logo.webp" alt={title} fill sizes="(min-width:1024px) 320px, 100vw" className="object-cover" /></div>}
-      </div>
-      <nav className="collection-edit-rail" aria-label={locale === "ar" ? "المجموعات" : "Explore collections"}>
-        <Link href="/collection/all" aria-current={isAll ? "page" : undefined}>{locale === "ar" ? "الكل" : "All creations"}</Link>
-        {collections.map((entry) => <Link key={entry.slug} href={`/collection/${entry.slug}`} aria-current={entry.slug === slug ? "page" : undefined}>{tx(entry.title, entry.titleAr, locale)}</Link>)}
-      </nav>
-      <div className="mt-8 grid items-start gap-8 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-14">
-        <CollectionFilters
-          key={filterKey}
-          basePath={`/collection/${raw}`}
-          floor={floor}
-          ceiling={ceiling}
-          context={activeNote || !isAll ? { label: title, clearHref: "/collection/all" } : undefined}
-          collections={collections.map((c) => ({ slug: c.slug, title: c.title, ...(c.titleAr ? { titleAr: c.titleAr } : {}) }))}
-          lineups={lineups.map((l) => ({ slug: l.slug, title: l.title, ...(l.titleAr ? { titleAr: l.titleAr } : {}) }))}
-          rituals={rituals.map((entry) => ({ slug: entry.id, title: entry.title, titleAr: entry.titleAr }))}
-          activeLineup={typeof searchParams?.lineup === "string" ? searchParams.lineup : undefined}
-        />
-        <div className="min-w-0">
-          {items.length === 0 ? (
-            <div className="border border-dashed border-ink/25 py-16 text-center">
-              <p className="font-display text-xl text-ink">{t("noMatchTitle")}</p>
-              <p className="mt-1 text-sm text-fog">
-                {t("noMatchHint")}
-              </p>
-              <Link href={`/collection/${raw}`} className="mt-6 inline-block border-b border-gold pb-1 text-sm">{locale === "ar" ? "مسح الفلاتر" : "Clear filters"}</Link>
+        <div className="collection-heading border-b border-ink/10 pb-10 pt-10 text-start">
+          <div>
+            <p className="eyebrow text-gold">{t("eyebrow")}</p>
+            <h1 className="mt-3 font-display text-5xl text-ink md:text-7xl">
+              {h1}
+            </h1>
+            {desc && (
+              <p className="mt-5 max-w-xl text-sm text-espresso">{desc}</p>
+            )}
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-fog">
+              {items.length} {t("pieces")}
+            </p>
+          </div>
+          {category?.image && (
+            <div className="collection-cover">
+              <SafeImage
+                src={category.image}
+                fallback="/mag.webp"
+                alt={title}
+                fill
+                sizes="(min-width:1024px) 320px, 100vw"
+                className="object-cover"
+              />
             </div>
-          ) : (
-            <CatalogInfinite
-              key={filterKey}
-              initial={items.slice(0, PAGE)}
-              total={items.length}
-              base={{ collection: slug }}
-            />
           )}
         </div>
+        <nav
+          className="collection-edit-rail"
+          aria-label={locale === "ar" ? "المجموعات" : "Explore collections"}
+        >
+          <Link
+            href="/collection/all"
+            aria-current={isAll ? "page" : undefined}
+          >
+            {locale === "ar" ? "الكل" : "All creations"}
+          </Link>
+          {collections.map((entry) => (
+            <Link
+              key={entry.slug}
+              href={`/collection/${entry.slug}`}
+              aria-current={entry.slug === slug ? "page" : undefined}
+            >
+              {tx(entry.title, entry.titleAr, locale)}
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[280px_minmax(0,1fr)] xl:gap-14">
+          <CollectionFilters
+            key={filterKey}
+            basePath={`/collection/${raw}`}
+            floor={floor}
+            ceiling={ceiling}
+            context={
+              activeNote || !isAll
+                ? { label: title, clearHref: "/collection/all" }
+                : undefined
+            }
+            collections={collections.map((c) => ({
+              slug: c.slug,
+              title: c.title,
+              ...(c.titleAr ? { titleAr: c.titleAr } : {}),
+            }))}
+            lineups={lineups.map((l) => ({
+              slug: l.slug,
+              title: l.title,
+              ...(l.titleAr ? { titleAr: l.titleAr } : {}),
+            }))}
+            rituals={rituals.map((entry) => ({
+              slug: entry.id,
+              title: entry.title,
+              titleAr: entry.titleAr,
+            }))}
+            activeLineup={
+              typeof searchParams?.lineup === "string"
+                ? searchParams.lineup
+                : undefined
+            }
+          />
+          <div className="min-w-0">
+            {items.length === 0 ? (
+              <div className="border border-dashed border-ink/25 py-16 text-center">
+                <p className="font-display text-xl text-ink">
+                  {t("noMatchTitle")}
+                </p>
+                <p className="mt-1 text-sm text-fog">{t("noMatchHint")}</p>
+                <Link
+                  href={`/collection/${raw}`}
+                  className="mt-6 inline-block border-b border-gold pb-1 text-sm"
+                >
+                  {locale === "ar" ? "مسح الفلاتر" : "Clear filters"}
+                </Link>
+              </div>
+            ) : (
+              <CatalogInfinite
+                key={filterKey}
+                initial={items.slice(0, PAGE)}
+                total={items.length}
+                base={{ collection: slug }}
+              />
+            )}
+          </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }
