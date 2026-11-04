@@ -26,7 +26,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForTimeout(1600);
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
+    assert.equal(await page.locator("[data-gallery-reflection]").count(), 4);
     const masthead = page.locator("[data-collection-masthead]");
+    assert.match(
+      await masthead.evaluate((el) => getComputedStyle(el).fontFamily),
+      /Originales Display/,
+    );
     assert.ok(
       await masthead.evaluate((el) => {
         const sequence = document.querySelector("[data-gallery-sequence]");
@@ -188,7 +193,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .locator("[data-display-title]")
         .evaluate((el) => getComputedStyle(el).fontWeight),
-      "800",
+      "700",
       "opening title uses the heavier display weight",
     );
     assert.equal(
@@ -361,8 +366,8 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .locator("h1")
         .evaluate((el) => getComputedStyle(el).fontWeight),
-      "400",
-      "the same title settles to regular weight at the price view",
+      "500",
+      "the same serif title settles to medium weight at the price view",
     );
     assert.equal(
       await page
@@ -748,6 +753,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     });
     await entry.click();
     await page.locator('[data-loading-phase="entering"]').waitFor();
+    await page.getByText("MAG PARFUM PRESENTS", { exact: true }).waitFor();
     assert.equal(
       await page.locator('[data-loading-journey="threshold"]').count(),
       1,

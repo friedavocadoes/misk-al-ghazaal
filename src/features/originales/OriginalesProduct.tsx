@@ -321,9 +321,9 @@ export function OriginalesProduct({
             );
             tl.fromTo(
               title,
-              { fontWeight: 800, letterSpacing: "-0.045em" },
+              { fontWeight: 700, letterSpacing: "0.025em" },
               {
-                fontWeight: 400,
+                fontWeight: 500,
                 letterSpacing: "0.025em",
                 duration: 0.22,
               },

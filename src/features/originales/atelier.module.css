@@ -327,11 +327,11 @@
   width: max-content;
   max-width: none;
   margin: 0;
-  font-family: var(--font-originales), var(--font-sans), sans-serif;
+  font-family: "Originales Display", Georgia, var(--font-arabic), serif;
   font-size: 43px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.12;
-  letter-spacing: -0.045em;
+  letter-spacing: 0.025em;
   text-transform: uppercase;
   white-space: nowrap;
   z-index: 4;
@@ -3215,7 +3215,7 @@
 @media (prefers-reduced-motion: reduce) {
   .frostedTitle {
     --title-settle: 1;
-    font-weight: 400;
+    font-weight: 500;
     letter-spacing: 0.025em;
   }
   .silhouetteNav {
@@ -3674,39 +3674,33 @@
 }
 .stickyProduct .displayTitle > span {
   --settled-ink: calc(var(--title-settle) * 100%);
-  --rim-strength: calc((1 - var(--title-settle)) * 82%);
-  background:
-    radial-gradient(
-      ellipse at 13% 85%,
-      color-mix(in srgb, var(--studio-rim) var(--rim-strength), transparent),
-      transparent 28%
-    ),
-    radial-gradient(
-      ellipse at 87% 22%,
-      color-mix(in srgb, var(--studio-rim) var(--rim-strength), transparent),
-      transparent 34%
-    ),
-    linear-gradient(
-      153deg,
-      color-mix(
+  --title-shade: color-mix(
+    in srgb,
+    var(--edition-accent) 42%,
+    var(--edition-wash)
+  );
+  background: linear-gradient(
+    176deg,
+    color-mix(in srgb, var(--edition-wash), #ecece4 var(--settled-ink)),
+    color-mix(
         in srgb,
-        color-mix(in srgb, var(--studio-rim) 88%, transparent),
-        #ecece4 var(--settled-ink)
-      ),
-      color-mix(
-          in srgb,
-          color-mix(in srgb, var(--edition-wash) 66%, transparent),
-          #ecece4 var(--settled-ink)
-        )
-        48%,
-      color-mix(
-        in srgb,
-        color-mix(in srgb, var(--edition-accent) 36%, var(--edition-wash) 50%),
+        color-mix(in srgb, var(--studio-rim) 65%, white),
         #ecece4 var(--settled-ink)
       )
-    );
+      29%,
+    color-mix(in srgb, var(--title-shade), #ecece4 var(--settled-ink)) 58%,
+    color-mix(in srgb, var(--studio-rim), #ecece4 var(--settled-ink)) 84%,
+    color-mix(in srgb, var(--title-shade), #ecece4 var(--settled-ink))
+  );
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.003em
+    color-mix(in srgb, #fff0d860, transparent var(--settled-ink));
+  filter: drop-shadow(0 0.019em 0.023em #0b090d80);
+}
+.stickyProduct .compactIdentity > span:first-child,
+.stickyProduct .photoFocusName {
+  font-family: "Originales Display", Georgia, var(--font-arabic), serif;
 }
 .stickyProduct .bottleObject img {
   object-position: center bottom;
@@ -4512,15 +4506,237 @@
   }
 }
 .collectionWorld .gallery {
-  background: radial-gradient(ellipse at 50% 28%, #242731, #111317 66%);
+  background: #101015;
+}
+.collectionWorld :is(.galleryIntro h1, [data-collection-title-dock]) {
+  font-family: "Originales Display", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.115em;
+}
+.collectionWorld .galleryIntro h1 {
+  font-size: clamp(52px, 10.65vw, 178px);
+}
+.collectionWorld :is(.galleryIntro h1 a, [data-collection-title-dock]) {
+  direction: ltr;
+  background: linear-gradient(
+    165deg,
+    #bda282 5%,
+    #fff5e6 29%,
+    #d3baa0 48%,
+    #96795d 63%,
+    #f5dec0 84%,
+    #c49c6d
+  );
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .collectionWorld .galleryIntro h1 a {
-  background-image: linear-gradient(
-    140deg,
-    #eef0f5e6,
-    #a9b1c1b5 49%,
-    #d9dce5df 82%
-  );
+  filter: drop-shadow(0 0.022em 0.026em #dba2634c);
+}
+.gallerySeal {
+  position: absolute;
+  top: -0.47em;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  font:
+    400 clamp(12px, 1.65vw, 22px) Georgia,
+    serif;
+  letter-spacing: 0;
+  color: #f5ddba;
+  pointer-events: none;
+}
+.gallerySeal::before,
+.gallerySeal::after {
+  content: "";
+  width: clamp(28px, 7vw, 115px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d9b783a8);
+}
+.gallerySeal::after {
+  scale: -1 1;
+}
+.collectionGlass {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100svh;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 51% 42%, #241b1d, #090a0e 72%);
+}
+.collectionGlass > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+.collectionFloor {
+  position: absolute;
+  inset: 0;
+}
+.glassFloor {
+  position: absolute;
+  inset: 61% 0 0;
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      #ad8e6e21 15%,
+      #0a0a0d40 34%,
+      #090a0e 100%
+    ),
+    repeating-linear-gradient(180deg, #fce4bb03 0 1px, transparent 2px 8px);
+}
+.floorLight {
+  position: absolute;
+  top: 54%;
+  left: var(--pool-x);
+  width: 25%;
+  height: 31%;
+  translate: -50% 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 54%,
+      color-mix(in srgb, var(--pool) 42%, transparent),
+      transparent 47%
+    ),
+    radial-gradient(
+      ellipse at 50% 40%,
+      color-mix(in srgb, var(--pool) 20%, transparent),
+      transparent 69%
+    );
+}
+.glassGlint {
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-dasharray: 9 91;
+  opacity: 0.47;
+}
+.galleryBottlePlane {
+  display: block;
+  position: relative;
+  height: 88%;
+}
+.galleryBottlePlane > .sequenceBottle {
+  height: 100%;
+  display: block;
+  object-position: center bottom;
+}
+.galleryReflection {
+  position: absolute;
+  inset: calc(100% - var(--reflection-seam)) 0 auto;
+  height: 25%;
+  overflow: hidden;
+  opacity: 0.52;
+  pointer-events: none;
+  mask-image: linear-gradient(#000 6%, #0009 42%, transparent);
+}
+.galleryReflection img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 400%;
+  object-fit: contain;
+  object-position: center bottom;
+  transform: translateY(-100%) scaleY(-1);
+  transform-origin: center bottom;
+  filter: blur(1px) saturate(0.88);
+}
+.galleryBottle figcaption {
+  position: relative;
+}
+.collectionWorld .galleryBottle figcaption span {
+  letter-spacing: 0.19em;
+}
+@media (min-width: 760px) {
+  .collectionWorld .galleryScroll {
+    flex-direction: column;
+    gap: 10px;
+    max-width: none;
+    font-size: clamp(10px, 0.92vw, 14px);
+    letter-spacing: 0.105em;
+  }
+  .collectionWorld .galleryBottle {
+    height: 55svh;
+  }
+  .collectionWorld .galleryBottle figcaption {
+    font-size: clamp(11px, 1.02vw, 16px);
+  }
+  .collectionWorld .galleryBottle figcaption small {
+    font-size: clamp(10px, 0.84vw, 13px);
+  }
+}
+@media (max-width: 759px) {
+  .collectionWorld .galleryIntro h1 {
+    font-size: clamp(32px, 11.8vw, 72px);
+  }
+  .gallerySeal {
+    top: -1.05em;
+  }
+  .galleryBottlePlane {
+    height: 85%;
+  }
+  .galleryReflection {
+    opacity: 0.38;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .collectionGlass > svg,
+  .collectionFloor {
+    animation: collection-glass-reveal 1.4s both;
+  }
+  .glassPane,
+  .glassWave {
+    animation: collection-glass-drift 14s var(--glass-delay) ease-in-out
+      infinite alternate;
+  }
+  .glassGlint {
+    animation: collection-glass-shine 13s var(--glass-delay) linear infinite;
+  }
+  .floorLight {
+    animation: collection-floor-light 8s var(--glass-delay) ease-in-out infinite
+      alternate;
+  }
+  [data-glass-dimmed] :is(.glassPane, .glassWave, .glassGlint, .floorLight) {
+    animation-play-state: paused;
+  }
+}
+@keyframes collection-glass-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes collection-glass-drift {
+  from {
+    transform: translate(-4px, 3px);
+  }
+  to {
+    transform: translate(6px, -3px);
+  }
+}
+@keyframes collection-glass-shine {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+@keyframes collection-floor-light {
+  from {
+    transform: scale(0.93, 0.86);
+    opacity: 0.54;
+  }
+  to {
+    transform: scale(1.07, 1.09);
+    opacity: 0.91;
+  }
 }
 .world .tools .collectionReturn {
   position: relative;

@@ -27,6 +27,12 @@ export function OriginalesLoading({
       <span className="originales-transition-seal" aria-hidden="true">
         {phase !== "arrived" && <OriginalesLoadingMark />}
       </span>
+      {journey === "threshold" && (
+        <div className="originales-transition-credit" aria-hidden="true">
+          <span>MAG PARFUM PRESENTS</span>
+          <strong>Originales</strong>
+        </div>
+      )}
       <span className="sr-only">Loading the collection</span>
     </div>
   );
