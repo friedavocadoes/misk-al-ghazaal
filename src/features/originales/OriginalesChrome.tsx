@@ -43,6 +43,7 @@ import {
 } from "./config";
 import s from "./atelier.module.css";
 import { useAtelierMotion } from "./useAtelierMotion";
+import { AtelierScrollContext, useOriginalesSmoother } from "./atelier-scroll";
 
 export function OriginalesChrome({
   products,
@@ -56,7 +57,8 @@ export function OriginalesChrome({
   const ar = useLocale() === "ar";
   const path = usePathname();
   const root = useRef<HTMLDivElement>(null);
-  useAtelierMotion(root, path);
+  const atelierScroll = useOriginalesSmoother(root);
+  useAtelierMotion(root, path, atelierScroll);
   useLayoutEffect(() => {
     document.body.dataset.originales = "true";
     return () => {
@@ -183,14 +185,16 @@ export function OriginalesChrome({
           <a
             href="#originales-top"
             data-collection-title-dock
-            className={s.headerEdition}
+            className={`${s.headerEdition} ${s.editionWordmark}`}
           >
             ORIGINALES
           </a>
         ) : (
-          <Link href="/originales" className={s.headerEdition}>
+          <Link
+            href="/originales"
+            className={`${s.headerEdition} ${s.editionWordmark}`}
+          >
             ORIGINALES
-            {/* <span>{ar ? "تعبير أصيل" : "An original expression"}</span> */}
           </Link>
         )}
         <div className={s.tools}>
@@ -253,17 +257,23 @@ export function OriginalesChrome({
         </div>
       </header>
       {!collectionPage && <aside className={s.rail}>{editions}</aside>}
-      <div className={s.content}>
-        {children}
-        <footer className={s.footer}>
-          <span>MAG PARFUM · ORIGINALES</span>
-          {back}
-          <span>
-            {ar
-              ? "فن العطر. تعبيرك الخاص."
-              : "The art of perfume. An expression of you."}
-          </span>
-        </footer>
+      <div data-atelier-scroll-wrapper>
+        <div data-atelier-scroll-content>
+          <div className={s.content}>
+            <AtelierScrollContext.Provider value={atelierScroll}>
+              {children}
+            </AtelierScrollContext.Provider>
+            <footer className={s.footer}>
+              <span>MAG PARFUM · ORIGINALES</span>
+              {back}
+              <span>
+                {ar
+                  ? "فن العطر. تعبيرك الخاص."
+                  : "The art of perfume. An expression of you."}
+              </span>
+            </footer>
+          </div>
+        </div>
       </div>
       <CartDrawer
         open={bag}

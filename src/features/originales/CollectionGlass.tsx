@@ -85,22 +85,26 @@ export function CollectionGlass() {
           </linearGradient>
           {panes.map(({ tone }, index) => (
             <linearGradient key={tone} id={`${id}-pane-${index}`}>
-              <stop stopColor={tone} stopOpacity=".28" />
-              <stop offset=".08" stopColor={tone} stopOpacity=".13" />
-              <stop offset=".57" stopColor={tone} stopOpacity=".055" />
-              <stop offset=".94" stopColor={tone} stopOpacity=".3" />
-              <stop offset="1" stopColor="#ffe8ce" stopOpacity=".08" />
+              <stop stopColor={tone} stopOpacity=".42" />
+              <stop offset=".12" stopColor={tone} stopOpacity=".26" />
+              <stop offset=".55" stopColor={tone} stopOpacity=".13" />
+              <stop offset=".89" stopColor={tone} stopOpacity=".4" />
+              <stop offset="1" stopColor="#eee3de" stopOpacity=".22" />
             </linearGradient>
           ))}
         </defs>
         <g mask={`url(#${id}-foot-mask)`}>
-          {panes.map(({ tone, shape, edge }, index) => (
+          <g className={s.paneFrost}>
+            {panes.map(({ tone, shape }, index) => (
+              <path key={tone} d={shape} fill={`url(#${id}-pane-${index})`} />
+            ))}
+          </g>
+          {panes.map(({ tone, edge }, index) => (
             <g
               key={tone}
               className={s.glassPane}
               style={{ "--glass-delay": `${index * -2.4}s` } as CSSProperties}
             >
-              <path d={shape} fill={`url(#${id}-pane-${index})`} />
               <path
                 d={edge}
                 stroke={`url(#${id}-edge)`}

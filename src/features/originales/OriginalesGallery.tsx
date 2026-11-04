@@ -15,6 +15,7 @@ import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
 import { CollectionGlass } from "./CollectionGlass";
+import { useAtelierScroll } from "./atelier-scroll";
 import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
 import { atelierGsap } from "./atelier-gsap";
@@ -78,7 +79,9 @@ export function OriginalesGallery({
   const current = useRef(0),
     progress = useRef(0),
     collapsedRef = useRef(false);
+  const smoother = useAtelierScroll();
   useEffect(() => {
+    if (smoother === null) return;
     let live = true,
       dispose = () => {};
     Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
@@ -138,7 +141,7 @@ export function OriginalesGallery({
                 scrollTrigger: {
                   start: 0,
                   end: () => innerHeight * 0.43,
-                  scrub: 0.38,
+                  scrub: smoother ? 0.22 : 0.38,
                   invalidateOnRefresh: true,
                 },
               });
@@ -332,8 +335,10 @@ export function OriginalesGallery({
                 onRefresh: (self) => setNavVisible(self.progress > 0),
               });
             let bounds: { top: number; bottom: number }[] = [];
+            const visualScroll = () =>
+              smoother ? smoother.scrollTop() : window.scrollY;
             const measure = () => {
-              const scroll = window.scrollY;
+              const scroll = visualScroll();
               bounds = chapters.map((chapter) => {
                 const rect = chapter.getBoundingClientRect();
                 return { top: rect.top + scroll, bottom: rect.bottom + scroll };
@@ -347,7 +352,7 @@ export function OriginalesGallery({
             measure();
             const sync = () => {
               if (mobile) return;
-              const scroll = window.scrollY;
+              const scroll = visualScroll();
               const clamp = gsap.utils.clamp(0, 1);
               figures.forEach((figure, index) => {
                 const rect = bounds[index];
@@ -409,7 +414,7 @@ export function OriginalesGallery({
                   trigger: node.querySelector("[data-gallery-sequence]"),
                   start: () => `top top+=${mobile ? 150 : 175}`,
                   end: () => `+=${innerHeight * 0.65}`,
-                  scrub: 0.52,
+                  scrub: smoother ? 0.26 : 0.52,
                   onUpdate: (self) => {
                     progress.current = self.progress;
                     sync();
@@ -488,7 +493,7 @@ export function OriginalesGallery({
                 .to(
                   stage,
                   {
-                    y: () => -innerHeight * 0.8,
+                    "--gallery-exit": () => `${-innerHeight * 0.8}px`,
                     opacity: 0,
                     duration: 1,
                     ease: "atelier-soft",
@@ -554,7 +559,7 @@ export function OriginalesGallery({
       live = false;
       dispose();
     };
-  }, [products.length]);
+  }, [products.length, smoother]);
   const featured = products[active] ?? products[0],
     story = COLLECTION_STORY[ar ? "ar" : "en"];
   return (
@@ -605,12 +610,18 @@ export function OriginalesGallery({
         })}
       </nav>
       <header className={s.galleryIntro}>
-        <h1 data-collection-masthead data-static-ink>
-          <a href="#originales-top">Originales</a>
-          <span data-gallery-seal className={s.gallerySeal} aria-hidden="true">
-            ✦
-          </span>
-        </h1>
+        <div data-atelier-masthead-layer className={s.mastheadLayer}>
+          <h1 data-collection-masthead data-static-ink>
+            <a href="#originales-top">Originales</a>
+            <span
+              data-gallery-seal
+              className={s.gallerySeal}
+              aria-hidden="true"
+            >
+              ✦
+            </span>
+          </h1>
+        </div>
         <a
           href={products[0] ? `#edition-${products[0].slug}` : "#the-editions"}
           className={s.galleryScroll}

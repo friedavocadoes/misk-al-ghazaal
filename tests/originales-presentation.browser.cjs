@@ -24,6 +24,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${base}/originales`, { waitUntil: "networkidle" });
     await page.waitForTimeout(1600);
+    assert.equal(await page.locator("[data-originales-smoothed]").count(), 1);
     assert.equal(await page.locator("aside").count(), 0);
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
     assert.equal(await page.locator("[data-gallery-reflection]").count(), 4);
@@ -105,7 +106,12 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page
       .locator("[data-edition-chapter]")
       .first()
-      .scrollIntoViewIfNeeded();
+      .evaluate((el) =>
+        scrollTo({
+          top: scrollY + el.getBoundingClientRect().top - 240,
+          behavior: "instant",
+        }),
+      );
     const collectionNav = page.locator("[data-originales-nav]");
     await collectionNav.waitFor({ state: "visible" });
     await collectionNav.getByRole("link", { name: /Sultanic/i }).click();
@@ -193,7 +199,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .locator("[data-display-title]")
         .evaluate((el) => getComputedStyle(el).fontWeight),
-      "700",
+      "800",
       "opening title uses the heavier display weight",
     );
     assert.equal(
@@ -366,8 +372,8 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .locator("h1")
         .evaluate((el) => getComputedStyle(el).fontWeight),
-      "500",
-      "the same serif title settles to medium weight at the price view",
+      "400",
+      "the same title settles to regular weight at the price view",
     );
     assert.equal(
       await page
@@ -539,7 +545,14 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.waitForSelector('[data-studio-active="true"]', {
       state: "attached",
     });
-    await page.locator("#fragrance-notes").scrollIntoViewIfNeeded();
+    await page
+      .locator("#fragrance-notes")
+      .evaluate((el) =>
+        scrollTo({
+          top: scrollY + el.getBoundingClientRect().top - 110,
+          behavior: "instant",
+        }),
+      );
     await page.waitForTimeout(1300);
     assert.equal(
       await page.locator("#fragrance-notes svg.lucide-plus").count(),
@@ -675,7 +688,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.ok(
       Math.abs(openingWordmark.x + openingWordmark.width / 2 - 195) < 2,
     );
-    await page.locator("[data-collection-masthead] + a").click();
+    await page.getByRole("link", { name: "Four expressions. Find your own." }).click();
     await page.waitForFunction(() => {
       const bottles = document.querySelectorAll("[data-gallery-bottle]");
       const first = bottles[0].getBoundingClientRect();
@@ -728,6 +741,7 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       false,
     );
     await page.goto(`${base}/collection/all`, { waitUntil: "networkidle" });
+    assert.equal(await page.locator("[data-originales-smoothed]").count(), 0);
     assert.equal(await page.locator("#site-header").count(), 1);
     assert.equal(
       await page.evaluate(() => document.body.hasAttribute("data-originales")),

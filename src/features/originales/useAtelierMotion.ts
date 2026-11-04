@@ -3,13 +3,16 @@ import { useEffect, type RefObject } from "react";
 import { atelierGsap } from "./atelier-gsap";
 import { PRODUCT_FRAMES } from "./motion-config";
 import { PANEL_ARRIVAL, PANEL_FRAME } from "./MorphFrame";
+import type { AtelierScroll } from "./atelier-scroll";
 
 /** Shared lighting, decorative parallax and proximity-only section settling. Native scroll stays in control. */
 export function useAtelierMotion(
   root: RefObject<HTMLDivElement | null>,
   route: string,
+  smoother: AtelierScroll,
 ) {
   useEffect(() => {
+    if (smoother === null) return;
     let live = true,
       dispose = () => {};
     Promise.all([atelierGsap(), import("gsap/ScrollTrigger")])
@@ -93,9 +96,7 @@ export function useAtelierMotion(
             const followLight = (event: PointerEvent) => {
               const card = (
                 event.target as Element | null
-              )?.closest<HTMLElement>(
-                "[data-atelier-surface]",
-              );
+              )?.closest<HTMLElement>("[data-atelier-surface]");
               if (event.pointerType === "touch" || !card) {
                 dimLight();
                 return;
@@ -177,6 +178,7 @@ export function useAtelierMotion(
                 return;
 
               const current = window.scrollY;
+              const visual = smoother ? smoother.scrollTop() : current;
               const max = ScrollTrigger.maxScroll(window);
               const mobile = innerWidth < 760;
               const gallery = node.querySelector("[data-gallery-stage]");
@@ -190,7 +192,7 @@ export function useAtelierMotion(
                 : Math.max(104, (scene?.clientHeight ?? 0) * 0.12);
 
               const origin = runway
-                ? current + runway.getBoundingClientRect().top
+                ? visual + runway.getBoundingClientRect().top
                 : 0;
               const dock = origin + PRODUCT_FRAMES.dock * innerHeight;
               const stops = desktopProduct
@@ -211,12 +213,12 @@ export function useAtelierMotion(
               for (const card of cards) {
                 const start = Math.max(
                   desktopProduct ? dock : 0,
-                  current + card.top - offset,
+                  visual + card.top - offset,
                 );
                 stops.push(start);
 
                 // A card taller than the reading area gets a continuous reading range.
-                const end = current + card.bottom - innerHeight + 32;
+                const end = visual + card.bottom - innerHeight + 32;
                 if (end > start) {
                   if (current >= start && current <= end) return;
                   stops.push(end);
@@ -352,5 +354,5 @@ export function useAtelierMotion(
       live = false;
       dispose();
     };
-  }, [root, route]);
+  }, [root, route, smoother]);
 }
