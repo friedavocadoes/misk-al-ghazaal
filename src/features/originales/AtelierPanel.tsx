@@ -25,7 +25,7 @@ export function AtelierPanel({
       data-panel-tone={art}
     >
       <div className={s.panelGrain} aria-hidden="true" />
-      <div className={s.panelContent}>
+      <div data-atelier-surface className={s.panelContent}>
         <MorphFrame />
         {children}
       </div>

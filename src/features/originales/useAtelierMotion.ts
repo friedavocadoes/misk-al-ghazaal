@@ -21,6 +21,7 @@ export function useAtelierMotion(
           {
             motion: "(prefers-reduced-motion: no-preference)",
             mobile: "(max-width: 759px)",
+            hover: "(hover: hover) and (pointer: fine)",
           },
           (context) => {
             if (!context.conditions?.motion) return;
@@ -28,41 +29,111 @@ export function useAtelierMotion(
             const seen = new WeakSet<Element>();
             const scan = () =>
               context.add(() => {
-                if (context.conditions?.mobile) return;
                 node.querySelectorAll("[data-snap-panel]").forEach((panel) => {
                   if (seen.has(panel)) return;
-                  const heading = panel.querySelector(
-                    "[class*=editionCard] h2, [class*=panelContent] h2",
+                  const surface = panel.querySelector<HTMLElement>(
+                    "[data-atelier-surface]",
                   );
-                  if (!heading) return;
+                  const heading = surface?.querySelector("h2");
+                  const frame = surface?.querySelector(
+                    "[data-morph-surface=panel], [data-morph-surface=edition]",
+                  );
+                  const trace = frame?.querySelector("[data-frame-trace]");
+                  if (!surface || !heading || !frame || !trace) return;
                   seen.add(panel);
+                  if (panel.hasAttribute("data-gallery-finale")) return;
+                  const mobileCollection =
+                    context.conditions?.mobile &&
+                    panel.closest("[data-originales-collection]");
                   const reveal = gsap.timeline({
                     defaults: { ease: "atelier-soft" },
                     scrollTrigger: {
-                      trigger: panel,
-                      start: "top 93%",
-                      end: "top 56%",
-                      scrub: 0.32,
+                      trigger: surface,
+                      start: mobileCollection ? "top 86%" : "top 76%",
+                      end: mobileCollection ? "top 60%" : "top 25%",
+                      scrub: 0.38,
                     },
                   });
-                  reveal.fromTo(
-                    heading,
-                    { y: 9, opacity: 0.78 },
-                    { y: 0, opacity: 1 },
-                  );
-                  if (!panel.hasAttribute("data-gallery-finale")) {
-                    reveal.fromTo(
-                      panel.querySelectorAll(
+                  reveal
+                    .fromTo(
+                      heading,
+                      { y: 9, opacity: 0.8 },
+                      { y: 0, opacity: 1 },
+                      0,
+                    )
+                    .fromTo(
+                      frame.querySelectorAll(
                         "[data-morph-frame], [data-frame-trace], [data-morph-clip]",
                       ),
                       { morphSVG: PANEL_ARRIVAL },
                       { morphSVG: PANEL_FRAME },
                       0,
+                    )
+                    .fromTo(
+                      trace,
+                      { attr: { "stroke-opacity": 0.72 } },
+                      { attr: { "stroke-opacity": 0.26 } },
+                      0,
                     );
-                  }
                 });
               });
             scan();
+            let litCard: HTMLElement | undefined;
+            const lights = new WeakMap<
+              HTMLElement,
+              {
+                x: ReturnType<typeof gsap.quickTo>;
+                y: ReturnType<typeof gsap.quickTo>;
+              }
+            >();
+            const dimLight = () => {
+              litCard?.removeAttribute("data-panel-lit");
+              litCard = undefined;
+            };
+            const followLight = (event: PointerEvent) => {
+              const card = (
+                event.target as Element | null
+              )?.closest<HTMLElement>(
+                "[data-atelier-surface]",
+              );
+              if (event.pointerType === "touch" || !card) {
+                dimLight();
+                return;
+              }
+              const rect = card.getBoundingClientRect();
+              const x = event.clientX - rect.left;
+              const y = event.clientY - rect.top;
+              if (card !== litCard) {
+                dimLight();
+                const light = card.querySelector("[data-panel-light]");
+                if (!light) return;
+                context.add(() => {
+                  if (!lights.has(card)) {
+                    gsap.set(light, { x, y });
+                    lights.set(card, {
+                      x: gsap.quickTo(light, "x", {
+                        duration: 0.48,
+                        ease: "atelier-settle",
+                      }),
+                      y: gsap.quickTo(light, "y", {
+                        duration: 0.48,
+                        ease: "atelier-settle",
+                      }),
+                    });
+                  }
+                });
+                litCard = card;
+                card.dataset.panelLit = "";
+              }
+              lights.get(card)?.x(x);
+              lights.get(card)?.y(y);
+            };
+            if (context.conditions.hover) {
+              node.addEventListener("pointermove", followLight, {
+                passive: true,
+              });
+              node.addEventListener("pointerleave", dimLight);
+            }
             let frame = 0,
               refresh: ReturnType<typeof setTimeout> | undefined;
             const observer = new MutationObserver(() => {
@@ -253,6 +324,9 @@ export function useAtelierMotion(
             });
             window.addEventListener("keydown", interruptByKey);
             return () => {
+              dimLight();
+              node.removeEventListener("pointermove", followLight);
+              node.removeEventListener("pointerleave", dimLight);
               cancelSettle();
               window.removeEventListener("scroll", trackScroll);
               window.removeEventListener("wheel", cancelSettle);

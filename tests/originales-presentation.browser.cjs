@@ -382,11 +382,25 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.getByRole("button", { name: "Increase quantity" }).click();
     await page.getByRole("button", { name: "Increase quantity" }).click();
     const add = page.getByRole("button", { name: "Add to bag", exact: true });
+    const bloom = add.locator("[class*=bagBloom]");
+    const restingClip = await bloom.evaluate(
+      (el) => getComputedStyle(el).clipPath,
+    );
     await add.hover();
     await page.waitForFunction(() => {
       const bloom = document.querySelector("[data-purchase] [class*=bagBloom]");
-      return getComputedStyle(bloom).transform === "matrix(1, 0, 0, 1, 0, 0)";
+      const face = document.querySelector(
+        "[data-purchase] [class*=bagHoverFace]",
+      );
+      return (
+        getComputedStyle(bloom).clipPath.includes("145%") &&
+        getComputedStyle(face).opacity === "1"
+      );
     });
+    assert.notEqual(
+      await bloom.evaluate((el) => getComputedStyle(el).clipPath),
+      restingClip,
+    );
     await add.click();
     await page.waitForTimeout(700);
     const cart = await page.evaluate(() =>
@@ -735,6 +749,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await entry.click();
     await page.locator('[data-loading-phase="entering"]').waitFor();
     assert.equal(
+      await page.locator('[data-loading-journey="threshold"]').count(),
+      1,
+    );
+    assert.equal(
       await page.locator("[data-originales-loading]:visible").count(),
       1,
     );
@@ -758,6 +776,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       .waitFor();
     await input.press("ArrowDown");
     await input.press("Enter");
+    assert.equal(
+      await page.locator('[data-loading-journey="threshold"]').count(),
+      0,
+    );
     await page.waitForURL("**/originales/originales-sultanic");
     const buyContext = await browser.newContext({
       viewport: { width: 1440, height: 1000 },

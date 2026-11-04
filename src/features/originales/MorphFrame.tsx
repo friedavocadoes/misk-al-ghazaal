@@ -8,7 +8,7 @@ export const OPEN_FRAME =
 export const PANEL_FRAME =
   "M35 2H941Q955 2 966 14L989 38Q998 47 998 58V563Q998 598 963 598H59Q45 598 34 586L11 562Q2 553 2 542V37Q2 2 35 2Z";
 export const PANEL_ARRIVAL =
-  "M58 10Q494 22 919 4Q949 2 968 20L989 42Q998 52 998 64V551Q998 589 962 592Q518 600 72 590Q46 589 31 574L13 556Q3 546 3 529V50Q3 13 58 10Z";
+  "M108 29Q528 122 897 12Q945 1 972 47L994 89Q998 101 998 123V525Q998 583 940 590Q544 609 87 588Q48 584 28 548L10 512Q2 495 2 474V92Q2 14 108 29Z";
 
 /** Real SVG path morphs; foreground text/controls never scale with the optical frame. */
 export function MorphFrame({
@@ -98,6 +98,15 @@ export function MorphFrame({
           vectorEffect="non-scaling-stroke"
         />
       </svg>
+      {!button && (
+        <span
+          className={s.panelSheen}
+          style={{ clipPath: `url(#glass-${id})` }}
+          aria-hidden="true"
+        >
+          <span data-panel-light />
+        </span>
+      )}
     </>
   );
 }

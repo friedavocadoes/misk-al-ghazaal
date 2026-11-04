@@ -15,6 +15,8 @@ export function RouteProgress() {
   const [target, setTarget] = useState<{
     path: string;
     capsule: boolean;
+    fromStore: boolean;
+    startedAt: number;
   } | null>(null);
   const [departing, setDeparting] = useState(false);
 
@@ -51,6 +53,8 @@ export function RouteProgress() {
         path: collectionAlias && ORIGINALES_ENABLED ? "/originales" : clean,
         capsule:
           ORIGINALES_ENABLED && (collectionAlias || isOriginalesPath(clean)),
+        fromStore: !isOriginalesPath(location.pathname),
+        startedAt: performance.now(),
       });
     };
     const onOriginalesNavigate = (event: Event) => {
@@ -62,7 +66,12 @@ export function RouteProgress() {
       )
         return;
       setDeparting(false);
-      setTarget({ path, capsule: true });
+      setTarget({
+        path,
+        capsule: true,
+        fromStore: !isOriginalesPath(location.pathname),
+        startedAt: performance.now(),
+      });
     };
     document.addEventListener("click", onClick, true);
     window.addEventListener(ORIGINALES_NAVIGATION_EVENT, onOriginalesNavigate);
@@ -83,12 +92,23 @@ export function RouteProgress() {
 
   useEffect(() => {
     if (!target?.capsule || departing) return;
+    let reveal: ReturnType<typeof setTimeout> | undefined;
     const check = () => {
-      if (pathname !== target.path) return;
+      if (pathname !== target.path || reveal !== undefined) return;
       const current = document.querySelector<HTMLElement>(
         "[data-originales-route][data-originales-ready=true]",
       );
-      if (current?.dataset.originalesRoute === target.path) setDeparting(true);
+      if (current?.dataset.originalesRoute !== target.path) return;
+      const animateThreshold =
+        target.fromStore &&
+        !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // Let the threshold register on a prefetched navigation before it parts.
+      const remaining = animateThreshold
+        ? 200 - (performance.now() - target.startedAt)
+        : 0;
+      if (remaining > 0)
+        reveal = setTimeout(() => setDeparting(true), remaining);
+      else setDeparting(true);
     };
     const observer = new MutationObserver(check);
     observer.observe(document.getElementById("page-content") ?? document.body, {
@@ -101,6 +121,7 @@ export function RouteProgress() {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
+      clearTimeout(reveal);
     };
   }, [target, pathname, departing]);
 
@@ -112,7 +133,12 @@ export function RouteProgress() {
 
   if (!target) return null;
   if (target.capsule)
-    return <OriginalesLoading phase={departing ? "leaving" : "entering"} />;
+    return (
+      <OriginalesLoading
+        phase={departing ? "leaving" : "entering"}
+        journey={target.fromStore ? "threshold" : undefined}
+      />
+    );
   if (target.path === pathname) return null;
   return (
     <div

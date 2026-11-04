@@ -64,6 +64,95 @@
   height: 68px;
 }
 
+/* Main store to capsule: ivory light closes over the storefront, then the
+   two lacquer panels part around the bottle as the destination arrives. */
+[data-loading-journey="threshold"] {
+  background: radial-gradient(ellipse at center, #3630398c, #111016e0 70%);
+}
+
+.originales-threshold {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.originales-threshold > span {
+  position: absolute;
+  inset-block: 0;
+  width: 50%;
+  transition: transform 390ms cubic-bezier(0.22, 0.75, 0.18, 1);
+}
+
+.originales-threshold > span:first-child {
+  left: 0;
+  border-right: 1px solid #e9cba256;
+  background:
+    radial-gradient(ellipse at 8% 12%, #c49d7169, transparent 65%),
+    linear-gradient(115deg, #87705f, #302529 57%, #171519);
+}
+
+.originales-threshold > span:nth-child(2) {
+  right: 0;
+  border-left: 1px solid #e9cba256;
+  background:
+    radial-gradient(ellipse at 87% 83%, #76697988, transparent 69%),
+    linear-gradient(245deg, #776c6c, #332832 57%, #171519);
+}
+
+.originales-threshold > i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    111deg,
+    transparent 25%,
+    #ffdfad20 47%,
+    #fff1d24d 50%,
+    #e8bfd421 53%,
+    transparent 72%
+  );
+  transform: translateX(-115%);
+  animation: originales-threshold-light 720ms cubic-bezier(0.23, 0.73, 0.25, 1)
+    both;
+}
+
+[data-loading-journey="threshold"] .originales-transition-seal {
+  background: radial-gradient(circle, #f2d7a51c, #151318aa 72%);
+  border-color: #f2d7a584;
+  box-shadow: 0 0 80px #f2d7a528;
+  transition: transform 410ms cubic-bezier(0.22, 0.75, 0.18, 1);
+}
+
+@starting-style {
+  [data-loading-phase="entering"] .originales-threshold > span:first-child {
+    transform: translateX(-100%);
+  }
+  [data-loading-phase="entering"] .originales-threshold > span:nth-child(2) {
+    transform: translateX(100%);
+  }
+  [data-loading-phase="entering"][data-loading-journey="threshold"]
+    .originales-transition-seal {
+    transform: scale(0.78);
+  }
+}
+
+[data-loading-phase="leaving"] .originales-threshold > span:first-child {
+  transform: translateX(-105%);
+}
+[data-loading-phase="leaving"] .originales-threshold > span:nth-child(2) {
+  transform: translateX(105%);
+}
+[data-loading-phase="leaving"][data-loading-journey="threshold"]
+  .originales-transition-seal {
+  transform: scale(1.2);
+}
+
+@keyframes originales-threshold-light {
+  to {
+    transform: translateX(115%);
+  }
+}
+
 body:has([data-loading-phase="entering"], [data-loading-phase="leaving"])
   :is([data-loading-phase="fallback"], [data-loading-phase="arrival"]) {
   display: none;
@@ -87,7 +176,8 @@ body:has([data-loading-phase="entering"]) [data-storefront-skeleton] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-originales-loading] {
+  [data-originales-loading],
+  [data-originales-loading] * {
     animation-duration: 1ms;
     transition-duration: 1ms;
   }

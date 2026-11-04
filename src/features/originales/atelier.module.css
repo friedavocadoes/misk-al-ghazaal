@@ -4733,57 +4733,86 @@
   }
 }
 
-/* The seal opens into a tint across the existing bag button. */
-.bagBloom {
-  position: absolute;
-  inset: 3px;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    color-mix(in srgb, var(--edition-wash) 58%, white),
-    var(--edition-wash)
-  );
-  opacity: 0.72;
-  transform: scale(0.065, 0.7);
-  transform-origin: calc(100% - 20px) center;
-  transition:
-    transform 0.56s,
-    opacity 0.42s;
+/* The dot expands into a contrasting face while the label trades places. */
+.bagMorph[data-purchase-action="bag"] {
+  --bag-reveal: 0;
+  --bag-origin: 18px;
+  --bag-shift: 12px;
 }
-.world[dir="rtl"] .bagBloom {
-  transform-origin: 20px center;
+.world[dir="rtl"] .bagMorph[data-purchase-action="bag"] {
+  --bag-origin: calc(100% - 18px);
+  --bag-shift: -12px;
 }
-.bagMorph[data-purchase-action="bag"] .bagSeal,
-.bagMorph[data-purchase-action="bag"] .bagWords {
-  transition: translate 0.45s;
-}
-.bagMorph:not(:disabled):is(:focus-visible, :active) .bagBloom,
-.bagMorph[data-added="true"] .bagBloom {
-  transform: scale(1);
-  opacity: 1;
-}
-.bagMorph[data-added="true"] .bagBloom {
-  background: linear-gradient(
-    115deg,
-    var(--edition-wash),
-    color-mix(in srgb, var(--edition-wash) 77%, white)
-  );
+.bagMorph[data-purchase-action="bag"]:not(:disabled):is(
+    :focus-visible,
+    :active
+  ),
+.bagMorph[data-purchase-action="bag"][data-added="true"] {
+  --bag-reveal: 1;
 }
 @media (hover: hover) {
-  .bagMorph:not(:disabled):hover .bagBloom {
-    transform: scale(1);
-    opacity: 1;
+  .bagMorph[data-purchase-action="bag"]:not(:disabled):hover {
+    --bag-reveal: 1;
   }
-  .bagMorph[data-purchase-action="bag"]:not(:disabled):hover .bagWords {
-    translate: 3px 0;
-  }
-  .world[dir="rtl"]
-    .bagMorph[data-purchase-action="bag"]:not(:disabled):hover
-    .bagWords {
-    translate: -3px 0;
-  }
+}
+.bagBloom {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    color-mix(in srgb, var(--edition-wash) 29%, #141018),
+    color-mix(in srgb, var(--edition-wash) 10%, #101014) 75%
+  );
+  clip-path: circle(
+    calc(4px + var(--bag-reveal) * 145%) at var(--bag-origin) 50%
+  );
+  transition: clip-path 0.56s;
+}
+.bagMorph[data-purchase-action="bag"]:not(:disabled) .bagWords {
+  margin-inline-start: 17px;
+}
+.bagMorph[data-purchase-action="bag"][data-added="false"]
+  :is(.bagWords, .bagSeal) {
+  opacity: calc(1 - var(--bag-reveal));
+  translate: calc(var(--bag-reveal) * var(--bag-shift)) 0;
+  transition:
+    opacity 0.24s,
+    translate 0.44s;
+}
+.bagHoverFace {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: clamp(12px, 1.25vw, 18px);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  color: #fff8ee;
+  opacity: var(--bag-reveal);
+  translate: calc((1 - var(--bag-reveal)) * var(--bag-shift)) 0;
+  pointer-events: none;
+  transition:
+    opacity 0.36s,
+    translate 0.52s;
+}
+.bagHoverFace strong {
+  text-transform: uppercase;
+  letter-spacing: 0.075em;
+  font-size: clamp(9px, 0.78vw, 12px);
+  font-weight: 700;
+}
+.bagHoverFace svg {
+  flex-shrink: 0;
+}
+.world[dir="rtl"] .bagHoverFace svg {
+  scale: -1 1;
+}
+.bagMorph[data-purchase-action="bag"][data-added="true"]
+  :is(.bagWords, .bagSeal) {
+  color: #fff8ee;
 }
 .bagMorph:disabled .bagBloom {
   display: none;
@@ -4803,21 +4832,30 @@
   color: color-mix(in srgb, var(--edition-wash) 72%, transparent);
   filter: none;
 }
-.world :is(.editionCard, .productChapters .panelContent)::after {
-  content: "";
+.world :is(.editionCard, .panelContent) > .panelSheen {
   position: absolute;
-  inset-block-start: 2px;
-  inset-inline-start: 8%;
-  width: 36%;
-  height: 1px;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--edition-wash),
-    transparent
+  opacity: 0;
+  transition: opacity 0.48s;
+}
+.world [data-panel-lit] > .panelSheen {
+  opacity: 1;
+}
+.panelSheen > span {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: min(460px, 100%);
+  height: 280px;
+  translate: -50% -50%;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--edition-wash) 27%, transparent),
+    color-mix(in srgb, var(--edition-accent, #8a7962) 21%, transparent) 36%,
+    transparent 72%
   );
-  opacity: 0.68;
 }
 .world :is(.editionCard, .productChapters .panelContent) .kicker {
   color: var(--edition-wash);
