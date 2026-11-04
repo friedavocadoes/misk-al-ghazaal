@@ -11,6 +11,7 @@ export interface SearchDocument {
   price: number;
   compareAtPrice?: number;
   lineupTitle?: string;
+  lineupSlug?: string;
   lineupTitleAr?: string;
   rating: number;
   reviewCount: number;
@@ -25,7 +26,7 @@ export interface SearchDocument {
 }
 export function searchDocument(p: Product): SearchDocument {
   return { id:p.id, slug:p.slug, title:p.title, titleAr:p.titleAr, image:p.images[0], price:p.price,
-    compareAtPrice:p.compareAtPrice, lineupTitle:p.lineupTitle, lineupTitleAr:p.lineupTitleAr,
+    compareAtPrice:p.compareAtPrice, lineupSlug:p.lineupSlug, lineupTitle:p.lineupTitle, lineupTitleAr:p.lineupTitleAr,
     rating:p.rating, reviewCount:p.reviewCount, isNew:p.isNew, isBestSeller:p.isBestSeller,
     isActive:p.isActive, outOfStock:!productAvailable(p), variantCount:p.variants.length,
     firstVariant:p.variants[0]?.title, topNotes:p.notes.filter(n=>n.kind==="top").slice(0,2).map(n=>({name:n.name,nameAr:n.nameAr})),

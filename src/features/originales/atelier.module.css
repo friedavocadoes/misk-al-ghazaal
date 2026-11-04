@@ -275,42 +275,6 @@
   text-transform: uppercase;
   font-weight: 500;
 }
-.arrival {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 22px;
-  background: #141612;
-  pointer-events: none;
-  transition:
-    opacity 0.8s,
-    visibility 0.8s;
-  animation: arrival-exit 0.8s 2.6s forwards;
-}
-.arrival > span {
-  font:
-    italic 100px Georgia,
-    serif;
-  color: #bcb697;
-}
-.arrival small {
-  font-size: 8px;
-  letter-spacing: 0.23em;
-}
-.arrival[data-ready="true"] {
-  opacity: 0;
-  visibility: hidden;
-}
-@keyframes arrival-exit {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
 .runway {
   height: 190svh;
 }
@@ -1834,9 +1798,6 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-  .arrival {
-    display: none;
   }
   .runway {
     height: auto;
@@ -3784,9 +3745,6 @@
 .stickyProduct .morphFrame {
   color: var(--studio-rim);
 }
-.stickyProduct .arrival[data-ready="true"] {
-  transition-duration: 0.42s;
-}
 .stickyProduct .panelContent > .morphFrame {
   filter: drop-shadow(0 14px 25px #08060838);
 }
@@ -4772,6 +4730,122 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* The seal opens into a tint across the existing bag button. */
+.bagBloom {
+  position: absolute;
+  inset: 3px;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--edition-wash) 58%, white),
+    var(--edition-wash)
+  );
+  opacity: 0.72;
+  transform: scale(0.065, 0.7);
+  transform-origin: calc(100% - 20px) center;
+  transition:
+    transform 0.56s,
+    opacity 0.42s;
+}
+.world[dir="rtl"] .bagBloom {
+  transform-origin: 20px center;
+}
+.bagMorph[data-purchase-action="bag"] .bagSeal,
+.bagMorph[data-purchase-action="bag"] .bagWords {
+  transition: translate 0.45s;
+}
+.bagMorph:not(:disabled):is(:focus-visible, :active) .bagBloom,
+.bagMorph[data-added="true"] .bagBloom {
+  transform: scale(1);
+  opacity: 1;
+}
+.bagMorph[data-added="true"] .bagBloom {
+  background: linear-gradient(
+    115deg,
+    var(--edition-wash),
+    color-mix(in srgb, var(--edition-wash) 77%, white)
+  );
+}
+@media (hover: hover) {
+  .bagMorph:not(:disabled):hover .bagBloom {
+    transform: scale(1);
+    opacity: 1;
+  }
+  .bagMorph[data-purchase-action="bag"]:not(:disabled):hover .bagWords {
+    translate: 3px 0;
+  }
+  .world[dir="rtl"]
+    .bagMorph[data-purchase-action="bag"]:not(:disabled):hover
+    .bagWords {
+    translate: -3px 0;
+  }
+}
+.bagMorph:disabled .bagBloom {
+  display: none;
+}
+
+/* Dark lacquer with one illuminated edge per chapter. The glass stays inside the SVG. */
+.world :is(.editionCard, .productChapters .panelContent) > .glassBlur {
+  background:
+    radial-gradient(
+      ellipse at 12% 0%,
+      color-mix(in srgb, var(--edition-accent) 29%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(155deg, #141216a6, #0d0e12dc);
+}
+.world :is(.editionCard, .productChapters .panelContent) > .morphFrame {
+  color: color-mix(in srgb, var(--edition-wash) 72%, transparent);
+  filter: none;
+}
+.world :is(.editionCard, .productChapters .panelContent)::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 8%;
+  width: 36%;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--edition-wash),
+    transparent
+  );
+  opacity: 0.68;
+}
+.world :is(.editionCard, .productChapters .panelContent) .kicker {
+  color: var(--edition-wash);
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+}
+.world :is(.editionCard, .productChapters .panelContent) h2 {
+  text-wrap: balance;
+  letter-spacing: -0.047em;
+}
+.world
+  :is(.editionCard, .productChapters .panelContent)
+  :is(.chapterProse, .panelCopy > p:not(.kicker)) {
+  max-width: 49ch;
+  color: #e6ddd3;
+}
+.world .editionCardLink > svg {
+  color: var(--edition-wash);
+  background: #ffffff05;
+  border-color: color-mix(in srgb, var(--edition-wash) 34%, transparent);
+}
+.world .editionCardLink:is(:hover, :focus-visible) > svg {
+  color: #201916;
+  background: var(--edition-wash);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bagMorph .bagWords {
+    translate: none !important;
   }
 }
 @media (hover: hover) and (min-width: 760px) {

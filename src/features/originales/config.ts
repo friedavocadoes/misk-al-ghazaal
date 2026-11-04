@@ -4,6 +4,7 @@ import type { Product } from "@/lib/types";
 export const ORIGINALES_ENABLED = true;
 export const ORIGINALES_SLUG = "originales";
 export const RETURN_KEY = "mag-originales-return-v1";
+export const ORIGINALES_NAVIGATION_EVENT = "originales:navigate";
 
 export const EDITIONS = {
   ambrato: {
@@ -65,6 +66,13 @@ export function editionFor(product: Pick<Product, "slug" | "title">) {
 }
 export function originalesPath(product: Pick<Product, "slug">) {
   return `/originales/${encodeURIComponent(product.slug)}`;
+}
+export function storefrontProductPath(
+  product: Pick<Product, "slug" | "lineupSlug">,
+) {
+  return isOriginales(product)
+    ? originalesPath(product)
+    : `/product/${encodeURIComponent(product.slug)}`;
 }
 export function isOriginalesPath(path: string): boolean {
   const clean = path.replace(/^\/(?:ar|en)(?=\/|$)/, "") || "/";

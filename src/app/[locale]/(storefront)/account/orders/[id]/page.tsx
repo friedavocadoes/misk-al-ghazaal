@@ -15,6 +15,7 @@ import { STORE_CONTACT, waLink } from "@/lib/site";
 import { getProductBySlug } from "@/lib/store";
 import { requireShopper } from "@/lib/shopper";
 import { toLocale } from "@/lib/i18n";
+import { storefrontProductPath } from "@/features/originales/config";
 
 export default async function AccountOrderDetail(props: {
   params: Promise<{ locale: string; id: string }>;
@@ -76,7 +77,7 @@ export default async function AccountOrderDetail(props: {
     lines.map(async (l) => {
       if (!l.product_slug || l.product_slug === "gift") return null;
       const p = await getProductBySlug(l.product_slug).catch(() => null);
-      return p ? { image: p.images[0] ?? "", slug: p.slug } : null;
+      return p ? { image: p.images[0] ?? "", href: storefrontProductPath(p) } : null;
     }),
   );
 
@@ -159,7 +160,7 @@ export default async function AccountOrderDetail(props: {
             return (
               <li key={i} className="p-4">
                 {face ? (
-                  <Link href={`/product/${face.slug}`} className="group flex items-center gap-4">
+                  <Link href={face.href} className="group flex items-center gap-4">
                     {inner}
                   </Link>
                 ) : (

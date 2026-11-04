@@ -3,6 +3,7 @@ import { getLineups, getRituals, getNotes, getNoteUsage } from "@/lib/store";
 import { getShopMenu, type ShopMenuColumn } from "@/lib/site";
 import { tx } from "@/lib/i18n";
 import type { Locale } from "@/i18n/routing";
+import { ORIGINALES_ENABLED, ORIGINALES_SLUG } from "@/features/originales/config";
 
 export const getNavigationMenu = cache(async (locale: Locale): Promise<ShopMenuColumn[]> => {
   const [lineups, rituals, notes, counts] = await Promise.all([getLineups(), getRituals(), getNotes(), getNoteUsage()]);
@@ -12,7 +13,7 @@ export const getNavigationMenu = cache(async (locale: Locale): Promise<ShopMenuC
     { heading: ar ? "العطور" : "Fragrances", href: "/collection/all", links: [
       { label: ar ? "له" : "For Him", href: "/collection/for-him" },
       { label: ar ? "لها" : "For Her", href: "/collection/for-her" },
-      ...lineups.map(l => ({ label: tx(l.title,l.titleAr,locale), href: `/collection/all?lineup=${encodeURIComponent(l.slug)}` })),
+      ...lineups.map(l => ({ label: tx(l.title,l.titleAr,locale), href: ORIGINALES_ENABLED && l.slug === ORIGINALES_SLUG ? "/originales" : `/collection/all?lineup=${encodeURIComponent(l.slug)}` })),
       ...rituals.map(r => ({ label: tx(r.title,r.titleAr,locale), href: `/collection/all?ritual=${encodeURIComponent(r.id)}` })),
     ] },
     { heading: ar ? "العائلات العطرية" : "Scent Family", href: "/find-your-scent", links: popular.map(n => ({ label: ar ? `عطور ${tx(n.name,n.nameAr,locale)}` : `${n.name} perfumes`, href: `/collection/all?note=${encodeURIComponent(n.slug)}` })) },

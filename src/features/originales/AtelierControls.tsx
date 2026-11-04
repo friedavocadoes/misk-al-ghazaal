@@ -177,7 +177,7 @@ export function AtelierBagButton({
         });
       }, el);
       const enter = () => {
-        if (!reduced && !added)
+        if (!reduced && !added && !el.disabled)
           gsap.to(frame, {
             morphSVG: OPEN_FRAME,
             duration: 0.5,
@@ -186,7 +186,7 @@ export function AtelierBagButton({
           });
       };
       const leave = () => {
-        if (!reduced && !added)
+        if (!reduced && !added && !el.disabled)
           gsap.to(frame, {
             morphSVG: FRAME_PATH,
             duration: 0.65,
@@ -234,6 +234,7 @@ export function AtelierBagButton({
       >
         <MorphFrame kind="button" />
         <span className={s.bagSweep} aria-hidden="true" />
+        {action === "bag" && <span className={s.bagBloom} aria-hidden="true" />}
         <span className={s.bagWords}>
           <AnimatePresence initial={false} mode="popLayout">
             <motion.span

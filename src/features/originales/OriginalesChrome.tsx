@@ -10,6 +10,7 @@ import {
 import Image from "next/image";
 import {
   ArrowLeft,
+  ArrowUpRight,
   Globe2,
   MapPin,
   Menu,
@@ -29,6 +30,7 @@ import { SearchSuggest } from "@/components/search/SearchSuggest";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -37,6 +39,7 @@ import {
   originalesPath,
   RETURN_KEY,
   safeReturnPath,
+  storefrontProductPath,
 } from "./config";
 import s from "./atelier.module.css";
 import { useAtelierMotion } from "./useAtelierMotion";
@@ -61,6 +64,12 @@ export function OriginalesChrome({
     };
   }, []);
   const collectionPage = path === "/originales" || path === "/originales/";
+  const selectedEdition = products.find(
+    (product) => originalesPath(product) === path,
+  );
+  const drawerTint = selectedEdition
+    ? editionFor(selectedEdition).wash
+    : undefined;
   const query = useSearchParams();
   const router = useRouter();
   const { count } = useCart();
@@ -256,28 +265,92 @@ export function OriginalesChrome({
           </span>
         </footer>
       </div>
-      <CartDrawer open={bag} onOpenChange={setBag} />
+      <CartDrawer
+        open={bag}
+        onOpenChange={setBag}
+        originales
+        originalesTint={drawerTint}
+      />
       <Sheet open={search} onOpenChange={setSearch}>
-        <SheetContent>
+        <SheetContent
+          data-originales-drawer="search"
+          dir={ar ? "rtl" : "ltr"}
+          style={{ "--drawer-tint": drawerTint } as React.CSSProperties}
+        >
           <SheetHeader>
-            <SheetTitle>
-              {ar ? "اكتشف عطرك" : "Find your expression"}
-            </SheetTitle>
+            <span className="originales-drawer-kicker">
+              MAG PARFUM · ORIGINALES
+            </span>
+            <SheetTitle>{ar ? "اكتشف عطرك" : "Find a fragrance"}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {ar
+                ? "ابحث بالاسم أو تصفح المجموعة"
+                : "Search by name or browse the collection"}
+            </SheetDescription>
           </SheetHeader>
-          <div className="p-6">
-            <SearchSuggest
-              placeholder={ar ? "ابحث عن عطر" : "Search fragrances…"}
-              autoFocus
-              recentKey="misk-search-recents"
-              pickHref={(item) => `/product/${item.slug}`}
-              submitLabel={(term) =>
-                ar ? `البحث عن ${term}` : `Search for ${term}`
-              }
-              onSubmitTerm={(term) =>
-                router.push(`/search?q=${encodeURIComponent(term)}`)
-              }
-              onNavigate={() => setSearch(false)}
-            />
+          <div className="originales-search-body">
+            <div className="originales-search-field">
+              <Search size={18} aria-hidden="true" />
+              <SearchSuggest
+                placeholder={ar ? "ابحث عن عطر" : "Search fragrances…"}
+                autoFocus
+                recentKey="mag-originales-search-recents"
+                pickHref={storefrontProductPath}
+                inputClassName="originales-search-input"
+                resultsClassName="originales-search-results"
+                submitLabel={(term) =>
+                  ar ? `البحث عن ${term}` : `Search for ${term}`
+                }
+                onSubmitTerm={(term) =>
+                  router.push(`/search?q=${encodeURIComponent(term)}`)
+                }
+                onNavigate={() => setSearch(false)}
+              />
+            </div>
+            {products.length > 0 && (
+              <section
+                className="originales-search-editions"
+                aria-label={ar ? "المجموعة" : "The collection"}
+              >
+                <p className="originales-drawer-kicker">
+                  {ar ? "المجموعة" : "The collection"}
+                </p>
+                <ul>
+                  {products.map((product) => {
+                    const edition = editionFor(product);
+                    return (
+                      <li key={product.id}>
+                        <Link
+                          href={originalesPath(product)}
+                          onClick={() => setSearch(false)}
+                          style={
+                            {
+                              "--drawer-edition": edition.accent,
+                            } as React.CSSProperties
+                          }
+                        >
+                          <span className="originales-search-bottle">
+                            <Image
+                              src={
+                                edition.bottle ??
+                                product.images[0] ??
+                                "/logo.webp"
+                              }
+                              alt=""
+                              width={84}
+                              height={120}
+                              sizes="62px"
+                            />
+                          </span>
+                          <span>{edition.name}</span>
+                          <ArrowUpRight size={14} aria-hidden="true" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
           </div>
         </SheetContent>
       </Sheet>

@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 type Prompt = {
   orderId: string;
-  items: { id: string; slug: string; title: string }[];
+  items: { id: string; slug: string; title: string; href?: string }[];
 };
 export function ReviewInvitation() {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
@@ -85,7 +85,7 @@ export function ReviewInvitation() {
         {prompt.items.slice(0, 3).map((item) => (
           <Link
             key={item.id}
-            href={`/product/${item.slug}#reviews`}
+            href={`${item.href ?? `/product/${item.slug}`}#reviews`}
             onClick={() => close("opened")}
             className="block rounded-lg border border-ink/10 px-3 py-3 text-sm hover:bg-sand"
           >

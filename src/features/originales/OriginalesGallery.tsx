@@ -531,6 +531,8 @@ export function OriginalesGallery({
       ref={root}
       className={s.gallery}
       data-originales-collection
+      data-originales-route="/originales"
+      data-originales-ready="true"
       data-collapsed={collapsed}
     >
       <StudioAtmosphere

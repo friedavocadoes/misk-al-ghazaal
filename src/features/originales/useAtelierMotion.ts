@@ -2,6 +2,7 @@
 import { useEffect, type RefObject } from "react";
 import { atelierGsap } from "./atelier-gsap";
 import { PRODUCT_FRAMES } from "./motion-config";
+import { PANEL_ARRIVAL, PANEL_FRAME } from "./MorphFrame";
 
 /** Shared lighting, decorative parallax and proximity-only section settling. Native scroll stays in control. */
 export function useAtelierMotion(
@@ -30,24 +31,35 @@ export function useAtelierMotion(
                 if (context.conditions?.mobile) return;
                 node.querySelectorAll("[data-snap-panel]").forEach((panel) => {
                   if (seen.has(panel)) return;
-                  const heading = panel.querySelector("[class*=editionCard] h2, [class*=panelContent] h2");
+                  const heading = panel.querySelector(
+                    "[class*=editionCard] h2, [class*=panelContent] h2",
+                  );
                   if (!heading) return;
                   seen.add(panel);
-                  gsap.fromTo(
-                    heading,
-                    { y: 12, opacity: 0.7 },
-                    {
-                      y: 0,
-                      opacity: 1,
-                      ease: "atelier-soft",
-                      scrollTrigger: {
-                        trigger: panel,
-                        start: "top 90%",
-                        end: "top 45%",
-                        scrub: 0.4,
-                      },
+                  const reveal = gsap.timeline({
+                    defaults: { ease: "atelier-soft" },
+                    scrollTrigger: {
+                      trigger: panel,
+                      start: "top 93%",
+                      end: "top 56%",
+                      scrub: 0.32,
                     },
+                  });
+                  reveal.fromTo(
+                    heading,
+                    { y: 9, opacity: 0.78 },
+                    { y: 0, opacity: 1 },
                   );
+                  if (!panel.hasAttribute("data-gallery-finale")) {
+                    reveal.fromTo(
+                      panel.querySelectorAll(
+                        "[data-morph-frame], [data-frame-trace], [data-morph-clip]",
+                      ),
+                      { morphSVG: PANEL_ARRIVAL },
+                      { morphSVG: PANEL_FRAME },
+                      0,
+                    );
+                  }
                 });
               });
             scan();

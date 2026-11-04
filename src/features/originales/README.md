@@ -51,7 +51,7 @@ All editions use the shared canvas and SVG ribbon scene, with edition-specific p
 
 ## Loading and route boundaries
 
-`OriginalesLoading.tsx` is a tiny dark mineral/champagne logo state, reused by the Originales loading file, layout Suspense and the parent storefront loading boundary. `OriginalesLoadingBoundary.tsx` selects it only for capsule paths; other pages retain their original skeleton. StorefrontChrome paints the capsule route background dark before nested content resolves. The parent loader matters: Originales layout itself awaits catalog data, so only changing its child loading file leaves a light parent fallback visible. The bounded client arrival veil uses the same dark palette.
+`OriginalesLoading.tsx` provides the shared frosted veil and bottle mark. `RouteProgress` keeps one veil mounted from a capsule navigation until the destination route reports ready, then fades it out. The route veil masks nested loader surfaces, and direct entry still uses the same design through the loading boundaries. Storefront product links should use `storefrontProductPath` when lineup membership is available so Originales links bypass the standard PDP loading boundary. Product arrival waits for the opening image decode, bounded by its existing timeout.
 
 ## Shopping and content
 

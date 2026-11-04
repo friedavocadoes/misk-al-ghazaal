@@ -24,10 +24,10 @@ import { NoteTooltip } from "@/components/product/NoteTooltip";
 import { SamplePicker } from "@/components/blocks/SamplePicker";
 import { atelierGsap } from "./atelier-gsap";
 import { PRODUCT_FRAMES } from "./motion-config";
-import { editionFor } from "./config";
+import { editionFor, originalesPath } from "./config";
 import { editionStory } from "./story";
 import { AtelierProductGallery } from "./AtelierProductGallery";
-import { OriginalesLoadingMark } from "./OriginalesLoadingMark";
+import { OriginalesLoading } from "./OriginalesLoading";
 import { StudioAtmosphere } from "./StudioAtmosphere";
 import { FinaleDecor } from "./FinaleDecor";
 import { AtelierPanel } from "./AtelierPanel";
@@ -491,6 +491,8 @@ export function OriginalesProduct({
     <div
       ref={root}
       data-originales-product
+      data-originales-route={originalesPath(product)}
+      data-originales-ready={ready}
       data-studio-intro="pending"
       data-photo-focus={photoFocus}
       className={`${s.product} ${s.stickyProduct}`}
@@ -503,10 +505,7 @@ export function OriginalesProduct({
         } as CSSProperties
       }
     >
-      <div className={s.arrival} data-ready={ready} aria-hidden="true">
-        {!ready && <OriginalesLoadingMark />}
-        <small>MAG PARFUM / ORIGINALES</small>
-      </div>
+      <OriginalesLoading phase={ready ? "arrived" : "arrival"} />
       <section data-runway className={`${s.runway} ${s.fullExperience}`}>
         <section
           ref={stage}

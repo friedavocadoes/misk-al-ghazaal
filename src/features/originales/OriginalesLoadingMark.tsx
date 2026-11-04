@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { atelierGsap } from "./atelier-gsap";
 
 // A bottle becomes a drop of perfume, then returns to its original form.
 const bottle =
@@ -20,21 +19,25 @@ export function OriginalesLoadingMark() {
       const attempt = ++generation;
       release();
       if (media.matches) return;
-      const { gsap } = await atelierGsap();
+      const [{ gsap }, { MorphSVGPlugin }] = await Promise.all([
+        import("gsap"),
+        import("gsap/MorphSVGPlugin"),
+      ]);
       if (!live || attempt !== generation || media.matches || !path.current)
         return;
+      gsap.registerPlugin(MorphSVGPlugin);
       const animation = gsap.timeline({ repeat: -1, repeatDelay: 0.35 });
       animation
         .to(path.current, {
           morphSVG: drop,
           duration: 1.25,
-          ease: "atelier-soft",
+          ease: "sine.inOut",
         })
         .to(path.current, {
           morphSVG: bottle,
           duration: 1.25,
           delay: 0.3,
-          ease: "atelier-soft",
+          ease: "sine.inOut",
         });
       const visibility = () => animation.paused(document.hidden);
       visibility();

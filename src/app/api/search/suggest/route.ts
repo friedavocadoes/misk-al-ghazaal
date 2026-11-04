@@ -33,6 +33,7 @@ export async function GET(req: Request) {
           price: p.price,
           ...(p.compareAtPrice != null ? { compareAtPrice: p.compareAtPrice } : {}),
           ...(p.lineupTitle ? { lineupTitle: p.lineupTitle } : {}),
+          ...(p.lineupSlug ? { lineupSlug: p.lineupSlug } : {}),
           ...(p.lineupTitleAr ? { lineupTitleAr: p.lineupTitleAr } : {}),
           outOfStock:!productAvailable(p),
           rating: p.rating,
