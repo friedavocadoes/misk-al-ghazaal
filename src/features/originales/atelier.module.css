@@ -236,6 +236,9 @@
 .collectionWorld .content {
   margin-left: 0;
 }
+.world [data-atelier-scroll-wrapper] {
+  background: var(--paper);
+}
 .footer {
   display: flex;
   align-items: center;
@@ -243,6 +246,8 @@
   gap: 20px;
   padding: 35px 5%;
   border-top: 1px solid var(--line);
+  background: #141316;
+  color: #eeeae0;
   font-size: 8px;
   letter-spacing: 0.08em;
 }
@@ -1056,7 +1061,7 @@
   height: 61svh;
   transform: translate(-50%, -50%);
   margin: 0;
-  will-change: transform, left, width, height, opacity;
+  will-change: transform, opacity;
   pointer-events: auto;
 }
 .galleryBottle a {
@@ -4203,9 +4208,18 @@
 
 /* The collection borrows the product studio, with one large title docking into the header. */
 .collectionWorld .header {
-  background: linear-gradient(180deg, #161217d6, #16121710);
+  background: transparent;
   border-color: transparent;
   backdrop-filter: none;
+}
+.collectionHeaderBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background: #0c0c0dde;
+  backdrop-filter: blur(18px) saturate(1.1);
 }
 .collectionReturn {
   position: absolute;
@@ -4487,20 +4501,19 @@
   .collectionWorld .mobileChapterProduct .bagWords strong {
     font-size: 10px;
   }
-  .collectionWorld .header {
-    background: linear-gradient(180deg, #161217ed, #16121791);
-    backdrop-filter: blur(10px);
-  }
 }
 
-/* The two collection navigation rows share one material when the chapter rail opens. */
-.collectionWorld:has(.silhouetteNav[data-visible="true"])
-  :is(.header, .silhouetteNav) {
+/* The chapter rail shares the header's material once the wordmark docks. */
+.collectionWorld .silhouetteNav {
   background: #0c0c0dde;
-  backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.1);
 }
-.collectionWorld:has(.silhouetteNav[data-visible="true"]) .header {
-  border-bottom-color: transparent;
+@media (prefers-reduced-motion: no-preference) {
+  .collectionWorld .gallery:not([data-title-docked="true"]) .silhouetteNav {
+    opacity: 0;
+    visibility: hidden;
+    transition-duration: 0s;
+  }
 }
 .collectionWorld [data-collection-title-dock] {
   opacity: 0;
@@ -4508,7 +4521,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .collectionWorld:has(.silhouetteNav[data-visible="true"])
-    [data-collection-title-dock] {
+    :is([data-collection-title-dock], .collectionHeaderBackdrop) {
     opacity: 1;
     visibility: visible;
   }
@@ -4663,6 +4676,15 @@
   pointer-events: none;
   background: radial-gradient(ellipse at 51% 42%, #241b1d, #090a0e 72%);
 }
+.openingExposure {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100svh;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 42%, #0b090fe0, #08080bec 70%);
+}
 .collectionGlass > svg {
   position: absolute;
   inset: 0;
@@ -4784,9 +4806,9 @@
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .collectionGlass > svg,
-  .collectionFloor {
-    animation: collection-glass-reveal 1.4s both;
+  .world .openingExposure {
+    animation: collection-room-reveal 1.8s both;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.28, 1) !important;
   }
   .glassPane,
   .glassWave {
@@ -4804,12 +4826,13 @@
     animation-play-state: paused;
   }
 }
-@keyframes collection-glass-reveal {
+@keyframes collection-room-reveal {
   from {
-    opacity: 0;
+    opacity: 0.94;
   }
   to {
-    opacity: 1;
+    opacity: 0;
+    visibility: hidden;
   }
 }
 @keyframes collection-glass-drift {

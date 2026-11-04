@@ -85,11 +85,11 @@ export function CollectionGlass() {
           </linearGradient>
           {panes.map(({ tone }, index) => (
             <linearGradient key={tone} id={`${id}-pane-${index}`}>
-              <stop stopColor={tone} stopOpacity=".42" />
-              <stop offset=".12" stopColor={tone} stopOpacity=".26" />
-              <stop offset=".55" stopColor={tone} stopOpacity=".13" />
-              <stop offset=".89" stopColor={tone} stopOpacity=".4" />
-              <stop offset="1" stopColor="#eee3de" stopOpacity=".22" />
+              <stop stopColor={tone} stopOpacity=".34" />
+              <stop offset=".12" stopColor={tone} stopOpacity=".2" />
+              <stop offset=".55" stopColor={tone} stopOpacity=".1" />
+              <stop offset=".89" stopColor={tone} stopOpacity=".29" />
+              <stop offset="1" stopColor="#eee3de" stopOpacity=".16" />
             </linearGradient>
           ))}
         </defs>

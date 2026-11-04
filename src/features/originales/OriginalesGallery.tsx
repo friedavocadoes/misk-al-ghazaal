@@ -103,7 +103,9 @@ export function OriginalesGallery({
               figures = [
                 ...node.querySelectorAll<HTMLElement>("[data-gallery-bottle]"),
               ],
-              captions = node.querySelectorAll("[data-bottle-caption]");
+              captions = node.querySelectorAll<HTMLElement>(
+                "[data-bottle-caption]",
+              );
             const chapters = [
               ...node.querySelectorAll<HTMLElement>("[data-edition-chapter]"),
             ];
@@ -113,9 +115,13 @@ export function OriginalesGallery({
             const masthead = node.querySelector<HTMLElement>(
               "[data-collection-masthead]",
             )!;
-            const dock = node
-              .closest("[class*=collectionWorld]")
-              ?.querySelector<HTMLElement>("[data-collection-title-dock]");
+            const chrome = node.closest("[class*=collectionWorld]");
+            const dock = chrome?.querySelector<HTMLElement>(
+              "[data-collection-title-dock]",
+            );
+            const backdrop = chrome?.querySelector(
+              "[data-collection-header-backdrop]",
+            );
             if (motion) {
               const glass = node.querySelector("[data-collection-glass]");
               const reflections = node.querySelectorAll(
@@ -128,15 +134,17 @@ export function OriginalesGallery({
                     start: 0,
                     end: () => innerHeight * (mobile ? 0.4 : 0.55),
                     scrub: 0.32,
-                    onLeave: () => node.setAttribute("data-glass-dimmed", ""),
-                    onEnterBack: () =>
-                      node.removeAttribute("data-glass-dimmed"),
+                    onUpdate: ({ progress }) => {
+                      const dimmed = progress >= 0.18;
+                      if (node.hasAttribute("data-glass-dimmed") !== dimmed)
+                        node.toggleAttribute("data-glass-dimmed", dimmed);
+                    },
                   },
                 })
                 .to(glass, { opacity: 0, duration: 1 }, 0)
                 .to(reflections, { opacity: 0, duration: 0.78 }, 0);
             }
-            if (motion && dock) {
+            if (motion && dock && backdrop) {
               const titleFlight = gsap.timeline({
                 scrollTrigger: {
                   start: 0,
@@ -178,6 +186,19 @@ export function OriginalesGallery({
                 { autoAlpha: 0 },
                 { autoAlpha: 1, duration: 0.12 },
                 0.88,
+              );
+              // The backdrop follows the type. Reversing scroll clears the
+              // glass first, so the travelling title stays readable both ways.
+              titleFlight.set(
+                node,
+                { attr: { "data-title-docked": "true" } },
+                1,
+              );
+              titleFlight.fromTo(
+                backdrop,
+                { opacity: 0 },
+                { opacity: 1, duration: 0.2 },
+                1,
               );
               void document.fonts.ready.then(() => {
                 if (live) ScrollTrigger.refresh();
@@ -335,6 +356,7 @@ export function OriginalesGallery({
                 onRefresh: (self) => setNavVisible(self.progress > 0),
               });
             let bounds: { top: number; bottom: number }[] = [];
+            let poses: { x: number; y: number; scale: number }[] = [];
             const visualScroll = () =>
               smoother ? smoother.scrollTop() : window.scrollY;
             const measure = () => {
@@ -343,17 +365,44 @@ export function OriginalesGallery({
                 const rect = chapter.getBoundingClientRect();
                 return { top: rect.top + scroll, bottom: rect.bottom + scroll };
               });
+              if (!mobile && motion) {
+                poses = figures.map((figure) => {
+                  const bottle = figure.querySelector<HTMLImageElement>(
+                    "[data-chapter-bottle]",
+                  );
+                  const aspect = bottle?.naturalHeight
+                    ? bottle.naturalWidth / bottle.naturalHeight
+                    : 0.65;
+                  const openingHeight = Math.min(
+                    figure.offsetHeight * 0.88,
+                    figure.offsetWidth / aspect,
+                  );
+                  const focusHeight = Math.min(
+                    innerHeight * 0.62 * 0.88,
+                    (stage.clientWidth * 0.43) / aspect,
+                  );
+                  const scale = openingHeight ? focusHeight / openingHeight : 1;
+                  return {
+                    x: stage.clientWidth * 0.25 - figure.offsetLeft,
+                    y:
+                      16 + (figure.offsetHeight * scale) / 2 - figure.offsetTop,
+                    scale,
+                  };
+                });
+              }
             };
-            const setBottle = figures.map((figure) => ({
-              opacity: gsap.quickSetter(figure, "opacity"),
-              y: gsap.quickSetter(figure, "y", "px"),
-            }));
             const setCaption = gsap.quickSetter(captions, "opacity");
-            measure();
+            const clamp = gsap.utils.clamp(0, 1);
+            const ease = gsap.parseEase("atelier-soft");
+            let frame = 0;
+            let captionOpacity = -1;
             const sync = () => {
               if (mobile) return;
               const scroll = visualScroll();
-              const clamp = gsap.utils.clamp(0, 1);
+              const height = innerHeight;
+              const opening = progress.current;
+              const focus = ease(opening);
+              const chapterMotion = ease(clamp((opening - 0.82) / 0.18));
               figures.forEach((figure, index) => {
                 const rect = bounds[index];
                 if (!rect) return;
@@ -361,45 +410,58 @@ export function OriginalesGallery({
                   index === 0
                     ? 1
                     : clamp(
-                        (innerHeight * 0.85 - (rect.top - scroll)) /
-                          (innerHeight * 0.3),
+                        (height * 0.85 - (rect.top - scroll)) / (height * 0.3),
                       );
                 const left = clamp(
-                  (innerHeight * 0.85 - (rect.bottom - scroll)) /
-                    (innerHeight * 0.3),
+                  (height * 0.85 - (rect.bottom - scroll)) / (height * 0.3),
                 );
-                const alpha =
-                  progress.current < 0.99
-                    ? index === current.current
-                      ? 1
-                      : 1 - Math.min(1, progress.current * 2.5)
-                    : entered * (1 - left);
-                setBottle[index].opacity(alpha);
-                setBottle[index].y(
-                  progress.current < 0.99 || !motion
-                    ? 0
-                    : (1 - entered - left) * innerHeight * 0.35,
+                const openingAlpha =
+                  index === current.current
+                    ? 1
+                    : 1 - Math.min(1, opening * 2.5);
+                const alpha = gsap.utils.interpolate(
+                  openingAlpha,
+                  entered * (1 - left),
+                  chapterMotion,
                 );
-                const inert = progress.current > 0.6 && alpha < 0.1;
+                const pose = poses[index];
+                if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
+                  const y =
+                    pose.y * focus +
+                    (1 - entered - left) * height * 0.35 * chapterMotion;
+                  const scale = 1 + (pose.scale - 1) * focus;
+                  figure.style.transform = `translate(-50%, -50%) translate3d(${pose.x * focus}px, ${y}px, 0) scale(${scale})`;
+                }
+                const opacity = String(alpha);
+                if (figure.style.opacity !== opacity)
+                  figure.style.opacity = opacity;
+                const inert = opening > 0.6 && alpha < 0.1;
                 if (figure.inert !== inert) figure.inert = inert;
               });
-              setCaption(1 - Math.min(1, progress.current * 2.5));
-              const next = progress.current > 0.55;
+              const nextCaptionOpacity = 1 - Math.min(1, opening * 2.5);
+              if (captionOpacity !== nextCaptionOpacity) {
+                captionOpacity = nextCaptionOpacity;
+                setCaption(captionOpacity);
+              }
+              const next = opening > 0.55;
               if (next !== collapsedRef.current) {
                 collapsedRef.current = next;
                 setCollapsed(next);
               }
             };
+            const scheduleSync = () => {
+              if (frame) return;
+              frame = requestAnimationFrame(() => {
+                frame = 0;
+                sync();
+              });
+            };
             const choose = (index: number) => {
               current.current = index;
               setActive(index);
-              sync();
+              scheduleSync();
             };
             gsap.set(figures, {
-              xPercent: -50,
-              yPercent: -50,
-              x: 0,
-              y: 0,
               left: (index) =>
                 mobile
                   ? (index % 2 ? 75 : 25) + "%"
@@ -408,26 +470,22 @@ export function OriginalesGallery({
               width: mobile ? "43%" : "22%",
               height: mobile ? "34svh" : "55svh",
             });
+            measure();
             if (!mobile && motion) {
-              const collapse = gsap.timeline({
+              const playhead = { progress: 0 };
+              gsap.to(playhead, {
+                progress: 1,
+                ease: "none",
+                onUpdate: () => {
+                  progress.current = playhead.progress;
+                  scheduleSync();
+                },
                 scrollTrigger: {
                   trigger: node.querySelector("[data-gallery-sequence]"),
-                  start: () => `top top+=${mobile ? 150 : 175}`,
+                  start: "top top+=175",
                   end: () => `+=${innerHeight * 0.65}`,
                   scrub: smoother ? 0.26 : 0.52,
-                  onUpdate: (self) => {
-                    progress.current = self.progress;
-                    sync();
-                  },
                 },
-              });
-              collapse.to(figures, {
-                left: "25%",
-                top: () => 16 + innerHeight * 0.31,
-                width: "43%",
-                height: "62svh",
-                duration: 1,
-                ease: "atelier-soft",
               });
             } else if (!mobile) {
               ScrollTrigger.create({
@@ -436,6 +494,7 @@ export function OriginalesGallery({
                 end: () => `+=${innerHeight * 0.65}`,
                 onUpdate: (self) => {
                   const next = self.progress > 0.12 ? 1 : 0;
+                  if (progress.current === next) return;
                   progress.current = next;
                   gsap.set(figures, {
                     left: (index: number) =>
@@ -465,7 +524,7 @@ export function OriginalesGallery({
               trigger: node.querySelector("[data-gallery-sequence]"),
               start: "top bottom",
               end: "bottom top",
-              onUpdate: sync,
+              onUpdate: scheduleSync,
               onRefresh: () => {
                 measure();
                 sync();
@@ -543,11 +602,17 @@ export function OriginalesGallery({
             sync();
             ScrollTrigger.refresh();
             return () => {
+              cancelAnimationFrame(frame);
               delete node.dataset.galleryReady;
               stage.inert = false;
               figures.forEach((figure) => {
                 figure.inert = false;
+                figure.style.removeProperty("transform");
+                figure.style.removeProperty("opacity");
               });
+              captions.forEach((caption) =>
+                caption.style.removeProperty("opacity"),
+              );
             };
           },
           root.current,
@@ -573,6 +638,7 @@ export function OriginalesGallery({
       data-collapsed={collapsed}
     >
       <CollectionGlass />
+      <div className={s.openingExposure} aria-hidden="true" />
       <nav
         data-originales-nav
         data-visible={navVisible}
