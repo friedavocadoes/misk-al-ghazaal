@@ -4,7 +4,12 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  experimental: { serverActions: { bodySizeLimit: "2mb" } },
+  experimental: {
+    serverActions: { bodySizeLimit: "2mb" },
+    // Bound simultaneous catalog reads while prerendering the bilingual store.
+    staticGenerationMaxConcurrency: 2,
+    staticGenerationMinPagesPerWorker: 100,
+  },
   serverExternalPackages: ["ffmpeg-static"],
   outputFileTracingIncludes: { "/api/admin/hero-video": ["./node_modules/ffmpeg-static/**/*"] },
   async headers() {

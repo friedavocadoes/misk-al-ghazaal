@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useCart } from "@/lib/cart";
 import { defaultVariant, productAvailable } from "@/lib/product-options";
@@ -15,6 +15,7 @@ import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
 import { CollectionGlass } from "./CollectionGlass";
+import { CollectionBottle, COLLECTION_BOTTLE_ASPECT } from "./CollectionBottle";
 import { useAtelierScroll } from "./atelier-scroll";
 import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
@@ -24,7 +25,7 @@ import s from "./atelier.module.css";
 
 function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
   const { add } = useCart(),
-    [added, setAdded] = useState(false),
+    [addedProduct, setAddedProduct] = useState<string | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     edition = editionFor(product),
     variant = defaultVariant(product);
@@ -47,7 +48,7 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
         </p>
       </Link>
       <AtelierBagButton
-        added={added}
+        added={addedProduct === product.id}
         disabled={!productAvailable(product)}
         ar={ar}
         onClick={(event) => {
@@ -56,9 +57,9 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
             "flight",
           );
           flyToBag(event.currentTarget, edition.bottle ?? product.images[0]);
-          setAdded(true);
+          setAddedProduct(product.id);
           if (timer.current) clearTimeout(timer.current);
-          timer.current = setTimeout(() => setAdded(false), 2100);
+          timer.current = setTimeout(() => setAddedProduct(null), 2100);
         }}
       />
     </div>
@@ -225,7 +226,8 @@ export function OriginalesGallery({
               let readingStops: number[] = [];
               let closingStart = 0;
               let travel = 0;
-              let flight: { x: number; y: number }[] = [];
+              let handoffDistance = 0;
+              let flight: { x: number; y: number; scale: number }[] = [];
 
               const measureMobile = () => {
                 const stageTop = parseFloat(getComputedStyle(stage).top);
@@ -240,11 +242,30 @@ export function OriginalesGallery({
                 openingEnd = Math.max(1, readingStops[0] - 42);
                 closingStart =
                   finale.getBoundingClientRect().top + scrollY - stageBottom;
-                travel = Math.min(112, stage.offsetHeight * 0.45);
-                flight = figures.map((figure) => ({
-                  x: stage.clientWidth / 2 - figure.offsetLeft,
-                  y: stage.offsetHeight * 0.55 - figure.offsetTop,
-                }));
+                travel = Math.min(24, stage.offsetHeight * 0.08);
+                handoffDistance = Math.max(180, innerHeight * 0.32);
+                flight = figures.map((figure) => {
+                  const position = getComputedStyle(figure);
+                  const plane = figure.querySelector<HTMLElement>(
+                    "[data-registered-bottle]",
+                  );
+                  const imageHeight = Math.min(
+                    plane?.offsetHeight ?? figure.offsetHeight * 0.85,
+                    figure.offsetWidth / COLLECTION_BOTTLE_ASPECT,
+                  );
+                  const scale = (stage.offsetHeight - 12) / imageHeight;
+                  const imageTop =
+                    (plane?.offsetHeight ?? imageHeight) - imageHeight;
+                  return {
+                    x: stage.clientWidth / 2 - parseFloat(position.left),
+                    y:
+                      6 +
+                      (figure.offsetHeight * scale) / 2 -
+                      parseFloat(position.top) -
+                      imageTop * scale,
+                    scale,
+                  };
+                });
               };
               gsap.set(figures, { xPercent: -50, yPercent: -50 });
               measureMobile();
@@ -253,13 +274,15 @@ export function OriginalesGallery({
               const render = (scroll: number) => {
                 const opening = clamp(scroll / openingEnd);
                 const focus = ease(opening);
-                const closing = ease(clamp((scroll - closingStart) / travel));
+                const closing = ease(
+                  clamp((scroll - closingStart) / handoffDistance),
+                );
                 let chapter = 0;
                 // Begin the handoff as the next story approaches the reading line.
                 let handoff = 0;
                 while (chapter + 1 < readingStops.length) {
                   const next = clamp(
-                    1 + (scroll - readingStops[chapter + 1]) / travel,
+                    1 + (scroll - readingStops[chapter + 1]) / handoffDistance,
                   );
                   if (next < 1) {
                     handoff = ease(next);
@@ -285,20 +308,19 @@ export function OriginalesGallery({
                     alpha = index === 0 ? 1 : 1 - ease(clamp(opening / 0.68));
                   } else if (index === chapter) {
                     alpha = (1 - handoff) * (1 - closing);
-                    slide = -(handoff + closing) * travel;
+                    slide = -closing * travel;
                   } else if (index === chapter + 1) {
                     alpha = handoff;
-                    slide = (1 - handoff) * travel;
                   } else {
                     alpha = 0;
                   }
                   const setter = setters[index];
                   if (!setter.visible && alpha === 0) return;
                   setter.visible = alpha > 0;
-                  const { x, y } = flight[index];
+                  const { x, y, scale } = flight[index];
                   setter.x(x * focus);
                   setter.y(y * focus + slide);
-                  setter.scale(1 + focus * 0.42);
+                  setter.scale(1 + focus * (scale - 1));
                   setter.opacity(alpha);
                   const inert = alpha < 0.5;
                   if (figure.inert !== inert) figure.inert = inert;
@@ -313,7 +335,8 @@ export function OriginalesGallery({
                 scrollTrigger: {
                   trigger: stage,
                   start: 0,
-                  end: () => Math.max(openingEnd + 1, closingStart + travel),
+                  end: () =>
+                    Math.max(openingEnd + 1, closingStart + handoffDistance),
                   scrub: 0.24,
                   onRefreshInit: measureMobile,
                   onRefresh: () => {
@@ -321,7 +344,7 @@ export function OriginalesGallery({
                   },
                 },
                 onUpdate: () =>
-                  render(playhead.progress * (closingStart + travel)),
+                  render(playhead.progress * (closingStart + handoffDistance)),
               });
               node.dataset.galleryReady = "true";
               scroll.scrollTrigger?.refresh();
@@ -365,27 +388,51 @@ export function OriginalesGallery({
                 const rect = chapter.getBoundingClientRect();
                 return { top: rect.top + scroll, bottom: rect.bottom + scroll };
               });
-              if (!mobile && motion) {
+              if (!mobile) {
+                const purchase = stage.querySelector<HTMLElement>(
+                  "[data-gallery-purchase]",
+                );
+                // Registered artwork shares one stationary frame during dissolves.
+                const availableHeight =
+                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 24;
                 poses = figures.map((figure) => {
+                  const position = getComputedStyle(figure);
                   const bottle = figure.querySelector<HTMLImageElement>(
                     "[data-chapter-bottle]",
                   );
-                  const aspect = bottle?.naturalHeight
-                    ? bottle.naturalWidth / bottle.naturalHeight
-                    : 0.65;
+                  const aspect = figure.querySelector(
+                    "[data-registered-bottle]",
+                  )
+                    ? COLLECTION_BOTTLE_ASPECT
+                    : bottle?.naturalHeight
+                      ? bottle.naturalWidth / bottle.naturalHeight
+                      : 0.65;
+                  const plane = bottle?.parentElement;
+                  const planeHeight =
+                    plane?.offsetHeight ?? figure.offsetHeight * 0.88;
                   const openingHeight = Math.min(
-                    figure.offsetHeight * 0.88,
+                    planeHeight,
                     figure.offsetWidth / aspect,
                   );
                   const focusHeight = Math.min(
-                    innerHeight * 0.62 * 0.88,
+                    innerHeight * 0.72 * 0.88,
                     (stage.clientWidth * 0.43) / aspect,
+                    Math.max(1, availableHeight),
                   );
                   const scale = openingHeight ? focusHeight / openingHeight : 1;
+                  // object-contain is bottom-aligned. Remove its upper letterbox
+                  // space from the destination, preserving the original image node.
+                  const letterbox = Math.max(
+                    0,
+                    planeHeight * scale - focusHeight,
+                  );
                   return {
-                    x: stage.clientWidth * 0.25 - figure.offsetLeft,
+                    x: stage.clientWidth * 0.25 - parseFloat(position.left),
                     y:
-                      16 + (figure.offsetHeight * scale) / 2 - figure.offsetTop,
+                      16 +
+                      (figure.offsetHeight * scale) / 2 -
+                      parseFloat(position.top) -
+                      letterbox,
                     scale,
                   };
                 });
@@ -409,26 +456,38 @@ export function OriginalesGallery({
                 const entered =
                   index === 0
                     ? 1
-                    : clamp(
-                        (height * 0.85 - (rect.top - scroll)) / (height * 0.3),
+                    : ease(
+                        clamp(
+                          0.5 +
+                            (scroll - (rect.top - height * 0.55)) /
+                              (height * 0.48),
+                        ),
                       );
-                const left = clamp(
-                  (height * 0.85 - (rect.bottom - scroll)) / (height * 0.3),
-                );
+                const nextChapter = bounds[index + 1];
+                const left = nextChapter
+                  ? ease(
+                      clamp(
+                        0.5 +
+                          (scroll - (nextChapter.top - height * 0.55)) /
+                            (height * 0.48),
+                      ),
+                    )
+                  : 0;
                 const openingAlpha =
                   index === current.current
                     ? 1
                     : 1 - Math.min(1, opening * 2.5);
-                const alpha = gsap.utils.interpolate(
-                  openingAlpha,
-                  entered * (1 - left),
-                  chapterMotion,
-                );
+                const alpha =
+                  !motion && opening > 0
+                    ? Number(index === current.current)
+                    : gsap.utils.interpolate(
+                        openingAlpha,
+                        entered * (1 - left),
+                        chapterMotion,
+                      );
                 const pose = poses[index];
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
-                  const y =
-                    pose.y * focus +
-                    (1 - entered - left) * height * 0.35 * chapterMotion;
+                  const y = pose.y * focus;
                   const scale = 1 + (pose.scale - 1) * focus;
                   figure.style.transform = `translate(-50%, -50%) translate3d(${pose.x * focus}px, ${y}px, 0) scale(${scale})`;
                 }
@@ -496,15 +555,6 @@ export function OriginalesGallery({
                   const next = self.progress > 0.12 ? 1 : 0;
                   if (progress.current === next) return;
                   progress.current = next;
-                  gsap.set(figures, {
-                    left: (index: number) =>
-                      next
-                        ? "25%"
-                        : figures[index].style.getPropertyValue("--start-left"),
-                    top: next ? `${16 + innerHeight * 0.31}px` : "44%",
-                    width: next ? "43%" : "22%",
-                    height: next ? "62svh" : "55svh",
-                  });
                   sync();
                 },
               });
@@ -679,23 +729,33 @@ export function OriginalesGallery({
         <div data-atelier-masthead-layer className={s.mastheadLayer}>
           <h1 data-collection-masthead data-static-ink>
             <a href="#originales-top">Originales</a>
-            <span
-              data-gallery-seal
-              className={s.gallerySeal}
-              aria-hidden="true"
-            >
-              ✦
-            </span>
           </h1>
         </div>
         <a
           href={products[0] ? `#edition-${products[0].slug}` : "#the-editions"}
           className={s.galleryScroll}
         >
-          {ar
-            ? "أربعة تعابير. اختر عالمك."
-            : "Four expressions. Find your own."}
-          <ArrowDown size={15} />
+          <span>
+            {ar
+              ? "أربعة تعابير. اختر عالمك."
+              : "Four expressions. Find your own."}
+          </span>
+          <svg
+            className={s.scrollMark}
+            width="16"
+            height="25"
+            viewBox="0 0 16 25"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M8 2v16m-4-4 4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </a>
       </header>
       <section data-gallery-sequence className={s.gallerySequence}>
@@ -730,33 +790,11 @@ export function OriginalesGallery({
                 }
               >
                 <Link href={originalesPath(product)}>
-                  <span className={s.galleryBottlePlane}>
-                    <Image
-                      data-chapter-bottle
-                      src={bottle}
-                      alt={edition.name}
-                      width={650}
-                      height={1000}
-                      priority
-                      sizes={sizes}
-                      className={s.sequenceBottle}
-                    />
-                    {edition.bottle && (
-                      <span
-                        data-gallery-reflection
-                        className={s.galleryReflection}
-                        aria-hidden="true"
-                      >
-                        <Image
-                          src={bottle}
-                          alt=""
-                          width={650}
-                          height={1000}
-                          sizes={sizes}
-                        />
-                      </span>
-                    )}
-                  </span>
+                  <CollectionBottle
+                    src={bottle}
+                    name={edition.name}
+                    sizes={sizes}
+                  />
                   <figcaption data-bottle-caption>
                     <span>{edition.name}</span>
                     <small>{formatAED(product.price)}</small>
@@ -766,8 +804,12 @@ export function OriginalesGallery({
             );
           })}
           {featured && (
-            <div className={s.stickyPurchase} data-visible={collapsed}>
-              <GalleryPurchase key={featured.id} product={featured} ar={ar} />
+            <div
+              data-gallery-purchase
+              className={s.stickyPurchase}
+              data-visible={collapsed}
+            >
+              <GalleryPurchase product={featured} ar={ar} />
             </div>
           )}
         </div>
@@ -819,6 +861,7 @@ export function OriginalesGallery({
                             <NoteTooltip
                               key={`${note.id}-${note.kind}`}
                               note={note}
+                              tint={edition.accent}
                               locale={ar ? "ar" : "en"}
                               className={s.galleryNote}
                             >

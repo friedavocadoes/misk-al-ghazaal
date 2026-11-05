@@ -37,7 +37,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     const masthead = page.locator("[data-collection-masthead]");
     assert.match(
       await masthead.evaluate((el) => getComputedStyle(el).fontFamily),
-      /Originales Display/,
+      /Manrope/i,
+    );
+    assert.equal(
+      await page
+        .locator('a[aria-label="MAG Parfum — Originales"]')
+        .evaluate(
+          (el) =>
+            getComputedStyle(el).fontSize ===
+            getComputedStyle(el.querySelector("span")).fontSize,
+        ),
+      true,
+      "MAG and PARFUM use the same size",
     );
     assert.ok(
       await masthead.evaluate((el) => {
@@ -143,15 +154,37 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       );
     const collectionNav = page.locator("[data-originales-nav]");
     await collectionNav.waitFor({ state: "visible" });
+    await page.evaluate(() => {
+      window.__originalesPurchase = document.querySelector(
+        "[class*=stickyPurchase] button",
+      );
+    });
     await collectionNav.getByRole("link", { name: /Sultanic/i }).click();
     await page.waitForFunction(() => location.hash.includes("sultanic"));
     await page.waitForTimeout(2200);
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__originalesPurchase ===
+          document.querySelector("[class*=stickyPurchase] button"),
+      ),
+      true,
+      "chapter changes keep the purchase button mounted",
+    );
     const alignment = await page.evaluate(() => {
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
       ].find((el) => getComputedStyle(el).opacity === "1");
+      const artwork = figure.querySelector("[data-bottle-artwork]");
+      const matrix = artwork.getScreenCTM();
+      const top = new DOMPoint(310, 0).matrixTransform(matrix);
+      const bottom = new DOMPoint(310, 1000).matrixTransform(matrix);
       return {
-        bottle: figure.getBoundingClientRect().top,
+        bottle: top.y,
+        bottom: bottom.y,
+        identity: document
+          .querySelector("[data-gallery-purchase]")
+          .getBoundingClientRect().top,
         card: document
           .querySelector("#edition-originales-sultanic div[class*=editionCard]")
           .getBoundingClientRect().top,
@@ -160,6 +193,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.ok(
       Math.abs(alignment.bottle - alignment.card) < 3,
       "gallery card locks against the top of the perfume",
+    );
+    assert.ok(
+      alignment.identity - alignment.bottom >= 24,
+      "the bottle stays above its name and purchase controls",
     );
     assert.ok(
       (
@@ -182,6 +219,48 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .getByRole("button", { name: "Add to bag", exact: true })
         .isVisible(),
+    );
+    // Hold an actual dissolve rather than checking only its settled endpoints.
+    await page.evaluate(() => {
+      document.body.setAttribute("data-originales-photo-focus", "true");
+      const next = document.querySelector(
+        "[data-edition-chapter]:nth-child(3)",
+      );
+      scrollTo({
+        top: scrollY + next.getBoundingClientRect().top - innerHeight * 0.61,
+        behavior: "instant",
+      });
+    });
+    await page.waitForTimeout(1200);
+    const dissolve = await page
+      .locator("[data-gallery-bottle]")
+      .evaluateAll((figures) =>
+        figures
+          .filter((el) => {
+            const alpha = Number(getComputedStyle(el).opacity);
+            return alpha > 0.05 && alpha < 0.95;
+          })
+          .map((el) => {
+            const artwork = el.querySelector("[data-bottle-artwork]");
+            const matrix = artwork.getScreenCTM();
+            return [0, 165, 280, 520, 1000].map((y) => {
+              const point = new DOMPoint(310, y).matrixTransform(matrix);
+              return { x: point.x, y: point.y };
+            });
+          }),
+      );
+    assert.equal(dissolve.length, 2, "the test pauses between two bottles");
+    dissolve[0].forEach((point, index) => {
+      assert.ok(
+        Math.hypot(
+          point.x - dissolve[1][index].x,
+          point.y - dissolve[1][index].y,
+        ) < 1,
+        "cap, collar, label O and base coincide throughout the dissolve",
+      );
+    });
+    await page.evaluate(() =>
+      document.body.removeAttribute("data-originales-photo-focus"),
     );
     await page.locator("[data-gallery-finale]").evaluate((el) =>
       scrollTo({

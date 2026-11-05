@@ -492,6 +492,11 @@ This section and the corrected entries above supersede historical implementation
 - Title gradient derives from edition accent/wash, starts72% opacity and settles to regular solid ivory; data-static-ink excludes shared text lighting. atelierGsap registers CustomEase atelier-soft/atelier-settle; CSS/Motion controls use cubic curves. Main store GSAP defaults untouched.
 - Originales menu Sheet anchors left with matching keyframes; search/bag keep their sides. Shared haptics handle button ticks; open triggers use data-haptic=open and menu close haptic(close), respecting settings/support. No DB/dependency changes.
 
+## 52. Originales collection refinement (2026-11-05)
+
+- Current capsule presentation is documented in `src/features/originales/README.md`; its later entries supersede historical water/model/font instructions above. Collection and shared navbar titles now reuse optimized Manrope, matching the PDP name direction. The Cormorant font face and assets were removed.
+- Keep the collection's GalleryPurchase mounted across chapter changes. Its background colour eases between edition tints, while cart targets update immediately. Confirmation state is product-specific. Desktop chapter bottle cross-dissolves span48vh; mobile handoffs span>=180px and complete at the chapter reading stop. Both use stationary registered artwork with no handoff drift. CollectionBottle.tsx aligns local source margins/cap/collar/label/base in SVG using the already-loaded optimized image, with no new bitmap downloads or database changes. Preserve persistent figures, section anchors, reduced-motion/native-touch behavior and shared commerce logic. See the feature README before replacing local cutouts.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

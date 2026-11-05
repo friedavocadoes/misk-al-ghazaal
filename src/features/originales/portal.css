@@ -47,9 +47,21 @@ body[data-originales="true"] [role="dialog"] .bg-white {
   background: #23291c;
 }
 body[data-originales="true"] .note-tooltip-inner {
-  background: #242a1e;
+  background:
+    radial-gradient(
+      ellipse at 0 0,
+      color-mix(in srgb, var(--note-tint, #887767) 18%, transparent),
+      transparent 75%
+    ),
+    var(--note-fill);
   color: #efeee4;
-  border: 1px solid #d2c39c33;
+  border: 1px solid color-mix(in srgb, var(--note-tint, #887767) 36%, #ded4c025);
+}
+body[data-originales="true"] .note-tooltip-glyph {
+  background: color-mix(in srgb, var(--note-tint, #887767) 15%, #ece8e0);
+}
+body[data-originales="true"] .note-tooltip-inner .text-gold {
+  color: color-mix(in srgb, var(--note-tint, #887767) 28%, #f2e8db);
 }
 body[data-originales="true"] [data-fly-to-bag] {
   background: #252b1c !important;
@@ -59,6 +71,7 @@ body[data-originales="true"] [data-fly-to-bag] {
 }
 /* Popover.Content is also a dialog: keep its outer rounded surface transparent. */
 body[data-originales="true"] .note-tooltip-card {
+  --note-fill: color-mix(in srgb, var(--note-tint, #887767) 20%, #17161a);
   background: transparent;
   border: 0;
   border-radius: 14px;
@@ -69,7 +82,7 @@ body[data-originales="true"] .note-tooltip-surface {
   isolation: isolate;
 }
 body[data-originales="true"] .note-tooltip-arrow {
-  fill: #242a1e;
+  fill: var(--note-fill);
 }
 
 @keyframes originales-menu-in {

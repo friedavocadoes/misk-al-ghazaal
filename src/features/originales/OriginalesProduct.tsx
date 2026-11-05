@@ -735,6 +735,7 @@ export function OriginalesProduct({
                           <NoteTooltip
                             key={note.id}
                             note={note}
+                              tint={edition.accent}
                             locale={locale}
                             className={s.noteTile}
                           >

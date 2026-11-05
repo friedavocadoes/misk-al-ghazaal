@@ -11,3 +11,14 @@ export function getSiteUrl(): string {
   if (typeof window !== "undefined") return window.location.origin;
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
 }
+
+/** Public search-engine URLs must never point to localhost or a preview host. */
+export function getSitemapOrigin(): string {
+  const fallback = "https://www.miskalghazaalperfumes.com";
+  const value = getSiteUrl();
+  if (!value) return fallback;
+  const url = new URL(value);
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]" || url.hostname.endsWith(".vercel.app")) return fallback;
+  if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("Invalid public site URL");
+  return url.origin;
+}

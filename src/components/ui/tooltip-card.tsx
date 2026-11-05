@@ -1,16 +1,24 @@
 "use client";
 // Adapted from Aceternity tooltip-card registry (Manu Arora): spring reveal,
 // with Radix positioning/portal, keyboard dismissal and persistent touch opening.
-import { useRef, useState, useEffect, type ReactNode } from "react";
+import {
+  useRef,
+  useState,
+  useEffect,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { motion, useReducedMotion } from "motion/react";
 
 export function TooltipCard({
   children,
   content,
+  contentStyle,
 }: {
   children: ReactNode;
   content: ReactNode;
+  contentStyle?: CSSProperties;
 }) {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +53,7 @@ export function TooltipCard({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          style={contentStyle}
           side="top"
           sideOffset={10}
           collisionPadding={12}

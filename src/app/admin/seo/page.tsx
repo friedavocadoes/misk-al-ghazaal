@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { getCollections } from "@/lib/store";
-import { PAGES } from "@/app/[locale]/(storefront)/pages/[slug]/page";
+import { PAGES } from "@/lib/info-pages";
 import { SEO_TYPE_LABELS, seoPathFor, type SeoPageType } from "@/lib/seo";
 
 interface Row {
