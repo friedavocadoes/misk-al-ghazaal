@@ -67,10 +67,8 @@
   gap: 10px;
 }
 .wordmark > span {
-  font:
-    8px var(--font-originales),
-    sans-serif;
-  letter-spacing: 0.23em;
+  font: inherit;
+  letter-spacing: -0.045em;
 }
 .headerEdition {
   position: absolute;
@@ -3864,7 +3862,7 @@
   .world:not(.collectionWorld) .wordmark {
     flex-direction: column;
     gap: 2px;
-    font-size: 29px;
+    font-size: 22px;
     align-items: center;
   }
   /* The dock, image frame and first reading stop share the same scene coordinates. */
@@ -4284,10 +4282,36 @@
 .collectionWorld .galleryScroll {
   position: absolute;
   z-index: 10;
-  top: 89svh;
+  top: calc(100svh - clamp(56px, 7svh, 84px));
   left: 50%;
   translate: -50% 0;
   white-space: nowrap;
+  color: #e9e2d0a6;
+  font-weight: 400;
+  transition: color 0.5s;
+}
+.collectionWorld .galleryScroll:is(:hover, :focus-visible) {
+  color: #fff4df;
+}
+.scrollMark {
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .scrollMark path {
+    animation: collection-scroll-breathe 3.2s infinite;
+  }
+}
+@keyframes collection-scroll-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
 }
 .collectionWorld .gallerySequence {
   z-index: 8;
@@ -4328,11 +4352,11 @@
   padding: 0 15px;
   border-radius: 999px;
   color: #201916;
-  background: linear-gradient(
-    115deg,
-    color-mix(in srgb, var(--edition-wash) 76%, white),
-    var(--edition-wash)
-  );
+  background-color: var(--edition-wash);
+  background-image: linear-gradient(115deg, #ffffff3d, transparent);
+  transition:
+    background-color 0.9s,
+    box-shadow 0.5s;
   border: 1px solid #fff6;
 }
 .collectionWorld .galleryPurchase .bagMorph > .morphFrame,
@@ -4531,46 +4555,37 @@
 }
 .collectionWorld .galleryIntro h1,
 .world .editionWordmark {
-  font-family: "Originales Display", Georgia, serif;
-  font-weight: 500;
-  letter-spacing: 0.115em;
+  font-family: var(--font-originales), var(--font-sans), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.045em;
 }
 .collectionWorld .galleryIntro h1 {
-  font-size: clamp(52px, 10.65vw, 178px);
+  font-size: clamp(52px, 11vw, 185px);
 }
 .collectionWorld .galleryIntro h1 a,
 .world .editionWordmark {
   direction: ltr;
   background: linear-gradient(
-    165deg,
-    #bda282 5%,
-    #fff5e6 29%,
-    #d3baa0 48%,
-    #96795d 63%,
-    #f5dec0 84%,
-    #c49c6d
+    135deg,
+    #eee8e0d9 5%,
+    #b8b4c5b8 49%,
+    #e0d5c4d1 92%
   );
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .collectionWorld .galleryIntro h1 a {
-  filter: drop-shadow(0 0.022em 0.026em #dba2634c);
+  filter: drop-shadow(0 0.035em 0.07em #100e1760);
 }
 .world .editionWordmark {
   display: block;
   font-size: clamp(16px, 1.45vw, 24px);
   line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   background-image:
     linear-gradient(112deg, transparent 43%, #fff6e2 50%, transparent 57%),
-    linear-gradient(
-      165deg,
-      #bda282 5%,
-      #fff5e6 29%,
-      #d3baa0 48%,
-      #96795d 63%,
-      #f5dec0 84%,
-      #c49c6d
-    );
+    linear-gradient(135deg, #eee8e0 5%, #b8b4c5 49%, #e0d5c4 92%);
   background-size:
     240% 100%,
     100% 100%;
@@ -4776,10 +4791,10 @@
 @media (min-width: 760px) {
   .collectionWorld .galleryScroll {
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
     max-width: none;
-    font-size: clamp(10px, 0.92vw, 14px);
-    letter-spacing: 0.105em;
+    font-size: clamp(9px, 0.65vw, 11px);
+    letter-spacing: 0.16em;
   }
   .collectionWorld .galleryBottle {
     height: 55svh;

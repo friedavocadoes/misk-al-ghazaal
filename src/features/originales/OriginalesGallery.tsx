@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { useCart } from "@/lib/cart";
 import { defaultVariant, productAvailable } from "@/lib/product-options";
@@ -24,7 +24,7 @@ import s from "./atelier.module.css";
 
 function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
   const { add } = useCart(),
-    [added, setAdded] = useState(false),
+    [addedProduct, setAddedProduct] = useState<string | null>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     edition = editionFor(product),
     variant = defaultVariant(product);
@@ -47,7 +47,7 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
         </p>
       </Link>
       <AtelierBagButton
-        added={added}
+        added={addedProduct === product.id}
         disabled={!productAvailable(product)}
         ar={ar}
         onClick={(event) => {
@@ -56,9 +56,9 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
             "flight",
           );
           flyToBag(event.currentTarget, edition.bottle ?? product.images[0]);
-          setAdded(true);
+          setAddedProduct(product.id);
           if (timer.current) clearTimeout(timer.current);
-          timer.current = setTimeout(() => setAdded(false), 2100);
+          timer.current = setTimeout(() => setAddedProduct(null), 2100);
         }}
       />
     </div>
@@ -225,6 +225,7 @@ export function OriginalesGallery({
               let readingStops: number[] = [];
               let closingStart = 0;
               let travel = 0;
+              let handoffDistance = 0;
               let flight: { x: number; y: number }[] = [];
 
               const measureMobile = () => {
@@ -240,7 +241,8 @@ export function OriginalesGallery({
                 openingEnd = Math.max(1, readingStops[0] - 42);
                 closingStart =
                   finale.getBoundingClientRect().top + scrollY - stageBottom;
-                travel = Math.min(112, stage.offsetHeight * 0.45);
+                travel = Math.min(24, stage.offsetHeight * 0.08);
+                handoffDistance = Math.max(180, innerHeight * 0.32);
                 flight = figures.map((figure) => ({
                   x: stage.clientWidth / 2 - figure.offsetLeft,
                   y: stage.offsetHeight * 0.55 - figure.offsetTop,
@@ -253,13 +255,15 @@ export function OriginalesGallery({
               const render = (scroll: number) => {
                 const opening = clamp(scroll / openingEnd);
                 const focus = ease(opening);
-                const closing = ease(clamp((scroll - closingStart) / travel));
+                const closing = ease(
+                  clamp((scroll - closingStart) / handoffDistance),
+                );
                 let chapter = 0;
                 // Begin the handoff as the next story approaches the reading line.
                 let handoff = 0;
                 while (chapter + 1 < readingStops.length) {
                   const next = clamp(
-                    1 + (scroll - readingStops[chapter + 1]) / travel,
+                    1 + (scroll - readingStops[chapter + 1]) / handoffDistance,
                   );
                   if (next < 1) {
                     handoff = ease(next);
@@ -313,7 +317,8 @@ export function OriginalesGallery({
                 scrollTrigger: {
                   trigger: stage,
                   start: 0,
-                  end: () => Math.max(openingEnd + 1, closingStart + travel),
+                  end: () =>
+                    Math.max(openingEnd + 1, closingStart + handoffDistance),
                   scrub: 0.24,
                   onRefreshInit: measureMobile,
                   onRefresh: () => {
@@ -321,7 +326,7 @@ export function OriginalesGallery({
                   },
                 },
                 onUpdate: () =>
-                  render(playhead.progress * (closingStart + travel)),
+                  render(playhead.progress * (closingStart + handoffDistance)),
               });
               node.dataset.galleryReady = "true";
               scroll.scrollTrigger?.refresh();
@@ -409,12 +414,23 @@ export function OriginalesGallery({
                 const entered =
                   index === 0
                     ? 1
-                    : clamp(
-                        (height * 0.85 - (rect.top - scroll)) / (height * 0.3),
+                    : ease(
+                        clamp(
+                          0.5 +
+                            (scroll - (rect.top - height * 0.55)) /
+                              (height * 0.48),
+                        ),
                       );
-                const left = clamp(
-                  (height * 0.85 - (rect.bottom - scroll)) / (height * 0.3),
-                );
+                const nextChapter = bounds[index + 1];
+                const left = nextChapter
+                  ? ease(
+                      clamp(
+                        0.5 +
+                          (scroll - (nextChapter.top - height * 0.55)) /
+                            (height * 0.48),
+                      ),
+                    )
+                  : 0;
                 const openingAlpha =
                   index === current.current
                     ? 1
@@ -428,7 +444,9 @@ export function OriginalesGallery({
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
                   const y =
                     pose.y * focus +
-                    (1 - entered - left) * height * 0.35 * chapterMotion;
+                    (1 - entered - left) *
+                      Math.min(36, height * 0.04) *
+                      chapterMotion;
                   const scale = 1 + (pose.scale - 1) * focus;
                   figure.style.transform = `translate(-50%, -50%) translate3d(${pose.x * focus}px, ${y}px, 0) scale(${scale})`;
                 }
@@ -692,10 +710,27 @@ export function OriginalesGallery({
           href={products[0] ? `#edition-${products[0].slug}` : "#the-editions"}
           className={s.galleryScroll}
         >
-          {ar
-            ? "أربعة تعابير. اختر عالمك."
-            : "Four expressions. Find your own."}
-          <ArrowDown size={15} />
+          <span>
+            {ar
+              ? "أربعة تعابير. اختر عالمك."
+              : "Four expressions. Find your own."}
+          </span>
+          <svg
+            className={s.scrollMark}
+            width="16"
+            height="25"
+            viewBox="0 0 16 25"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M8 2v16m-4-4 4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </a>
       </header>
       <section data-gallery-sequence className={s.gallerySequence}>
@@ -767,7 +802,7 @@ export function OriginalesGallery({
           })}
           {featured && (
             <div className={s.stickyPurchase} data-visible={collapsed}>
-              <GalleryPurchase key={featured.id} product={featured} ar={ar} />
+              <GalleryPurchase product={featured} ar={ar} />
             </div>
           )}
         </div>

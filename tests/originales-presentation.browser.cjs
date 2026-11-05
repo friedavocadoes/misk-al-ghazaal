@@ -37,7 +37,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     const masthead = page.locator("[data-collection-masthead]");
     assert.match(
       await masthead.evaluate((el) => getComputedStyle(el).fontFamily),
-      /Originales Display/,
+      /Manrope/i,
+    );
+    assert.equal(
+      await page
+        .locator('a[aria-label="MAG Parfum — Originales"]')
+        .evaluate(
+          (el) =>
+            getComputedStyle(el).fontSize ===
+            getComputedStyle(el.querySelector("span")).fontSize,
+        ),
+      true,
+      "MAG and PARFUM use the same size",
     );
     assert.ok(
       await masthead.evaluate((el) => {
@@ -143,9 +154,23 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       );
     const collectionNav = page.locator("[data-originales-nav]");
     await collectionNav.waitFor({ state: "visible" });
+    await page.evaluate(() => {
+      window.__originalesPurchase = document.querySelector(
+        "[class*=stickyPurchase] button",
+      );
+    });
     await collectionNav.getByRole("link", { name: /Sultanic/i }).click();
     await page.waitForFunction(() => location.hash.includes("sultanic"));
     await page.waitForTimeout(2200);
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__originalesPurchase ===
+          document.querySelector("[class*=stickyPurchase] button"),
+      ),
+      true,
+      "chapter changes keep the purchase button mounted",
+    );
     const alignment = await page.evaluate(() => {
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),

@@ -2,6 +2,14 @@
 
 Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivory editorial and liquid-glass versions. This is a frontend capsule with no new database schema, admin fields, Storage uploads, order system, account system or cart. Existing product data remains authoritative.
 
+### Collection refinement — 5 November 2026
+
+- The collection title and shared navbar wordmark reuse the existing optimized Manrope, matching the soft product-name direction. The Cormorant font face, WOFF2 and license asset have been removed. The transition credit also uses the existing font stack. Keep the product hero typography unchanged.
+- MAG and PARFUM inherit the same type size. Desktop product chrome keeps a compact stacked wordmark within its existing rail; collection chrome uses the horizontal wordmark.
+- The sticky collection purchase control persists across chapters. Its background colour transitions over 0.9s while the real product/variant destination updates immediately. Confirmation state belongs to the product actually added, so moving to another chapter never shows a false confirmation.
+- Desktop bottle handoffs share one eased cross-dissolve around the next chapter's reading threshold, across 48vh with at most 36px of vertical travel. Mobile handoffs span at least 180px of scroll with at most 24px of travel. Preserve the original persistent image nodes, immediate cart actions, native touch scrolling and reduced-motion fallback.
+- The opening scroll cue uses small spaced copy and a restrained animated SVG stroke near the bottom of the opening. Its animation is disabled for reduced motion.
+
 ## Routes and ownership
 
 - `/originales`: four real bottles first, followed by a continuous sticky product stage and scrolling stories/compositions. The short philosophy follows the products.
