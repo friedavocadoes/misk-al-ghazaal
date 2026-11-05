@@ -497,6 +497,12 @@ This section and the corrected entries above supersede historical implementation
 - Current capsule presentation is documented in `src/features/originales/README.md`; its later entries supersede historical water/model/font instructions above. Collection and shared navbar titles now reuse optimized Manrope, matching the PDP name direction. The Cormorant font face and assets were removed.
 - Keep the collection's GalleryPurchase mounted across chapter changes. Its background colour eases between edition tints, while cart targets update immediately. Confirmation state is product-specific. Desktop chapter bottle cross-dissolves span48vh; mobile handoffs span>=180px and complete at the chapter reading stop. Both use stationary registered artwork with no handoff drift. CollectionBottle.tsx aligns local source margins/cap/collar/label/base in SVG using the already-loaded optimized image, with no new bitmap downloads or database changes. Preserve persistent figures, section anchors, reduced-motion/native-touch behavior and shared commerce logic. See the feature README before replacing local cutouts.
 
+## 53. Notes workspace and scroll-driven names (2026-11-05)
+
+- Apply `supabase/migration_notes_active.sql` for persistent Enable/Disable in the notes library. Disabled notes keep assignments but are filtered out of storefront catalog, finder and sample note displays. Admin queries keep disabled entries available for management. `/admin/notes` uses the searchable NotesLibrary grid, bulk actions and atomic quick creation (one English name per line, generated slugs, duplicate batches fail without partial insertion). Existing full glyph/translation/definition editing remains available on expansion.
+- ProductNotesField preserves the existing note_ids/kind_ID/pos_ID server-action contract with searchable multi-selection, stage assignment, removal and ordering. Hidden input changes dispatch input so AdminForm dirty tracking stays reliable. Keep mutation authorization, audit logs, glyph cleanup and locale-aware revalidation.
+- Originales uses EditionMorphName's Magic UI-inspired blur/threshold effect driven by bottle opacity progress, with no timed rotation. Collection cards group notes by their actual top/heart/base kind. The feature README documents provenance and removal.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

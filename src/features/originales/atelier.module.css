@@ -1195,6 +1195,21 @@
   gap: 20px;
   flex-wrap: wrap;
 }
+.galleryNoteStage {
+  width: 100%;
+}
+.galleryNoteStage h4 {
+  margin-bottom: 12px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--edition-wash);
+}
+.galleryNoteStage > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 .galleryNote {
   display: flex;
   flex-direction: column;

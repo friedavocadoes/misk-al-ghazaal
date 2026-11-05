@@ -4,6 +4,8 @@ Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivor
 
 ### Collection refinement — 5 November 2026
 
+- `EditionMorphName.tsx` adapts [Magic UI Morphing Text](https://magicui.design/docs/components/morphing-text)'s blur/alpha threshold to the existing bottle cross-dissolve progress. It retains the local font/size, reverses with scrolling, holds at stopped scroll positions and has no timer or idle animation loop. The semantic product name remains accessible; reduced motion resolves to a single clear name. Collection composition cards group actual assigned notes by top/heart/base, omitting empty stages.
+
 - The collection title and shared navbar wordmark reuse the existing optimized Manrope, matching the soft product-name direction. The Cormorant font face, WOFF2 and license asset have been removed. The transition credit also uses the existing font stack. Keep the product hero typography unchanged.
 - MAG and PARFUM inherit the same type size. Desktop product chrome keeps a compact stacked wordmark within its existing rail; collection chrome uses the horizontal wordmark.
 - The Originales collection/navbar wordmark retains its Manrope metrics with a shared champagne-metal gradient and a hover glimmer on the navbar mark. MAG PARFUM is 24px on desktop collection chrome and 18px in the stacked product mark. Collection note tiles use 12px corners. NoteTooltip's optional tint passes through TooltipCard's portal style so the popup surface, rim, glyph well and arrow inherit that perfume's colour. The main-store tooltip palette is unchanged.

@@ -236,17 +236,22 @@ export function ActionButton({
   className,
   danger,
   ariaLabel,
+  disabled,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   danger?: boolean;
   ariaLabel?: string;
+  disabled?: boolean;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
+      onClick={onClick}
       aria-label={ariaLabel}
       className={cn(
         "flex items-center justify-center gap-2 px-4 py-2 text-sm transition disabled:opacity-60",

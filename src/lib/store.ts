@@ -94,6 +94,7 @@ interface DbProductNote {
   kind: "top" | "heart" | "base";
   position: number;
   notes: {
+    is_active?: boolean;
     id: string;
     slug: string;
     name: string;
@@ -106,7 +107,7 @@ interface DbProductNote {
 }
 
 function toProductNote(r: DbProductNote): ProductNote | null {
-  if (!r.notes) return null;
+  if (!r.notes || r.notes.is_active === false) return null;
   return {
     id: r.notes.id,
     slug: r.notes.slug,
@@ -842,7 +843,7 @@ export async function getNotes(): Promise<Note[]> {
     .select("*")
     .order("name");
   if (error || !data) throw error ?? new Error("notes failed");
-  return (data ?? []).map(
+  return (data ?? []).filter((n: {is_active?:boolean})=>n.is_active !== false).map(
     (n: {
       id: string;
       slug: string;

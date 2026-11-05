@@ -21,6 +21,7 @@ import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
 import { atelierGsap } from "./atelier-gsap";
 import { AtelierPanel } from "./AtelierPanel";
+import { EditionMorphName, paintEditionName } from "./EditionMorphName";
 import s from "./atelier.module.css";
 
 function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
@@ -42,7 +43,7 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
       style={{ "--edition-wash": edition.wash } as CSSProperties}
     >
       <Link href={originalesPath(product)} className={s.galleryIdentity}>
-        <h2>{edition.name}</h2>
+        <EditionMorphName name={edition.name} />
         <p className={s.galleryPrice}>
           {formatAED(variant?.price ?? product.price)}
         </p>
@@ -99,6 +100,7 @@ export function OriginalesGallery({
           },
           (context) => {
             const node = root.current!,
+              names = products.map((product) => editionFor(product).name),
               mobile = !!context.conditions?.mobile,
               motion = !!context.conditions?.motion,
               figures = [
@@ -394,7 +396,7 @@ export function OriginalesGallery({
                 );
                 // Registered artwork shares one stationary frame during dissolves.
                 const availableHeight =
-                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 24;
+                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 26;
                 poses = figures.map((figure) => {
                   const position = getComputedStyle(figure);
                   const bottle = figure.querySelector<HTMLImageElement>(
@@ -450,6 +452,7 @@ export function OriginalesGallery({
               const opening = progress.current;
               const focus = ease(opening);
               const chapterMotion = ease(clamp((opening - 0.82) / 0.18));
+              const nameAlphas: number[] = [];
               figures.forEach((figure, index) => {
                 const rect = bounds[index];
                 if (!rect) return;
@@ -486,6 +489,7 @@ export function OriginalesGallery({
                         chapterMotion,
                       );
                 const pose = poses[index];
+                nameAlphas[index] = alpha;
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
                   const y = pose.y * focus;
                   const scale = 1 + (pose.scale - 1) * focus;
@@ -498,6 +502,8 @@ export function OriginalesGallery({
                 if (figure.inert !== inert) figure.inert = inert;
               });
               const nextCaptionOpacity = 1 - Math.min(1, opening * 2.5);
+              if (opening > 0.82)
+                paintEditionName(stage, names, nameAlphas, !motion);
               if (captionOpacity !== nextCaptionOpacity) {
                 captionOpacity = nextCaptionOpacity;
                 setCaption(captionOpacity);
@@ -674,7 +680,7 @@ export function OriginalesGallery({
       live = false;
       dispose();
     };
-  }, [products.length, smoother]);
+  }, [products, smoother]);
   const featured = products[active] ?? products[0],
     story = COLLECTION_STORY[ar ? "ar" : "en"];
   return (
@@ -857,23 +863,54 @@ export function OriginalesGallery({
                       <div className={s.chapterNotes}>
                         <h3>{ar ? "التوليفة" : "The composition"}</h3>
                         <div>
-                          {product.notes.map((note) => (
-                            <NoteTooltip
-                              key={`${note.id}-${note.kind}`}
-                              note={note}
-                              tint={edition.accent}
-                              locale={ar ? "ar" : "en"}
-                              className={s.galleryNote}
-                            >
-                              <NoteGlyph
-                                glyph={note.glyph}
-                                className={s.galleryNoteGlyph}
-                              />
-                              <span>
-                                {tx(note.name, note.nameAr, ar ? "ar" : "en")}
-                              </span>
-                            </NoteTooltip>
-                          ))}
+                          {(["top", "heart", "base"] as const).map(
+                            (kind) =>
+                              product.notes.some((n) => n.kind === kind) && (
+                                <section
+                                  key={kind}
+                                  className={s.galleryNoteStage}
+                                >
+                                  <h4>
+                                    {ar
+                                      ? {
+                                          top: "البداية",
+                                          heart: "القلب",
+                                          base: "القاعدة",
+                                        }[kind]
+                                      : {
+                                          top: "Top · opening",
+                                          heart: "Heart",
+                                          base: "Base",
+                                        }[kind]}
+                                  </h4>
+                                  <div>
+                                    {product.notes
+                                      .filter((n) => n.kind === kind)
+                                      .map((note) => (
+                                        <NoteTooltip
+                                          key={`${note.id}-${note.kind}`}
+                                          note={note}
+                                          tint={edition.accent}
+                                          locale={ar ? "ar" : "en"}
+                                          className={s.galleryNote}
+                                        >
+                                          <NoteGlyph
+                                            glyph={note.glyph}
+                                            className={s.galleryNoteGlyph}
+                                          />
+                                          <span>
+                                            {tx(
+                                              note.name,
+                                              note.nameAr,
+                                              ar ? "ar" : "en",
+                                            )}
+                                          </span>
+                                        </NoteTooltip>
+                                      ))}
+                                  </div>
+                                </section>
+                              ),
+                          )}
                         </div>
                       </div>
                     )}

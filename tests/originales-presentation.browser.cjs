@@ -25,7 +25,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     await page.goto(`${base}/originales`, { waitUntil: "networkidle" });
     await page.waitForTimeout(1600);
     assert.equal(await page.locator("[data-originales-smoothed]").count(), 1);
-    assert.equal(await page.locator("aside").count(), 0);
+    assert.equal(
+      await page.locator('aside:not([aria-label="Privacy settings"])').count(),
+      0,
+    );
     assert.equal(await page.locator("[data-gallery-bottle]").count(), 4);
     assert.equal(await page.locator("[data-gallery-reflection]").count(), 4);
     assert.equal(

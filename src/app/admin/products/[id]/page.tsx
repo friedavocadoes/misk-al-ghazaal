@@ -1,3 +1,4 @@
+import { ProductNotesField } from "@/components/admin/product-notes-field";
 import { assertAdminWrite } from "@/lib/admin-write";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -19,7 +20,11 @@ import {
 import { cleanupProductArt } from "@/lib/product-storage";
 import { ProductImagesEditor } from "@/components/admin/product-images-editor";
 import { NotesArtworkField } from "@/components/admin/notes-artwork-field";
-import { SeoFields, readSeoFields, type SeoFieldValues } from "@/components/admin/seo-fields";
+import {
+  SeoFields,
+  readSeoFields,
+  type SeoFieldValues,
+} from "@/components/admin/seo-fields";
 import { parseSchemaJson } from "@/lib/seo";
 import { BestsellerControl } from "@/components/admin/bestseller-control";
 import { ProductVariantsEditor } from "@/components/admin/product-variants-editor";
@@ -33,14 +38,30 @@ async function savePageContent(formData: FormData) {
   const id = String(formData.get("id"));
   const content: Record<string, string> = {};
   for (const key of ["story", "composition", "reviews", "recommendations"]) {
-    for (const suffix of ["", "_ar"]) content[key + suffix] = String(formData.get(key + suffix) || "").trim().slice(0, 100);
+    for (const suffix of ["", "_ar"])
+      content[key + suffix] = String(formData.get(key + suffix) || "")
+        .trim()
+        .slice(0, 100);
   }
   const db = await createClient();
-  const { error } = await db.from("products").update({ pdp_content: content }).eq("id", id);
-  if (error) throw new Error("Could not save page headings. Apply migration_product_page_content.sql if this field is not installed.");
+  const { error } = await db
+    .from("products")
+    .update({ pdp_content: content })
+    .eq("id", id);
+  if (error)
+    throw new Error(
+      "Could not save page headings. Apply migration_product_page_content.sql if this field is not installed.",
+    );
   await touchProduct(db, id);
   revalidatePath(`/admin/products/${id}`);
-  await logAdmin(db, session, {category:"products", action:"update", entity:"product", entityId:id, summary:"Updated product page headings", details:content});
+  await logAdmin(db, session, {
+    category: "products",
+    action: "update",
+    entity: "product",
+    entityId: id,
+    summary: "Updated product page headings",
+    details: content,
+  });
 }
 
 async function saveProduct(formData: FormData) {
@@ -48,11 +69,16 @@ async function saveProduct(formData: FormData) {
   const s = await getAdminSession();
   if (!s || s.role !== "super_admin") redirect("/admin/login");
   const id = String(formData.get("id"));
-  const mode=String(formData.get("bestseller_mode")||"auto");
-  if(!["auto","pinned","excluded"].includes(mode))throw new Error("Invalid bestseller policy.");
+  const mode = String(formData.get("bestseller_mode") || "auto");
+  if (!["auto", "pinned", "excluded"].includes(mode))
+    throw new Error("Invalid bestseller policy.");
   const supabase = await createClient();
-  const {data:current}=await supabase.from("products").select("auto_best_seller").eq("id",id).single();
-  const {error:saveError}=await supabase
+  const { data: current } = await supabase
+    .from("products")
+    .select("auto_best_seller")
+    .eq("id", id)
+    .single();
+  const { error: saveError } = await supabase
     .from("products")
     .update({
       title: String(formData.get("title")),
@@ -68,12 +94,13 @@ async function saveProduct(formData: FormData) {
       ritual_id: String(formData.get("ritual_id") || "") || null,
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
-      is_best_seller: mode==="pinned" || (mode==="auto" && !!current?.auto_best_seller),
-      bestseller_mode:mode,
+      is_best_seller:
+        mode === "pinned" || (mode === "auto" && !!current?.auto_best_seller),
+      bestseller_mode: mode,
       is_active: formData.get("is_active") === "on",
     })
     .eq("id", id);
-  if(saveError)throw new Error(saveError.message);
+  if (saveError) throw new Error(saveError.message);
   const { data: prod } = await supabase
     .from("products")
     .select("slug")
@@ -111,14 +138,16 @@ async function saveProduct(formData: FormData) {
     details: {
       title: String(formData.get("title")),
       price: Number(formData.get("price")),
-      compare_at: formData.get("compare_at") ? Number(formData.get("compare_at")) : null,
+      compare_at: formData.get("compare_at")
+        ? Number(formData.get("compare_at"))
+        : null,
       sort: Math.trunc(Number(formData.get("sort") || 0)),
       lineup_id: String(formData.get("lineup_id") || "") || null,
       ritual_id: String(formData.get("ritual_id") || "") || null,
       featured: formData.get("featured") === "on",
       is_new: formData.get("is_new") === "on",
       is_best_seller: formData.get("is_best_seller") === "on",
-      bestseller_mode:mode,
+      bestseller_mode: mode,
       is_active: formData.get("is_active") === "on",
     },
   });
@@ -153,11 +182,13 @@ async function saveProductNotes(formData: FormData) {
     .map((r) => r.note_id)
     .filter((id) => !keep.has(id));
   if (stale.length)
-    await assertAdminWrite(supabase
-      .from("product_notes")
-      .delete()
-      .eq("product_id", productId)
-      .in("note_id", stale));
+    await assertAdminWrite(
+      supabase
+        .from("product_notes")
+        .delete()
+        .eq("product_id", productId)
+        .in("note_id", stale),
+    );
   // …then upsert the rest (insert-or-update atomically per row).
   if (rows.length) {
     const { error } = await supabase
@@ -198,17 +229,24 @@ async function saveProductCollections(formData: FormData) {
   const drop = [...have].filter((id) => !keep.has(id));
   const add = [...keep].filter((id) => !have.has(id));
   if (drop.length)
-    await assertAdminWrite(supabase
-      .from("product_collections")
-      .delete()
-      .eq("product_id", productId)
-      .in("collection_id", drop));
+    await assertAdminWrite(
+      supabase
+        .from("product_collections")
+        .delete()
+        .eq("product_id", productId)
+        .in("collection_id", drop),
+    );
   if (add.length) {
-    await assertAdminWrite(supabase
-      .from("product_collections")
-      .insert(
-        add.map((collection_id) => ({ product_id: productId, collection_id })),
-      ));
+    await assertAdminWrite(
+      supabase
+        .from("product_collections")
+        .insert(
+          add.map((collection_id) => ({
+            product_id: productId,
+            collection_id,
+          })),
+        ),
+    );
   }
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
@@ -242,7 +280,9 @@ async function saveNotesArtwork(productId: string, field: string, url: string) {
     entity: "product_artwork",
     entityId: productId,
     label: field,
-    summary: url ? `Updated detailed-notes artwork (${field})` : `Removed detailed-notes artwork (${field})`,
+    summary: url
+      ? `Updated detailed-notes artwork (${field})`
+      : `Removed detailed-notes artwork (${field})`,
     details: { product_id: productId, field, url },
   });
 }
@@ -271,7 +311,10 @@ async function saveGallery(productId: string, images: string[]) {
     .update({ images })
     .eq("id", productId);
   if (error) throw new Error(error.message);
-  const orphans=await cleanupProductArt(supabase,[...before].filter(u=>!images.includes(u)));
+  const orphans = await cleanupProductArt(
+    supabase,
+    [...before].filter((u) => !images.includes(u)),
+  );
   revalidatePath(`/admin/products/${productId}`);
   await touchProduct(supabase, productId);
   await logAdmin(supabase, s, {
@@ -280,7 +323,12 @@ async function saveGallery(productId: string, images: string[]) {
     entity: "product_gallery",
     entityId: productId,
     summary: `Saved gallery (${images.length} images${orphans.length ? `, purged ${orphans.length} orphans` : ""})`,
-    details: { product_id: productId, count: images.length, images, purged: orphans.length },
+    details: {
+      product_id: productId,
+      count: images.length,
+      images,
+      purged: orphans.length,
+    },
   });
 }
 
@@ -357,10 +405,12 @@ async function moveToBin(formData: FormData) {
     .select("slug")
     .eq("id", id)
     .single();
-  await assertAdminWrite(supabase
-    .from("products")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id));
+  await assertAdminWrite(
+    supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id),
+  );
   revalidatePath("/admin/products");
   const dslug = (doomed as { slug?: string } | null)?.slug;
   if (dslug) revalidateProductPaths(dslug);
@@ -414,7 +464,7 @@ export default async function ProductDetail(props: {
   ] = await Promise.all([
     supabase.from("lineups").select("id, title").order("sort"),
     supabase.from("rituals").select("id, title").order("title"),
-    supabase.from("notes").select("id, name, color").order("name"),
+    supabase.from("notes").select("*").order("name"),
     supabase
       .from("product_notes")
       .select("note_id, kind, position")
@@ -432,8 +482,7 @@ export default async function ProductDetail(props: {
   const assignedMap = new Map(
     (
       (assigned as
-        | { note_id: string; kind: string; position: number }[]
-        | null) ?? []
+        { note_id: string; kind: string; position: number }[] | null) ?? []
     ).map((a) => [a.note_id, a]),
   );
   const inCollections = new Set(
@@ -497,7 +546,12 @@ export default async function ProductDetail(props: {
                 {(p.images ?? []).length} images · {(variants ?? []).length}{" "}
                 variants
               </span>
-              <Link href="/admin/stores" className="text-xs text-gold underline underline-offset-4">Manage in-store availability ↗</Link>
+              <Link
+                href="/admin/stores"
+                className="text-xs text-gold underline underline-offset-4"
+              >
+                Manage in-store availability ↗
+              </Link>
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
@@ -578,7 +632,7 @@ export default async function ProductDetail(props: {
                   Price AED · option prices are managed under variants
                   <input
                     name="price"
-                    readOnly={!!variants?.some(v=>v.is_active!==false)}
+                    readOnly={!!variants?.some((v) => v.is_active !== false)}
                     type="number"
                     step="0.01"
                     defaultValue={p.price}
@@ -689,8 +743,16 @@ export default async function ProductDetail(props: {
                     />{" "}
                     New
                   </label>
-                  <BestsellerControl key={`${p.bestseller_mode}:${p.is_best_seller}`} mode={p.bestseller_mode??(p.is_best_seller?"pinned":"auto")} checked={p.is_best_seller} automatic={p.auto_best_seller??false} score={Number(p.demand_score??0)}/>
-
+                  <BestsellerControl
+                    key={`${p.bestseller_mode}:${p.is_best_seller}`}
+                    mode={
+                      p.bestseller_mode ??
+                      (p.is_best_seller ? "pinned" : "auto")
+                    }
+                    checked={p.is_best_seller}
+                    automatic={p.auto_best_seller ?? false}
+                    score={Number(p.demand_score ?? 0)}
+                  />
                 </div>
                 <SaveButton className="md:col-span-2">Save details</SaveButton>
               </AdminForm>
@@ -699,14 +761,37 @@ export default async function ProductDetail(props: {
             {/* 02 — Gallery */}
             <section className={sectionCls}>
               <h2 className="text-lg font-medium">Storefront page headings</h2>
-              <p className="mt-2 mb-5 text-sm text-ink/60">Optional per-product wording. Leave blank for defaults. Edit the story above; composition in Fragrance notes; artwork below; ritual content in Catalog → Rituals.</p>
-              <AdminForm action={savePageContent} className="grid gap-4 md:grid-cols-2">
+              <p className="mt-2 mb-5 text-sm text-ink/60">
+                Optional per-product wording. Leave blank for defaults. Edit the
+                story above; composition in Fragrance notes; artwork below;
+                ritual content in Catalog → Rituals.
+              </p>
+              <AdminForm
+                action={savePageContent}
+                className="grid gap-4 md:grid-cols-2"
+              >
                 <input type="hidden" name="id" value={id} />
-                {[["story", "The story"], ["composition", "The composition"], ["reviews", "Reviews"], ["recommendations", "You may also adore"]].flatMap(([key, label]) => ["", "_ar"].map(suffix => (
-                  <label key={key + suffix} className="text-sm">{label}{suffix ? " — Arabic" : ""}
-                    <input name={key + suffix} maxLength={100} dir={suffix ? "rtl" : undefined} defaultValue={p.pdp_content?.[key + suffix] ?? ""} placeholder={suffix ? "Default Arabic heading" : label} className="mt-1 w-full border border-ink/20 px-3 py-2" />
-                  </label>
-                )))}
+                {[
+                  ["story", "The story"],
+                  ["composition", "The composition"],
+                  ["reviews", "Reviews"],
+                  ["recommendations", "You may also adore"],
+                ].flatMap(([key, label]) =>
+                  ["", "_ar"].map((suffix) => (
+                    <label key={key + suffix} className="text-sm">
+                      {label}
+                      {suffix ? " — Arabic" : ""}
+                      <input
+                        name={key + suffix}
+                        maxLength={100}
+                        dir={suffix ? "rtl" : undefined}
+                        defaultValue={p.pdp_content?.[key + suffix] ?? ""}
+                        placeholder={suffix ? "Default Arabic heading" : label}
+                        className="mt-1 w-full border border-ink/20 px-3 py-2"
+                      />
+                    </label>
+                  )),
+                )}
                 <SaveButton>Save page headings</SaveButton>
               </AdminForm>
             </section>
@@ -757,7 +842,7 @@ export default async function ProductDetail(props: {
               {sectionHead(
                 "04",
                 "Fragrance notes",
-                "Position orders dots inside each tier",
+                "Search, select and assign notes to a stage",
               )}
               <AdminForm
                 action={saveProductNotes}
@@ -765,55 +850,18 @@ export default async function ProductDetail(props: {
                 className="text-sm"
               >
                 <input type="hidden" name="product_id" value={p.id} />
-                <input
-                  type="hidden"
-                  name="note_ids"
-                  value={((allNotes as { id: string }[] | null) ?? [])
-                    .map((n) => n.id)
-                    .join(",")}
+                <ProductNotesField
+                  key={JSON.stringify(Array.from(assignedMap.values()))}
+                  notes={
+                    (allNotes ?? []) as {
+                      id: string;
+                      name: string;
+                      color: string;
+                      is_active?: boolean;
+                    }[]
+                  }
+                  initial={Array.from(assignedMap.values())}
                 />
-                <div className="grid gap-x-6 md:grid-cols-2">
-                  {(
-                    (allNotes as
-                      | { id: string; name: string; color: string }[]
-                      | null) ?? []
-                  ).map((n) => {
-                    const a = assignedMap.get(n.id);
-                    const active = (a?.kind ?? "none") !== "none";
-                    return (
-                      <div
-                        key={n.id}
-                        className={`flex items-center gap-3 border-t border-ink/10 py-2.5 ${active ? "" : "opacity-70"}`}
-                      >
-                        <span
-                          className="size-5 shrink-0 rounded-full ring-1 ring-ink/15"
-                          style={{ backgroundColor: n.color }}
-                        />
-                        <span className="w-36 shrink-0 truncate font-medium">
-                          {n.name}
-                        </span>
-                        <select
-                          name={`kind_${n.id}`}
-                          defaultValue={a?.kind ?? "none"}
-                          aria-label={`${n.name} tier`}
-                          className="border border-ink/20 bg-white px-2 py-1.5"
-                        >
-                          <option value="none">—</option>
-                          <option value="top">Top</option>
-                          <option value="heart">Heart</option>
-                          <option value="base">Base</option>
-                        </select>
-                        <input
-                          name={`pos_${n.id}`}
-                          type="number"
-                          defaultValue={a?.position ?? 0}
-                          aria-label={`${n.name} position`}
-                          className="w-16 border border-ink/20 px-2 py-1.5"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
                 <SaveButton className="mt-4 w-full">Save notes</SaveButton>
               </AdminForm>
             </section>
@@ -860,23 +908,58 @@ export default async function ProductDetail(props: {
                 "Variants + stock",
                 "Concentration · capacity · photography · inventory",
               )}
-              <AdminForm action={setProductStock} success="Availability updated" className="mb-5 flex flex-wrap items-center justify-between gap-4 border border-red-200 bg-red-50/40 p-4">
-                <input type="hidden" name="product_id" value={p.id}/>
-                <input type="hidden" name="out_of_stock" value={p.out_of_stock ? "false" : "true"}/>
-                <div><p className="text-sm font-medium">{p.out_of_stock ? "Manually marked out of stock" : "Availability follows option stock"}</p><p className="mt-1 text-xs text-ink/55">The manual override stops sales without changing inventory counts.</p></div>
-                <ActionButton>{p.out_of_stock ? "Use inventory counts" : "Mark product out of stock"}</ActionButton>
+              <AdminForm
+                action={setProductStock}
+                success="Availability updated"
+                className="mb-5 flex flex-wrap items-center justify-between gap-4 border border-red-200 bg-red-50/40 p-4"
+              >
+                <input type="hidden" name="product_id" value={p.id} />
+                <input
+                  type="hidden"
+                  name="out_of_stock"
+                  value={p.out_of_stock ? "false" : "true"}
+                />
+                <div>
+                  <p className="text-sm font-medium">
+                    {p.out_of_stock
+                      ? "Manually marked out of stock"
+                      : "Availability follows option stock"}
+                  </p>
+                  <p className="mt-1 text-xs text-ink/55">
+                    The manual override stops sales without changing inventory
+                    counts.
+                  </p>
+                </div>
+                <ActionButton>
+                  {p.out_of_stock
+                    ? "Use inventory counts"
+                    : "Mark product out of stock"}
+                </ActionButton>
               </AdminForm>
-              <ProductVariantsEditor productId={p.id} variants={variants ?? []} price={p.price}/>
-
+              <ProductVariantsEditor
+                productId={p.id}
+                variants={variants ?? []}
+                price={p.price}
+              />
             </section>
 
             {/* 07 — SEO (invisible crawler layer) */}
             <section id="seo" className={sectionCls}>
-              {sectionHead("07", "SEO", "H1 · meta · schema — never visible on page")}
-              <AdminForm action={saveSeo} success="SEO saved" className="grid gap-4 text-sm md:grid-cols-2">
+              {sectionHead(
+                "07",
+                "SEO",
+                "H1 · meta · schema — never visible on page",
+              )}
+              <AdminForm
+                action={saveSeo}
+                success="SEO saved"
+                className="grid gap-4 text-sm md:grid-cols-2"
+              >
                 <input type="hidden" name="product_id" value={p.id} />
                 <input type="hidden" name="product_slug" value={p.slug} />
-                <SeoFields initial={(seoRow ?? null) as SeoFieldValues | null} />
+                <SeoFields
+                  initial={(seoRow ?? null) as SeoFieldValues | null}
+                />
                 <SaveButton className="md:col-span-2">Save SEO</SaveButton>
               </AdminForm>
             </section>
