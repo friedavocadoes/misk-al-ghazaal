@@ -322,6 +322,14 @@
     "rights": "Prices in AED"
   },
   "Account": {
+    "clientSpace": "YOUR MAISON ACCOUNT",
+    "welcomeBack": "A familiar place.",
+    "welcomeIn": "Make yourself at home.",
+    "accountInvitation": "Your favourite fragrances, thoughtful discoveries, and every order — all in one place.",
+    "benefitOrders": "Follow your orders, from our door to yours",
+    "benefitWishlist": "Keep the scents you love close",
+    "benefitRewards": "Discover your personal rewards",
+    "exploreCollection": "Explore the collection",
     "eyebrow": "Maison",
     "title": "My Account",
     "text": "Client accounts arrive with Phase 2 and Supabase Auth.",

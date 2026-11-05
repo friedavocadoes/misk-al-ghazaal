@@ -1,20 +1,5 @@
-"use client";
-
-import { Suspense } from "react";
-import { useTranslations } from "next-intl";
-import { AuthTabs } from "@/components/blocks/AuthTabs";
+import { AuthExperience } from "@/components/blocks/AuthExperience";
 
 export default function RegisterPage() {
-  const t = useTranslations("Account");
-  return (
-    <div className="mx-auto max-w-md px-5 py-16">
-      <p className="eyebrow text-center text-gold">{t("eyebrow")}</p>
-      <h1 className="mt-3 text-center font-display text-4xl text-ink">{t("register")}</h1>
-      <div className="mt-8">
-        <Suspense>
-          <AuthTabs defaultTab="register" />
-        </Suspense>
-      </div>
-    </div>
-  );
+  return <AuthExperience mode="register" />;
 }

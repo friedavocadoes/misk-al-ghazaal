@@ -1,0 +1,54 @@
+.experience {
+  display: grid;
+  max-width: 1120px;
+  margin: 48px auto 80px;
+  grid-template-columns: 1fr 1fr;
+  border-block: 1px solid #1c19171a;
+}
+.intro {
+  position: relative;
+  overflow: hidden;
+  padding: 56px 64px 64px 32px;
+  background: linear-gradient(140deg, #f2ede2, #faf7f1 78%);
+}
+.crest { display: inline-flex; margin-bottom: 36px; }
+.crest img { object-fit: contain; }
+.intro h1 {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  max-width: 340px;
+  font-size: clamp(36px, 4vw, 52px);
+  line-height: 1.12;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.description { position: relative; z-index: 1; margin-top: 22px; max-width: 310px; font-size: 14px; line-height: 1.8; color: #57534e; }
+.benefits { position: relative; z-index: 1; margin: 36px 0; }
+.benefits p { display: flex; gap: 18px; padding-block: 12px; font-size: 12px; border-bottom: 1px solid #1c191710; }
+.benefits span { color: #8a6d2f; font-size: 10px; font-variant-numeric: tabular-nums; }
+.watermark { position: absolute; bottom: -100px; inset-inline-end: -20px; font-family: Georgia, serif; font-size: 360px; line-height: 1; color: #8a6d2f06; pointer-events: none; }
+.form { min-width: 0; padding: 56px; border-inline-start: 1px solid #1c19171a; }
+.form [role="tablist"] { gap: 0; margin-bottom: 30px; border: 0; background: #e9e1d250; padding: 4px; }
+.form [role="tab"] { flex: 1; margin: 0; border: 0; padding: 12px 8px; font-size: 11px; letter-spacing: 0.12em; transition: background 180ms, color 180ms; }
+.form [role="tab"][data-state="active"] { background: #1c1917; color: #fff; }
+.form [role="tabpanel"] { margin-top: 0; }
+.form form { gap: 18px; }
+.form input:not([type="checkbox"]) { background: transparent; height: 48px; }
+.form form button[type="submit"] { min-height: 48px; margin-top: 4px; }
+.form label { font-size: 12px; line-height: 1.6; }
+@media (max-width: 767px) {
+  .experience { display: block; margin: 20px 20px 48px; }
+  .intro { padding: 28px 12px 30px; }
+  .crest { margin-bottom: 20px; }
+  .crest img { width: 64px; height: 64px; }
+  .intro h1 { font-size: 34px; max-width: none; }
+  .description { margin-top: 12px; max-width: none; }
+  .benefits, .watermark { display: none; }
+  .intro > a:last-of-type { display: none; }
+  .form { padding: 28px 0 0; border-inline-start: 0; border-top: 1px solid #1c19171a; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form [role="tab"] { transition: none; }
+}

@@ -16,11 +16,11 @@ import { getSiteUrl } from "@/lib/site-url";
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-function GoogleButton({ onClick, onSignIn, busy }: { onClick: () => void; onSignIn: () => Promise<void>; busy: boolean }) {
+function GoogleButton({ onClick, next, referral, busy }: { onClick: () => void; next: string; referral?: string; busy: boolean }) {
   const t = useTranslations("Account");
   return (
     <>
-      {googleClientId ? <GoogleIdentityButton clientId={googleClientId} onSignIn={onSignIn} /> : <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
+      {googleClientId ? <GoogleIdentityButton clientId={googleClientId} next={next} referral={referral} /> : <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
         <GoogleGlyph className="size-[18px]" /> {t("google")}
       </Button>}
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-fog">
@@ -90,12 +90,12 @@ function LoginPane({ next }: { next: string }) {
 
   return (
     <>
-      <GoogleButton onClick={googleLogin} onSignIn={afterAuth} busy={busy} />
+      <GoogleButton onClick={googleLogin} next={next} busy={busy} />
       <form onSubmit={emailLogin} className="grid gap-3">
-        <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input placeholder={t("password")} type="password" required aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <label className="grid gap-2"><span>{t("email")}</span><Input autoComplete="email" dir="ltr" placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("password")}</span><Input autoComplete="current-password"  placeholder={t("password")} type="password" required aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
         <div className="flex justify-end">
-          <Link href="/account/forgot" className="text-[12px] font-semibold uppercase tracking-[0.14em] text-fog transition hover:text-gold">
+          <Link href="/account/forgot" className="text-xs text-espresso underline underline-offset-4 transition hover:text-gold">
             {t("forgot")}
           </Link>
         </div>
@@ -174,19 +174,20 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 
   return (
     <>
-      <GoogleButton onClick={googleSignup} onSignIn={() => finishShopperSignIn(router, next, referral.trim())} busy={busy} />
+      <GoogleButton onClick={googleSignup} next={next} referral={referral.trim()} busy={busy} />
       <form onSubmit={submit} className="grid gap-3">
-        <Input placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} />
-        <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input placeholder={t("password")} type="password" required minLength={6} aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <label className="grid gap-2"><span>{t("fullName")}</span><Input autoComplete="name"  placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("email")}</span><Input autoComplete="email" dir="ltr" placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("password")}</span><Input autoComplete="new-password"  placeholder={t("password")} type="password" required minLength={6} aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+        <details className="border-y border-ink/10 py-3"><summary className="cursor-pointer text-xs text-espresso">{t("referralPh")}</summary>
         <Input
           placeholder={t("referralPh")}
           aria-label={t("referralPh")}
           value={referral}
           onChange={(e) => setReferral(e.target.value.toUpperCase())}
-          className="font-mono uppercase"
+          className="mt-3 font-mono uppercase"
         />
-        <p className="-mt-1 text-[12px] leading-relaxed text-fog">{t("referralHint")}</p>
+        <p className="-mt-1 text-[12px] leading-relaxed text-fog">{t("referralHint")}</p></details>
         {error && <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
         <label className="flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-fog">
           <input
@@ -215,6 +216,7 @@ export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
   const ref = params.get("ref") ?? "";
   return (
     <Tabs defaultValue={defaultTab} className="w-full">
+      {params.get("error") === "google" && <p role="alert" className="mb-4 text-sm text-red-800">{t("googleUnavailable")}</p>}
       <TabsList className="w-full justify-start">
         <TabsTrigger value="login">{t("login")}</TabsTrigger>
         <TabsTrigger value="register">{t("register")}</TabsTrigger>
