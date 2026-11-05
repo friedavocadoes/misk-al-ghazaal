@@ -503,6 +503,11 @@ This section and the corrected entries above supersede historical implementation
 - ProductNotesField preserves the existing note_ids/kind_ID/pos_ID server-action contract with searchable multi-selection, stage assignment, removal and ordering. Hidden input changes dispatch input so AdminForm dirty tracking stays reliable. Keep mutation authorization, audit logs, glyph cleanup and locale-aware revalidation.
 - Originales uses EditionMorphName's Magic UI-inspired blur/threshold effect driven by bottle opacity progress, with no timed rotation. Collection cards group notes by their actual top/heart/base kind. The feature README documents provenance and removal.
 
+## 54. Product workbook export and Originales polish (2026-11-05)
+
+- Admin → Products → Export all · Excel calls the super_admin-only `/api/admin/products/export` endpoint. It paginates all non-deleted products, ignoring list filters, and uses server-only ExcelJS generation in `lib/product-export.ts`. Sheets separate enabled/disabled products; columns contain literal product names, clickable full canonical storefront URLs, and top/heart/base notes. The download uses the actual admin referrer origin (request origin fallback), never the SEO production-domain override. XLSX responses are private/no-store and exports are audited. No customer-side ExcelJS bundle or database migration.
+- Originales name morphs use a wider64vh reading window and a gentle custom curve. CollectionBottle SVG bands require overlap plus matching source bleed to avoid dark raster sampling seams. See the feature README before adjusting registration.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

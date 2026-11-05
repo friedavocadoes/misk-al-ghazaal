@@ -24,6 +24,7 @@ export function atelierGsap() {
       gsap.registerPlugin(MorphSVGPlugin, DrawSVGPlugin, Flip, CustomEase);
       CustomEase.create("atelier-settle", "0.22,0.75,0.18,1");
       CustomEase.create("atelier-soft", "0.45,0,0.2,1");
+      CustomEase.create("atelier-name", "0.25,0.4,0.75,0.6");
       return { gsap, Flip };
     },
   ));

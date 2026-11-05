@@ -92,7 +92,7 @@ export function CollectionBottle({
           const [left, top, cropWidth, cropHeight] =
             registration.regions[index];
           // A subpixel overlap prevents raster seams at adjacent clip boundaries.
-          const overlap = 0.25;
+          const overlap = 3;
           const bleed = (overlap * cropHeight) / height;
           return (
             <svg

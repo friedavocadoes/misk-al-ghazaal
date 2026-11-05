@@ -443,6 +443,7 @@ export function OriginalesGallery({
             const setCaption = gsap.quickSetter(captions, "opacity");
             const clamp = gsap.utils.clamp(0, 1);
             const ease = gsap.parseEase("atelier-soft");
+            const nameEase = gsap.parseEase("atelier-name");
             let frame = 0;
             let captionOpacity = -1;
             const sync = () => {
@@ -489,7 +490,28 @@ export function OriginalesGallery({
                         chapterMotion,
                       );
                 const pose = poses[index];
-                nameAlphas[index] = alpha;
+                const nameEnter =
+                  index === 0
+                    ? 1
+                    : nameEase(
+                        clamp(
+                          0.5 +
+                            (scroll - (rect.top - height * 0.55)) /
+                              (height * 0.64),
+                        ),
+                      );
+                const nameExit = nextChapter
+                  ? nameEase(
+                      clamp(
+                        0.5 +
+                          (scroll - (nextChapter.top - height * 0.55)) /
+                            (height * 0.64),
+                      ),
+                    )
+                  : 0;
+                nameAlphas[index] = !motion
+                  ? alpha
+                  : nameEnter * (1 - nameExit);
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
                   const y = pose.y * focus;
                   const scale = 1 + (pose.scale - 1) * focus;
