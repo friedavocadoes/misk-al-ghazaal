@@ -868,6 +868,7 @@ export function OriginalesGallery({
                             <NoteTooltip
                               key={`${note.id}-${note.kind}`}
                               note={note}
+                              tint={edition.accent}
                               locale={ar ? "ar" : "en"}
                               className={s.galleryNote}
                             >

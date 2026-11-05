@@ -1,4 +1,15 @@
 .world {
+  --originales-metal: linear-gradient(
+    165deg,
+    #aa9278 5%,
+    #ead7bd 19%,
+    #fff5e6 30%,
+    #c6ae92 45%,
+    #8d755e 57%,
+    #d6bfa0 69%,
+    #fff2dc 84%,
+    #b89972 98%
+  );
   --atelier-gallery-top: 160px;
   --paper: #141612;
   --line: #f1ebdc20;
@@ -59,7 +70,7 @@
 }
 .wordmark {
   font:
-    33px Georgia,
+    24px Georgia,
     serif;
   letter-spacing: -0.075em;
   display: flex;
@@ -2658,7 +2669,25 @@
 .galleryNote {
   background: #e8ecd90a;
   padding: 15px 11px;
-  border: 1px solid #e4e9d115;
+  border: 1px solid
+    color-mix(in srgb, var(--edition-wash, #ded4c0) 18%, transparent);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 #ffffff08;
+  transition:
+    background-color 0.45s,
+    border-color 0.45s;
+}
+.galleryNote:is(:hover, :focus-visible, [data-state="open"]) {
+  background-color: color-mix(
+    in srgb,
+    var(--edition-accent, #8a7962) 14%,
+    #ffffff06
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--edition-wash, #ded4c0) 35%,
+    transparent
+  );
 }
 .galleryNoteGlyph {
   transition: transform 0.5s cubic-bezier(0.2, 1, 0.2, 1);
@@ -3862,7 +3891,7 @@
   .world:not(.collectionWorld) .wordmark {
     flex-direction: column;
     gap: 2px;
-    font-size: 22px;
+    font-size: 18px;
     align-items: center;
   }
   /* The dock, image frame and first reading stop share the same scene coordinates. */
@@ -4565,17 +4594,13 @@
 .collectionWorld .galleryIntro h1 a,
 .world .editionWordmark {
   direction: ltr;
-  background: linear-gradient(
-    135deg,
-    #eee8e0d9 5%,
-    #b8b4c5b8 49%,
-    #e0d5c4d1 92%
-  );
+  background: var(--originales-metal);
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .collectionWorld .galleryIntro h1 a {
-  filter: drop-shadow(0 0.035em 0.07em #100e1760);
+  filter: drop-shadow(0 0.012em 0.02em #fff3df24)
+    drop-shadow(0 0.035em 0.07em #100e1760);
 }
 .world .editionWordmark {
   display: block;
@@ -4585,7 +4610,7 @@
   letter-spacing: 0.09em;
   background-image:
     linear-gradient(112deg, transparent 43%, #fff6e2 50%, transparent 57%),
-    linear-gradient(135deg, #eee8e0 5%, #b8b4c5 49%, #e0d5c4 92%);
+    var(--originales-metal);
   background-size:
     240% 100%,
     100% 100%;
