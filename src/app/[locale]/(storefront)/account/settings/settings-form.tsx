@@ -1,8 +1,17 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { Combobox } from "@/components/ui/combobox";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState, useTransition } from "react";
 import { DIAL_CODES, combinePhone, splitPhone } from "@/lib/dial-codes";
 import { saveContactDetails } from "../actions";
+
+const dialOptions = Array.from(new Set(DIAL_CODES.map(entry => entry.code))).map(code => ({
+  value: code,
+  label: "+" + code + " · " + DIAL_CODES.filter(entry => entry.code === code).map(entry => entry.country).join(", "),
+}));
 
 /** Personal details editor: name + dial-code mobile. Initial values are
     the live profile (autopulled server-side) — saving rewrites the
@@ -25,6 +34,7 @@ export function SettingsForm({
     saved: string;
   };
 }) {
+  const t = useTranslations("Account");
   const start = splitPhone(initialPhone);
   const [name, setName] = useState(initialName);
   const [dial, setDial] = useState(start.dial);
@@ -52,13 +62,13 @@ export function SettingsForm({
         <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-fog">
           {labels.name}
         </span>
-        <input
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={80}
           autoComplete="name"
           placeholder={labels.nameHint}
-          className="mt-2 w-full border border-ink/20 px-4 py-3 text-[15px] text-ink placeholder:text-fog/60 focus:border-gold focus:outline-none"
+          className="mt-2 text-[15px]"
         />
       </label>
 
@@ -68,26 +78,24 @@ export function SettingsForm({
         </span>
         <p className="mt-1 text-[13px] text-fog">{labels.phoneHint}</p>
         <div className="mt-2 flex gap-2" dir="ltr">
-          <label className="shrink-0">
-            <span className="sr-only">{labels.code}</span>
-            <select
+          <div className="w-40 shrink-0 sm:w-52">
+            <Combobox
               value={dial}
-              onChange={(e) => setDial(e.target.value)}
-              className="h-full cursor-pointer border border-ink/20 bg-white px-3 py-3 text-[15px] text-ink focus:border-gold focus:outline-none"
-            >
-              {DIAL_CODES.map((d) => (
-                <option key={`${d.code}-${d.country}`} value={d.code}>
-                  +{d.code} · {d.country}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
+              onChange={setDial}
+              options={dialOptions}
+              placeholder={labels.code}
+              ariaLabel={labels.code}
+              searchPlaceholder={t("searchDialCode")}
+              emptyText={t("noDialCodes")}
+            />
+          </div>
+          <Input
+            aria-label={labels.phone}
             value={national}
             onChange={(e) => setNational(e.target.value.replace(/[^\d\s-]/g, ""))}
             inputMode="tel"
             autoComplete="tel"
-            className="min-w-0 flex-1 border border-ink/20 px-4 py-3 text-[15px] text-ink focus:border-gold focus:outline-none"
+            className="h-auto min-w-0 flex-1 text-[15px]"
           />
         </div>
         {combined && (
@@ -98,13 +106,9 @@ export function SettingsForm({
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending || !dirty}
-          className="cursor-pointer bg-ink px-8 py-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-gold-soft hover:text-ink disabled:cursor-default disabled:opacity-40"
-        >
+        <Button type="submit" disabled={pending || !dirty}>
           {pending ? labels.saving : labels.save}
-        </button>
+        </Button>
         {msg && (
           <span className={`text-[13px] ${msg.ok ? "text-[#1e7a46]" : "text-[#9c2b2e]"}`}>
             {msg.text}

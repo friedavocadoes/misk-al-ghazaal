@@ -322,6 +322,8 @@
     "rights": "Prices in AED"
   },
   "Account": {
+    "searchDialCode": "Search country or dial code…",
+    "noDialCodes": "No matching countries.",
     "clientSpace": "YOUR MAISON ACCOUNT",
     "welcomeBack": "A familiar place.",
     "welcomeIn": "Make yourself at home.",

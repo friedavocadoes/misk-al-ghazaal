@@ -30,12 +30,9 @@
 .benefits span { color: #8a6d2f; font-size: 10px; font-variant-numeric: tabular-nums; }
 .watermark { position: absolute; bottom: -100px; inset-inline-end: -20px; font-family: Georgia, serif; font-size: 360px; line-height: 1; color: #8a6d2f06; pointer-events: none; }
 .form { min-width: 0; padding: 56px; border-inline-start: 1px solid #1c19171a; }
-.form [role="tablist"] { gap: 0; margin-bottom: 30px; border: 0; background: #e9e1d250; padding: 4px; }
-.form [role="tab"] { flex: 1; margin: 0; border: 0; padding: 12px 8px; font-size: 11px; letter-spacing: 0.12em; transition: background 180ms, color 180ms; }
-.form [role="tab"][data-state="active"] { background: #1c1917; color: #fff; }
 .form [role="tabpanel"] { margin-top: 0; }
 .form form { gap: 18px; }
-.form input:not([type="checkbox"]) { background: transparent; height: 48px; }
+.form input:not([type="checkbox"]) { background: #fffdf9; height: 48px; }
 .form form button[type="submit"] { min-height: 48px; margin-top: 4px; }
 .form label { font-size: 12px; line-height: 1.6; }
 @media (max-width: 767px) {

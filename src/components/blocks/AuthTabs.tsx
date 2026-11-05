@@ -4,7 +4,7 @@ import { LegalLinks } from "./LegalLinks";
 import { haptic } from "@/lib/haptics";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -179,7 +179,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
         <label className="grid gap-2"><span>{t("fullName")}</span><Input autoComplete="name"  placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} /></label>
         <label className="grid gap-2"><span>{t("email")}</span><Input autoComplete="email" dir="ltr" placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
         <label className="grid gap-2"><span>{t("password")}</span><Input autoComplete="new-password"  placeholder={t("password")} type="password" required minLength={6} aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
-        <details className="border-y border-ink/10 py-3"><summary className="cursor-pointer text-xs text-espresso">{t("referralPh")}</summary>
+        <details className="auth-referral group rounded-[4px] border border-ink/10 px-4 py-3 transition-colors open:border-gold/30 open:bg-sand/30"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs text-espresso [&::-webkit-details-marker]:hidden">{t("referralPh")}<span aria-hidden="true" className="text-gold transition-transform group-open:rotate-45">+</span></summary>
         <Input
           placeholder={t("referralPh")}
           aria-label={t("referralPh")}
@@ -209,15 +209,16 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 /** One-step auth: login + register as tabs on a single card. */
 export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
   const t = useTranslations("Account");
+  const locale = useLocale();
   const params = useSearchParams();
   const rawNext = params.get("next") ?? "/account";
   // Internal paths only — never bounce shoppers to an external URL.
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !/[\\\u0000-\u001f]/.test(rawNext) ? rawNext : "/account";
   const ref = params.get("ref") ?? "";
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
+    <Tabs dir={locale === "ar" ? "rtl" : "ltr"} defaultValue={defaultTab} className="w-full">
       {params.get("error") === "google" && <p role="alert" className="mb-4 text-sm text-red-800">{t("googleUnavailable")}</p>}
-      <TabsList className="w-full justify-start">
+      <TabsList variant="default" className="mb-8 w-full">
         <TabsTrigger value="login">{t("login")}</TabsTrigger>
         <TabsTrigger value="register">{t("register")}</TabsTrigger>
       </TabsList>
