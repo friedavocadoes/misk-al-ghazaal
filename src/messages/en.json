@@ -49,7 +49,7 @@
     "free": "Complimentary",
     "total": "Total",
     "checkout": "Proceed to Checkout",
-    "checkoutNote": "Cash on delivery across the UAE · complimentary shipping above AED 200.",
+    "checkoutNote": "Complimentary UAE shipping above AED 200.",
     "qty": "Qty",
     "remove": "Remove",
     "decrease": "Decrease quantity",
@@ -106,9 +106,10 @@
     "referralBad": "That referral code isn't valid.",
     "discount": "Discount",
     "referralDiscount": "Referral reward",
-    "placeOrder": "Place order · Cash on delivery",
+    "termsStale": "Please refresh checkout to review the latest terms before placing your order.",
+    "placeOrder": "Place order",
     "placing": "Placing your order…",
-    "codNote": "Pay in cash or by card machine at your door, anywhere in the UAE.",
+    "codNote": "Payment method for this order · Cash on delivery",
     "successTitle": "Shukran — order received.",
     "successText": "Our team will call to confirm, then your parcel leaves with complimentary samples.",
     "reference": "Order",
@@ -229,7 +230,7 @@
     "shippingTitle": "Shipping",
     "shippingBody": "Complimentary above AED 200 (1–3 working days). Flat AED 26 below AED 200. Remote areas up to 5 days.",
     "assuranceTitle": "Assurance",
-    "assuranceBody": "100% authentic, 7-day returns on unopened pieces, cash on delivery within the UAE."
+    "assuranceBody": "100% authentic. Unopened items can be returned within 30 days with proof of purchase."
   },
   "Search": {
     "eyebrow": "Search",
@@ -318,9 +319,19 @@
   },
   "Footer": {
     "taglineSuffix": "Crafted for the Emirates.",
-    "rights": "Prices in AED · Cash on Delivery within UAE"
+    "rights": "Prices in AED"
   },
   "Account": {
+    "searchDialCode": "Search country or dial code…",
+    "noDialCodes": "No matching countries.",
+    "clientSpace": "YOUR MAISON ACCOUNT",
+    "welcomeBack": "A familiar place.",
+    "welcomeIn": "Make yourself at home.",
+    "accountInvitation": "Your favourite fragrances, thoughtful discoveries, and every order — all in one place.",
+    "benefitOrders": "Follow your orders, from our door to yours",
+    "benefitWishlist": "Keep the scents you love close",
+    "benefitRewards": "Discover your personal rewards",
+    "exploreCollection": "Explore the collection",
     "eyebrow": "Maison",
     "title": "My Account",
     "text": "Client accounts arrive with Phase 2 and Supabase Auth.",
@@ -334,10 +345,11 @@
     "signIn": "Sign in",
     "create": "Create account",
     "google": "Continue with Google",
+    "googleUnavailable": "Google sign-in is unavailable. Try again or continue with email.",
     "or": "or",
     "noAccount": "New to the maison?",
     "hasAccount": "Already one of us?",
-    "checkMail": "Almost there — check your inbox for the confirmation link, then come back.",
+    "checkMail": "Almost there — check your inbox for the confirmation link, then come back. Make sure to check spam too",
     "referralPh": "Referral code (optional)",
     "referralHint": "Were you invited? Enter their code — you both earn a reward on your first order.",
     "promoOpt": "Keep me posted on private offers & new arrivals",
@@ -389,7 +401,7 @@
     "forgotTitle": "Reset your password",
     "forgotText": "Enter your account email — we'll send a reset link.",
     "sendReset": "Send reset link",
-    "resetSent": "Check your inbox for the reset link.",
+    "resetSent": "We will send you a reset link if you have an account with us. Check spam if not found in inbox.",
     "resetTitle": "Choose a new password",
     "avatarUpload": "Upload photo",
     "avatarSaved": "Photo updated",
@@ -463,5 +475,19 @@
     "soldOut": "Sold out",
     "noMatches": "Try another combination.",
     "buy": "Buy now"
+  },
+  "Legal": {
+    "settings": "Privacy settings",
+    "notice": "We collect website analytics to improve the store.",
+    "dismissNotice": "Close privacy notice",
+    "manage": "Manage",
+    "essential": "Essential only",
+    "analytics": "Optional analytics",
+    "settingsDescription": "Essential data keeps your bag, sign-in, security and orders working.",
+    "optionalDescription": "Optional analytics record browsing and shopping activity, device type, referral source and approximate location. If you sign in, activity may be linked to your account. We also use this data to invite feedback.",
+    "storageError": "Your browser could not save this choice.",
+    "privacy": "Privacy Policy",
+    "account": "Read our <terms>Terms & Conditions</terms> and <privacy>Privacy Policy</privacy>.",
+    "checkout": "By placing your order, you agree to our <terms>Terms & Conditions</terms>. See how we handle order data in our <privacy>Privacy Policy</privacy>."
   }
 }

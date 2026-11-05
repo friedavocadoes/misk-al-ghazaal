@@ -41,8 +41,8 @@ export const SITE = {
     "عطور مِسك الغزال والدخون والبخور والعود المقدس — صُنعت في الإمارات.",
   ),
   announcement: L(
-    "Complimentary delivery across the UAE on orders above AED 200 · Cash on Delivery",
-    "توصيل مجاني في الإمارات للطلبات فوق 200 درهم · الدفع عند الاستلام",
+    "Complimentary delivery across the UAE on orders above AED 200",
+    "توصيل مجاني في الإمارات للطلبات فوق 200 درهم",
   ),
   email: "support@miskalghazaalperfumes.com",
   phone: "+971 4 000 0000",
@@ -293,22 +293,22 @@ const FAQS: Localizable<Faq>[] = [
   },
   {
     en: {
-      q: "Can I pay cash on delivery?",
-      a: "Yes — cash on delivery is available everywhere within the UAE.",
+      q: "How can I pay for my order?",
+      a: "The available payment method is shown at checkout before you place your order.",
     },
     ar: {
-      q: "هل يمكنني الدفع عند الاستلام؟",
-      a: "نعم — الدفع عند الاستلام متاح في كل أنحاء الإمارات.",
+      q: "كيف أدفع مقابل طلبي؟",
+      a: "تظهر وسيلة الدفع المتاحة عند إتمام الطلب قبل إرساله.",
     },
   },
   {
     en: {
       q: "What is your return policy?",
-      a: "Unopened items may be returned within 7 days (30 days with receipt for eligible items). Write to support@miskalghazaalperfumes.com to begin.",
+      a: "Unopened items may be returned within 30 days with proof of purchase. Write to support@miskalghazaalperfumes.com to begin.",
     },
     ar: {
       q: "ما هي سياسة الإرجاع؟",
-      a: "يمكن إرجاع القطع غير المفتوحة خلال 7 أيام (30 يوماً مع الإيصال للقطع المؤهلة). راسلنا على support@miskalghazaalperfumes.com للبدء.",
+      a: "يمكن إرجاع القطع غير المفتوحة خلال 30 يوماً مع إثبات الشراء. راسلنا على support@miskalghazaalperfumes.com للبدء.",
     },
   },
 ];
@@ -333,12 +333,8 @@ const PERKS: Localizable<Perk>[] = [
     ar: { title: "توصيل 2–3 أيام", desc: "في كل الإمارات" },
   },
   {
-    en: { title: "Cash On Delivery", desc: "Available within the UAE" },
-    ar: { title: "الدفع عند الاستلام", desc: "متاح داخل الإمارات" },
-  },
-  {
-    en: { title: "7-Day Returns", desc: "On unopened items" },
-    ar: { title: "إرجاع 7 أيام", desc: "للقطع غير المفتوحة" },
+    en: { title: "30-Day Returns", desc: "On unopened items" },
+    ar: { title: "إرجاع خلال 30 يوماً", desc: "للقطع غير المفتوحة" },
   },
 ];
 

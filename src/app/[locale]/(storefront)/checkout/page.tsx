@@ -6,6 +6,8 @@ import {CartStockNotice, StockCheckoutGuard} from "@/components/blocks/CartStock
 import type {CartStockIssue} from "@/lib/pricing";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CHECKOUT_TERMS_VERSION } from "@/lib/checkout-terms";
+import { LegalLinks } from "@/components/blocks/LegalLinks";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowUpRight, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
@@ -39,7 +41,7 @@ export default function CheckoutPage() {
   const [guest, setGuest] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
   const [savePhone, setSavePhone] = useState(true);
-  const [whatsappOptIn,setWhatsappOptIn]=useState(true);
+  const [whatsappOptIn,setWhatsappOptIn]=useState(false);
   const [addrInitial, setAddrInitial] = useState<{
     line?: string; building?: string; countryCode?: string; state?: string;
     city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
@@ -310,6 +312,7 @@ export default function CheckoutPage() {
     if (/row-level security|permission denied|secret|service_role|JWT|Failed fetch|fetch failed/i.test(msg)) {
       return t("serverError");
     }
+    if (msg === "terms:stale") return t("termsStale");
     return msg || t("orderError");
   };
 
@@ -333,6 +336,7 @@ export default function CheckoutPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        checkout_terms_version: CHECKOUT_TERMS_VERSION,
         customer_name: name,
         phone,
         email,
@@ -726,12 +730,18 @@ export default function CheckoutPage() {
               <dd className="font-display text-xl text-ink">{quote ? formatAED(quote.total) : "…"}</dd>
             </div>
           </dl>
-          <label className="mb-4 flex items-start gap-3 border border-ink/10 bg-white p-4 text-sm leading-6"><input type="checkbox" checked={whatsappOptIn} onChange={e=>setWhatsappOptIn(e.target.checked)} className="mt-1"/>{locale === "ar" ? "ستُرسل تحديثات الطلب إلى رقم الهاتف هذا عبر واتساب." : "Order updates will be sent to this mobile number via WhatsApp."}</label>
+          <label className="mb-4 flex items-start gap-3 border border-ink/10 bg-white p-4 text-sm leading-6"><input type="checkbox" checked={whatsappOptIn} onChange={e=>setWhatsappOptIn(e.target.checked)} className="mt-1"/>{locale === "ar" ? "أرغب في تلقي تحديثات هذا الطلب عبر واتساب على هذا الرقم." : "Send me updates for this order via WhatsApp at this number."}</label>
             {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}<div className="mt-6"><StockCheckoutGuard issues={stockIssues}><Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
-            {placing ? t("placing") : t("placeOrder")}
-          </Button></StockCheckoutGuard></div>
-          <p className="mt-3 text-center text-[11px] leading-relaxed text-fog">{t("codNote")}</p>
+          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}
+          <div className="mt-6">
+            <p className="mb-2 text-sm text-espresso">{t("codNote")}</p>
+            <div className="mb-3"><LegalLinks context="checkout" /></div>
+            <StockCheckoutGuard issues={stockIssues}>
+              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
+                {placing ? t("placing") : t("placeOrder")}
+              </Button>
+            </StockCheckoutGuard>
+          </div>
         </aside>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { ensureAnalyticsIdentity,lastViewedProduct,trackEvent } from "@/lib/anal
 import { isShoppingPath,productSlug,surveyEligible,surveyRouteAllowed,type SurveyContext } from "@/lib/analytics/survey-policy";
 import { feedbackHistory,rememberFeedback,SURVEY_HISTORY_KEY } from "@/lib/analytics/survey-memory";
 import type { AnalyticsItem } from "@/lib/analytics/shared";
+import { browserPrivacyChoice, usePrivacyChoice } from "@/lib/analytics/consent-client";
 import { OPTIONS } from "./survey-options";
 const BAG="misk-survey-bag";
 type SavedBag={items:AnalyticsItem[];updatedAt:number;awayAt?:number;checkoutAt?:number};
@@ -16,8 +17,12 @@ function readBag():SavedBag{
  try{const b=JSON.parse(localStorage.getItem(BAG)??"null");if(b&&Array.isArray(b.items)&&typeof b.updatedAt==="number"&&b.items.every((i:AnalyticsItem)=>typeof i.product_id==="string"&&typeof i.product_name==="string"&&Number.isFinite(i.price)&&Number.isFinite(i.quantity)))return b;}catch{}
  return {items:[],updatedAt:0};
 }
-function saveBag(value:SavedBag){try{localStorage.setItem(BAG,JSON.stringify(value));}catch{}}
+function saveBag(value:SavedBag){if(browserPrivacyChoice() === "essential")return;try{localStorage.setItem(BAG,JSON.stringify(value));}catch{}}
 export function CartAbandonmentSurvey(){
+ const choice = usePrivacyChoice();
+  return choice !== null && choice !== "essential" ? <ActiveSurvey /> : null;
+}
+function ActiveSurvey(){
  const {lines,hydrated}=useCart(),{meta}=useCartMeta(lines.map(l=>l.productSlug)),path=usePathname(),ar=useLocale()==="ar";
  const [context,setContext]=useState<SurveyContext|null>(null),[expanded,setExpanded]=useState(false),[reason,setReason]=useState(""),[comment,setComment]=useState(""),[state,setState]=useState<"idle"|"saving"|"sent"|"error">("idle");
  const cart=useRef<AnalyticsItem[]>([]),lastBag=useRef<AnalyticsItem[]>([]),product=useRef<AnalyticsItem|null>(null),active=useRef<SurveyContext|null>(null);
@@ -27,7 +32,7 @@ export function CartAbandonmentSurvey(){
  const cancelPending=useCallback(()=>{version.current++;if(timer.current)clearTimeout(timer.current);request.current?.abort();},[]);
  const close=useCallback(()=>{cancelPending();active.current=null;setContext(null);setExpanded(false);},[cancelPending]);
  const eligible=useCallback(()=>{
-  if(paused.current||document.hidden||!surveyRouteAllowed(currentPath.current))return false;
+  if(browserPrivacyChoice() === "essential" || paused.current||document.hidden||!surveyRouteAllowed(currentPath.current))return false;
   try{const sid=ensureAnalyticsIdentity();return surveyEligible(Date.now(),feedbackHistory(),!!sessionStorage.getItem(`analytics-survey:${sid}`),!!sessionStorage.getItem(`analytics-purchased:${sid}`));}catch{return false;}
  },[]);
  const relevant=useCallback((next:SurveyContext)=>next.type==="product"?productSlug(currentPath.current)===next.product_id&&!added.current.has(next.product_id??"")&&!cart.current.some(i=>i.product_id===next.product_id):next.trigger!=="cart_return"||cart.current.length>0,[]);

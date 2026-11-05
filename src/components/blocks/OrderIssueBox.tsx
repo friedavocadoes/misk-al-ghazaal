@@ -179,7 +179,7 @@ export function OrderIssueBox({
                 </>
               )}
               {type === "refund_status" && (
-                <label className="block text-sm">Anything we should know?<textarea value={fields.note ?? ""} onChange={set("note")} rows={3} className={inputCls} placeholder="e.g. paid by card machine, waiting 5 days" /></label>
+                <label className="block text-sm">Anything we should know?<textarea value={fields.note ?? ""} onChange={set("note")} rows={3} className={inputCls} placeholder="e.g. payment was collected, waiting 5 days" /></label>
               )}
               {type === "other" && (
                 <>

@@ -6,10 +6,17 @@ import { createClient } from "@/lib/supabase/client";
 import { privateOrderPath, attributionCookie, attributionFromUrl } from "@/lib/analytics/shared";
 import { trackEvent, trackRoute } from "@/lib/analytics/client";
 
+import { browserPrivacyChoice, usePrivacyChoice } from "@/lib/analytics/consent-client";
+
 export function AnalyticsProvider() {
+  const choice = usePrivacyChoice();
+  return choice !== null && choice !== "essential" ? <ActiveAnalytics /> : null;
+}
+
+function ActiveAnalytics() {
   const pathname = usePathname(); const query = useSearchParams();
   useEffect(() => {
-    if(privateOrderPath(pathname))return;
+    if(browserPrivacyChoice() === "essential" || privateOrderPath(pathname))return;
     if (/^\/(admin|auth|api)(\/|$)/.test(pathname)) return;
     try {
       const touch=attributionFromUrl(new URL(location.href),document.referrer);

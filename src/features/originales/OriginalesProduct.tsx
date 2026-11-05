@@ -70,7 +70,7 @@ export function OriginalesProduct({
     stock = product.outOfStock ? 0 : (variant?.stock ?? Infinity),
     safeQty = Math.min(qty, Math.max(1, Math.min(20, stock))),
     price = variant?.price ?? product.price,
-    bottle = edition.bottle ?? product.images[0] ?? "/logo.webp";
+    bottle = edition.bottle ?? product.images[0] ?? "/mag.webp";
   useEffect(() => {
     let live = true;
     const timer = setTimeout(() => {

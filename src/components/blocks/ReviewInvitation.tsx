@@ -2,12 +2,18 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { browserPrivacyChoice, usePrivacyChoice } from "@/lib/analytics/consent-client";
 import { createClient } from "@/lib/supabase/client";
 type Prompt = {
   orderId: string;
   items: { id: string; slug: string; title: string; href?: string }[];
 };
 export function ReviewInvitation() {
+  const choice = usePrivacyChoice();
+  return choice !== null && choice !== "essential" ? <ActiveReviewInvitation /> : null;
+}
+
+function ActiveReviewInvitation() {
   const [prompt, setPrompt] = useState<Prompt | null>(null);
   const path = usePathname();
   useEffect(() => {
@@ -22,7 +28,7 @@ export function ReviewInvitation() {
       if (!user) return;
       const version = generation;
       timer = setTimeout(async () => {
-        if (document.hidden || /checkout|account|cart/.test(location.pathname))
+        if (browserPrivacyChoice() === "essential" || document.hidden || /checkout|account|cart/.test(location.pathname))
           return;
         try {
           const r = await fetch("/api/review-prompt", {
@@ -54,7 +60,7 @@ export function ReviewInvitation() {
     };
   }, []);
   function close(state: "dismissed" | "opened") {
-    if (prompt)
+    if (prompt && browserPrivacyChoice() !== "essential")
       void fetch("/api/review-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

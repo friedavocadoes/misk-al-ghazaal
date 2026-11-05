@@ -1,3 +1,4 @@
+import { LegalContent } from "@/components/blocks/LegalContent";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
@@ -109,7 +110,7 @@ export default async function StaticInfoPage(
       <div className="mt-10">
         {slug === "faq" && <FaqAccordion items={getFaqs(locale)} />}
         {slug === "wishlist" && <WishlistGrid products={await getProducts()} />}
-        {slug !== "contact" && slug !== "faq" && slug !== "wishlist" && (
+        {slug === "privacy" || slug === "terms" ? <LegalContent locale={locale} policy={slug} /> : slug !== "faq" && slug !== "wishlist" && (
           <div
             className="prose max-w-none text-espresso"
             dangerouslySetInnerHTML={{ __html: page.html }}

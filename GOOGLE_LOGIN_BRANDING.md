@@ -28,3 +28,19 @@ Changing only Supabase's Site URL does not rename the Google app or replace the 
 Repository references: `SETUP_SUPABASE.md` section 6c, `src/app/auth/callback/route.ts`, and the shared Supabase clients in `src/lib/supabase/`.
 
 No provider settings, DNS records, OAuth credentials, billing, or deployed environment variables were changed by this task. After making dashboard changes, test a fresh Google sign-in and confirm it returns to the production shop.
+
+## Free-tier storefront sign-in and branded email
+
+1. In Google Auth Platform, set the app name, logo, support email, public homepage and policy links on the Google project that owns the OAuth web client in Supabase. Verify the storefront domain and complete Google's publishing and branding requirements. Under **Clients**, add each exact storefront origin you will use to **Authorized JavaScript origins** (for example the production HTTPS origin and http://localhost:3000 for local testing). Origins have no path. Retain the current authorized redirect URI for the existing redirect flow.
+2. Keep the Google provider enabled in Supabase and use the same OAuth web client ID for **NEXT_PUBLIC_GOOGLE_CLIENT_ID** in the app or Vercel. Redeploy after changing this public build-time variable. Keep the Google client secret in Supabase only. Without the variable, the app uses the existing redirect button.
+3. Under **Supabase → Authentication → SMTP Settings**, configure the no-reply mailbox's actual SMTP host, port, username, password, sender email and **Misk Al Ghazaal** sender name. Vercel's SMTP variables configure application mail only. Keep email confirmations enabled. In **Authentication → Email Templates**, brand Confirm signup and Reset password while retaining the working Supabase confirmation URL variable. Check the Site URL and redirect allowlist, including the production storefront's /auth/callback.
+4. Check SPF, DKIM and DMARC for the sender and disable link tracking on verification and recovery mail. Test with a fresh non-team inbox, an existing Google customer, and a new Google signup. Confirm the returned account, checkout return path, referral, and any eligible guest order before public rollout. Google controls the chooser's presentation.
+
+## Same-tab Google redirect
+
+The storefront Google button now uses GIS redirect mode. In the existing Google OAuth web client, add these exact **Authorized redirect URIs** for each origin you use:
+
+- https://YOUR-STOREFRONT-DOMAIN/auth/google
+- http://localhost:3000/auth/google for local testing
+
+Retain the existing Supabase callback URI for the fallback redirect flow. JavaScript origins still contain only the origin. The application prepares a short-lived, HttpOnly nonce cookie and Google POSTs its credential to /auth/google. The handler checks Google's double-submit CSRF token and the per-attempt nonce before requesting a Supabase session. Secure SameSite=None attempt cookies allow the cross-site form POST from Google. Use HTTPS outside localhost. The handler returns with a 303 redirect, preserving the saved destination, Arabic locale and referral context. No Google client secret belongs in frontend environment variables.

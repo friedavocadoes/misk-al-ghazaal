@@ -1,8 +1,10 @@
 "use client";
+import { GoogleIdentityButton } from "./GoogleIdentityButton";
+import { LegalLinks } from "./LegalLinks";
 import { haptic } from "@/lib/haptics";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,13 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 
-function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean }) {
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+function GoogleButton({ onClick, next, referral, busy }: { onClick: () => void; next: string; referral?: string; busy: boolean }) {
   const t = useTranslations("Account");
   return (
     <>
-      <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
+      {googleClientId ? <GoogleIdentityButton clientId={googleClientId} next={next} referral={referral} /> : <Button data-ios-haptic="on" variant="outline" className="w-full cursor-pointer" onClick={onClick} disabled={busy}>
         <GoogleGlyph className="size-[18px]" /> {t("google")}
-      </Button>
+      </Button>}
       <div className="my-6 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-fog">
         <span className="h-px flex-1 bg-ink/10" />
         {t("or")}
@@ -28,28 +32,29 @@ function GoogleButton({ onClick, busy }: { onClick: () => void; busy: boolean })
   );
 }
 
+async function finishShopperSignIn(router: ReturnType<typeof useRouter>, next: string, ref?: string) {
+  try {
+    await fetch("/api/auth/ensure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ref }),
+    });
+  } catch {
+    /* Profile backfills on next visit. */
+  }
+  router.push(next);
+  router.refresh();
+}
+
 function LoginPane({ next }: { next: string }) {
   const t = useTranslations("Account");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [promo, setPromo] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const afterAuth = async () => {
-    try {
-      await fetch("/api/auth/ensure", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ promoOptIn: promo }),
-      });
-    } catch {
-      /* profile backfills on next visit */
-    }
-    router.push(next);
-    router.refresh();
-  };
+  const afterAuth = () => finishShopperSignIn(router, next);
 
   const emailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,25 +90,16 @@ function LoginPane({ next }: { next: string }) {
 
   return (
     <>
-      <GoogleButton onClick={googleLogin} busy={busy} />
+      <GoogleButton onClick={googleLogin} next={next} busy={busy} />
       <form onSubmit={emailLogin} className="grid gap-3">
-        <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input placeholder={t("password")} type="password" required aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <label className="grid gap-2"><span>{t("email")}</span><Input autoComplete="email" dir="ltr" placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("password")}</span><Input autoComplete="current-password"  placeholder={t("password")} type="password" required aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
         <div className="flex justify-end">
-          <Link href="/account/forgot" className="text-[12px] font-semibold uppercase tracking-[0.14em] text-fog transition hover:text-gold">
+          <Link href="/account/forgot" className="text-xs text-espresso underline underline-offset-4 transition hover:text-gold">
             {t("forgot")}
           </Link>
         </div>
         {error && <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
-        <label className="flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-fog">
-          <input
-            type="checkbox"
-            checked={promo}
-            onChange={(e) => setPromo(e.target.checked)}
-            className="mt-0.5 size-3 shrink-0 cursor-pointer accent-[#8a6d2f]"
-          />
-          <span>{t("promoOpt")}</span>
-        </label>
         <Button data-ios-haptic="on" type="submit" disabled={busy}>
           {t("signIn")}
         </Button>
@@ -119,7 +115,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referral, setReferral] = useState(initialRef);
-  const [promo, setPromo] = useState(true);
+  const [promo, setPromo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [checkMail, setCheckMail] = useState(false);
@@ -134,7 +130,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
       email,
       password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, signup_promo_opt_in: promo },
         emailRedirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`,
       },
     });
@@ -146,17 +142,7 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
     }
     haptic("success");
     if (data.session) {
-      try {
-        await fetch("/api/auth/ensure", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ref: ref || undefined, promoOptIn: promo }),
-        });
-      } catch {
-        /* backfills later */
-      }
-      router.push(next);
-      router.refresh();
+      await finishShopperSignIn(router, next, ref);
     } else {
       setBusy(false);
       setCheckMail(true);
@@ -188,19 +174,20 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 
   return (
     <>
-      <GoogleButton onClick={googleSignup} busy={busy} />
+      <GoogleButton onClick={googleSignup} next={next} referral={referral.trim()} busy={busy} />
       <form onSubmit={submit} className="grid gap-3">
-        <Input placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} />
-        <Input placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input placeholder={t("password")} type="password" required minLength={6} aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <label className="grid gap-2"><span>{t("fullName")}</span><Input autoComplete="name"  placeholder={t("fullName")} aria-label={t("fullName")} value={name} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("email")}</span><Input autoComplete="email" dir="ltr" placeholder={t("email")} type="email" required aria-label={t("email")} value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+        <label className="grid gap-2"><span>{t("password")}</span><Input autoComplete="new-password"  placeholder={t("password")} type="password" required minLength={6} aria-label={t("password")} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+        <details className="auth-referral group rounded-[4px] border border-ink/10 px-4 py-3 transition-colors open:border-gold/30 open:bg-sand/30"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs text-espresso [&::-webkit-details-marker]:hidden">{t("referralPh")}<span aria-hidden="true" className="text-gold transition-transform group-open:rotate-45">+</span></summary>
         <Input
           placeholder={t("referralPh")}
           aria-label={t("referralPh")}
           value={referral}
           onChange={(e) => setReferral(e.target.value.toUpperCase())}
-          className="font-mono uppercase"
+          className="mt-3 font-mono uppercase"
         />
-        <p className="-mt-1 text-[12px] leading-relaxed text-fog">{t("referralHint")}</p>
+        <p className="-mt-1 text-[12px] leading-relaxed text-fog">{t("referralHint")}</p></details>
         {error && <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{error}</p>}
         <label className="flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-fog">
           <input
@@ -222,14 +209,16 @@ function RegisterPane({ next, initialRef }: { next: string; initialRef: string }
 /** One-step auth: login + register as tabs on a single card. */
 export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
   const t = useTranslations("Account");
+  const locale = useLocale();
   const params = useSearchParams();
   const rawNext = params.get("next") ?? "/account";
   // Internal paths only — never bounce shoppers to an external URL.
-  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/account";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !/[\\\u0000-\u001f]/.test(rawNext) ? rawNext : "/account";
   const ref = params.get("ref") ?? "";
   return (
-    <Tabs defaultValue={defaultTab} className="w-full">
-      <TabsList className="w-full justify-start">
+    <Tabs dir={locale === "ar" ? "rtl" : "ltr"} defaultValue={defaultTab} className="w-full">
+      {params.get("error") === "google" && <p role="alert" className="mb-4 text-sm text-red-800">{t("googleUnavailable")}</p>}
+      <TabsList variant="default" className="mb-8 w-full">
         <TabsTrigger value="login">{t("login")}</TabsTrigger>
         <TabsTrigger value="register">{t("register")}</TabsTrigger>
       </TabsList>
@@ -239,6 +228,7 @@ export function AuthTabs({ defaultTab }: { defaultTab: "login" | "register" }) {
       <TabsContent value="register">
         <RegisterPane next={next} initialRef={ref} />
       </TabsContent>
+      <LegalLinks context="account" />
     </Tabs>
   );
 }

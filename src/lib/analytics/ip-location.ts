@@ -42,6 +42,7 @@ export async function resolveAnalyticsLocation(req: Request) {
               : null,
         })
       : analyticsLocation(new Headers());
+  if (edge.country || process.env.ANALYTICS_IP_LOOKUP !== "1") return edge;
   const raw = vercel
     ? (req.headers.get("x-vercel-forwarded-for") ??
       req.headers.get("x-forwarded-for"))
@@ -52,7 +53,7 @@ export async function resolveAnalyticsLocation(req: Request) {
         : null;
   const ip = publicIP(raw);
   const secret = process.env.COMMUNICATION_PREFERENCES_SECRET;
-  if (!ip || !secret || process.env.ANALYTICS_IP_LOOKUP === "0") return edge;
+  if (!ip || !secret) return edge;
   try {
     const db = createAdminClient(),
       key = createHmac("sha256", secret).update(ip).digest("hex");

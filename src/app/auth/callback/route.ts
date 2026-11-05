@@ -22,7 +22,10 @@ export async function GET(req: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
       const admin = await createAdminClient();
-      const { created } = await ensureProfile(admin, data.user.id, data.user.email ?? null, ref);
+      const { created } = await ensureProfile(
+          admin, data.user.id, data.user.email ?? null, ref,
+          data.user.app_metadata.provider === "email" && data.user.user_metadata.signup_promo_opt_in === true,
+        );
       if (data.user.email) await claimGuestOrders(admin, data.user.id, data.user.email);
       if (created && data.user.email) {
         const meta = (data.user.user_metadata ?? {}) as { full_name?: string; name?: string };

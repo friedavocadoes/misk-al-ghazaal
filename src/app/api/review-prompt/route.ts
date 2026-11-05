@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { PRIVACY_COOKIE, privacyChoice } from "@/lib/analytics/consent";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
 import { storefrontProductPath } from "@/features/originales/config";
@@ -5,6 +7,9 @@ export async function POST(req: Request) {
   if (req.headers.get("origin") !== new URL(req.url).origin)
     return Response.json({}, { status: 403 });
   try {
+    if (privacyChoice((await cookies()).get(PRIVACY_COOKIE)?.value) === "essential") {
+      return Response.json({ prompt: null });
+    }
     const db = await createClient();
     const {
       data: { user },

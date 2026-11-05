@@ -1,3 +1,4 @@
+import { browserPrivacyChoice } from "./consent-client";
 import type { SurveyHistory } from "./survey-policy";
 export const SURVEY_HISTORY_KEY="misk-survey-history";
 export function feedbackHistory():SurveyHistory {
@@ -6,7 +7,7 @@ export function feedbackHistory():SurveyHistory {
  try{const cookie=document.cookie.split("; ").find(v=>v.startsWith("misk-feedback-purchase="));const stamp=Number(cookie?.split("=")[1]);if(Number.isFinite(stamp)&&stamp>0)history.purchasedAt=Math.max(history.purchasedAt??0,stamp);}catch{}
  return history;
 }
-export function rememberFeedback(patch:SurveyHistory){try{localStorage.setItem(SURVEY_HISTORY_KEY,JSON.stringify({...feedbackHistory(),...patch}));}catch{}}
+export function rememberFeedback(patch:SurveyHistory){if(browserPrivacyChoice() === "essential")return;try{localStorage.setItem(SURVEY_HISTORY_KEY,JSON.stringify({...feedbackHistory(),...patch}));}catch{}}
 export function rememberPurchase(){
  const now=Date.now();rememberFeedback({purchasedAt:now});
  try{document.cookie=`misk-feedback-purchase=${now}; Path=/; Max-Age=604800; SameSite=Lax${location.protocol==="https:"?"; Secure":""}`;}catch{}

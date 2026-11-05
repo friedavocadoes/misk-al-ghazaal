@@ -1,3 +1,4 @@
+import { analyticsCollectionEnabled } from "@/lib/analytics/environment";
 import { Suspense } from "react";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import type { ReactNode } from "react";
@@ -5,5 +6,5 @@ import type { ReactNode } from "react";
 // Root layout stays minimal: <html>/<body> live in app/[locale]/layout.tsx
 // so lang + dir follow the active locale.
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return <><Suspense fallback={null}><AnalyticsProvider /></Suspense>{children}</>;
+  return <>{analyticsCollectionEnabled() && <Suspense fallback={null}><AnalyticsProvider /></Suspense>}{children}</>;
 }

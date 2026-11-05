@@ -29,9 +29,10 @@ export async function getFooterColumns(locale: Locale): Promise<FooterColumn[]> 
           href: "/pages/faq",
         },
         {
-          label: pick(L("Returns & Terms", "الإرجاع والشروط"), locale),
+          label: pick(L("Terms & Conditions", "الشروط والأحكام"), locale),
           href: "/pages/terms",
         },
+        { label: pick(L("Privacy Policy", "سياسة الخصوصية"), locale), href: "/pages/privacy" },
         {
           label: pick(L("Wishlist", "المفضلة"), locale),
           href: "/pages/wishlist",

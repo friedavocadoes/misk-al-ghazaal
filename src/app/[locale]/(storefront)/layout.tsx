@@ -1,3 +1,4 @@
+import { PrivacyNotice } from "@/components/analytics/PrivacyNotice";
 import { StorefrontHaptics } from "@/components/blocks/StorefrontHaptics";
 import { CartAbandonmentSurvey } from "@/components/analytics/CartAbandonmentSurvey";
 import {ReviewInvitation} from "@/components/blocks/ReviewInvitation";
@@ -35,6 +36,7 @@ export default async function StorefrontLayout(
             in-flow layout exactly, morph included. */}
         <StorefrontHaptics/><CartAbandonmentSurvey/><StorefrontToasts /><ReviewInvitation/>
         <RouteProgress />
+        <PrivacyNotice />
         <StorefrontChrome editor={editable ? <AdminEditBar /> : null} header={<SiteHeader locale={locale} campaigns={campaigns} shopMenu={shopMenu} />} footer={<Suspense fallback={<div className="h-80 bg-sand/60" />}><SiteFooter locale={locale} /></Suspense>}>
           {props.children}
         </StorefrontChrome>

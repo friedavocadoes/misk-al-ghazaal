@@ -1,3 +1,4 @@
+import { CHECKOUT_TERMS_VERSION } from "@/lib/checkout-terms";
 import { processTelegramQueue } from "@/lib/telegram";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { getOrderAccessPath, rememberOrderAccess } from "@/lib/order-access";
@@ -25,6 +26,7 @@ function randomCode(prefix: string, len = 6): string {
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as {
+      checkout_terms_version?: string;
       customer_name?: string;
       phone?: string;
       email?: string;
@@ -46,6 +48,9 @@ export async function POST(req: Request) {
       save_phone?: boolean;
       whatsapp_opt_in?: boolean;
     };
+    if (body.checkout_terms_version !== CHECKOUT_TERMS_VERSION) {
+      return NextResponse.json({ error: "terms:stale" }, { status: 409 });
+    }
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
     const email = (body.email ?? "").trim();
@@ -105,6 +110,7 @@ export async function POST(req: Request) {
       .from("orders")
       .insert({
         ...(body.sample_ids?.length ? {sample_ids:body.sample_ids} : {}),
+        checkout_terms_version: CHECKOUT_TERMS_VERSION,
         order_no: "", // trigger assigns MG-0001…
         customer_name: name,
         phone,
