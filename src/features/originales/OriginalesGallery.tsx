@@ -15,6 +15,7 @@ import { editionFor, originalesPath } from "./config";
 import { COLLECTION_STORY, editionStory } from "./story";
 import { AtelierBagButton } from "./AtelierControls";
 import { CollectionGlass } from "./CollectionGlass";
+import { CollectionBottle, COLLECTION_BOTTLE_ASPECT } from "./CollectionBottle";
 import { useAtelierScroll } from "./atelier-scroll";
 import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
@@ -226,7 +227,7 @@ export function OriginalesGallery({
               let closingStart = 0;
               let travel = 0;
               let handoffDistance = 0;
-              let flight: { x: number; y: number }[] = [];
+              let flight: { x: number; y: number; scale: number }[] = [];
 
               const measureMobile = () => {
                 const stageTop = parseFloat(getComputedStyle(stage).top);
@@ -243,10 +244,28 @@ export function OriginalesGallery({
                   finale.getBoundingClientRect().top + scrollY - stageBottom;
                 travel = Math.min(24, stage.offsetHeight * 0.08);
                 handoffDistance = Math.max(180, innerHeight * 0.32);
-                flight = figures.map((figure) => ({
-                  x: stage.clientWidth / 2 - figure.offsetLeft,
-                  y: stage.offsetHeight * 0.55 - figure.offsetTop,
-                }));
+                flight = figures.map((figure) => {
+                  const position = getComputedStyle(figure);
+                  const plane = figure.querySelector<HTMLElement>(
+                    "[data-registered-bottle]",
+                  );
+                  const imageHeight = Math.min(
+                    plane?.offsetHeight ?? figure.offsetHeight * 0.85,
+                    figure.offsetWidth / COLLECTION_BOTTLE_ASPECT,
+                  );
+                  const scale = (stage.offsetHeight - 12) / imageHeight;
+                  const imageTop =
+                    (plane?.offsetHeight ?? imageHeight) - imageHeight;
+                  return {
+                    x: stage.clientWidth / 2 - parseFloat(position.left),
+                    y:
+                      6 +
+                      (figure.offsetHeight * scale) / 2 -
+                      parseFloat(position.top) -
+                      imageTop * scale,
+                    scale,
+                  };
+                });
               };
               gsap.set(figures, { xPercent: -50, yPercent: -50 });
               measureMobile();
@@ -289,20 +308,19 @@ export function OriginalesGallery({
                     alpha = index === 0 ? 1 : 1 - ease(clamp(opening / 0.68));
                   } else if (index === chapter) {
                     alpha = (1 - handoff) * (1 - closing);
-                    slide = -(handoff + closing) * travel;
+                    slide = -closing * travel;
                   } else if (index === chapter + 1) {
                     alpha = handoff;
-                    slide = (1 - handoff) * travel;
                   } else {
                     alpha = 0;
                   }
                   const setter = setters[index];
                   if (!setter.visible && alpha === 0) return;
                   setter.visible = alpha > 0;
-                  const { x, y } = flight[index];
+                  const { x, y, scale } = flight[index];
                   setter.x(x * focus);
                   setter.y(y * focus + slide);
-                  setter.scale(1 + focus * 0.42);
+                  setter.scale(1 + focus * (scale - 1));
                   setter.opacity(alpha);
                   const inert = alpha < 0.5;
                   if (figure.inert !== inert) figure.inert = inert;
@@ -374,18 +392,21 @@ export function OriginalesGallery({
                 const purchase = stage.querySelector<HTMLElement>(
                   "[data-gallery-purchase]",
                 );
-                // Reserve the real identity/control height, including the small
-                // incoming drift. Asset aspect ratios must not push bottles into it.
-                const drift = motion ? Math.min(36, innerHeight * 0.04) : 0;
+                // Registered artwork shares one stationary frame during dissolves.
                 const availableHeight =
-                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 24 - drift;
+                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 24;
                 poses = figures.map((figure) => {
+                  const position = getComputedStyle(figure);
                   const bottle = figure.querySelector<HTMLImageElement>(
                     "[data-chapter-bottle]",
                   );
-                  const aspect = bottle?.naturalHeight
-                    ? bottle.naturalWidth / bottle.naturalHeight
-                    : 0.65;
+                  const aspect = figure.querySelector(
+                    "[data-registered-bottle]",
+                  )
+                    ? COLLECTION_BOTTLE_ASPECT
+                    : bottle?.naturalHeight
+                      ? bottle.naturalWidth / bottle.naturalHeight
+                      : 0.65;
                   const plane = bottle?.parentElement;
                   const planeHeight =
                     plane?.offsetHeight ?? figure.offsetHeight * 0.88;
@@ -394,7 +415,7 @@ export function OriginalesGallery({
                     figure.offsetWidth / aspect,
                   );
                   const focusHeight = Math.min(
-                    innerHeight * 0.62 * 0.88,
+                    innerHeight * 0.72 * 0.88,
                     (stage.clientWidth * 0.43) / aspect,
                     Math.max(1, availableHeight),
                   );
@@ -406,11 +427,11 @@ export function OriginalesGallery({
                     planeHeight * scale - focusHeight,
                   );
                   return {
-                    x: stage.clientWidth * 0.25 - figure.offsetLeft,
+                    x: stage.clientWidth * 0.25 - parseFloat(position.left),
                     y:
                       16 +
                       (figure.offsetHeight * scale) / 2 -
-                      figure.offsetTop -
+                      parseFloat(position.top) -
                       letterbox,
                     scale,
                   };
@@ -466,11 +487,7 @@ export function OriginalesGallery({
                       );
                 const pose = poses[index];
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
-                  const y =
-                    pose.y * focus +
-                    (1 - entered - left) *
-                      (motion ? Math.min(36, height * 0.04) : 0) *
-                      chapterMotion;
+                  const y = pose.y * focus;
                   const scale = 1 + (pose.scale - 1) * focus;
                   figure.style.transform = `translate(-50%, -50%) translate3d(${pose.x * focus}px, ${y}px, 0) scale(${scale})`;
                 }
@@ -773,33 +790,11 @@ export function OriginalesGallery({
                 }
               >
                 <Link href={originalesPath(product)}>
-                  <span className={s.galleryBottlePlane}>
-                    <Image
-                      data-chapter-bottle
-                      src={bottle}
-                      alt={edition.name}
-                      width={650}
-                      height={1000}
-                      priority
-                      sizes={sizes}
-                      className={s.sequenceBottle}
-                    />
-                    {edition.bottle && (
-                      <span
-                        data-gallery-reflection
-                        className={s.galleryReflection}
-                        aria-hidden="true"
-                      >
-                        <Image
-                          src={bottle}
-                          alt=""
-                          width={650}
-                          height={1000}
-                          sizes={sizes}
-                        />
-                      </span>
-                    )}
-                  </span>
+                  <CollectionBottle
+                    src={bottle}
+                    name={edition.name}
+                    sizes={sizes}
+                  />
                   <figcaption data-bottle-caption>
                     <span>{edition.name}</span>
                     <small>{formatAED(product.price)}</small>

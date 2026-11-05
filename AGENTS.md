@@ -495,7 +495,7 @@ This section and the corrected entries above supersede historical implementation
 ## 52. Originales collection refinement (2026-11-05)
 
 - Current capsule presentation is documented in `src/features/originales/README.md`; its later entries supersede historical water/model/font instructions above. Collection and shared navbar titles now reuse optimized Manrope, matching the PDP name direction. The Cormorant font face and assets were removed.
-- Keep the collection's GalleryPurchase mounted across chapter changes. Its background colour eases between edition tints, while cart targets update immediately. Confirmation state is product-specific. Desktop chapter bottle cross-dissolves span48vh with<=36px travel; mobile handoffs span>=180px with<=24px travel and complete at the chapter reading stop. Preserve existing persistent bottle nodes, section anchors, reduced-motion/native-touch behavior and shared commerce logic.
+- Keep the collection's GalleryPurchase mounted across chapter changes. Its background colour eases between edition tints, while cart targets update immediately. Confirmation state is product-specific. Desktop chapter bottle cross-dissolves span48vh; mobile handoffs span>=180px and complete at the chapter reading stop. Both use stationary registered artwork with no handoff drift. CollectionBottle.tsx aligns local source margins/cap/collar/label/base in SVG using the already-loaded optimized image, with no new bitmap downloads or database changes. Preserve persistent figures, section anchors, reduced-motion/native-touch behavior and shared commerce logic. See the feature README before replacing local cutouts.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

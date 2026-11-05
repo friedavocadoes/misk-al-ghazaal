@@ -175,15 +175,13 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
       ].find((el) => getComputedStyle(el).opacity === "1");
-      const image = figure.querySelector("[data-chapter-bottle]");
-      const box = image.getBoundingClientRect();
-      const imageHeight = Math.min(
-        box.height,
-        (box.width * image.naturalHeight) / image.naturalWidth,
-      );
+      const artwork = figure.querySelector("[data-bottle-artwork]");
+      const matrix = artwork.getScreenCTM();
+      const top = new DOMPoint(310, 0).matrixTransform(matrix);
+      const bottom = new DOMPoint(310, 1000).matrixTransform(matrix);
       return {
-        bottle: box.bottom - imageHeight,
-        bottom: box.bottom,
+        bottle: top.y,
+        bottom: bottom.y,
         identity: document
           .querySelector("[data-gallery-purchase]")
           .getBoundingClientRect().top,
@@ -221,6 +219,48 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       await page
         .getByRole("button", { name: "Add to bag", exact: true })
         .isVisible(),
+    );
+    // Hold an actual dissolve rather than checking only its settled endpoints.
+    await page.evaluate(() => {
+      document.body.setAttribute("data-originales-photo-focus", "true");
+      const next = document.querySelector(
+        "[data-edition-chapter]:nth-child(3)",
+      );
+      scrollTo({
+        top: scrollY + next.getBoundingClientRect().top - innerHeight * 0.61,
+        behavior: "instant",
+      });
+    });
+    await page.waitForTimeout(1200);
+    const dissolve = await page
+      .locator("[data-gallery-bottle]")
+      .evaluateAll((figures) =>
+        figures
+          .filter((el) => {
+            const alpha = Number(getComputedStyle(el).opacity);
+            return alpha > 0.05 && alpha < 0.95;
+          })
+          .map((el) => {
+            const artwork = el.querySelector("[data-bottle-artwork]");
+            const matrix = artwork.getScreenCTM();
+            return [0, 165, 280, 520, 1000].map((y) => {
+              const point = new DOMPoint(310, y).matrixTransform(matrix);
+              return { x: point.x, y: point.y };
+            });
+          }),
+      );
+    assert.equal(dissolve.length, 2, "the test pauses between two bottles");
+    dissolve[0].forEach((point, index) => {
+      assert.ok(
+        Math.hypot(
+          point.x - dissolve[1][index].x,
+          point.y - dissolve[1][index].y,
+        ) < 1,
+        "cap, collar, label O and base coincide throughout the dissolve",
+      );
+    });
+    await page.evaluate(() =>
+      document.body.removeAttribute("data-originales-photo-focus"),
     );
     await page.locator("[data-gallery-finale]").evaluate((el) =>
       scrollTo({
