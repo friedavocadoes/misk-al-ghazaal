@@ -370,7 +370,15 @@ export function OriginalesGallery({
                 const rect = chapter.getBoundingClientRect();
                 return { top: rect.top + scroll, bottom: rect.bottom + scroll };
               });
-              if (!mobile && motion) {
+              if (!mobile) {
+                const purchase = stage.querySelector<HTMLElement>(
+                  "[data-gallery-purchase]",
+                );
+                // Reserve the real identity/control height, including the small
+                // incoming drift. Asset aspect ratios must not push bottles into it.
+                const drift = motion ? Math.min(36, innerHeight * 0.04) : 0;
+                const availableHeight =
+                  (purchase?.offsetTop ?? stage.clientHeight) - 16 - 24 - drift;
                 poses = figures.map((figure) => {
                   const bottle = figure.querySelector<HTMLImageElement>(
                     "[data-chapter-bottle]",
@@ -378,19 +386,32 @@ export function OriginalesGallery({
                   const aspect = bottle?.naturalHeight
                     ? bottle.naturalWidth / bottle.naturalHeight
                     : 0.65;
+                  const plane = bottle?.parentElement;
+                  const planeHeight =
+                    plane?.offsetHeight ?? figure.offsetHeight * 0.88;
                   const openingHeight = Math.min(
-                    figure.offsetHeight * 0.88,
+                    planeHeight,
                     figure.offsetWidth / aspect,
                   );
                   const focusHeight = Math.min(
                     innerHeight * 0.62 * 0.88,
                     (stage.clientWidth * 0.43) / aspect,
+                    Math.max(1, availableHeight),
                   );
                   const scale = openingHeight ? focusHeight / openingHeight : 1;
+                  // object-contain is bottom-aligned. Remove its upper letterbox
+                  // space from the destination, preserving the original image node.
+                  const letterbox = Math.max(
+                    0,
+                    planeHeight * scale - focusHeight,
+                  );
                   return {
                     x: stage.clientWidth * 0.25 - figure.offsetLeft,
                     y:
-                      16 + (figure.offsetHeight * scale) / 2 - figure.offsetTop,
+                      16 +
+                      (figure.offsetHeight * scale) / 2 -
+                      figure.offsetTop -
+                      letterbox,
                     scale,
                   };
                 });
@@ -435,17 +456,20 @@ export function OriginalesGallery({
                   index === current.current
                     ? 1
                     : 1 - Math.min(1, opening * 2.5);
-                const alpha = gsap.utils.interpolate(
-                  openingAlpha,
-                  entered * (1 - left),
-                  chapterMotion,
-                );
+                const alpha =
+                  !motion && opening > 0
+                    ? Number(index === current.current)
+                    : gsap.utils.interpolate(
+                        openingAlpha,
+                        entered * (1 - left),
+                        chapterMotion,
+                      );
                 const pose = poses[index];
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
                   const y =
                     pose.y * focus +
                     (1 - entered - left) *
-                      Math.min(36, height * 0.04) *
+                      (motion ? Math.min(36, height * 0.04) : 0) *
                       chapterMotion;
                   const scale = 1 + (pose.scale - 1) * focus;
                   figure.style.transform = `translate(-50%, -50%) translate3d(${pose.x * focus}px, ${y}px, 0) scale(${scale})`;
@@ -514,15 +538,6 @@ export function OriginalesGallery({
                   const next = self.progress > 0.12 ? 1 : 0;
                   if (progress.current === next) return;
                   progress.current = next;
-                  gsap.set(figures, {
-                    left: (index: number) =>
-                      next
-                        ? "25%"
-                        : figures[index].style.getPropertyValue("--start-left"),
-                    top: next ? `${16 + innerHeight * 0.31}px` : "44%",
-                    width: next ? "43%" : "22%",
-                    height: next ? "62svh" : "55svh",
-                  });
                   sync();
                 },
               });
@@ -697,13 +712,6 @@ export function OriginalesGallery({
         <div data-atelier-masthead-layer className={s.mastheadLayer}>
           <h1 data-collection-masthead data-static-ink>
             <a href="#originales-top">Originales</a>
-            <span
-              data-gallery-seal
-              className={s.gallerySeal}
-              aria-hidden="true"
-            >
-              ✦
-            </span>
           </h1>
         </div>
         <a
@@ -801,7 +809,11 @@ export function OriginalesGallery({
             );
           })}
           {featured && (
-            <div className={s.stickyPurchase} data-visible={collapsed}>
+            <div
+              data-gallery-purchase
+              className={s.stickyPurchase}
+              data-visible={collapsed}
+            >
               <GalleryPurchase product={featured} ar={ar} />
             </div>
           )}

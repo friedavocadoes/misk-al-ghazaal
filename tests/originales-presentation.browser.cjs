@@ -175,8 +175,18 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       const figure = [
         ...document.querySelectorAll("[data-gallery-bottle]"),
       ].find((el) => getComputedStyle(el).opacity === "1");
+      const image = figure.querySelector("[data-chapter-bottle]");
+      const box = image.getBoundingClientRect();
+      const imageHeight = Math.min(
+        box.height,
+        (box.width * image.naturalHeight) / image.naturalWidth,
+      );
       return {
-        bottle: figure.getBoundingClientRect().top,
+        bottle: box.bottom - imageHeight,
+        bottom: box.bottom,
+        identity: document
+          .querySelector("[data-gallery-purchase]")
+          .getBoundingClientRect().top,
         card: document
           .querySelector("#edition-originales-sultanic div[class*=editionCard]")
           .getBoundingClientRect().top,
@@ -185,6 +195,10 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
     assert.ok(
       Math.abs(alignment.bottle - alignment.card) < 3,
       "gallery card locks against the top of the perfume",
+    );
+    assert.ok(
+      alignment.identity - alignment.bottom >= 24,
+      "the bottle stays above its name and purchase controls",
     );
     assert.ok(
       (

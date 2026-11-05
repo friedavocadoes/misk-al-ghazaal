@@ -8,6 +8,7 @@ Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivor
 - MAG and PARFUM inherit the same type size. Desktop product chrome keeps a compact stacked wordmark within its existing rail; collection chrome uses the horizontal wordmark.
 - The sticky collection purchase control persists across chapters. Its background colour transitions over 0.9s while the real product/variant destination updates immediately. Confirmation state belongs to the product actually added, so moving to another chapter never shows a false confirmation.
 - Desktop bottle handoffs share one eased cross-dissolve around the next chapter's reading threshold, across 48vh with at most 36px of vertical travel. Mobile handoffs span at least 180px of scroll with at most 24px of travel. Preserve the original persistent image nodes, immediate cart actions, native touch scrolling and reduced-motion fallback.
+- Desktop bottle poses fit the measured space above the persistent purchase block, reserving a24px gap plus the incoming drift. Subtract object-contain's upper letterbox space when positioning each asset, so different bottle proportions align at the top and cannot overlap their names. These measurements happen at setup/refresh, never during scroll frames; reduced motion uses the same fitted geometry.
 - The opening scroll cue uses small spaced copy and a restrained animated SVG stroke near the bottom of the opening. Its animation is disabled for reduced motion.
 
 ## Routes and ownership
