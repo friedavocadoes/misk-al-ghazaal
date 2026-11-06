@@ -4,6 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Keep root detection inside this standalone app, regardless of parent lockfiles.
+  turbopack: { root: __dirname },
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
     // Bound simultaneous catalog reads while prerendering the bilingual store.
