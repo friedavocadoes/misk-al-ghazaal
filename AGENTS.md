@@ -508,6 +508,11 @@ This section and the corrected entries above supersede historical implementation
 - Admin → Products → Export all · Excel calls the super_admin-only `/api/admin/products/export` endpoint. It paginates all non-deleted products, ignoring list filters, and uses server-only ExcelJS generation in `lib/product-export.ts`. Sheets separate enabled/disabled products; columns contain literal product names, clickable full canonical storefront URLs, and top/heart/base notes. The download uses the actual admin referrer origin (request origin fallback), never the SEO production-domain override. XLSX responses are private/no-store and exports are audited. No customer-side ExcelJS bundle or database migration.
 - Originales name morphs use a wider64vh reading window and a gentle custom curve. CollectionBottle SVG bands require overlap plus matching source bleed to avoid dark raster sampling seams. See the feature README before adjusting registration.
 
+## 55. Notes expansion and owner glyph importer (2026-11-06)
+
+- `supabase/migration_notes_expansion_20261106.sql` compares37 requested names with the supplied `Table/Notes.md` snapshot:36 new notes; existing slug apple remains Granny Smith Apple with its ID/artwork intact. Insert-only, name/slug duplicate guards, safe to rerun. Product assignments are untouched.
+- `docs/note-glyphs/` contains the manifest,36 individual transparent-image prompts and execution guide. User subsequently requested actual glyph generation: `assets/note-glyphs/matched-20261106/` holds the matching charcoal silhouette PNG masters, lossless-alpha WebPs, preview and generation log. Earlier draft art and Apple's existing glyph are preserved. `scripts/upload-note-glyphs.mjs` defaults to local preview and512px lossless-alpha WebP conversion. Only --apply contacts Supabase; it uses local server credentials, content-hashed paths in products/note-glyphs/bulk-20261106, protects custom artwork unless --replace, and guards against concurrent note edits. Previous files/URLs are retained for rollback. Admin → Notes → Refresh storefront performs authenticated locale-aware revalidation after SQL/CLI imports.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

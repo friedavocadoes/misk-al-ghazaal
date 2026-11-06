@@ -341,6 +341,18 @@ function NoteFields({ note }: { note?: NoteRow }) {
     </>
   );
 }
+async function refreshLibrary() {
+  "use server";
+  const { session, sb } = await staff();
+  await refreshNotes(sb);
+  await logAdmin(sb, session, {
+    category: "notes",
+    action: "refresh",
+    entity: "notes",
+    summary: "Refreshed storefront notes after external import",
+  });
+}
+
 export default async function NotesPage() {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
@@ -354,6 +366,13 @@ export default async function NotesPage() {
       <AdminNav email={session.email} role={session.role} />
       <div className="admin-workspace admin-legacy">
         <h1 className="font-display text-3xl">Fragrance notes</h1>
+        <AdminForm
+          action={refreshLibrary}
+          success="Storefront notes refreshed"
+          className="mt-3"
+        >
+          <ActionButton>Refresh storefront</ActionButton>
+        </AdminForm>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-fog">
           Your artwork library for the scent finder and product notes. Upload
           each drawing once, then assign the note to products.

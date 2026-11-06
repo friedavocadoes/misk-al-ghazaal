@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-06",
+  "method": "Built-in image_gen; one transparent image per note",
+  "references": "Existing rose and fruity glyphs from Table/Notes.md, visually inspected",
+  "images": [
+    {
+      "slug": "blackcurrant",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/blackcurrant.png",
+      "prompt": "Create ONE transparent PNG perfume-note glyph for BLACKCURRANT. Style: a refined flat hand-drawn emblem in solid dark charcoal #30383A, matching premium perfume note icons: bold filled botanical silhouettes with broad clean negative-space cutout veins and highlights. Compact cluster of five round blackcurrant berries on a short curved stem and one small lobed leaf. Confident smooth slightly organic contours. Not delicate outlines, not fine engraving/hatching, not a realistic illustration. No gradients, no lighting, no shadow, no paper, no background, no checkerboard, no words, no border. Genuinely transparent background and transparent negative-space cuts, dark charcoal artwork only. Centre the complete isolated glyph in square canvas occupying 72% with clear padding all around. Reads clearly at 48 pixels. Consistent visual density with a bold botanical rose or solid fruit silhouette icon.",
+      "source": "C:/Users/g/.codex/generated_images/01a149c5-a327-7913-8df6-a1d473b85969/exec-3c6e2378-ea3a-480b-884e-b11025c0d1e3.png"
+    },
+    {
+      "slug": "pineapple",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/pineapple.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-e0e0a195-03db-46f4-bbdd-7e40314bef95.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Pineapple. Subject: one pineapple with a compact spiky crown and simplified diamond skin."
+    },
+    {
+      "slug": "pear",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/pear.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-8aec2cfa-143c-4002-a29c-b06b60b5f1ec.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Pear. Subject: one pear with an elegant curved outline, short stem and one leaf."
+    },
+    {
+      "slug": "plum",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/plum.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-be077f1a-668f-41bf-a558-c73f973a8dde.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Plum. Subject: two oval plums, one whole and one half showing a simple stone."
+    },
+    {
+      "slug": "lemon",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/lemon.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-2e10ced6-0728-45a3-b5b4-7b43e88ebddc.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Lemon. Subject: one lemon and a small cross-section with a few clear radial segments."
+    },
+    {
+      "slug": "raspberry",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/raspberry.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-9180b3a9-9e84-40be-8533-30cfb1e47008.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Raspberry. Subject: one raspberry formed from a few bold rounded drupelets and a small leaf."
+    },
+    {
+      "slug": "peach",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/peach.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-aecb2891-4dcc-48f8-940f-1cf95a16e399.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Peach. Subject: one peach and a single leaf, with one understated seam."
+    },
+    {
+      "slug": "orange",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/orange.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-47250abc-3e85-4f58-8a26-f66a9271fdf6.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Orange. Subject: one orange with a single leaf and a short curled peel."
+    },
+    {
+      "slug": "jasmine",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/jasmine.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-acc39744-bc11-4e9e-8bf4-e6c68a52ab50.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Jasmine. Subject: a jasmine sprig with two five-petalled flowers and one bud."
+    },
+    {
+      "slug": "violet",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/violet.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-b57d2705-0160-4ae4-ac05-e49f49057b06.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Violet. Subject: one five-petalled violet flower with a heart-shaped leaf."
+    },
+    {
+      "slug": "freesia",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/freesia.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-0edb183c-965c-4fbc-b059-ba22098841a8.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Freesia. Subject: a curved freesia stem with two open funnel-shaped blossoms and two buds."
+    },
+    {
+      "slug": "lily-of-the-valley",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/lily-of-the-valley.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-836f3189-b1fa-40b7-8ded-f23f60c32926.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Lily of the Valley. Subject: an arching lily-of-the-valley stem with five hanging bell flowers and one long leaf."
+    },
+    {
+      "slug": "cyclamen",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/cyclamen.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-8441f09e-f30b-419e-b191-6c133dc1bdc8.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Cyclamen. Subject: one cyclamen blossom with five distinctly swept-back petals and a heart-shaped leaf."
+    },
+    {
+      "slug": "ylang-ylang",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/ylang-ylang.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-9704db23-6ce5-49e2-8980-25d2ce434252.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Ylang Ylang. Subject: one ylang-ylang flower with six long narrow gently twisting petals."
+    },
+    {
+      "slug": "geranium",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/geranium.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-aa38fec9-306d-4a6f-8d93-107209bf7b8e.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Geranium. Subject: a geranium flower cluster above one rounded lobed leaf."
+    },
+    {
+      "slug": "heliotrope",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/heliotrope.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-ff4134a3-3f24-435c-9e2a-a2f7e2776463.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Heliotrope. Subject: a compact curled heliotrope flower cluster with a few tiny five-petal blossoms and one leaf."
+    },
+    {
+      "slug": "coconut-blossom",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/coconut-blossom.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-7c7e0f6f-2fe4-4c20-bf88-d340b7b4471d.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Coconut Blossom. Subject: a simplified coconut-palm flower spray with short branching strands of small blossoms, not a coconut fruit."
+    },
+    {
+      "slug": "green",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/green.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-3fad73fb-ad30-442c-a1a0-70688b20a4d5.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Green. Subject: two fresh leaves and one curved cut stem, a clean expressive botanical gesture."
+    },
+    {
+      "slug": "vetiver",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/vetiver.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-e385b427-79b1-46f3-90ce-de3145a37f51.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Vetiver. Subject: a small upright tuft of vetiver grass with a few long elegant roots."
+    },
+    {
+      "slug": "artemisia",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/artemisia.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-2dd40aa8-0af8-472c-a2ae-79ff0d29e37c.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Artemisia. Subject: a sprig of artemisia with a few deeply divided feathery leaves."
+    },
+    {
+      "slug": "moss",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/moss.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-fec6f611-5334-4fae-977d-8062cd90e605.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Moss. Subject: one compact cushion of moss represented by several bold branching fronds."
+    },
+    {
+      "slug": "cashmere-wood",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/cashmere-wood.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-e77791f7-ecbb-4e6b-8f74-d3953ef12f26.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Cashmere Wood. Subject: two smooth rounded wood curls with soft flowing contours, without a fabric or clothing item."
+    },
+    {
+      "slug": "patchouli",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/patchouli.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-b36b6a69-7b2a-41e5-8871-633d2f474087.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Patchouli. Subject: two broad pointed patchouli leaves with clearly serrated edges on a short stem."
+    },
+    {
+      "slug": "guaiac-wood",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/guaiac-wood.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-c399b308-bdc6-4298-ba80-f7109c853760.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Guaiac Wood. Subject: a small angular piece of wood with two flowing grain lines and one subtle smoke curl."
+    },
+    {
+      "slug": "cedarwood",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/cedarwood.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-992b3fde-6a44-43c6-b410-d0ef578953b0.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Cedarwood. Subject: a small cedar sprig beside one clean curled wood shaving."
+    },
+    {
+      "slug": "cinnamon",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/cinnamon.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-aed16312-48e2-4924-85bb-ea44d3d6c653.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Cinnamon. Subject: two short rolled cinnamon quills crossing slightly, with clear curled ends."
+    },
+    {
+      "slug": "nutmeg",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/nutmeg.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-15768439-2519-428b-9ccd-30907d00346c.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Nutmeg. Subject: one whole oval nutmeg and one half showing two clear swirling grain lines."
+    },
+    {
+      "slug": "cardamom",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/cardamom.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-31dd060c-3c25-4414-9415-8090d8655374.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Cardamom. Subject: two ribbed cardamom pods, one partly open with a few seeds."
+    },
+    {
+      "slug": "vanilla",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/vanilla.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-74c01338-5cbd-4ccd-945e-a7139e1e1815.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Vanilla. Subject: two slender vanilla pods and one simple orchid blossom."
+    },
+    {
+      "slug": "tonka-bean",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/tonka-bean.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-33450770-9e29-4bed-bc88-bf5cad1bdcd9.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Tonka Bean. Subject: two elongated wrinkled tonka beans with a few bold contour grooves."
+    },
+    {
+      "slug": "gourmand",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/gourmand.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-11f530ff-eaf0-4b0d-af9a-b5a7c9b7f58b.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Gourmand. Subject: a single flowing caramel ribbon curling around a small stylized sugar crystal, no plate or dessert scene."
+    },
+    {
+      "slug": "tobacco",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/tobacco.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-b297459b-0646-42da-913a-d88a111ead43.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Tobacco. Subject: one elegantly curled dried tobacco leaf with a strong central vein, no cigarette or smoke."
+    },
+    {
+      "slug": "incense",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/incense.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-94cdde27-1ee4-4f0e-a374-f31bcd8bb6e2.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Incense. Subject: a small resin drop with two restrained rising smoke curves, no incense burner."
+    },
+    {
+      "slug": "oriental",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/oriental.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-dd2b05b7-f020-4f47-a63b-08a7d6ac8729.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Oriental. Subject: three interlocking pointed scent curves surrounding one resin droplet, an abstract fragrance accord, no architecture."
+    },
+    {
+      "slug": "styrax",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/styrax.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-c56f4875-2fb0-441a-84f0-7f5b090421c8.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Styrax. Subject: one textured piece of bark beside a rounded resin drop, without smoke."
+    },
+    {
+      "slug": "animalic",
+      "path": "C:/Users/g/Downloads/gazaal/assets/note-glyphs/matched-20261106/animalic.png",
+      "source": "C:\\Users\\g\\.codex\\generated_images\\01a149c5-a327-7913-8df6-a1d473b85969\\exec-0896a451-472e-4762-a81a-12eee95d8d4e.png",
+      "prompt": "Create ONE premium perfume-note glyph: solid charcoal #30383A bold filled botanical silhouette with broad clean TRANSPARENT negative-space cutout veins/highlights, a sophisticated flat hand-drawn emblem like a solid charcoal rose or fruit icon. Confident smooth slightly organic contours, restrained detail, uniform visual weight. Not fine outlines, no crosshatching, no photorealism, no 3D, no lighting, no gradients, no shadows, no background, no checkerboard, no words, no labels, no border or watermark. Genuine transparent alpha PNG, dark charcoal art only. Square canvas, complete isolated subject centred and occupying 72 percent with clear padding. Strongly legible at 48px. Perfume note: Animalic. Subject: two soft interwoven scent ribbons enclosing a small warm scent droplet, abstract and elegant, no animal or animal body part."
+    }
+  ]
+}

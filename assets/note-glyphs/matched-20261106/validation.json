@@ -1,0 +1,326 @@
+[
+  {
+    "slug": "blackcurrant",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 637325,
+    "webpBytes": 69888
+  },
+  {
+    "slug": "pineapple",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 554104,
+    "webpBytes": 64014
+  },
+  {
+    "slug": "pear",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 664264,
+    "webpBytes": 65076
+  },
+  {
+    "slug": "peach",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 652103,
+    "webpBytes": 66422
+  },
+  {
+    "slug": "plum",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 627344,
+    "webpBytes": 70520
+  },
+  {
+    "slug": "raspberry",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 724706,
+    "webpBytes": 76272
+  },
+  {
+    "slug": "lemon",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 802098,
+    "webpBytes": 96604
+  },
+  {
+    "slug": "orange",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 666322,
+    "webpBytes": 70196
+  },
+  {
+    "slug": "jasmine",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 742752,
+    "webpBytes": 81782
+  },
+  {
+    "slug": "lily-of-the-valley",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 495293,
+    "webpBytes": 59036
+  },
+  {
+    "slug": "freesia",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 633319,
+    "webpBytes": 73426
+  },
+  {
+    "slug": "violet",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 715918,
+    "webpBytes": 73684
+  },
+  {
+    "slug": "cyclamen",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 697806,
+    "webpBytes": 74758
+  },
+  {
+    "slug": "ylang-ylang",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 537766,
+    "webpBytes": 63504
+  },
+  {
+    "slug": "geranium",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 748382,
+    "webpBytes": 89330
+  },
+  {
+    "slug": "heliotrope",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 659928,
+    "webpBytes": 78212
+  },
+  {
+    "slug": "coconut-blossom",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 662574,
+    "webpBytes": 81686
+  },
+  {
+    "slug": "green",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 557195,
+    "webpBytes": 58464
+  },
+  {
+    "slug": "artemisia",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 657728,
+    "webpBytes": 76156
+  },
+  {
+    "slug": "vetiver",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 418051,
+    "webpBytes": 50434
+  },
+  {
+    "slug": "patchouli",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 644318,
+    "webpBytes": 73160
+  },
+  {
+    "slug": "moss",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 648044,
+    "webpBytes": 76304
+  },
+  {
+    "slug": "guaiac-wood",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 361729,
+    "webpBytes": 39630
+  },
+  {
+    "slug": "cashmere-wood",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 597412,
+    "webpBytes": 68536
+  },
+  {
+    "slug": "cedarwood",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 668085,
+    "webpBytes": 81234
+  },
+  {
+    "slug": "nutmeg",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 504814,
+    "webpBytes": 57866
+  },
+  {
+    "slug": "cardamom",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 664148,
+    "webpBytes": 78500
+  },
+  {
+    "slug": "cinnamon",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 691211,
+    "webpBytes": 72666
+  },
+  {
+    "slug": "vanilla",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 530140,
+    "webpBytes": 61058
+  },
+  {
+    "slug": "tonka-bean",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 578387,
+    "webpBytes": 66958
+  },
+  {
+    "slug": "gourmand",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 553445,
+    "webpBytes": 57320
+  },
+  {
+    "slug": "tobacco",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 525859,
+    "webpBytes": 60884
+  },
+  {
+    "slug": "incense",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 395128,
+    "webpBytes": 38212
+  },
+  {
+    "slug": "styrax",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 552374,
+    "webpBytes": 64986
+  },
+  {
+    "slug": "oriental",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 424894,
+    "webpBytes": 47456
+  },
+  {
+    "slug": "animalic",
+    "width": 1254,
+    "height": 1254,
+    "alphaMin": 0,
+    "alphaMax": 255,
+    "pngBytes": 404005,
+    "webpBytes": 46384
+  }
+]
