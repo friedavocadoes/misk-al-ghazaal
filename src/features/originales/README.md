@@ -4,8 +4,8 @@ Current presentation: **2 November 2026 (V9)**. This supersedes the earlier ivor
 
 ### Collection refinement — 5 November 2026
 
-- `EditionMorphName.tsx` adapts [Magic UI Morphing Text](https://magicui.design/docs/components/morphing-text)'s blur/alpha threshold to the existing bottle cross-dissolve progress. It retains the local font/size, reverses with scrolling, holds at stopped scroll positions and has no timer or idle animation loop. The semantic product name remains accessible; reduced motion resolves to a single clear name. Collection composition cards group actual assigned notes by top/heart/base, omitting empty stages.
-- The name now spans a wider 64vh reading transition with atelier-name(.25,.4,.75,.6), keeping the middle of the morph calmer than the bottle's48vh dissolve. It still holds/reverses with scroll and has no delayed catch-up timer. CollectionBottle's clipped SVG bands overlap by3 source-frame units to prevent dark sampling seams at fractional display scales; keep the matching source bleed when changing this overlap.
+- The collection purchase heading fades and rises slightly when the featured edition changes during the bottle dissolve. It shares CSS timing with the bag button tint and skips the name animation for reduced motion. Collection composition cards group assigned notes by top, heart and base, omitting empty stages.
+- CollectionBottle's clipped SVG bands overlap by 3 source-frame units to prevent dark sampling seams at fractional display scales. Keep the matching source bleed when changing this overlap.
 
 - The collection title and shared navbar wordmark reuse the existing optimized Manrope, matching the soft product-name direction. The Cormorant font face, WOFF2 and license asset have been removed. The transition credit also uses the existing font stack. Keep the product hero typography unchanged.
 - MAG and PARFUM inherit the same type size. Desktop product chrome keeps a compact stacked wordmark within its existing rail; collection chrome uses the horizontal wordmark.

@@ -4389,6 +4389,26 @@
   text-decoration: underline;
   text-underline-offset: 0.18em;
 }
+.stickyPurchase {
+  --edition-handoff-duration: 0.9s;
+  --edition-handoff-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stickyPurchase[data-visible="true"] .galleryEditionName {
+    animation: gallery-edition-enter var(--edition-handoff-duration)
+      var(--edition-handoff-ease) both;
+  }
+}
+@keyframes gallery-edition-enter {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .collectionWorld .galleryIdentity h2 {
   font-size: clamp(22px, 1.85vw, 28px);
   line-height: 1.15;
@@ -4408,7 +4428,8 @@
   background-color: var(--edition-wash);
   background-image: linear-gradient(115deg, #ffffff3d, transparent);
   transition:
-    background-color 0.9s,
+    background-color var(--edition-handoff-duration, 0.9s)
+      var(--edition-handoff-ease, ease),
     box-shadow 0.5s;
   border: 1px solid #fff6;
 }

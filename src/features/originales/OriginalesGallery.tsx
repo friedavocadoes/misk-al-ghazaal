@@ -21,7 +21,6 @@ import { MorphFrame } from "./MorphFrame";
 import { FinaleDecor } from "./FinaleDecor";
 import { atelierGsap } from "./atelier-gsap";
 import { AtelierPanel } from "./AtelierPanel";
-import { EditionMorphName, paintEditionName } from "./EditionMorphName";
 import s from "./atelier.module.css";
 
 function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
@@ -43,7 +42,9 @@ function GalleryPurchase({ product, ar }: { product: Product; ar: boolean }) {
       style={{ "--edition-wash": edition.wash } as CSSProperties}
     >
       <Link href={originalesPath(product)} className={s.galleryIdentity}>
-        <EditionMorphName name={edition.name} />
+        <h2 key={product.id} className={s.galleryEditionName}>
+          {edition.name}
+        </h2>
         <p className={s.galleryPrice}>
           {formatAED(variant?.price ?? product.price)}
         </p>
@@ -100,7 +101,6 @@ export function OriginalesGallery({
           },
           (context) => {
             const node = root.current!,
-              names = products.map((product) => editionFor(product).name),
               mobile = !!context.conditions?.mobile,
               motion = !!context.conditions?.motion,
               figures = [
@@ -443,7 +443,6 @@ export function OriginalesGallery({
             const setCaption = gsap.quickSetter(captions, "opacity");
             const clamp = gsap.utils.clamp(0, 1);
             const ease = gsap.parseEase("atelier-soft");
-            const nameEase = gsap.parseEase("atelier-name");
             let frame = 0;
             let captionOpacity = -1;
             const sync = () => {
@@ -453,7 +452,6 @@ export function OriginalesGallery({
               const opening = progress.current;
               const focus = ease(opening);
               const chapterMotion = ease(clamp((opening - 0.82) / 0.18));
-              const nameAlphas: number[] = [];
               figures.forEach((figure, index) => {
                 const rect = bounds[index];
                 if (!rect) return;
@@ -490,28 +488,6 @@ export function OriginalesGallery({
                         chapterMotion,
                       );
                 const pose = poses[index];
-                const nameEnter =
-                  index === 0
-                    ? 1
-                    : nameEase(
-                        clamp(
-                          0.5 +
-                            (scroll - (rect.top - height * 0.55)) /
-                              (height * 0.64),
-                        ),
-                      );
-                const nameExit = nextChapter
-                  ? nameEase(
-                      clamp(
-                        0.5 +
-                          (scroll - (nextChapter.top - height * 0.55)) /
-                            (height * 0.64),
-                      ),
-                    )
-                  : 0;
-                nameAlphas[index] = !motion
-                  ? alpha
-                  : nameEnter * (1 - nameExit);
                 if (pose && (alpha > 0 || figure.style.opacity !== "0")) {
                   const y = pose.y * focus;
                   const scale = 1 + (pose.scale - 1) * focus;
@@ -524,8 +500,6 @@ export function OriginalesGallery({
                 if (figure.inert !== inert) figure.inert = inert;
               });
               const nextCaptionOpacity = 1 - Math.min(1, opening * 2.5);
-              if (opening > 0.82)
-                paintEditionName(stage, names, nameAlphas, !motion);
               if (captionOpacity !== nextCaptionOpacity) {
                 captionOpacity = nextCaptionOpacity;
                 setCaption(captionOpacity);
