@@ -7,6 +7,8 @@ import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
+import { createHash } from "node:crypto";
+import { addressKey, normalizeAddress } from "@/lib/saved-address";
 import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
 
 // COD checkout, now with the full working flow: live pricing via quoteBag
@@ -31,6 +33,8 @@ export async function POST(req: Request) {
       phone?: string;
       email?: string;
       address?: string;
+      address_line?: string;
+      address_building?: string;
       city?: string;
       emirate?: string;
       notes?: string;
@@ -47,9 +51,13 @@ export async function POST(req: Request) {
       lng?: number | null;
       save_phone?: boolean;
       whatsapp_opt_in?: boolean;
+      payment_method?: "cod";
     };
     if (body.checkout_terms_version !== CHECKOUT_TERMS_VERSION) {
       return NextResponse.json({ error: "terms:stale" }, { status: 409 });
+    }
+    if (body.payment_method !== undefined && body.payment_method !== "cod") {
+      return NextResponse.json({ error: "This payment method is unavailable." }, { status: 400 });
     }
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -249,24 +257,41 @@ export async function POST(req: Request) {
       try {
         const { data: prof } = await admin
           .from("profiles")
-          .select("full_name, phone")
+          .select("full_name, phone, default_address")
           .eq("id", ownerId)
           .single();
-        const p = (prof as { full_name?: string | null; phone?: string | null } | null) ?? {};
-        const patch: Record<string, unknown> = {
-          default_address: {
-            line: address,
-            city: (body.city ?? "Dubai").trim() || "Dubai",
-            state: (body.state ?? body.emirate ?? "Dubai").trim() || "Dubai",
-            postcode: (body.postcode ?? "").trim(),
-            country_code: countryCode,
-            label: (body.address_label ?? "").trim(),
-            lat: typeof body.lat === "number" ? body.lat : null,
-            lng: typeof body.lng === "number" ? body.lng : null,
-          },
-        };
-        if (name && !p.full_name) patch.full_name = name;
+        const saved = normalizeAddress({
+          line: body.address_line || address,
+          building: body.address_building,
+          city: (body.city ?? "Dubai").trim() || "Dubai",
+          state: (body.state ?? body.emirate ?? "Dubai").trim() || "Dubai",
+          postcode: body.postcode,
+          country_code: countryCode,
+          label: body.address_label,
+          lat: body.lat,
+          lng: body.lng,
+        });
+        const patch: Record<string, unknown> = { default_address: saved };
+        if (name && !prof?.full_name) patch.full_name = name;
         if (body.save_phone && phone) patch.phone = phone;
+        if (saved) {
+          const key = (value: typeof saved) => createHash("sha256").update(addressKey(value)).digest("hex");
+          const previous = normalizeAddress(prof?.default_address);
+          if (previous && key(previous) !== key(saved)) {
+            const { data: existing } = await admin.from("shopper_addresses")
+              .select("id").eq("user_id", ownerId).limit(1);
+            if (existing?.length === 0) {
+              await admin.from("shopper_addresses").upsert(
+                { user_id: ownerId, address: previous, address_key: key(previous) },
+                { onConflict: "user_id,address_key", ignoreDuplicates: true },
+              );
+            }
+          }
+          await admin.from("shopper_addresses").upsert(
+            { user_id: ownerId, address: saved, address_key: key(saved), last_used_at: new Date().toISOString() },
+            { onConflict: "user_id,address_key" },
+          );
+        }
         await admin.from("profiles").update(patch).eq("id", ownerId);
       } catch {
         /* profile memory must never block checkout */

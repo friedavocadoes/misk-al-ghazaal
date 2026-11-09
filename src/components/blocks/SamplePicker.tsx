@@ -31,9 +31,11 @@ type Sample = {
 export function SamplePicker({
   subtotal,
   product = false,
+  compact = false,
 }: {
   subtotal: number;
   product?: boolean;
+  compact?: boolean;
 }) {
   const locale = useLocale() === "ar" ? "ar" : "en";
   const reduced = useReducedMotion();
@@ -94,7 +96,25 @@ export function SamplePicker({
   }
   return (
     <>
-      <div className="sample-invitation">
+      {compact ? (
+        <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" data-ios-haptic="on"
+          className={`flex w-full cursor-pointer items-center gap-3 border px-3 py-2.5 text-start transition-colors hover:border-gold ${selected.length ? "border-gold bg-gold-wash/40" : count && data.samples.some((sample) => sample.stock > 0) ? "border-dashed border-gold/70 bg-gold-wash/20" : "border-ink/15"}`}>
+          {selected.length ? <Check className="size-4 shrink-0 text-gold" /> : <Sparkles className="size-4 shrink-0 text-gold" />}
+          <span className="min-w-0 flex-1">
+            <strong className="block text-xs text-ink">{locale === "ar" ? "عينات مجانية" : "Complimentary samples"}</strong>
+            <span className="block text-xs text-espresso" aria-live="polite">
+              {selected.length > count || chosen.length < selected.length
+                ? (locale === "ar" ? "راجع العينات المختارة" : "Review your sample selection")
+                : selected.length
+                ? (locale === "ar" ? `تم اختيار ${selected.length} من ${count}` : `${selected.length} of ${count} selected`)
+                : count
+                  ? (locale === "ar" ? `اختر عيناتك المجانية (${count})` : `Choose your samples · ${count} available`)
+                  : (locale === "ar" ? "استكشف العينات" : "Explore samples")}
+            </span>
+          </span>
+          <ArrowUpRight aria-hidden className="size-4 shrink-0 text-gold" />
+        </button>
+      ) : <div className="sample-invitation">
         <button data-ios-haptic="on"
           type="button"
           onClick={() => setOpen(true)}
@@ -167,7 +187,7 @@ export function SamplePicker({
             ? `Your allowance is now ${count}. Update your selections before checkout.`
             : incentive}
         </p>
-      </div>
+      </div>}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="sample-drawer sm:max-w-xl">
           <SheetHeader className="sample-drawer-heading">
