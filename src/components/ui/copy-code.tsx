@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 /** Copy-to-clipboard ticket button (CSS flips on data-done, no re-render). */
 export function CopyCode({ code, label, copied }: { code: string; label: string; copied: string }) {
@@ -21,13 +21,13 @@ export function CopyCode({ code, label, copied }: { code: string; label: string;
       type="button"
       onClick={onCopy}
       aria-label={label}
-      className="shrink-0 cursor-pointer border border-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink transition hover:bg-ink hover:text-white data-[done]:border-[#1e7a46] data-[done]:bg-[#1e7a46] data-[done]:text-white"
+      className="group shrink-0 cursor-pointer border border-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink transition hover:bg-ink hover:text-white data-[done]:border-[#1e7a46] data-[done]:bg-[#1e7a46] data-[done]:text-white"
     >
-      <span className="hidden data-[done]:inline">
-        <Check className="mr-1 inline size-3.5" />
+      <span className="hidden group-data-[done]:inline">
+        <Check aria-hidden className="me-1 inline size-3.5" />
         {copied}
       </span>
-      <span className="data-[done]:hidden">{label}</span>
+      <span className="group-data-[done]:hidden"><Copy aria-hidden className="me-1 inline size-3.5" />{label}</span>
     </button>
   );
 }

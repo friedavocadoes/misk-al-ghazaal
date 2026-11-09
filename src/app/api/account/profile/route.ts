@@ -39,7 +39,8 @@ export async function GET() {
     const address = normalizeAddress(row.address);
     if (address) savedAddresses.push({ id: row.id, address });
   }
-  if (!savedAddresses.length) {
+  const addressBookCleared = profile?.default_address?.address_book_cleared === true;
+  if (!savedAddresses.length && !addressBookCleared) {
     const legacy = normalizeAddress(profile?.default_address) ??
       normalizeAddress(lastOrder && {
         line: lastOrder.address, city: lastOrder.city,
@@ -65,13 +66,30 @@ export async function GET() {
         (profile as { phone?: string | null } | null)?.phone ||
         (lastOrder as { phone?: string } | null)?.phone ||
         "",
-      defaultAddress:
-        (profile as { default_address?: unknown } | null)?.default_address ?? null,
+      defaultAddress: addressBookCleared ? null : profile?.default_address ?? null,
       lastOrder: lastOrder ?? null,
       savedAddresses,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
+}
+
+export async function DELETE(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "login" }, { status: 401 });
+  const body = await request.json().catch(() => null);
+  const id = body?.id;
+  if (typeof id !== "string" || (id !== "previous" && !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(id))) {
+    return NextResponse.json({ error: "Invalid address." }, { status: 400 });
+  }
+
+  const { data, error } = await supabase.rpc("delete_shopper_address", {
+    p_address_id: id === "previous" ? null : id,
+  });
+  if (error) return NextResponse.json({ error: "Couldn’t delete this address." }, { status: 500 });
+  if (!data) return NextResponse.json({ error: "Address not found." }, { status: 404 });
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function PUT(request: Request) {

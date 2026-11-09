@@ -2,24 +2,27 @@
 
 import { imageAsWebp } from "@/lib/image-conversion";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { Loader2, Pencil, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { ShopperAvatar } from "@/components/ui/avatar";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
-/** Profile medallion: a gold signet ring whose edit seal only surfaces
-    on hover; the upload UI (with its fine print) lives in a modal. */
+/** Profile photo editor, opened by the account action row. */
 export function AvatarUploader({
   userId,
   name,
   initial,
+  className,
+  children,
 }: {
   userId: string;
   name: string;
   initial: string | null;
+  className: string;
+  children: ReactNode;
 }) {
   const t = useTranslations("Account");
   const router = useRouter();
@@ -80,20 +83,10 @@ export function AvatarUploader({
       <button
         type="button"
         onClick={open}
-        aria-label={t("avatarUpload")}
-        className="group relative shrink-0 cursor-pointer"
+        aria-haspopup="dialog"
+        className={className}
       >
-        <ShopperAvatar
-          url={url}
-          name={name}
-          className="size-24 text-4xl ring-1 ring-gold/60 ring-offset-[3px] ring-offset-white transition-shadow group-hover:ring-gold md:size-28"
-        />
-        <span
-          aria-hidden
-          className="absolute -bottom-1 -right-1 flex size-8 scale-50 items-center justify-center rounded-full bg-ink text-white opacity-0 shadow-lg transition-all duration-300 group-hover:scale-100 group-hover:opacity-100"
-        >
-          <Pencil className="size-3.5" />
-        </span>
+        {children}
       </button>
 
       {/* Portaled to body: `position: fixed` inside the smoothed content

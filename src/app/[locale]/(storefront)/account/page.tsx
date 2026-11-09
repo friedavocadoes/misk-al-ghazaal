@@ -3,11 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
 import NextLink from "next/link";
-import { Gift, KeyRound, Mail, Package, Ticket, UserRound } from "lucide-react";
+import { Camera, ChevronDown, ChevronRight, Gift, Heart, KeyRound, LayoutDashboard, LifeBuoy, Mail, MapPin, Package, Star, Ticket, UserRound } from "lucide-react";
 import { AuthTabs } from "@/components/blocks/AuthTabs";
 import { CopyCode } from "@/components/ui/copy-code";
 import { AvatarUploader } from "@/components/blocks/AvatarUploader";
-import { GoogleGlyph } from "@/components/ui/brand-icons";
+import { ShopperAvatar } from "@/components/ui/avatar";
 import { ShopperSignOut } from "@/components/blocks/ShopperSignOut";
 import { avatarOf, displayName, providerOf } from "@/lib/shopper-identity";
 import { requireShopper } from "@/lib/shopper";
@@ -76,219 +76,92 @@ export default async function AccountPage(
     (profile as { role?: string } | null)?.role ?? "",
   );
 
-  return (
-    <div className="mx-auto max-w-3xl px-5 py-12 md:px-8">
-      <p className="eyebrow text-gold">{t("eyebrow")}</p>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-4xl text-ink">
-          {t("welcome")}
-          {name ? ` · ${name}` : ""}
-        </h1>
-        <ShopperSignOut />
-      </div>
+  const ar = locale === "ar";
+  const actions = [
+    { href: "/account/orders", icon: Package, label: t("ordersTitle"), description: ar ? "تتبع شحناتك واعرض الطلبات السابقة" : "Track shipments and view past purchases" },
+    { href: "/account/addresses", icon: MapPin, label: ar ? "العناوين المحفوظة" : "Saved addresses", description: ar ? "إدارة عناوين التوصيل" : "Manage your delivery addresses" },
+    { href: "/account/wishlist", icon: Heart, label: t("wishlistTitle"), description: ar ? "العطور التي حفظتها" : "Revisit the fragrances you saved" },
+    { href: "/account/coupons", icon: Ticket, label: t("rewardsTitle"), description: ar ? "قسائمك ومكافآتك" : "See your coupons and rewards" },
+    { href: "/account/ratings", icon: Star, label: ar ? "تقييماتي ومراجعاتي" : "My ratings & reviews", description: ar ? "عرض تقييماتك ومراجعاتك" : "View the feedback you’ve shared" },
+    { href: "/account/settings", icon: UserRound, label: ar ? "البيانات الشخصية" : "Personal details", description: ar ? "حدّث اسمك ورقم هاتفك" : "Update your name and phone number" },
+    { href: "/account/notifications", icon: Mail, label: ar ? "تفضيلات البريد" : "Email preferences", description: ar
+      ? `الطلبات ${orderMailOn ? "مفعّلة" : "متوقفة"} · العروض ${promoOn ? "مفعّلة" : "متوقفة"}`
+      : `Orders ${orderMailOn ? "on" : "off"} · Offers ${promoOn ? "on" : "off"}` },
+    ...(provider === "email" ? [{ href: "/account/password", icon: KeyRound, label: t("changePassword"), description: ar ? "إدارة كلمة مرور حسابك" : "Manage your account password" }] : []),
+  ];
+  const row = "group flex min-h-20 min-w-0 items-center gap-3.5 bg-white p-4 text-start transition-colors hover:bg-gold-wash/35 focus-visible:z-10 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-gold sm:p-5";
+  const icon = "grid size-10 shrink-0 place-items-center rounded-full border border-gold/25 bg-gold-wash/40 text-gold";
+  const arrow = <ChevronRight aria-hidden className="ms-auto size-4 shrink-0 text-gold rtl:rotate-180" />;
 
-      <Link href="/account/ratings" className="mt-8 block border border-gold/25 bg-white p-5 text-sm">{locale === "ar" ? "تقييماتي ومراجعاتي" : "My ratings & reviews"} →</Link>
-      <Link href="/account/addresses" className="mt-3 block border border-gold/25 bg-white p-5 text-sm">{locale === "ar" ? "العناوين المحفوظة" : "Saved addresses"} →</Link>
-      {/* Profile — maison member card */}
-      <section className="relative mt-10 overflow-hidden border border-gold/30 bg-white">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-10 -right-2 select-none font-display text-[11rem] italic leading-none text-gold/10"
-        >
-          {(name.trim().charAt(0) || "·").toUpperCase()}
+  return (
+    <main className="mx-auto max-w-4xl px-5 py-10 md:px-8 md:py-16">
+      <header className="relative isolate overflow-hidden border border-gold/25 bg-gradient-to-br from-white via-white to-gold-wash/60 px-5 py-8 sm:px-9">
+        <span aria-hidden className="pointer-events-none absolute -bottom-16 end-2 -z-10 select-none font-display text-[13rem] leading-none text-gold/[0.08]">
+          {name.trim().charAt(0).toUpperCase()}
         </span>
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-2 border border-gold/20"
-        />
-        <div className="relative flex flex-col items-center gap-6 p-6 text-center sm:flex-row sm:text-left md:p-8">
-          <AvatarUploader userId={user.id} name={name} initial={avatar} />
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow text-gold">{t("memberCard")}</p>
-            <p className="mt-2 font-display text-3xl leading-tight text-ink md:text-4xl">
-              {name || "—"}
-            </p>
-            <p className="mt-1.5 truncate text-sm text-fog" dir="ltr">
-              {user.email ?? "—"}
-            </p>
-            {storedPhone && (
-              <p className="mt-1 truncate text-sm text-fog" dir="ltr">
-                {storedPhone}
-              </p>
-            )}
-            <p className="mt-1 text-[12px] text-fog/80">
-              {t("loggedInWith")}{" "}
-              {provider === "google" ? (
-                <GoogleGlyph className="inline size-3.5 align-[-2px]" />
-              ) : (
-                t("providerEmail")
-              )}
-            </p>
+        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:gap-7 sm:text-start">
+          <ShopperAvatar url={avatar} name={name} className="size-24 shrink-0 text-4xl ring-1 ring-gold/60 ring-offset-4 ring-offset-white md:size-28" />
+          <div className="min-w-0">
+            <p className="eyebrow text-gold">{t("title")}</p>
+            <h1 className="mt-2 break-words font-display text-3xl text-ink md:text-5xl">{name || t("welcome")}</h1>
+            {user.email && <p className="mt-2 break-all text-sm text-espresso"><bdi>{user.email}</bdi></p>}
+            {storedPhone && <p className="mt-1 text-sm text-fog"><bdi>{storedPhone}</bdi></p>}
           </div>
         </div>
-        {provider === "email" && (
-          <div className="relative mx-6 mb-6 md:mx-8 md:mb-8">
-            <Link
-              href="/account/password"
-              className="group flex items-center gap-4 border border-ink/10 bg-cream/60 p-4 transition hover:border-gold/60"
-            >
-              <span className="flex size-10 items-center justify-center rounded-full bg-ink text-gold-soft">
-                <KeyRound className="size-4" />
+      </header>
+
+      <nav aria-label={ar ? "خيارات الحساب" : "Account options"} className="mt-5 overflow-hidden border border-ink/10 bg-ink/10">
+        <div className="grid gap-px sm:grid-cols-2">
+          {actions.map(({ href, icon: Icon, label, description }) => (
+            <Link key={href} href={href} className={row}>
+              <span className={icon}><Icon aria-hidden className="size-[18px]" strokeWidth={1.5} /></span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-ink">{label}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-fog">{description}</span>
               </span>
-              <span className="font-display text-lg text-ink transition group-hover:text-gold">
-                {t("changePassword")}
-              </span>
-              <span
-                aria-hidden
-                className="ms-auto text-gold opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100 rtl:rotate-180"
-              >
-                →
-              </span>
+              {arrow}
             </Link>
-          </div>
-        )}
-      </section>
-
-      {/* Doors to orders + rewards */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <Link
-          href="/account/orders"
-          className="group flex items-center gap-4 border border-ink/10 bg-white p-5 transition hover:-translate-y-0.5 hover:border-gold/60"
-        >
-          <span className="flex size-11 items-center justify-center rounded-full bg-ink text-gold-soft">
-            <Package className="size-5" strokeWidth={1.5} />
-          </span>
-          <span className="font-display text-xl text-ink transition group-hover:text-gold">
-            {t("ordersTitle")}
-          </span>
-        </Link>
-        <Link
-          href="/account/coupons"
-          className="group flex items-center gap-4 border border-ink/10 bg-white p-5 transition hover:-translate-y-0.5 hover:border-gold/60"
-        >
-          <span className="flex size-11 items-center justify-center rounded-full bg-ink text-gold-soft">
-            <Ticket className="size-5" strokeWidth={1.5} />
-          </span>
-          <span className="font-display text-xl text-ink transition group-hover:text-gold">
-            {t("rewardsTitle")}
-          </span>
-        </Link>
-      </div>
-
-      {/* Referral card */}
-      <section className="mt-6 border border-gold/40 bg-gold-wash/50 p-6 md:p-8">
-        <p className="eyebrow flex items-center gap-2 text-gold">
-          <Gift className="size-4" /> {t("referralTitle")}
-        </p>
-        <p className="mt-2 text-sm leading-relaxed text-espresso">
-          {t("referralText")}
-        </p>
-        {code ? (
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="border border-dashed border-gold/60 bg-cream px-5 py-2.5 font-mono text-xl font-bold tracking-[0.2em] text-ink">
-              {code}
+          ))}
+          <AvatarUploader userId={user.id} name={name} initial={avatar} className={`${row} cursor-pointer`}>
+            <span className={icon}><Camera aria-hidden className="size-[18px]" strokeWidth={1.5} /></span>
+            <span className="text-sm font-semibold text-ink">{t("avatarUpload")}</span>
+            {arrow}
+          </AvatarUploader>
+          <a href="mailto:support@miskalghazaalperfumes.com" className={`${row}${!staff && actions.length % 2 ? " sm:col-span-2" : ""}`}>
+            <span className={icon}><LifeBuoy aria-hidden className="size-[18px]" strokeWidth={1.5} /></span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-ink">{ar ? "الشكاوى والدعم" : "Complaints & support"}</span>
+              <span className="mt-1 block text-xs text-fog">{ar ? "راسل فريقنا" : "Email our team"}</span>
             </span>
-            <CopyCode
-              code={code}
-              label={t("copyCode")}
-              copied={t("codeCopied")}
-            />
-            <span className="text-[12px] text-fog">
-              {uses} {locale === "ar" ? "استخدام" : uses === 1 ? "use" : "uses"}
-            </span>
-          </div>
-        ) : null}
-      </section>
-
-      {/* Settings — personal details + email preferences live behind
-          these doors (with live summaries), not as open forms. */}
-      <section
-        className="mt-6 border border-ink/10 bg-white"
-        aria-label={locale === "ar" ? "الإعدادات" : "Settings"}
-      >
-        <Link
-          href="/account/settings"
-          className="group flex items-center gap-4 border-b border-ink/10 p-5 transition hover:bg-cream/60"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-gold-soft">
-            <UserRound className="size-5" strokeWidth={1.5} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-display text-xl text-ink transition group-hover:text-gold">
-              {locale === "ar" ? "البيانات الشخصية" : "Personal details"}
-            </span>
-            <span
-              className="mt-0.5 block truncate text-[13px] text-fog"
-              dir="ltr"
-            >
-              {storedPhone ? `${name} · ${storedPhone}` : name}
-            </span>
-          </span>
-          <span
-            aria-hidden
-            className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1"
-          >
-            →
-          </span>
-        </Link>
-        <Link
-          href="/account/notifications"
-          className="group flex items-center gap-4 p-5 transition hover:bg-cream/60"
-        >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-gold-soft">
-            <Mail className="size-5" strokeWidth={1.5} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-display text-xl text-ink transition group-hover:text-gold">
-              {locale === "ar" ? "تفضيلات البريد" : "Email preferences"}
-            </span>
-            <span className="mt-0.5 block truncate text-[13px] text-fog">
-              {locale === "ar"
-                ? `الطلبات ${orderMailOn ? "مفعّلة" : "متوقفة"} · العروض ${promoOn ? "مفعّلة" : "متوقفة"}`
-                : `Orders ${orderMailOn ? "on" : "off"} · Offers ${promoOn ? "on" : "off"}`}
-            </span>
-          </span>
-          <span
-            aria-hidden
-            className="text-gold transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1"
-          >
-            →
-          </span>
-        </Link>
-      </section>
-
-      <a
-        href="mailto:support@miskalghazaalperfumes.com"
-        className="mt-3 block border border-ink/10 bg-white p-5 text-sm transition hover:border-gold/60"
-      >
-        <span className="block font-display text-xl text-ink">
-          {locale === "ar" ? "شكوى أو اقتراح؟" : "Complaints & support"}
-        </span>
-        <span className="mt-1 block text-espresso" dir="ltr">
-          support@miskalghazaalperfumes.com
-        </span>
-        <span className="mt-0.5 block text-[13px] text-fog">
-          {locale === "ar"
-            ? "راسلنا مباشرة — نرد خلال ٢٤ ساعة."
-            : "Write to us directly — we usually reply within 24 hours."}
-        </span>
-      </a>
-      {staff && (
-        <NextLink
-          href="/admin"
-          className="group mt-3 flex items-center gap-4 border border-gold/50 bg-gold-wash/50 p-5 transition hover:-translate-y-0.5 hover:border-gold"
-        >
-          <span className="font-display text-xl text-ink transition group-hover:text-gold">
-            {locale === "ar" ? "لوحة الإدارة" : "Open admin panel"}
-          </span>
-          <span
-            aria-hidden
-            className="ms-auto text-gold opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100 rtl:rotate-180"
-          >
-            →
-          </span>
-        </NextLink>
-      )}
-    </div>
+            {arrow}
+          </a>
+          {staff && (
+            <NextLink href="/admin" className={`${row}${actions.length % 2 === 0 ? " sm:col-span-2" : ""}`}>
+              <span className={icon}><LayoutDashboard aria-hidden className="size-[18px]" strokeWidth={1.5} /></span>
+              <span className="text-sm font-semibold text-ink">{ar ? "لوحة الإدارة" : "Open admin panel"}</span>
+              {arrow}
+            </NextLink>
+          )}
+          <details className="group/referral bg-white sm:col-span-2">
+            <summary className={`${row} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}>
+              <span className={icon}><Gift aria-hidden className="size-[18px]" strokeWidth={1.5} /></span>
+              <span className="text-sm font-semibold text-ink">{t("referralTitle")}</span>
+              <ChevronDown aria-hidden className="ms-auto size-4 text-gold transition-transform group-open/referral:rotate-180" />
+            </summary>
+            <div className="border-t border-ink/10 px-5 py-4">
+              <p className="text-sm leading-relaxed text-espresso">{t("referralText")}</p>
+              {code && (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <span dir="ltr" className="border border-gold/40 bg-gold-wash/40 px-3 py-2 font-mono text-sm tracking-widest text-ink">{code}</span>
+                  <CopyCode code={code} label={t("copyCode")} copied={t("codeCopied")} />
+                  <span className="text-xs text-fog">{uses} {ar ? "استخدام" : uses === 1 ? "use" : "uses"}</span>
+                </div>
+              )}
+            </div>
+          </details>
+          <ShopperSignOut className="sm:col-span-2" />
+        </div>
+      </nav>
+    </main>
   );
 }
