@@ -685,10 +685,6 @@ export interface HomepageSectionConfig {
   secondaryCtaAr?: string;
   badge?: string;
   badgeAr?: string;
-  /** Scent Alchemist overrides (stored inside JSONB config) */
-  prompt?: string;
-  promptAr?: string;
-  noteSlugs?: string[];
   /** Dual Feature overrides */
   leftEyebrow?: string;
   leftEyebrowAr?: string;

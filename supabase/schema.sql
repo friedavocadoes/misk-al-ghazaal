@@ -1,8 +1,6 @@
 -- ============================================================================
 -- Misk Al Ghazaal — Supabase schema (Phase 2 backend)
--- Run in order in Supabase Dashboard → SQL Editor:
---   1. this file (schema + RLS + storage)
---   2. seed.sql (optional demo rows)
+-- First step of the fresh-project order in supabase/README.md.
 -- Mirrors src/lib/types.ts. Storefront reads via publishable key
 -- (`sb_publishable_…` → `anon` role, public SELECT); privileged writes go
 -- through the secret key (`sb_secret_…` → `service_role`, bypasses RLS)

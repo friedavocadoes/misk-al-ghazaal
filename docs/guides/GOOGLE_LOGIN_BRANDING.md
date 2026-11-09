@@ -25,7 +25,7 @@ Before activation, add `https://auth.your-domain.com/auth/v1/callback` to the ex
 
 Changing only Supabase's Site URL does not rename the Google app or replace the callback domain. Our storefront callback remains responsible for finishing login and account bootstrap.
 
-Repository references: `SETUP_SUPABASE.md` section 6c, `src/app/auth/callback/route.ts`, and the shared Supabase clients in `src/lib/supabase/`.
+Repository references: [Supabase setup](SETUP_SUPABASE.md), section 6c, `src/app/auth/callback/route.ts`, and the shared Supabase clients in `src/lib/supabase/`.
 
 No provider settings, DNS records, OAuth credentials, billing, or deployed environment variables were changed by this task. After making dashboard changes, test a fresh Google sign-in and confirm it returns to the production shop.
 

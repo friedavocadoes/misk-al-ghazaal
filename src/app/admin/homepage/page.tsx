@@ -10,7 +10,6 @@ import { ArrowDown, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { logAdmin } from "@/lib/audit";
 
 const KINDS = [
-  "scent_alchemist",
   "products_carousel",
   "product_tabs",
   "collections_grid",
@@ -24,7 +23,7 @@ const KINDS = [
   "image_banner",
 ] as const;
 
-const KIND_LABELS: Record<(typeof KINDS)[number], string> = {
+const KIND_LABELS: Record<string, string> = {
   scent_alchemist: "scent alchemist (moved to /find-your-scent)",
   products_carousel: "products carousel",
   product_tabs: "product tabs (Trending)",
@@ -56,14 +55,8 @@ async function createSection(formData: FormData) {
     .limit(1);
   const sort = ((last as { sort: number }[] | null)?.[0]?.sort ?? 0) + 10;
   const kind = String(formData.get("kind") || "products_carousel");
-  const title = String(
-    formData.get("title") ||
-      (kind === "scent_alchemist"
-        ? "The Art of High Perfumery"
-        : kind === "brand_split"
-          ? "Worlds of Misk Al Ghazaal"
-          : "New section"),
-  );
+  if (!KINDS.some((supported) => supported === kind)) throw new Error("Unsupported homepage section.");
+  const title = String(formData.get("title") || (kind === "brand_split" ? "Worlds of Misk Al Ghazaal" : "New section"));
   const { data, error } = await supabase
     .from("homepage_sections")
     .insert({
@@ -75,13 +68,7 @@ async function createSection(formData: FormData) {
     })
     .select("id")
     .single();
-  if (error) {
-    throw new Error(
-      error.message.includes("homepage_sections_kind_check")
-        ? "Run supabase/migration_luxury_revamp.sql in Supabase SQL Editor once to unlock the 'scent_alchemist' section kind."
-        : error.message,
-    );
-  }
+  if (error) throw new Error(error.message);
   await logAdmin(supabase, s, {
     category: "homepage",
     action: "create",
@@ -220,7 +207,7 @@ export default async function HomepageAdmin() {
         <AdminForm resetOnSuccess action={createSection} success="Section created" className="mt-8 flex flex-wrap items-end gap-3 border border-ink/10 bg-white p-5 text-sm">
           <label className="block">Kind
             <select name="kind" className="mt-1 border border-ink/20 bg-white px-3 py-2" defaultValue="products_carousel">
-              {KINDS.filter(k => k !== "scent_alchemist").map((k) => (
+              {KINDS.map((k) => (
                 <option key={k} value={k}>{KIND_LABELS[k] ?? k}</option>
               ))}
             </select>

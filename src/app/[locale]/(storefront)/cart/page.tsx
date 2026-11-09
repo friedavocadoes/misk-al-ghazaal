@@ -2,7 +2,6 @@ import { setRequestLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { toLocale } from "@/lib/i18n";
 import { BagView, TrendingUpsell } from "@/components/blocks/CartBlocks";
-import { ProductCarousel } from "@/components/blocks/ProductCarousel";
 import { getProductsByCollection } from "@/lib/store";
 
 export default async function CartPage(props: PageProps<"/[locale]/cart">) {

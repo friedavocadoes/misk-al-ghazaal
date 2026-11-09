@@ -518,26 +518,13 @@ html[lang="ar"] .eyebrow {
   a:is(:hover, :focus-visible) .brand-crest__metal::after { opacity: .4; }
 }
 @keyframes crest-reflection { 0%, 8% { transform: translateX(-65%); } 75%, 100% { transform: translateX(65%); } }
-/* Artwork remains on a light ground so ink drawings and original colors stay legible. */
-.atelier-note { outline-offset: -3px; }
-.atelier-note__mark { opacity: 0; transition: opacity .3s ease; }
-.atelier-note__art { transition: transform .7s var(--ease-luxury); }
-.atelier-note[data-selected="true"] { background: #e6ddcc; box-shadow: inset 0 0 0 1px #8a6d2f; }
-.atelier-note[data-selected="true"] .atelier-note__mark { opacity: 1; }
-.atelier-note:not(:disabled):is(:hover, :focus-visible) .atelier-note__art { transform: translateY(-3px); }
-.atelier-arrow { display: inline-flex; width: 30px; height: 30px; align-items: center; justify-content: center; border: 1px solid transparent; cursor: pointer; transition: border-color .3s ease; }
-.atelier-arrow:hover { border-color: rgb(28 25 23 / .25); }
-.atelier-arrow:disabled { opacity: .25; cursor: default; }
-.atelier-button { display: flex; min-height: 46px; align-items: center; justify-content: center; gap: 9px; padding: 10px 8px; font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: background-color .4s ease, border-color .4s ease; }
-.atelier-result { animation: atelier-reveal .55s var(--ease-luxury) both; }
-@keyframes atelier-reveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .pyramid-note > span:first-child { transition: transform .7s var(--ease-luxury); }
 .pyramid-note:hover > span:first-child { transform: translateY(-4px); }
 .glyph-upload-preview { background-color: #faf7f1; background-image: conic-gradient(#e9e1d2 25%, transparent 0 50%, #e9e1d2 0 75%, transparent 0); background-size: 16px 16px; }
 @media (prefers-reduced-motion: reduce) {
-  .brand-crest__reflection, .atelier-result { animation: none; }
+  .brand-crest__reflection { animation: none; }
   .brand-crest__reflection { opacity: 0; }
-  .brand-crest__lift, .brand-crest__metal::after, .maison-nav-link::after, .atelier-note__art, .pyramid-note > span:first-child { transition: none; transform: none !important; }
+  .brand-crest__lift, .brand-crest__metal::after, .maison-nav-link::after, .pyramid-note > span:first-child { transition: none; transform: none !important; }
 }
 
 /* Editorial masthead: warm paper, engraved gold, generous serif navigation. */

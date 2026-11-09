@@ -19,6 +19,7 @@
 
 # production
 /build
+/bootstrap.sql
 
 # misc
 .DS_Store

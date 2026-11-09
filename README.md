@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Misk Al Ghazaal
 
-## Getting Started
+Bilingual Next.js storefront and admin workspace backed by Supabase.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+1. Use Node.js 22 and run `npm ci`.
+2. Copy `.env.example` to `.env` and fill in your Supabase credentials. See the [Supabase setup guide](docs/guides/SETUP_SUPABASE.md).
+3. Run `npm run dev` and open `http://localhost:3000`. The staff console is at `/admin`.
+
+For a new database, start with the [numbered migration order](supabase/README.md). The demo catalog is optional.
+
+## Checks
+
+```sh
+npm run lint
+npx tsc --noEmit
+node --test tests/*.test.cjs
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The build reads catalog data from the configured Supabase project. Some tests support an optional local PGlite module via `ANALYTICS_PGLITE_MODULE`. The Originales browser suite has its own setup in the [feature guide](src/features/originales/README.md).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project map
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/[locale]/(storefront)/` holds the English and Arabic storefront.
+- `src/app/admin/` holds the staff console.
+- `src/app/api/` holds the server endpoints.
+- `src/lib/` holds shared catalog, pricing and Supabase access code.
+- [Guides](docs/guides/) cover operations and integrations. [AGENTS.md](AGENTS.md) records repository conventions and history.

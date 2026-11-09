@@ -12,13 +12,15 @@ import { Pencil, X } from "lucide-react";
     API 401s without one. */
 export function AdminEditBar() {
   const pathname = usePathname();
+  return <PageEditBar key={pathname} pathname={pathname} />;
+}
+
+function PageEditBar({ pathname }: { pathname: string }) {
   const [target, setTarget] = useState<{ href: string; label: string } | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     let live = true;
-    setTarget(null);
-    setDismissed(false);
     fetch(`/api/admin/edit-target?path=${encodeURIComponent(pathname)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { href?: string; label?: string } | null) => {

@@ -1,4 +1,4 @@
-# Supabase setup — Misk Al Ghazaal backend (Phase 2)
+# Supabase setup for Misk Al Ghazaal
 
 REQUIRED — Supabase is the only data source (mock-data deleted). Storefront
 getters throw without env; `/admin/*` shows a setup hint.
@@ -10,41 +10,7 @@ getters throw without env; `/admin/*` shows a setup hint.
 
 ## 2. Run the schema
 
-Dashboard → SQL Editor → New query, paste in order:
-
-1. `supabase/schema.sql` (tables + RLS + storage buckets + policies)
-2. `supabase/migration_soft_delete.sql` (recycle bin)
-3. `supabase/migration_shopper_reads.sql` (shoppers read own orders/items)
-4. `supabase/migration_avatars.sql` (`avatars` bucket + `profiles.avatar_url`;
-   shoppers upload into their own `avatars/<user_id>/` folder)
-5. `supabase/migration_delivery_cart.sql` (`delivery_countries` + seed,
-   order delivery columns, `profiles.cart`)
-6. `supabase/migration_product_active.sql` (`products.is_active` pause flag)
-7. `supabase/migration_ranking_homepage.sql` (`sort` + `sales_count`,
-   `homepage_sections` + seed mirroring the current home)
-4. `supabase/migration_product_experience.sql` (lineups, notes, rituals,
-   coupons, referrals, reviews, PDP copy, order links — includes
-   `increment_coupon_use()` + a starter notes library)
-5. `supabase/migration_coupons_v2.sql` (max discount cap + once-per-account)
-6. `supabase/migration_referrals_v2.sql` (split percents + caps per side)
-7. `supabase/migration_page_seo.sql` (invisible SEO layer per page)
-8. `supabase/migration_audit_log.sql` (append-only admin audit trail)
-9. `supabase/migration_emails_promo.sql` (promo opt-in, hello template, campaigns)
-10. `supabase/migration_orders_lock.sql` (STRICT order isolation: user_id-only
-    shopper RLS + `expected_delivery_date` + shopper contact profile —
-    run even on existing DBs; guest orders are auto-claimed at next login)
-11. `supabase/migration_email_prefs.sql` (`profiles.order_updates_opt_in`,
-    default ON — gates noreply confirmation + status mails per account)
-12. `supabase/migration_invoices.sql` (private `invoices` bucket + order
-    invoice source/file columns; invoices served via
-    `/api/orders/[id]/invoice`, never public URLs)
-2. `supabase/seed.sql` (FULL catalog: 11 collections, 47 products + variants,
-   106 collection links incl. for-him/for-her/ramadan, 9 banners, 3 articles.
-   Safe to re-run — upserts on slug, wipes + re-inserts variants/links/banners.)
-
-Verify: Table Editor shows `profiles, products, variants, collections,
-banners, articles, orders, order_items, order_status_history`. Storage shows
-public buckets `products`, `banners`.
+Follow the [numbered migration checklist](../../supabase/README.md). Use the optional demo seed only for a new project intended to contain sample data.
 
 ## 3. Env variables
 
@@ -65,7 +31,7 @@ working alongside until you deactivate them):
 Without these, storefront getters throw and `next build` fails — by design
 (fail loudly, never serve stale mock data). `/admin/*` shows a setup hint.
 
-## 4. Create users (no public signup)
+## 4. Create staff accounts
 
 1. Authentication → Add user → Create new user (email + password, auto-confirm).
    Shopper signups always land on role `customer` (zero admin access).
@@ -90,7 +56,7 @@ read, super_admin write via RLS).
 
 - Admin: open a product → Images → Upload (3MB max, `<slug>-<timestamp>.webp`).
   First image = primary. Public URL is saved into `products.images[]`.
-- Banners: Storage → `banners` → Upload, copy public URL into table `banners.src`.
+- Banners: use [Admin → Banners](BANNER_WORKSPACE.md) to upload media and publish changes.
 - Code: `next.config.ts` already allows `**.supabase.co` in `next/image`.
   Local `/products/*` files keep working as fallback.
 
@@ -98,27 +64,26 @@ read, super_admin write via RLS).
 
 - Storefront posts COD orders to `POST /api/checkout` (validates against live
   prices, writes `orders + order_items + history`, decrements stock).
-- Staff monitors `/admin/orders` (filter by status), opens detail, confirms via
-  WhatsApp button (`wa.me`, zero API cost), prints slip, updates status +
-  tracking no + internal note. Every change is logged to `order_status_history`.
-- Realtime: add a `supabase.channel('orders').on('postgres_changes', …)` listener
-  on the orders page later for a new-order toast — no extra service needed.
+- Staff confirms and updates orders in `/admin/orders`. The configured email and
+  WhatsApp channels send customer updates when staff chooses them. New orders
+  can alert the shop through Telegram. See [notification setup](NOTIFICATION_SETUP.md).
+- Logged-in shoppers can manage saved delivery addresses in `/account/addresses`.
+  The checkout currently accepts cash on delivery.
 
 ## 6b. Domain emails (cPanel, one login per address)
 
-Run `supabase/migration_emails_promo.sql` once (adds `profiles.promo_opt_in`,
-`hello_mail_settings`, `promo_campaigns`, `promo` bucket).
+The numbered database setup includes the email and notification tables. After setup, configure the sender accounts and staff notification switches.
 
 | Address | Sends | Via |
 |---|---|---|
 | `hello@` | Welcome mail on account creation (copy + 2–3 products edited at `/admin/emails/hello`) | `HELLO_SMTP_*` |
-| `noreply@` | Order confirmation + every admin status change | `NOREPLY_SMTP_*` |
+| `noreply@` | Order confirmations and status updates selected by staff | `NOREPLY_SMTP_*` |
 | `promo@` | Newsletters/offers, composed at `/admin/promo` (Write/HTML tabs, phone+PC preview, artwork uploads to `promo` bucket) — only to promo-opted-in shoppers | `PROMO_SMTP_*` |
 | `orders@` | Shopper order-issue forms (`/account/orders` cards + order page) forwarded to support | `ORDERS_SMTP_*` |
 | `support@` | Human inbox — mailto links (contact, account, footer, every mail footer). No SMTP needed. | — |
 
 Shared cPanel connection: `SMTP_HOST=miskalghazaalperfumes.com`, `SMTP_PORT=465`, `SMTP_SECURE=1`. Each mailbox keeps its own login/password; its FROM address defaults to that login.
-All application mailboxes now share `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`. Only `<PREFIX>_SMTP_USER`, `<PREFIX>_SMTP_PASS`, and optional `<PREFIX>_SMTP_FROM` vary by mailbox. See `.env.example` and [System emails](SYSTEM_EMAILS.md) for compact configuration and every design/template call site. Hosted Supabase Auth recovery/verification mail has its own dashboard SMTP/template configuration.
+All application mailboxes now share `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`. Only `<PREFIX>_SMTP_USER`, `<PREFIX>_SMTP_PASS`, and optional `<PREFIX>_SMTP_FROM` vary by mailbox. See `.env.example` and [mail templates and transport](../../src/lib/mailer.ts) for compact configuration and every design/template call site. Hosted Supabase Auth recovery/verification mail has its own dashboard SMTP/template configuration.
 
 
 ## 6c. Shopper auth (email + Google) + referrals
@@ -153,21 +118,19 @@ To show the brand name/logo on Google sign-in and optionally replace the visible
 4. Referral reward % and on/off live at `/admin/referrals` (default 25% both
    sides, first orders only). Reward coupons for referrers are minted with
    `owner_id` — visible only to that account.
-5. Reviews: shoppers file from the PDP (login required); nothing is public
-   until approved at `/admin/reviews` (approval recomputes the product
-   rating/count shown on cards and the PDP).
+5. Shoppers can rate products as guests. Written reviews require a signed-in
+   account and approval in `/admin/reviews` before they appear publicly.
 
 ## 7. Analytics (super_admin)
 
-Build from SQL views next (revenue/day, orders by status, top products,
-low stock) — no Mixpanel/GA required at this volume.
+Open `/admin/analytics` after database setup. See the [analytics guide](ANALYTICS_SETUP.md) for event collection, reporting, and verification.
 
 ## Troubleshooting
 
 - `/admin/login` loops back → user has no `profiles` row or role is null.
   Check Table Editor → `profiles`, re-run the promote SQL.
-- Empty catalog after setup → you ran an old `seed.sql` (collections only).
-  Re-run the current `supabase/seed.sql` — it loads the full catalog.
+- A fresh database without the demo seed starts with an empty product catalog.
+  Add products in admin or import your catalog before publishing the storefront.
 - `Missing Supabase URL / SUPABASE_SECRET_KEY` on checkout → set
   `SUPABASE_SECRET_KEY` (`sb_secret_…`) in `.env` and restart `next dev`.
 - Still on legacy keys? Set `NEXT_PUBLIC_SUPABASE_ANON_KEY` /
@@ -184,7 +147,7 @@ Run `supabase/migration_analytics.sql`, then open Admin → Analytics. See [ANAL
 
 ### Physical stores and product availability
 
-Run `supabase/migration_retail_stores.sql`, then open Admin → Catalog → Stores & product availability (`/admin/stores`). It seeds Mamzar Centre for all current/future products. Edit its details centrally, add locations, and bulk assign products by collection or lineup. See [RETAIL_STORES.md](RETAIL_STORES.md) for assignments, Maps links, access controls and caching. This is a store directory, separate from online stock quantities and checkout delivery.
+Run `supabase/migration_retail_stores.sql`, then open Admin → Catalog → Stores & product availability (`/admin/stores`). It seeds Mamzar Centre for all current/future products. Edit its details centrally, add locations, and bulk assign products by collection or lineup. Manage assignments, Maps links and store visibility from that admin page. This is a store directory, separate from online stock quantities and checkout delivery.
 
 
 ## Orders workspace upgrade (27 October 2026)
@@ -196,7 +159,7 @@ After the orders workspace migration, run `supabase/migration_admin_customer_wor
 
 
 ### Guest orders and contact inbox (2026-10-27)
-Apply `supabase/migration_guest_order_links.sql`, then `supabase/migration_contact_inbox.sql`, after existing order/auth/profile migrations. This enables existing/new order links, safe account adoption and durable contact enquiries. Keep `NEXT_PUBLIC_SITE_URL` set to your real public origin for email links. Details: [GUEST_ORDERS_AND_CONTACT.md](GUEST_ORDERS_AND_CONTACT.md).
+Apply the guest-order and contact-inbox migrations in the [numbered order](../../supabase/README.md). This enables existing/new order links, safe account adoption and durable contact enquiries. Keep `NEXT_PUBLIC_SITE_URL` set to your real public origin for email links. Details: [GUEST_ORDERS_AND_CONTACT.md](GUEST_ORDERS_AND_CONTACT.md).
 
 
 ### Admin notifications and read/unread inbox (2026-10-28)
@@ -204,7 +167,7 @@ Run `supabase/migration_admin_attention.sql` after `migration_contact_inbox.sql`
 
 ### Customer channels, master email and Telegram (2026-10-28)
 
-Apply `supabase/migration_whatsapp.sql` if needed, then `supabase/migration_notification_control.sql`. Always keep that order: the second migration supersedes placement receipts. Customer email/WhatsApp starts at admin confirmation/selected updates; new orders notify the Telegram shop chat. Master controls are at `/admin/settings/notifications`; unreadable/missing settings pause application SMTP, so apply the migration before deployment. Supabase Auth security mail remains managed separately. See [NOTIFICATION_SETUP.md](NOTIFICATION_SETUP.md) and [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md) for templates, webhook, BotFather/token/chat ID and the externally scheduled `/api/notifications/process` worker. No live scheduler or messages are installed/sent by these migrations.
+Apply `supabase/migration_whatsapp.sql`, then `supabase/migration_notification_control.sql`. Always keep that order: the second migration supersedes placement receipts. Customer email/WhatsApp starts at admin confirmation/selected updates; new orders notify the Telegram shop chat. Master controls are at `/admin/settings/notifications`; unreadable/missing settings pause application SMTP, so apply the migration before deployment. Supabase Auth security mail remains managed separately. See [NOTIFICATION_SETUP.md](NOTIFICATION_SETUP.md) and [WHATSAPP_SETUP.md](WHATSAPP_SETUP.md) for templates, webhook, BotFather/token/chat ID and the externally scheduled `/api/notifications/process` worker. No live scheduler or messages are installed/sent by these migrations.
 
 ### Leads, guest preferences and visited cities (2026-10-29)
 

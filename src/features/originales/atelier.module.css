@@ -154,17 +154,6 @@
 .mobileMenu {
   display: none;
 }
-.collectionMenu {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 42px;
-}
-.collectionMenu svg {
-  width: 17px;
-  stroke-width: 1.1;
-}
 .rail {
   position: fixed;
   left: 0;
@@ -182,14 +171,6 @@
   align-items: center;
   min-height: 100%;
   padding: 24px 8px;
-}
-.indexLink {
-  display: flex;
-  gap: 5px;
-  font-size: 7px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  margin-bottom: 13px;
 }
 .editionLink {
   position: relative;
@@ -325,17 +306,6 @@
     linear-gradient(0deg, #141612, transparent 30%);
   z-index: -1;
 }
-.sceneCaption {
-  position: absolute;
-  left: 5%;
-  right: 5%;
-  top: 122px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 7px;
-  letter-spacing: 0.17em;
-  z-index: 4;
-}
 .frostedTitle {
   position: absolute;
   left: 58%;
@@ -427,17 +397,6 @@
   font-size: 24px;
   letter-spacing: -0.04em;
   font-weight: 400;
-}
-.buyButton {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 17px 0 13px;
-  border-bottom: 1px solid var(--line);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
 }
 .couponLogin {
   border: 1px solid var(--line);
@@ -623,32 +582,12 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.5' d='M0 0h220v220H0z'/%3E%3C/svg%3E");
   pointer-events: none;
 }
-.sculptureMagnet {
-  position: absolute;
-  left: -5%;
-  top: 0;
-  bottom: 0;
-  width: 58%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: -1;
-  transform: translate3d(var(--mx, 0px), var(--my, 0px), 0);
-  transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
-  pointer-events: none;
-}
 .sculpture {
   height: 100%;
   width: 100%;
   object-fit: contain;
   opacity: 0.9;
   filter: drop-shadow(0 30px 30px #0008);
-}
-.orbitArt {
-  left: auto;
-  right: -11%;
-  width: 62%;
-  opacity: 0.8;
 }
 .panelContent {
   width: 100%;
@@ -758,10 +697,6 @@
 .discoveryPanel .orbitArt {
   right: -22%;
   opacity: 0.7;
-}
-.offersPanel .panelCopy {
-  width: 55%;
-  margin-left: auto;
 }
 .offersPanel:not(:has(:global(.pdp-offers))),
 .discoveryPanel:not(:has(:global(.sample-invitation))) {
@@ -1222,39 +1157,6 @@
   height: 73px;
   filter: invert(0.85) sepia(0.1);
 }
-.chapterStillLife {
-  position: relative;
-  height: 335px;
-  margin: 25px -5% 0;
-  isolation: isolate;
-}
-.chapterSculpture {
-  position: absolute;
-  height: 100%;
-  width: 90%;
-  left: -12%;
-  bottom: 0;
-  object-fit: contain;
-  opacity: 0.65;
-  filter: drop-shadow(0 20px 25px #0008);
-}
-.chapterBox {
-  position: absolute;
-  right: 0;
-  height: 80%;
-  width: 57%;
-  top: 9%;
-  object-fit: contain;
-  filter: drop-shadow(0 20px 17px #0008);
-}
-.chapterStillLife > span {
-  position: absolute;
-  left: 6%;
-  bottom: 13%;
-  writing-mode: vertical-rl;
-  font-size: 7px;
-  letter-spacing: 0.2em;
-}
 .gallery[data-collapsed="true"] .galleryStage {
   background: linear-gradient(
     90deg,
@@ -1317,9 +1219,6 @@
   }
   .galleryPrice {
     font-size: 13px;
-  }
-  .chapterStillLife {
-    height: 300px;
   }
   .galleryStage {
     height: 70svh;
@@ -1386,11 +1285,6 @@
   .scene {
     min-height: 0;
     height: 100svh;
-  }
-  .sceneCaption {
-    top: 103px;
-    font-size: 6px;
-    letter-spacing: 0.12em;
   }
   .frostedTitle {
     left: 7%;
@@ -1477,10 +1371,6 @@
     height: 35px;
     flex-basis: 35px;
   }
-  .buyButton {
-    padding: 12px 0;
-    font-size: 8px;
-  }
   .scrollCue {
     font-size: 7px;
     bottom: 28px;
@@ -1508,22 +1398,6 @@
   .panelCopy > p:not(.kicker) {
     font-size: 11px;
     line-height: 2;
-  }
-  .sculptureMagnet {
-    left: -22%;
-    top: -15%;
-    bottom: auto;
-    width: 95%;
-    height: 60%;
-    opacity: 0.6;
-  }
-  .orbitArt {
-    left: auto;
-    right: -25%;
-    width: 100%;
-    height: 65%;
-    top: -20%;
-    opacity: 0.45;
   }
   .panelContent {
     padding-top: 30svh;
@@ -1579,11 +1453,6 @@
     height: 65%;
     width: 110%;
     opacity: 0.65;
-  }
-  .offersPanel .sculptureMagnet {
-    top: -10%;
-    height: 60%;
-    opacity: 0.75;
   }
   .world :global(.sample-invitation) {
     padding: 18px;
@@ -1701,10 +1570,6 @@
     line-height: 2.1;
     margin-top: 20px;
   }
-  .chapterStillLife {
-    height: 285px;
-    margin-top: 22px;
-  }
   .chapterNotes {
     margin-top: 25px;
   }
@@ -1812,9 +1677,6 @@
     height: 38%;
     top: 42%;
   }
-  .buyButton {
-    padding-block: 10px;
-  }
   .panel {
     min-height: 94svh;
   }
@@ -1858,9 +1720,6 @@
   }
   .scrollCue {
     display: none;
-  }
-  .sculptureMagnet {
-    transform: none !important;
   }
   .numberFace {
     transform: none !important;
@@ -2004,25 +1863,6 @@
 .productChapters .panelGrain {
   z-index: -3;
 }
-.panelCurrent {
-  position: absolute;
-  inset: -20%;
-  pointer-events: none;
-  z-index: -2;
-  background:
-    radial-gradient(
-      ellipse at 28% 70%,
-      color-mix(in srgb, var(--edition-accent, #a79d77) 23%, transparent),
-      transparent 45%
-    ),
-    conic-gradient(
-      from 60deg at 65% 42%,
-      transparent 40%,
-      #b9c0a010 49%,
-      transparent 58%
-    );
-  filter: blur(15px);
-}
 .productChapters .noteColumns {
   grid-template-columns: 1fr;
   gap: 20px;
@@ -2076,19 +1916,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-.photoGlint {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    120deg,
-    #fff2,
-    transparent 22%,
-    transparent 70%,
-    #ffffff08
-  );
-  box-shadow: inset 1px 1px 1px #fff3;
 }
 .photoRail {
   position: absolute;
@@ -2219,11 +2046,6 @@
   font-size: 10px;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-}
-.sculpturePass {
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
 }
 /* Optical scenery belongs to the chapter, not to its card's clipping rectangle. */
 .productChapters .panel {
@@ -2513,60 +2335,6 @@
   gap: 12px;
 }
 /* V6: chrome object + drawn optical frames. The scene is shared by every chapter. */
-.sculptureSticky {
-  position: sticky;
-  top: 88px;
-  height: calc(100svh - 88px);
-  margin-bottom: calc(-100svh + 88px);
-  z-index: 0;
-  pointer-events: none;
-}
-.objectScene {
-  position: absolute;
-  inset: 0 -9% 0 -8%;
-}
-.objectScene canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.7s;
-}
-.objectPoster {
-  object-fit: contain;
-  opacity: 0.42;
-  transition: opacity 0.7s;
-}
-.objectScene[data-ready="true"] canvas {
-  opacity: 1;
-}
-.objectScene[data-ready="true"] .objectPoster {
-  opacity: 0;
-}
-.objectCaption {
-  position: absolute;
-  top: 35px;
-  left: 8%;
-  right: 7%;
-  display: flex;
-  justify-content: space-between;
-  font-size: 7px;
-  letter-spacing: 0.2em;
-  color: #b0b3a4;
-}
-.objectCaption > span {
-  opacity: 0.5;
-}
-.objectCredit {
-  display: block;
-  margin-top: 9px;
-  font-size: 7px;
-  opacity: 0.5;
-  letter-spacing: 0.06em;
-  text-transform: none;
-}
 .morphFrame {
   position: absolute;
   inset: -1px;
@@ -2667,12 +2435,6 @@
   grid-template-columns: 75px 1fr auto;
   align-items: center;
   gap: 28px;
-}
-.editionEmblem {
-  width: 72px;
-  height: 72px;
-  color: #cbc8ac;
-  opacity: 0.75;
 }
 .galleryIntro h1 {
   font-size: clamp(32px, 4.8vw, 74px);
@@ -2794,20 +2556,6 @@
 .photoSelected {
   display: none;
 }
-.photoCounter {
-  position: absolute;
-  top: 64.2%;
-  left: 6%;
-  width: 39%;
-  display: flex;
-  justify-content: space-between;
-  font-size: 7px;
-  letter-spacing: 0.17em;
-  opacity: 0.6;
-}
-.photoCounter small {
-  font-size: inherit;
-}
 @media (min-width: 760px) and (max-height: 740px) {
   .stickyProduct[data-docked="true"] .bagMorphTrack,
   .stickyProduct[data-docked="true"] .bagMorph,
@@ -2827,19 +2575,6 @@
   }
 }
 @media (max-width: 759px) {
-  .sculptureSticky {
-    top: 70px;
-    height: 70svh;
-    margin-bottom: -70svh;
-  }
-  .objectScene {
-    inset: 0 -3%;
-  }
-  .objectCaption {
-    top: 20px;
-    left: 25px;
-    font-size: 6px;
-  }
   .productChapters .panel {
     min-height: 85svh;
     padding: 90px 20px;
@@ -2863,10 +2598,6 @@
     grid-template-columns: 44px 1fr;
     gap: 18px;
   }
-  .editionEmblem {
-    width: 44px;
-    height: 44px;
-  }
   .galleryIntro h1 {
     font-size: 30px;
     letter-spacing: 0.1em;
@@ -2886,26 +2617,11 @@
     width: 46px;
     height: 46px;
   }
-  .photoCounter {
-    top: auto;
-    bottom: 70px;
-    left: 20px;
-    width: calc(100% - 40px);
-  }
-  .photoCounter small {
-    display: none;
-  }
   .mobilePurchaseDock .bagMorph {
     background: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .objectScene canvas {
-    display: none;
-  }
-  .objectPoster {
-    opacity: 0.32;
-  }
   .productChapters .panelContent,
   .editionCard {
     backdrop-filter: none;
@@ -2934,9 +2650,6 @@
   .gallery:not([data-collapsed="true"]) .sculptureSticky {
     opacity: 0;
   }
-  .sculptureSticky {
-    transition: opacity 0.65s;
-  }
 }
 @media (max-width: 759px) {
   .galleryIntro h1 {
@@ -2957,9 +2670,6 @@
 .photoAperture {
   top: 28%;
   transition: scale 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.photoCounter {
-  top: 76%;
 }
 .photoRail {
   top: 80%;
@@ -3234,9 +2944,6 @@
   width: 54px;
   height: 56px;
 }
-.objectScene[data-ready="true"] canvas {
-  opacity: 0.5;
-}
 @media (max-width: 759px) {
   .productChapters .compositionPanel {
     padding-block: 60px;
@@ -3256,9 +2963,6 @@
     width: 48px;
     height: 50px;
   }
-}
-.objectPoster {
-  opacity: 0.28;
 }
 
 /* The title keeps its semantic identity as the opening colour and weight settle. */
@@ -4728,31 +4432,6 @@
     min-width: 28px;
   }
 }
-.gallerySeal {
-  position: absolute;
-  top: -0.47em;
-  left: 50%;
-  translate: -50% 0;
-  display: flex;
-  align-items: center;
-  gap: 0.55em;
-  font:
-    400 clamp(12px, 1.65vw, 22px) Georgia,
-    serif;
-  letter-spacing: 0;
-  color: #f5ddba;
-  pointer-events: none;
-}
-.gallerySeal::before,
-.gallerySeal::after {
-  content: "";
-  width: clamp(28px, 7vw, 115px);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #d9b783a8);
-}
-.gallerySeal::after {
-  scale: -1 1;
-}
 .collectionGlass {
   position: absolute;
   inset: 0 0 auto;
@@ -4904,9 +4583,6 @@
 @media (max-width: 759px) {
   .collectionWorld .galleryIntro h1 {
     font-size: clamp(32px, 11.8vw, 72px);
-  }
-  .gallerySeal {
-    top: -1.05em;
   }
   .galleryBottlePlane {
     height: 85%;

@@ -177,7 +177,7 @@ export function orderStatusGraphic(status: string): string {
   returned: "Your order is marked as returned. Contact our team for assistance.",
  };
  const terminal = status === "cancelled" || status === "returned";
- const cells = stages.map((stage,i)=>`<td width="20%" align="center" style="padding:10px 2px;vertical-align:top"><div style="width:26px;height:26px;line-height:26px;margin:0 auto 8px;border-radius:50%;background:${!terminal&&i<=index?"#8a6d2f":"#e9e1d2"};color:${!terminal&&i<=index?"#ffffff":"#766c5e"};font-size:12px">${!terminal&&i<index?"&#10003;":i+1}</div><span style="font-size:10px;color:#605749">${labels[i]}</span></td>`).join("");
+ const cells = stages.map((_,i)=>`<td width="20%" align="center" style="padding:10px 2px;vertical-align:top"><div style="width:26px;height:26px;line-height:26px;margin:0 auto 8px;border-radius:50%;background:${!terminal&&i<=index?"#8a6d2f":"#e9e1d2"};color:${!terminal&&i<=index?"#ffffff":"#766c5e"};font-size:12px">${!terminal&&i<index?"&#10003;":i+1}</div><span style="font-size:10px;color:#605749">${labels[i]}</span></td>`).join("");
  return `<div style="padding:20px;background:${terminal?"#f5e8e3":"#efe9dc"};border-radius:12px;margin:20px 0"><p style="margin:0 0 12px;font-size:16px;font-weight:600">${terminal?(status==="cancelled"?"Order cancelled":"Order returned"):labels[Math.max(index,0)]}</p>${terminal?"":`<table role="presentation" style="width:100%;border-collapse:collapse"><tr>${cells}</tr></table>`}<p style="margin:12px 0 0;font-size:13px;line-height:1.7">${messages[status]||"Your order status has been updated."}</p></div>`;
 }
 

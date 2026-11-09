@@ -80,6 +80,6 @@ The optional confirmation email respects saved order-mail preferences. Status up
 | `supabase/migration_orders_workspace.sql` | Schema, sequence, report and transactional mutation RPCs |
 | `tests/orders-workspace.test.cjs` | SMTP, tracking, dates, access, export and real PostgreSQL regressions |
 
-For all email design locations, see [System emails](SYSTEM_EMAILS.md).
+Order email layouts and transport live in [src/lib/mailer.ts](../../src/lib/mailer.ts).
 
 Current follow-up: apply `migration_paid_feedback.sql` after this workspace migration for paid-only money in analytics too. See [Paid reporting and customer feedback](HAPTICS_AND_FEEDBACK.md).

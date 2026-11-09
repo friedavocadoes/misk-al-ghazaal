@@ -36,14 +36,6 @@ async function saveSection(formData: FormData) {
     config.limit = Math.min(24, Math.max(1, Number(formData.get("limit") || 8)));
   }
 
-  if (kind === "scent_alchemist") {
-    config.mode = (str("mode") as "collection" | "manual") || "collection";
-    config.slugs = lines("slugs");
-    config.prompt = str("prompt");
-    config.promptAr = str("prompt_ar");
-    config.noteSlugs = lines("note_slugs");
-  }
-
   if (kind === "collections_grid" || kind === "blog_grid") {
     config.limit = Math.min(24, Math.max(1, Number(formData.get("limit") || 6)));
   }
@@ -137,10 +129,7 @@ export default async function SectionDetail(props: { params: Promise<{ id: strin
   if (!s) redirect("/admin/homepage");
   if (s.kind === "scent_alchemist") return <><AdminNav email={session.email} role={session.role} /><div className="admin-workspace admin-legacy"><h1 className="text-3xl">The scent finder has moved</h1><p className="mt-5 text-sm leading-7">Find Your Scent is now a dedicated page. It uses all active products and the notes library, with twelve popular notes shown first. This legacy homepage section is no longer displayed.</p><div className="mt-8 flex gap-6 text-sm underline"><Link href="/find-your-scent">View scent finder</Link><Link href="/admin/notes">Manage notes</Link><Link href="/admin/products">Manage products</Link></div></div></>;
 
-  const [{ data: collections }, { data: notes }] = await Promise.all([
-    supabase.from("collections").select("slug,title").is("deleted_at", null).order("sort"),
-    supabase.from("notes").select("slug,name,color").order("name"),
-  ]);
+  const { data: collections } = await supabase.from("collections").select("slug,title").is("deleted_at", null).order("sort");
 
   const cfg = (s.config ?? {}) as HomepageSectionConfig;
   const field = "mt-1 w-full border border-ink/20 bg-white px-3 py-2";
@@ -180,70 +169,6 @@ export default async function SectionDetail(props: { params: Promise<{ id: strin
             Eyebrow (AR)
             <input name="eyebrow_ar" defaultValue={s.eyebrow_ar ?? ""} className={field} />
           </label>
-
-          {s.kind === "scent_alchemist" && (
-            <>
-              <label className="block">
-                Interactive Prompt (EN)
-                <input
-                  name="prompt"
-                  defaultValue={cfg.prompt ?? ""}
-                  placeholder="Tap up to 3 accords to compose your aura"
-                  className={field}
-                />
-              </label>
-              <label className="block">
-                Interactive Prompt (AR)
-                <input
-                  name="prompt_ar"
-                  defaultValue={cfg.promptAr ?? ""}
-                  placeholder="اختر حتى 3 نوتات لتركيب هالتك العطرية"
-                  className={field}
-                />
-              </label>
-              <label className="block md:col-span-2">
-                Product Pool Source
-                <select name="mode" defaultValue={cfg.mode ?? "collection"} className={field}>
-                  <option value="collection">All active products (matched by notes & keywords)</option>
-                  <option value="manual">Hand-picked product slugs only</option>
-                </select>
-              </label>
-              <label className="block md:col-span-2">
-                Hand-picked product slugs (optional — one per line)
-                <textarea
-                  name="slugs"
-                  rows={4}
-                  defaultValue={(cfg.slugs ?? []).join("\n")}
-                  dir="ltr"
-                  placeholder={"misk-al-ghazaal-abukhalid-50ml\ndukhoonak-big-boss\nnoorjes-imagine\nclassic-oud"}
-                  className={`${field} font-mono text-[13px]`}
-                />
-              </label>
-              <div className="md:col-span-2">
-                <label className="block">
-                  Featured Accord / Note Slugs (optional — one per line; leave empty to show top 6 from{" "}
-                  <Link href="/admin/notes" className="underline">
-                    /admin/notes
-                  </Link>
-                  )
-                  <textarea
-                    name="note_slugs"
-                    rows={4}
-                    defaultValue={(cfg.noteSlugs ?? []).join("\n")}
-                    dir="ltr"
-                    placeholder={"oud\nmusk\nrose\namber\nbakhoor-smoke\ncitrus"}
-                    className={`${field} font-mono text-[13px]`}
-                  />
-                </label>
-                {notes && notes.length > 0 && (
-                  <p className="mt-1.5 text-xs text-ink/60">
-                    Available note slugs in your DB:{" "}
-                    {notes.map((n: { slug: string }) => n.slug).join(", ")}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
 
           {s.kind === "products_carousel" && (
             <>

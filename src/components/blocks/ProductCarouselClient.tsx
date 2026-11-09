@@ -49,12 +49,18 @@ export function ProductCarouselClient({
 
   useEffect(() => {
     if (!emblaApi) return;
-    onSelect();
-    onScroll();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        onSelect();
+        onScroll();
+      }
+    });
     emblaApi.on("select", onSelect);
     emblaApi.on("reInit", onSelect);
     emblaApi.on("scroll", onScroll);
     return () => {
+      active = false;
       emblaApi.off("select", onSelect);
       emblaApi.off("reInit", onSelect);
       emblaApi.off("scroll", onScroll);

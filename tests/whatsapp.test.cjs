@@ -561,13 +561,11 @@ test("queue worker rechecks consent, distinguishes acceptance from delivery and 
         return { error: null };
       },
       from: (table) => {
-        let update;
         const q = {
           select() {
             return q;
           },
           update(v) {
-            update = v;
             patches.push(v);
             return q;
           },

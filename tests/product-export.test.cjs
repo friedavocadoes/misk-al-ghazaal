@@ -11,13 +11,13 @@ function load(file, resolve) {
       esModuleInterop: true,
     },
   }).outputText;
-  const module = { exports: {} };
+  const loaded = { exports: {} };
   new Function("require", "module", "exports", code)(
     resolve,
-    module,
-    module.exports,
+    loaded,
+    loaded.exports,
   );
-  return module.exports;
+  return loaded.exports;
 }
 const config = load("src/features/originales/config.ts", require);
 const { productWorkbook } = load("src/lib/product-export.ts", (name) =>
