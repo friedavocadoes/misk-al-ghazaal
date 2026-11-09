@@ -207,7 +207,7 @@ export function DeliveryAddress({
             onClick={() => setLabel(o.id)}
             aria-pressed={label === o.id}
             className={`flex cursor-pointer items-center justify-center gap-2 border px-4 py-3 text-[12px] font-semibold uppercase tracking-[0.18em] transition ${
-              label === o.id ? "border-ink bg-ink text-white" : "border-ink/20 bg-white text-espresso hover:border-ink"
+              label === o.id ? "border-gold bg-gold-wash/40 text-ink" : "border-ink/20 bg-white text-espresso hover:border-gold"
             }`}
           >
             <o.Icon className="size-4" />
@@ -268,6 +268,7 @@ export function DeliveryAddress({
             searchPlaceholder={t("addrSearch")}
             emptyText={t("addrEmpty")}
             ariaLabel={t("addrCountry")}
+            className={country ? "border-gold/70" : undefined}
           />
         </span>
         <span>
@@ -280,6 +281,7 @@ export function DeliveryAddress({
             searchPlaceholder={t("addrSearch")}
             emptyText={t("addrEmpty")}
             ariaLabel={stateWord}
+            className={state ? "border-gold/70" : undefined}
           />
         </span>
         <span>

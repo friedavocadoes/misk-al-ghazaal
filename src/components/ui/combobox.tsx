@@ -21,6 +21,7 @@ export function Combobox({
   searchPlaceholder,
   emptyText,
   ariaLabel,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -29,6 +30,7 @@ export function Combobox({
   searchPlaceholder: string;
   emptyText: string;
   ariaLabel: string;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const listId = useId();
@@ -42,7 +44,7 @@ export function Combobox({
           aria-expanded={open}
           aria-controls={listId}
           aria-label={ariaLabel}
-          className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-[4px] border border-ink/20 bg-white px-4 py-3 text-left text-sm text-ink transition-colors hover:border-gold/40 data-[state=open]:border-gold focus:border-gold focus:outline-none"
+          className={cn("flex w-full cursor-pointer items-center justify-between gap-2 rounded-[4px] border border-ink/20 bg-white px-4 py-3 text-start text-sm text-ink transition-colors hover:border-gold/40 data-[state=open]:border-gold focus:border-gold focus:outline-none", className)}
         >
           <span className={cn("truncate", !selected && "text-fog")}>
             {selected ? selected.label : placeholder}

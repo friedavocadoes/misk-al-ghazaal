@@ -88,6 +88,7 @@ export default async function AccountPage(
       </div>
 
       <Link href="/account/ratings" className="mt-8 block border border-gold/25 bg-white p-5 text-sm">{locale === "ar" ? "تقييماتي ومراجعاتي" : "My ratings & reviews"} →</Link>
+      <Link href="/account/addresses" className="mt-3 block border border-gold/25 bg-white p-5 text-sm">{locale === "ar" ? "العناوين المحفوظة" : "Saved addresses"} →</Link>
       {/* Profile — maison member card */}
       <section className="relative mt-10 overflow-hidden border border-gold/30 bg-white">
         <span

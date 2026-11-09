@@ -10,7 +10,8 @@ import { CHECKOUT_TERMS_VERSION } from "@/lib/checkout-terms";
 import { LegalLinks } from "@/components/blocks/LegalLinks";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowUpRight, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
+import { ArrowUpRight, Banknote, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
@@ -21,12 +22,14 @@ import {SamplePicker} from "@/components/blocks/SamplePicker";
 import {readSamples} from "@/lib/sample-tiers";
 import { CouponTicket } from "@/components/blocks/CouponTicket";
 import { celebrate } from "@/lib/confetti";
-import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { DIAL_CODES, combinePhone, splitPhone, DEFAULT_DIAL } from "@/lib/dial-codes";
 import type { Locale } from "@/i18n/routing";
 import type { Coupon, DeliveryAnswer, DeliveryCountry, Quote } from "@/lib/types";
 import { OrderReceived, type ReceivedOrder } from "@/components/blocks/OrderReceived";
 import { cn } from "@/lib/utils";
+import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/saved-address";
+import { CheckoutItems } from "@/components/blocks/CheckoutItems";
+import { whatsappPhone } from "@/lib/whatsapp-shared";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -34,27 +37,22 @@ const inputCls =
 export default function CheckoutPage() {
   const t = useTranslations("Checkout");
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
-  const { lines, clear } = useCart();
+  const ar = locale === "ar";
+  const [step, setStep] = useState<"delivery" | "payment">("delivery");
+  const stepTitle = useRef<HTMLHeadingElement>(null);
+  const goToStep = (next: typeof step) => {
+    setStep(next);
+    requestAnimationFrame(() => stepTitle.current?.focus());
+  };
+  const { lines, clear, hydrated } = useCart();
   const { meta } = useCartMeta(lines.map((l) => l.productSlug));
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [guest, setGuest] = useState(false);
-  const [prefilled, setPrefilled] = useState(false);
   const [savePhone, setSavePhone] = useState(true);
-  const [whatsappOptIn,setWhatsappOptIn]=useState(false);
-  const [addrInitial, setAddrInitial] = useState<{
-    line?: string; building?: string; countryCode?: string; state?: string;
-    city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
-  } | null>(null);
+  const [whatsappOptIn,setWhatsappOptIn]=useState(true);
   const [addrReady, setAddrReady] = useState(false);
-  const [addrKey, setAddrKey] = useState(0);
-  const [savedAddr, setSavedAddr] = useState<{
-    initial: {
-      line?: string; building?: string; countryCode?: string; state?: string;
-      city?: string; postcode?: string; label?: string; lat?: number | null; lng?: number | null;
-    };
-    summary: string;
-  } | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [addressChoice, setAddressChoice] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [dial, setDial] = useState(DEFAULT_DIAL);
   const [national, setNational] = useState("");
@@ -66,6 +64,7 @@ export default function CheckoutPage() {
   const [emirate, setEmirate] = useState("Dubai");
   const [notes, setNotes] = useState("");
   const [countries, setCountries] = useState<DeliveryCountry[]>([]);
+  const [countriesReady, setCountriesReady] = useState(false);
   const [delivery, setDelivery] = useState<DeliveryAnswer | null>(null);
   const [deliveryValid, setDeliveryValid] = useState(false);
   const [coupon, setCoupon] = useState("");
@@ -83,82 +82,36 @@ export default function CheckoutPage() {
   const prevCouponState = useRef(couponState);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [placing, setPlacing] = useState(false);
+  const submitting = useRef(false);
   const [orderError, setOrderError] = useState("");
   const [done, setDone] = useState<ReceivedOrder | null>(null);
 
   useEffect(() => {
-    createBrowserClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (data.user) {
-          setUserId(data.user.id);
-          if (data.user.email) setEmail((e) => e || data.user.email!);
-          // Autofill from the account (profile → last order fallback).
-          // Functional sets only fill blanks, so a fast typer is never
-          // clobbered by the late response.
-          fetch("/api/account/profile")
-            .then((r) => (r.ok ? r.json() : null))
-            .then((j) => {
-              if (!j || typeof j !== "object") return;
-              const nm = typeof j.name === "string" ? j.name : "";
-              const ph = typeof j.phone === "string" ? j.phone : "";
-              if (nm) setName((v) => v || nm);
-              if (ph && !phoneTouched.current) {
-                const split = splitPhone(ph);
-                setDial(split.dial);
-                setNational(split.national);
-              }
-              const saved = (j.defaultAddress ?? null) as {
-                line?: string; city?: string; state?: string; postcode?: string;
-                country_code?: string; countryCode?: string; label?: string;
-                lat?: number | null; lng?: number | null;
-              } | null;
-              const last = (j.lastOrder ?? null) as {
-                address?: string; city?: string; emirate?: string; state_name?: string;
-                postcode?: string; country_code?: string;
-              } | null;
-              if (saved && typeof saved === "object") {
-                const initial = {
-                  line: saved.line ?? "",
-                  countryCode: saved.countryCode ?? saved.country_code ?? undefined,
-                  state: saved.state ?? "",
-                  city: saved.city ?? "",
-                  postcode: saved.postcode ?? "",
-                  label: saved.label ?? "",
-                  lat: saved.lat ?? null,
-                  lng: saved.lng ?? null,
-                };
-                setAddrInitial(initial);
-                const bits = [saved.line ?? "", saved.city ?? "", saved.state ?? ""].filter(Boolean);
-                if (bits.length) setSavedAddr({ initial, summary: bits.join(" · ") });
-                setAddress((v) => v || saved.line || "");
-                setCity((v) => (v && v !== "Dubai") || !saved.city ? v : saved.city || v);
-                setEmirate((v) => (v && v !== "Dubai") || !saved.state ? v : saved.state || v);
-              } else if (last) {
-                setAddress((v) => v || last.address || "");
-                if (last.city) setCity((v) => (v && v !== "Dubai" ? v : last.city!));
-                const st = last.state_name || last.emirate || "";
-                if (st) setEmirate((v) => (v && v !== "Dubai" ? v : st));
-              }
-              setPrefilled(true);
-            })
-            .catch(() => {})
-            .finally(() => setAddrReady(true));
-        } else {
-          setGuest(true);
-          setAddrReady(true);
+    const controller = new AbortController();
+    fetch("/api/account/profile", { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const profile = await response.json();
+        if (controller.signal.aborted) return;
+        setUserId(profile.userId);
+        if (profile.email) setEmail((value) => value || profile.email);
+        if (profile.name) setName((value) => value || profile.name);
+        if (profile.phone && !phoneTouched.current) {
+          const { dial, national } = splitPhone(profile.phone);
+          setDial(dial);
+          setNational(national);
         }
+        if (Array.isArray(profile.savedAddresses)) setSavedAddresses(profile.savedAddresses);
       })
-      .catch(() => {
-        setGuest(true);
-        setAddrReady(true);
-      });
-    fetch("/api/countries")
+      .catch(() => {})
+      .finally(() => { if (!controller.signal.aborted) setAddrReady(true); });
+    fetch("/api/countries", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (Array.isArray(j?.countries)) setCountries(j.countries as DeliveryCountry[]);
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!controller.signal.aborted) setCountriesReady(true); });
     // Pick up a code applied on a product page.
     try {
       const saved = localStorage.getItem("misk-coupon")?.trim().toUpperCase();
@@ -168,6 +121,7 @@ export default function CheckoutPage() {
     } catch {
       /* private mode — no handoff */
     }
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -276,7 +230,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const prev = prevCouponState.current;
     prevCouponState.current = couponState;
-    if (couponState === "ok" && prev !== "ok") celebrate(offersRef.current);
+    if (couponState === "ok" && prev !== "ok" && offersRef.current) celebrate(offersRef.current);
     if ((couponState === "bad" || couponState === "min") && prev !== couponState) {
       setShakeKey((k) => k + 1);
     }
@@ -316,8 +270,21 @@ export default function CheckoutPage() {
     return msg || t("orderError");
   };
 
+  const hasMap = countries.length > 0;
+  const supportedAddresses = hasMap
+    ? savedAddresses.filter(({ address }) => addressIsSupported(address, countries))
+    : savedAddresses;
+  const selectedId = addressChoice ?? supportedAddresses[0]?.id;
+  const selectedAddress = supportedAddresses.find(({ id }) => id === selectedId)?.address;
+  const phoneOk = national.replace(/^0+/, "").length >= 7 && Boolean(whatsappPhone(phone));
+  const deliveryComplete = Boolean(addrReady && countriesReady && name.trim() && phoneOk &&
+    (!email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) &&
+    (selectedAddress || (hasMap ? deliveryValid : address.trim() && city.trim() && emirate.trim())));
+  const valid = deliveryComplete && quote && !quoteLoading && stockIssues.length === 0;
+
   const placeOrder = async () => {
-    if(placing||!valid)return;
+    if (submitting.current || !valid || step !== "payment") return;
+    submitting.current = true;
     haptic("selection");
     rememberFeedback({checkoutAttemptAt:Date.now()});
     window.dispatchEvent(new Event("analytics-checkout-attempt"));
@@ -326,7 +293,7 @@ export default function CheckoutPage() {
     try {
     // Structured delivery wins; legacy manual fields are the fallback
     // when the countries service is unreachable.
-    const addr = delivery && deliveryValid ? delivery : null;
+    const addr = selectedAddress ?? (delivery && deliveryValid ? delivery : null);
     const finalAddress = addr
       ? `${addr.line}${addr.building ? `, ${addr.building}` : ""}`
       : address;
@@ -337,10 +304,13 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         checkout_terms_version: CHECKOUT_TERMS_VERSION,
+        payment_method: "cod",
         customer_name: name,
         phone,
         email,
         address: finalAddress,
+        address_line: addr?.line,
+        address_building: addr?.building,
         city: finalCity,
         emirate: finalState,
         notes,
@@ -363,7 +333,18 @@ export default function CheckoutPage() {
     if (res.ok && j?.order_no) {
       haptic("order");
       try { localStorage.removeItem("misk-samples");window.dispatchEvent(new Event("samples-change")); } catch { /* Storage may be disabled. */ }
-      setDone({ orderNo: j.order_no as string, orderUrl:j.order_url??undefined, total: Number(j.total ?? 0), items: (j.items ?? []).map((item: {title:string;qty:number;unit:number;slug:string}) => ({...item, image: meta[item.slug]?.image ?? "", lineupSlug: meta[item.slug]?.lineupSlug})) });
+      setDone({
+        orderNo: j.order_no,
+        orderUrl: j.order_url ?? undefined,
+        total: Number(j.total ?? 0),
+        recipient: name.trim(),
+        deliveryAddress: addr ? addressSummary(addr) : [finalAddress, finalCity, finalState].filter(Boolean).join(", "),
+        items: (j.items ?? []).map((item: { title: string; qty: number; unit: number; slug: string }) => ({
+          ...item,
+          image: meta[item.slug]?.image ?? "",
+          lineupSlug: meta[item.slug]?.lineupSlug,
+        })),
+      });
       try {
         localStorage.removeItem("misk-coupon");
       } catch {
@@ -376,11 +357,26 @@ export default function CheckoutPage() {
       setOrderError(friendlyError(j?.error));
     }
     } catch {haptic("error");setOrderError(locale==="ar"?"تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.":"Couldn’t send your order. Please try again.");}
-    finally {setPlacing(false);}
+    finally {
+      submitting.current = false;
+      setPlacing(false);
+    }
   };
 
   if (done) {
     return <OrderReceived order={done} locale={locale} loggedIn={!!userId} />;
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
+        <h1 className="font-display text-4xl text-ink">{t("title")}</h1>
+        <p role="status" className="mt-4 flex items-center gap-2 text-sm text-fog">
+          <Loader2 aria-hidden className="size-4 animate-spin" />
+          {ar ? "جارٍ تحميل حقيبتك…" : "Loading your bag…"}
+        </p>
+      </div>
+    );
   }
 
   if (!lines.length) {
@@ -396,38 +392,41 @@ export default function CheckoutPage() {
     );
   }
 
-  const hasMap = countries.length > 0;
-  const phoneOk = national.replace(/\D/g, "").length >= 7;
-  const valid = name.trim() && phoneOk && (hasMap ? deliveryValid : address.trim()) && quote && !quoteLoading && stockIssues.length===0;
-
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
       <p className="eyebrow text-gold">{t("eyebrow")}</p>
       <h1 className="mt-2.5 font-display text-4xl text-ink md:text-5xl">{t("title")}</h1>
+      <ol aria-label={ar ? "خطوات الدفع" : "Checkout steps"} className="mt-6 grid max-w-md grid-cols-2 gap-4">
+        {(["delivery", "payment"] as const).map((item, index) => (
+          <li key={item} aria-current={step === item ? "step" : undefined}
+            className={cn("border-b-2 pb-2.5 text-sm", step === item ? "border-gold font-semibold text-ink" : "border-ink/10 text-fog")}>
+            <span className="me-2 text-xs tabular-nums text-gold">0{index + 1}</span>
+            {item === "delivery" ? (ar ? "التوصيل" : "Delivery") : (ar ? "الدفع" : "Payment")}
+          </li>
+        ))}
+      </ol>
 
-      {guest && (
-        <div className="mt-8 flex flex-col items-start gap-4 border border-gold/40 bg-gold-wash/50 p-5 sm:flex-row sm:items-center md:p-6">
-          <div>
-            <p className="font-display text-xl text-ink">{t("loginTitle")}</p>
-            <p className="mt-1 text-sm text-espresso">{t("loginText")}</p>
-          </div>
-          <Button asChild variant="outline" className="sm:ms-auto">
-            <Link href="/account/login?next=/checkout">{t("loginCta")}</Link>
-          </Button>
-        </div>
-      )}
-
-      <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid min-w-0 grid-cols-1 gap-8">
+      <CartStockNotice issues={stockIssues} loading={quoteLoading} />
+      <div className="mt-8 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+        <div className="min-w-0 space-y-5">
           {/* Details */}
-          <section className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("contactTitle")}>
-            <h2 className="font-display text-2xl text-ink">{t("contactTitle")}</h2>
-            {prefilled && (
-              <p className="mt-1.5 text-[13px] text-[#1e7a46]">{t("prefilled")}</p>
+          <section hidden={step !== "delivery"} className="border border-ink/10 bg-white p-5 md:p-8" aria-label={t("contactTitle")}>
+            <h2 ref={step === "delivery" ? stepTitle : undefined} tabIndex={-1} className="scroll-mt-32 font-display text-2xl text-ink">{ar ? "بيانات التوصيل" : "Delivery details"}</h2>
+            {addrReady && !userId && (
+              <Link href="/account/login?next=/checkout" className="mt-2 inline-block text-xs text-gold underline underline-offset-4">{t("loginTitle")}</Link>
             )}
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={`${t("name")} *`} aria-label={t("name")} className={inputCls} autoComplete="name" />
-              <div className="flex gap-2" dir="ltr">
+              <label className="grid gap-1.5 text-xs font-medium text-espresso">
+                {t("name")} *
+                <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} autoComplete="name" />
+              </label>
+              <label className="grid gap-1.5 text-xs font-medium text-espresso">
+                {t("email")}
+                <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" dir="ltr" className={inputCls} autoComplete="email" />
+              </label>
+              <div className="sm:col-span-2">
+                <label htmlFor="checkout-phone" className="mb-1.5 block text-xs font-medium text-espresso">{t("phone")} *</label>
+                <div className="flex gap-2" dir="ltr">
                 <label className="shrink-0">
                   <span className="sr-only">{t("phone")}</span>
                   <select
@@ -436,7 +435,7 @@ export default function CheckoutPage() {
                       phoneTouched.current = true;
                       setDial(e.target.value);
                     }}
-                    aria-label={t("phone")}
+                    aria-label={ar ? "رمز الاتصال الدولي" : "Country calling code"}
                     className="h-full cursor-pointer rounded-[2px] border border-ink/20 bg-white px-2 py-3 text-sm text-ink focus:border-gold focus:outline-none"
                   >
                     {DIAL_CODES.map((d) => (
@@ -447,19 +446,20 @@ export default function CheckoutPage() {
                   </select>
                 </label>
                 <input
+                  id="checkout-phone"
+                  required
                   value={national}
                   onChange={(e) => {
                     phoneTouched.current = true;
                     setNational(e.target.value.replace(/\D/g, "").slice(0, 12));
                   }}
-                  placeholder={`${t("phone")} *`}
-                  aria-label={t("phone")}
                   inputMode="numeric"
+                  type="tel"
                   autoComplete="tel-national"
                   className={`${inputCls} min-w-0 flex-1`}
                 />
+                </div>
               </div>
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("email")} type="email" aria-label={t("email")} dir="ltr" className={`${inputCls} sm:col-span-2`} autoComplete="email" />
             </div>
             {userId && (
               <label className="mt-3 flex cursor-pointer items-start gap-2 text-[12px] leading-relaxed text-fog">
@@ -473,39 +473,38 @@ export default function CheckoutPage() {
               </label>
             )}
             <div className="mt-6">
-              {savedAddr && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddrInitial(savedAddr.initial);
-                    setAddrKey((k) => k + 1);
-                  }}
-                  className="mb-4 flex w-full cursor-pointer items-center gap-3 border border-gold/50 bg-gold-wash/50 p-4 text-left transition hover:border-gold"
-                >
-                  <MapPin className="size-5 shrink-0 text-gold" />
-                  <span className="min-w-0">
-                    <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-gold">
-                      {t("savedAddrTitle")}
-                    </span>
-                    <span className="mt-0.5 block truncate text-sm text-ink">{savedAddr.summary}</span>
-                  </span>
-                </button>
+              <h3 className="mb-3 text-sm font-semibold text-ink">{ar ? "عنوان التوصيل" : "Delivery address"}</h3>
+              {supportedAddresses.length > 0 && (
+                <fieldset className="mb-4 space-y-2">
+                  <legend className="sr-only">{ar ? "العناوين المحفوظة" : "Saved addresses"}</legend>
+                  {supportedAddresses.map(({ id, address }) => (
+                    <label key={id} className={cn("flex cursor-pointer items-center gap-3 border p-4 text-sm", selectedId === id ? "border-gold bg-gold-wash/40" : "border-ink/15")}>
+                      <input type="radio" name="delivery-address" checked={selectedId === id} onChange={() => setAddressChoice(id)} className="accent-gold" />
+                      <MapPin aria-hidden className="size-4 shrink-0 text-gold" />
+                      <span className="min-w-0">
+                        <strong className="block text-xs text-ink">{address.label === "work" ? (ar ? "العمل" : "Work") : (ar ? "المنزل" : "Home")}</strong>
+                        <span className="break-words text-espresso">{addressSummary(address)}</span>
+                      </span>
+                    </label>
+                  ))}
+                  <button type="button" onClick={() => setAddressChoice("new")} aria-pressed={selectedId === "new"}
+                    className={cn("cursor-pointer border px-4 py-2 text-sm", selectedId === "new" ? "border-gold bg-gold-wash/40" : "border-ink/15 hover:border-gold")}>
+                    {ar ? "+ إضافة عنوان آخر" : "+ Add another address"}
+                  </button>
+                </fieldset>
               )}
-              {hasMap ? (
-                addrReady ? (
-                  <DeliveryAddress
-                    key={addrKey}
-                    locale={locale}
-                    countries={countries}
-                    initial={addrInitial}
-                    onChange={(a, v) => {
-                      setDelivery(a);
-                      setDeliveryValid(v);
-                    }}
-                  />
-                ) : (
-                  <div className="h-64 w-full animate-pulse border border-ink/15 bg-sand md:h-72" />
-                )
+              {!addrReady || !countriesReady ? (
+                <p role="status" className="flex items-center gap-2 py-4 text-sm text-fog"><Loader2 className="size-4 animate-spin" />{ar ? "جارٍ تحميل العناوين…" : "Loading delivery options…"}</p>
+              ) : selectedAddress || step !== "delivery" ? null : hasMap ? (
+                <DeliveryAddress
+                  locale={locale}
+                  countries={countries}
+                  initial={delivery}
+                  onChange={(answer, isValid) => {
+                    setDelivery(answer);
+                    setDeliveryValid(isValid);
+                  }}
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2">
                   <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={`${t("address")} *`} aria-label={t("address")} className={`${inputCls} sm:col-span-2`} />
@@ -518,10 +517,12 @@ export default function CheckoutPage() {
           </section>
 
           {/* Offers */}
-          <section ref={offersRef} className="border border-ink/10 bg-white p-6 md:p-8" aria-label={t("offersTitle")}>
-            <h2 className="flex items-center gap-2 font-display text-2xl text-ink">
+          {step === "payment" && <>
+          <section ref={offersRef} className="border border-ink/10 bg-white p-5 md:p-8" aria-label={t("offersTitle")}>
+            <h2 ref={stepTitle} tabIndex={-1} className="mb-6 scroll-mt-32 font-display text-2xl text-ink">{ar ? "الدفع" : "Payment"}</h2>
+            <h3 className="flex items-center gap-2 font-display text-lg text-ink">
               <Ticket className="size-5 text-gold" /> {t("offersTitle")}
-            </h2>
+            </h3>
 
             {appliedCoupon && couponState === "ok" ? (
               offers.find(o => o.code === appliedCoupon) ? <CouponTicket
@@ -593,10 +594,10 @@ export default function CheckoutPage() {
             )}
 
             {offers.length > 0 && !(appliedCoupon && couponState === "ok") && (
-              <div className="mt-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
+              <details className="mt-5 border-t border-ink/10 pt-4">
+                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-gold">
                   {t("offersPick")}
-                </p>
+                </summary>
                 <ul className="mt-3 grid gap-3">
                   {offers
                     .filter((o) => o.code !== appliedCoupon)
@@ -621,7 +622,7 @@ export default function CheckoutPage() {
                       </li>
                     ))}
                 </ul>
-              </div>
+              </details>
             )}
 
             <div className="mt-6 border-t border-ink/10 pt-5">
@@ -643,7 +644,7 @@ export default function CheckoutPage() {
                 <div className="overflow-hidden">
                   <div className="pt-4">
                     {appliedReferral && referralState === "ok" ? (
-                      <div className="flex items-center gap-3 border border-[#1e7a46]/40 bg-[#1e7a46]/[0.07] p-4">
+                      <div className="flex items-center gap-3 border border-gold bg-gold-wash/40 p-4">
                         <span className="min-w-0 flex-1">
                           <span className="block font-mono text-base font-bold tracking-[0.12em] text-ink">
                             {appliedReferral}
@@ -691,56 +692,94 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
+          <fieldset className="space-y-3 border border-ink/10 bg-white p-5 md:p-8">
+            <legend className="px-2 text-sm font-semibold text-ink">{ar ? "طريقة الدفع" : "Payment method"}</legend>
+            <label className="flex items-center gap-3 border border-gold bg-gold-wash/40 p-4 text-sm text-ink">
+              <input type="radio" name="payment" value="cod" checked readOnly className="accent-gold" />
+              <Banknote aria-hidden className="size-5 text-gold" />
+              <span>{ar ? "الدفع عند الاستلام" : "Cash on delivery"}</span>
+            </label>
+            <label className="block cursor-not-allowed border border-ink/10 bg-ink/[0.04] p-4 text-sm text-espresso">
+              <span className="flex flex-wrap items-center gap-3">
+                <input type="radio" name="payment" value="tap" disabled />
+                <span>Tap Payments</span>
+                <span className="ms-auto text-xs">{ar ? "قريباً" : "Coming soon"}</span>
+              </span>
+              <span className="mt-3 flex flex-wrap gap-2 opacity-60 grayscale">
+                {([["visa", "Visa"], ["mastercard", "Mastercard"], ["apple-pay", "Apple Pay"], ["tabby", "Tabby"], ["tamara", "Tamara"]] as const).map(([file, label]) => (
+                  <span key={file} className="grid h-7 w-12 place-items-center rounded-sm border border-ink/10 bg-white p-1">
+                    <Image src={`/payment/${file}.svg`} alt={label} width={40} height={20} unoptimized className="h-full w-full object-contain" />
+                  </span>
+                ))}
+              </span>
+            </label>
+          </fieldset>
+          </>}
         </div>
 
         {/* Summary */}
-        <aside className="h-fit border border-ink/10 bg-white p-6 lg:sticky lg:top-24" aria-label="Summary">
-          <ul className="divide-y divide-ink/10">
+        <aside className="flex min-w-0 flex-col gap-3 border border-ink/10 bg-white p-5 [scrollbar-color:#aa9167_transparent] [scrollbar-width:thin] lg:[@media(min-height:560px)]:sticky lg:[@media(min-height:560px)]:top-24 lg:[@media(min-height:560px)]:h-[min(37rem,calc(100dvh-7rem))] lg:[@media(min-height:560px)]:overflow-y-auto" aria-labelledby="checkout-summary">
+          <h2 id="checkout-summary" className="font-display text-xl text-ink">{ar ? "ملخص الطلب" : "Order summary"}</h2>
+          <CheckoutItems label={ar ? "المنتجات" : "Order items"}>
             {lines.map((l) => {
               const m = cartVariantMeta(meta[l.productSlug],l.variantId);
               return (
                 <li key={`${l.productSlug}-${l.variantId ?? ""}`} className="flex items-center gap-3 py-3 text-sm">
-                  <span className="flex-1 truncate text-ink">
+                  <span className="min-w-0 flex-1 break-words text-ink">
                     {m ? m.title : l.productSlug} <span className="text-fog">× {l.qty}</span>
                   </span>
-                  <span className="text-espresso">{m ? formatAED((m.variants?.find(v=>v.id===l.variantId)?.price??m.price) * l.qty) : "…"}</span>
+                  <span className="shrink-0 text-espresso">{m ? formatAED(m.price * l.qty) : "…"}</span>
                 </li>
               );
             })}
-          </ul>
-          <SamplePicker subtotal={quote?.subtotal||0}/><dl className="mt-4 space-y-2.5 border-t border-ink/10 pt-4 text-sm">
+          </CheckoutItems>
+          <div className="shrink-0 border-t border-ink/10 pt-3"><SamplePicker subtotal={quote?.subtotal ?? 0} compact /></div>
+          <dl className="shrink-0 space-y-1.5 border-t border-ink/10 pt-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-fog">Subtotal</dt>
+              <dt className="text-fog">{ar ? "المجموع الفرعي" : "Subtotal"}</dt>
               <dd className="font-medium text-ink">{quote ? formatAED(quote.subtotal) : "…"}</dd>
             </div>
             {quote && quote.discount > quote.referralDiscount && <div className="flex justify-between text-[#1e7a46]"><dt>{t("discount")}{quote.couponCode ? ` · ${quote.couponCode}` : ""}</dt><dd>−{formatAED(quote.discount-quote.referralDiscount)}</dd></div>}
             {quote && quote.referralDiscount > 0 && <div className="flex justify-between text-[#1e7a46]"><dt>{t("referralDiscount")}</dt><dd>−{formatAED(quote.referralDiscount)}</dd></div>}
             <div className="flex justify-between">
-              <dt className="text-fog">Shipping</dt>
-              <dd className="font-medium text-ink">{quote ? (quote.shipping === 0 ? "Complimentary" : formatAED(quote.shipping)) : "…"}</dd>
+              <dt className="text-fog">{ar ? "الشحن" : "Shipping"}</dt>
+              <dd className="font-medium text-ink">{quote ? (quote.shipping === 0 ? (ar ? "مجاني" : "Complimentary") : formatAED(quote.shipping)) : "…"}</dd>
             </div>
             {quote?.giftTitle && (
               <div className="flex justify-between text-gold">
-                <dt>Gift</dt>
+                <dt>{ar ? "هدية" : "Gift"}</dt>
                 <dd className="text-end">{quote.giftTitle}</dd>
               </div>
             )}
-            <div className="flex justify-between border-t border-ink/10 pt-4">
-              <dt className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink">Total</dt>
+            <div className="flex justify-between border-t border-ink/10 pt-2">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink">{ar ? "الإجمالي" : "Total"}</dt>
               <dd className="font-display text-xl text-ink">{quote ? formatAED(quote.total) : "…"}</dd>
             </div>
           </dl>
-          <label className="mb-4 flex items-start gap-3 border border-ink/10 bg-white p-4 text-sm leading-6"><input type="checkbox" checked={whatsappOptIn} onChange={e=>setWhatsappOptIn(e.target.checked)} className="mt-1"/>{locale === "ar" ? "أرغب في تلقي تحديثات هذا الطلب عبر واتساب على هذا الرقم." : "Send me updates for this order via WhatsApp at this number."}</label>
-            {orderError && <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#9c2b2e]">{orderError}</p>}
-          <CartStockNotice issues={stockIssues} loading={quoteLoading}/>{quoteFailure&&<div role="alert" className="mt-5 rounded border border-red-200 p-4 text-sm"><p>{quoteFailure}</p><button type="button" className="mt-2 underline" onClick={()=>setQuoteAttempt(n=>n+1)}>Retry pricing</button></div>}{(couponError||referralError)&&quote&&<p className="mt-4 text-xs text-fog">Unavailable offers are excluded from this total. You can continue without them.</p>}
-          <div className="mt-6">
-            <p className="mb-2 text-sm text-espresso">{t("codNote")}</p>
-            <div className="mb-3"><LegalLinks context="checkout" /></div>
+          <div className="mt-auto shrink-0">
+            {orderError && <p role="alert" className="mb-2 text-xs font-semibold text-[#9c2b2e]">{orderError}</p>}
+            {quoteFailure && <p role="alert" className="mb-2 text-xs text-[#9c2b2e]">{quoteFailure} <button type="button" className="underline" onClick={() => setQuoteAttempt(n => n + 1)}>{ar ? "إعادة المحاولة" : "Retry pricing"}</button></p>}
+            {step === "delivery" ? (
+              <Button className="w-full" size="lg" disabled={!deliveryComplete || stockIssues.length > 0} onClick={() => goToStep("payment")}>
+                {ar ? "المتابعة إلى الدفع" : "Continue to payment"}
+              </Button>
+            ) : (
             <StockCheckoutGuard issues={stockIssues}>
               <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
                 {placing ? t("placing") : t("placeOrder")}
               </Button>
             </StockCheckoutGuard>
+            )}
+            {step === "delivery" ? (
+              <Link className="mt-2 block text-center text-xs text-espresso underline underline-offset-4" href="/cart">{ar ? "تعديل الحقيبة" : "Edit bag"}</Link>
+            ) : (
+              <button type="button" disabled={placing} onClick={() => goToStep("delivery")} className="mt-2 block w-full cursor-pointer text-center text-xs text-espresso underline underline-offset-4 disabled:opacity-50">{ar ? "تعديل عنوان التوصيل" : "Edit delivery details"}</button>
+            )}
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs leading-relaxed text-fog">
+              <input type="checkbox" checked={whatsappOptIn} onChange={e => setWhatsappOptIn(e.target.checked)} className="mt-0.5 accent-gold" />
+              {ar ? "إرسال تحديثات هذا الطلب عبر واتساب." : "Send order updates via WhatsApp."}
+            </label>
+            <div className="[&_p]:mt-1 [&_p]:text-[11px] [&_p]:text-fog"><LegalLinks context="checkout" /></div>
           </div>
         </aside>
       </div>
