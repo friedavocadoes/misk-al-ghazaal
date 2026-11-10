@@ -2,11 +2,9 @@
 
 import { useEffect, useRef } from "react";
 
-// Exact original bottle - untouched
 const bottle =
   "M 60 42 L 140 42 L 143 46 L 143 70 L 140 74 L 119 74 L 119 100 L 165 100 Q 170 100, 170 105 L 170 255 Q 170 260, 165 260 L 35 260 Q 30 260, 30 255 L 30 105 Q 30 100, 35 100 L 81 100 L 81 74 L 60 74 L 57 70 L 57 46 Z";
 
-// Drop scaled and translated to share the exact same bounds as the bottle
 const drop =
   "M100 42 C117.5 77 160.5 126.3 160.5 174.1 C160.5 221.8 135 255.2 100 260 C65 255.2 39.5 221.8 39.5 174.1 C39.5 126.3 82.5 77 100 42 Z";
 
@@ -72,7 +70,6 @@ export function OriginalesLoadingMark() {
   return (
     <svg
       data-originales-loading-mark
-      /* ViewBox expanded to 200x308 (keeps the exact same 100x154 aspect ratio) to fit the original paths */
       viewBox="0 0 200 308"
       width="64"
       height="98"
@@ -84,7 +81,7 @@ export function OriginalesLoadingMark() {
         fill="currentColor"
         fillOpacity=".14"
         stroke="currentColor"
-        strokeWidth="2.4" /* slightly thicker to account for the doubled viewBox */
+        strokeWidth="2.4" 
         strokeLinejoin="round"
       />
     </svg>

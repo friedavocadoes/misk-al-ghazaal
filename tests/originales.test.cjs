@@ -132,9 +132,6 @@ test("every shipped edition has transparent sources and optimized local artwork"
         "real alpha coverage, not a checkerboard",
       );
     }
-    assert.ok(
-      fs.statSync(`public/originales/${name}-atmosphere.webp`).size < 500000,
-    );
   }
 });
 test("product refresh invalidates the capsule and existing public/en/ar product paths together", () => {
@@ -156,19 +153,5 @@ test("product refresh invalidates the capsule and existing public/en/ar product 
         ([path]) => path === `${prefix}/originales/originales-ambrato`,
       ),
     );
-  }
-});
-
-test("shared atelier sculpture files preserve real alpha within the web asset budget", async () => {
-  const sharp = require("sharp");
-  for (const name of ["fold", "orbit"]) {
-    const file = `public/originales/sculpture-${name}.webp`;
-    const metadata = await sharp(file).metadata();
-    const stats = await sharp(file).stats();
-    assert.equal(metadata.hasAlpha, true);
-    assert.ok(metadata.width <= 1100 && metadata.height <= 1100);
-    assert.ok(stats.channels[3].min === 0 && stats.channels[3].max >= 250);
-    assert.ok(fs.statSync(file).size < 350000);
-    assert.ok(fs.existsSync(`public/originales/source/sculpture-${name}.png`));
   }
 });

@@ -581,13 +581,15 @@ const base = process.env.ORIGINALES_QA_URL || "http://localhost:3000";
       true,
     );
     assert.equal(
-      await page
-        .locator(
-          'img[src*="sculpture-fold"]:not([data-finale-material]),img[src*="sculpture-orbit"]:not([data-finale-material])',
-        )
-        .count(),
+      await page.locator("img[src]").evaluateAll((images) =>
+        images.filter((image) => {
+          const url = new URL(image.src);
+          const source = url.searchParams.get("url") ?? url.pathname;
+          return /^\/originales\/(?:sculpture-(?:fold|orbit)|(?:ambrato|sultanic|lustra|lazvaro)-(?:atmosphere|studio))\.webp$/.test(source);
+        }).length,
+      ),
       0,
-      "no repeating chapter PNGs outside the closing parallax",
+      "retired Originales image assets are never mounted",
     );
     const glass = await page
       .locator("#originales-story [data-glass-blur]")

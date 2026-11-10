@@ -582,13 +582,6 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.5' d='M0 0h220v220H0z'/%3E%3C/svg%3E");
   pointer-events: none;
 }
-.sculpture {
-  height: 100%;
-  width: 100%;
-  object-fit: contain;
-  opacity: 0.9;
-  filter: drop-shadow(0 30px 30px #0008);
-}
 .panelContent {
   width: 100%;
   position: relative;
@@ -632,11 +625,6 @@
 }
 .compositionPanel {
   min-height: 85svh;
-}
-.compositionPanel .sculptureMagnet {
-  opacity: 0.18;
-  width: 80%;
-  right: -15%;
 }
 .compositionHeading {
   margin-bottom: 55px;
@@ -799,16 +787,6 @@
 .sharedContent {
   position: relative;
   width: 100%;
-}
-.storePanel .sculptureMagnet {
-  width: 60%;
-  left: -9%;
-  opacity: 0.55;
-}
-.reviewsPanel .sculptureMagnet {
-  left: auto;
-  right: -16%;
-  opacity: 0.45;
 }
 .world :global(#find-in-store) {
   margin: 0;
@@ -1441,12 +1419,6 @@
     width: 65px;
     height: 76px;
   }
-  .compositionPanel .sculptureMagnet {
-    height: 55%;
-    top: -15%;
-    width: 100%;
-    opacity: 0.3;
-  }
   .discoveryPanel .orbitArt {
     right: -35%;
     top: -10%;
@@ -1849,17 +1821,6 @@
 .productChapters .panelCopy > p:not(.kicker) {
   max-width: none;
 }
-.productChapters .sculptureMagnet {
-  left: -18%;
-  right: auto;
-  width: 112%;
-  opacity: 0.95;
-  z-index: 3;
-  transform-style: preserve-3d;
-}
-.productChapters .sculpture {
-  opacity: 1;
-}
 .productChapters .panelGrain {
   z-index: -3;
 }
@@ -2054,10 +2015,6 @@
 .productChapters .panelContent {
   z-index: 2;
 }
-.productChapters .sculptureMagnet {
-  left: 0;
-  width: 94%;
-}
 .mobilePurchaseDock {
   display: none;
 }
@@ -2082,10 +2039,6 @@
   .stickyProduct .panelContent {
     backdrop-filter: none;
     background: #20251ee8;
-  }
-  .stickyProduct .sculptureMagnet {
-    z-index: 0;
-    opacity: 0.3;
   }
 }
 @media (max-width: 759px) {
@@ -2220,10 +2173,6 @@
   .productChapters .panelContent {
     padding: 28px 22px;
   }
-  .productChapters .sculptureMagnet {
-    width: 94%;
-    left: 0;
-  }
   .mobilePurchaseDock {
     display: block;
     position: fixed;
@@ -2284,10 +2233,6 @@
 @media (prefers-reduced-motion: reduce) {
   .productChapters .panelContent {
     backdrop-filter: none;
-  }
-  .productChapters .sculptureMagnet {
-    z-index: 0;
-    opacity: 0.3;
   }
 }
 .stickyProduct {
@@ -2645,12 +2590,6 @@
   background: linear-gradient(115deg, #121a16db, #121a1644);
   backdrop-filter: blur(3px);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .stickyProduct:not([data-docked="true"]) .sculptureSticky,
-  .gallery:not([data-collapsed="true"]) .sculptureSticky {
-    opacity: 0;
-  }
-}
 @media (max-width: 759px) {
   .galleryIntro h1 {
     font-size: clamp(24px, 7.6vw, 30px);
@@ -2787,12 +2726,6 @@
   height: 370px;
   pointer-events: none;
   z-index: 3;
-}
-.finaleDecor > img {
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 20px 20px #0005);
 }
 .finaleDecor > svg {
   position: absolute;
@@ -3151,12 +3084,6 @@
   .productChapters .panelCopy > p:not(.kicker) {
     font-size: 14px;
     line-height: 1.8;
-  }
-  .productChapters .sculptureSticky {
-    opacity: 1 !important;
-    top: 70px;
-    height: 65svh;
-    margin-bottom: -65svh;
   }
   .productChapters .objectScene {
     inset: -4% -18% 0 2%;
