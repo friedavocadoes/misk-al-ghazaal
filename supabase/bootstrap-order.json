@@ -52,7 +52,8 @@
     "migration_notes_active.sql",
     "migration_notes_expansion_20261106.sql",
     "migration_checkout_address_book.sql",
-    "migration_checkout_address_delete.sql"
+    "migration_checkout_address_delete.sql",
+    "migration_tap_checkout.sql"
   ],
   "catalogData": [
     "migration_catalog_perfume_notes_20261109.sql"

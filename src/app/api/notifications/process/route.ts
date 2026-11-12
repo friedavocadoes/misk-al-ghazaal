@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { processWhatsAppQueue } from "@/lib/whatsapp";
 import { processTelegramQueue } from "@/lib/telegram";
 import { processEmailCampaignQueue } from "@/lib/email-campaigns";
+import { reconcilePendingTapPayments } from "@/lib/checkout-tap";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
@@ -14,11 +15,12 @@ export async function GET(req: Request) {
     processWhatsAppQueue(),
     processTelegramQueue(),
     processEmailCampaignQueue(),
+    reconcilePendingTapPayments(),
   ]);
   return Response.json(
     Object.fromEntries(
       results.map((r, i) => [
-        ["whatsapp", "telegram", "email"][i],
+        ["whatsapp", "telegram", "email", "tap"][i],
         r.status === "fulfilled" ? r.value : { error: "Queue unavailable" },
       ]),
     ),

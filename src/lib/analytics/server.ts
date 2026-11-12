@@ -57,8 +57,13 @@ export async function readSmallBody(req: Request): Promise<Record<string, unknow
 }
 export async function recordPurchase(req: Request, orderId: string, revenue: number, items: AnalyticsItem[], userId: string | null) {
   try {
-    const session = await analyticsSession(req,false,0,userId); if (!session) { await refreshDemandRanking(); return; }
-    await createAdminClient().rpc("ingest_analytics_event",{p_session:session,p_event:{event_type:"purchase",page_path:"/checkout",order_id:orderId,revenue,metadata:{items,verified:true,payment_method:"cod"}}});
+    await recordCheckoutPurchase(await analyticsSession(req,false,0,userId), orderId, revenue, items, "cod");
+  } catch { /* Analytics never changes the outcome of an order. */ }
+}
+
+export async function recordCheckoutPurchase(session: Awaited<ReturnType<typeof analyticsSession>>, orderId: string, revenue: number, items: AnalyticsItem[], method: string) {
+  try {
+    if (session) await createAdminClient().rpc("ingest_analytics_event",{p_session:session,p_event:{event_type:"purchase",page_path:"/checkout",order_id:orderId,revenue,metadata:{items,verified:true,payment_method:method}}});
     await refreshDemandRanking();
   } catch { /* Analytics never changes the outcome of an order. */ }
 }

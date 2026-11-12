@@ -10,8 +10,7 @@ import { CHECKOUT_TERMS_VERSION } from "@/lib/checkout-terms";
 import { LegalLinks } from "@/components/blocks/LegalLinks";
 import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowUpRight, Banknote, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
-import Image from "next/image";
+import { ArrowUpRight, Check, ChevronDown, Loader2, MapPin, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatAED } from "@/lib/utils";
@@ -30,6 +29,8 @@ import { cn } from "@/lib/utils";
 import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/saved-address";
 import { CheckoutItems } from "@/components/blocks/CheckoutItems";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
+import { CheckoutPaymentMethods, checkoutPaymentReason, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
+import { forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -39,6 +40,8 @@ export default function CheckoutPage() {
   const locale = (useLocale() === "ar" ? "ar" : "en") as Locale;
   const ar = locale === "ar";
   const [step, setStep] = useState<"delivery" | "payment">("delivery");
+  const [method, setMethod] = useState<CheckoutMethod>("cod");
+  const { methods, appleAvailable } = useCheckoutPaymentOptions(step === "payment");
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const goToStep = (next: typeof step) => {
     setStep(next);
@@ -88,6 +91,15 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const resumePayment = () => {
+      const previous = readPaymentProof();
+      if (!previous || previous.settled) return false;
+      const path = window.location.pathname.replace(/\/+$/, "");
+      window.location.replace(`${path}/payment?attempt=${encodeURIComponent(previous.id)}`);
+      return true;
+    };
+    if (resumePayment()) return;
+    window.addEventListener("pageshow", resumePayment);
     fetch("/api/account/profile", { signal: controller.signal, cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
@@ -121,7 +133,10 @@ export default function CheckoutPage() {
     } catch {
       /* private mode — no handoff */
     }
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      window.removeEventListener("pageshow", resumePayment);
+    };
   }, []);
 
   useEffect(() => {
@@ -266,6 +281,10 @@ export default function CheckoutPage() {
     if (/row-level security|permission denied|secret|service_role|JWT|Failed fetch|fetch failed/i.test(msg)) {
       return t("serverError");
     }
+    if (msg === "checkout:price") return ar ? "تغيّر الإجمالي. راجع المبلغ قبل الدفع." : "Your total changed. Review it before paying.";
+    if (msg.startsWith("payment:")) return method === "cod"
+      ? checkoutPaymentReason("unavailable", undefined, ar)
+      : describePayment(method) ?? checkoutPaymentReason("unavailable", undefined, ar);
     if (msg === "terms:stale") return t("termsStale");
     return msg || t("orderError");
   };
@@ -282,14 +301,30 @@ export default function CheckoutPage() {
     (selectedAddress || (hasMap ? deliveryValid : address.trim() && city.trim() && emirate.trim())));
   const valid = deliveryComplete && quote && !quoteLoading && stockIssues.length === 0;
 
+  const describePayment = (choice: TapMethod) => {
+    if (methods === null || !quote || quoteLoading) return ar ? "جارٍ التحقق من التوفر…" : "Checking availability…";
+    const limits = methods[choice];
+    const reason = paymentRestriction(choice, limits, quote.total, selectedAddress?.countryCode ?? delivery?.countryCode ?? "", phone, appleAvailable);
+    return reason ? checkoutPaymentReason(reason, limits, ar) : undefined;
+  };
+  const paymentReady = method === "cod" || !describePayment(method);
+  const paymentStatusPath = (id: string) => `${ar ? "/ar" : ""}/checkout/payment?attempt=${encodeURIComponent(id)}`;
+
   const placeOrder = async () => {
-    if (submitting.current || !valid || step !== "payment") return;
+    if (submitting.current || !valid || !paymentReady || step !== "payment") return;
+    const previous = readPaymentProof();
+    if (previous && !previous.settled) {
+      window.location.assign(paymentStatusPath(previous.id));
+      return;
+    }
     submitting.current = true;
     haptic("selection");
     rememberFeedback({checkoutAttemptAt:Date.now()});
     window.dispatchEvent(new Event("analytics-checkout-attempt"));
     setPlacing(true);
     setOrderError("");
+    let attempt: BrowserPayment | undefined;
+    let paymentStarted = false;
     try {
     // Structured delivery wins; legacy manual fields are the fallback
     // when the countries service is unreachable.
@@ -299,12 +334,22 @@ export default function CheckoutPage() {
       : address;
     const finalCity = addr ? addr.city : city;
     const finalState = addr ? addr.state : emirate;
+    const samples = readSamples();
+    if (method !== "cod") {
+      attempt = {
+        id: crypto.randomUUID(), key: crypto.randomUUID(), bag: paymentBag(lines),
+        coupon: quote.couponCode, samples: JSON.stringify(samples),
+      };
+      sessionStorage.setItem(PAYMENT_ATTEMPT_KEY, JSON.stringify(attempt));
+    }
+    paymentStarted = Boolean(attempt);
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         checkout_terms_version: CHECKOUT_TERMS_VERSION,
-        payment_method: "cod",
+        payment_method: method,
+        ...(attempt ? { payment_attempt: { id: attempt.id, key: attempt.key }, expected_total: quote.total, locale } : {}),
         customer_name: name,
         phone,
         email,
@@ -315,7 +360,7 @@ export default function CheckoutPage() {
         emirate: finalState,
         notes,
         items: payload.lines,
-        sample_ids: readSamples(),
+        sample_ids: samples,
         coupon_code: quote?.couponCode || undefined,
         referral_code: quote?.referralCode || undefined,
         user_id: userId ?? undefined,
@@ -330,6 +375,12 @@ export default function CheckoutPage() {
       }),
     });
     const j = await res.json().catch(() => null);
+    if (attempt && (res.ok || res.status >= 500)) {
+      window.location.assign(res.ok && j?.url ? j.url : paymentStatusPath(attempt.id));
+      return;
+    }
+    if (attempt) forgetPaymentProof(attempt.id);
+    if (res.status === 409 && j?.error === "checkout:price") setQuoteAttempt(n => n + 1);
     if (res.ok && j?.order_no) {
       haptic("order");
       try { localStorage.removeItem("misk-samples");window.dispatchEvent(new Event("samples-change")); } catch { /* Storage may be disabled. */ }
@@ -356,7 +407,14 @@ export default function CheckoutPage() {
       haptic("error");
       setOrderError(friendlyError(j?.error));
     }
-    } catch {haptic("error");setOrderError(locale==="ar"?"تعذر إرسال الطلب. يرجى المحاولة مرة أخرى.":"Couldn’t send your order. Please try again.");}
+    } catch {
+      if (paymentStarted && attempt) {
+        window.location.assign(paymentStatusPath(attempt.id));
+        return;
+      }
+      haptic("error");
+      setOrderError(ar ? "تعذر إرسال الطلب. يرجى المحاولة مرة أخرى." : "Couldn’t send your order. Please try again.");
+    }
     finally {
       submitting.current = false;
       setPlacing(false);
@@ -692,28 +750,7 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
-          <fieldset className="space-y-3 border border-ink/10 bg-white p-5 md:p-8">
-            <legend className="px-2 text-sm font-semibold text-ink">{ar ? "طريقة الدفع" : "Payment method"}</legend>
-            <label className="flex items-center gap-3 border border-gold bg-gold-wash/40 p-4 text-sm text-ink">
-              <input type="radio" name="payment" value="cod" checked readOnly className="accent-gold" />
-              <Banknote aria-hidden className="size-5 text-gold" />
-              <span>{ar ? "الدفع عند الاستلام" : "Cash on delivery"}</span>
-            </label>
-            <label className="block cursor-not-allowed border border-ink/10 bg-ink/[0.04] p-4 text-sm text-espresso">
-              <span className="flex flex-wrap items-center gap-3">
-                <input type="radio" name="payment" value="tap" disabled />
-                <span>Tap Payments</span>
-                <span className="ms-auto text-xs">{ar ? "قريباً" : "Coming soon"}</span>
-              </span>
-              <span className="mt-3 flex flex-wrap gap-2 opacity-60 grayscale">
-                {([["visa", "Visa"], ["mastercard", "Mastercard"], ["apple-pay", "Apple Pay"], ["tabby", "Tabby"], ["tamara", "Tamara"]] as const).map(([file, label]) => (
-                  <span key={file} className="grid h-7 w-12 place-items-center rounded-sm border border-ink/10 bg-white p-1">
-                    <Image src={`/payment/${file}.svg`} alt={label} width={40} height={20} unoptimized className="h-full w-full object-contain" />
-                  </span>
-                ))}
-              </span>
-            </label>
-          </fieldset>
+          <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} />
           </>}
         </div>
 
@@ -765,8 +802,11 @@ export default function CheckoutPage() {
               </Button>
             ) : (
             <StockCheckoutGuard issues={stockIssues}>
-              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || placing} onClick={placeOrder}>
-                {placing ? t("placing") : t("placeOrder")}
+              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || !paymentReady || placing} onClick={placeOrder}>
+                {method === "cod"
+                  ? (placing ? t("placing") : t("placeOrder"))
+                  : (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…")
+                    : (ar ? `ادفع ${formatAED(quote?.total ?? 0)}` : `Pay ${formatAED(quote?.total ?? 0)}`))}
               </Button>
             </StockCheckoutGuard>
             )}
