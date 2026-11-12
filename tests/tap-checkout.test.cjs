@@ -42,6 +42,7 @@ test("merchant configuration and the final AED total determine selectable method
   assert.equal(loadTap({ ...tapEnv, TAP_TAMARA_MIN_AED: "" }).tapConfig().methods.tamara, undefined);
   assert.equal(loadTap({ ...tapEnv, TAP_TABBY_MIN_AED: "1" }).tapConfig().methods.tabby.min, 10);
   assert.equal(loadTap({ ...tapEnv, VERCEL_ENV: "production" }).tapConfig(), null);
+  assert.equal(loadTap({ ...tapEnv, TAP_MERCHANT_ID: "pk_test_fixture" }).tapConfig(), null);
 });
 
 test("Tap receives the selected source and a stable attempt reference, and signs AED with two decimals", async () => {
@@ -60,6 +61,7 @@ test("Tap receives the selected source and a stable attempt reference, and signs
   assert.deepEqual(calls.map(call => call.body.source.id), ["src_card", "src_apple_pay", "src_tabby.installement", "src_tamara"]);
   assert.deepEqual(calls[0].body.reference, { order: id, transaction: id, idempotent: id });
   assert.equal(calls[0].body.currency, "AED");
+  assert.deepEqual(calls[0].body.merchant, { id: "12345678" });
   assert.equal(calls[0].options.headers.lang_code, "ar");
   assert.equal(calls[0].body.redirect.url, `https://store.example/ar/checkout/payment?attempt=${id}`);
   assert.equal(calls[0].body.post.url, "https://store.example/api/checkout/payment/webhook");
@@ -75,6 +77,24 @@ test("Tap receives the selected source and a stable attempt reference, and signs
   assert.equal(tap.verifyTapWebhook(payload, signature, config.secret), true);
   assert.equal(tap.verifyTapWebhook({ ...payload, amount: 101 }, signature, config.secret), false);
   assert.equal(tap.verifyTapWebhook(payload, "bad-signature", config.secret), false);
+});
+
+test("a merchant-scoped secret key can create a charge without a Merchant ID", async () => {
+  const env = { ...tapEnv, TAP_MERCHANT_ID: "" };
+  let request;
+  const tap = loadTap(env, { fetch: async (_url, options) => {
+    request = options;
+    return { ok: true, json: async () => ({ id: "chg_TEST" }) };
+  } });
+  const config = tap.tapConfig();
+  assert.equal(config.methods.card.min, 0.1);
+  assert.notEqual(config.merchantScope, loadTap({ ...env, TAP_SECRET_KEY: "sk_test_other" }).tapConfig().merchantScope);
+  await tap.createTapCharge(config, {
+    id: "00000000-0000-4000-8000-000000000001", method: "card", amount: 100, locale: "en",
+    customer: { first_name: "Test", phone: { country_code: "971", number: "501234567" } },
+  });
+  assert.equal(request.headers.Authorization, "Bearer sk_test_fixture");
+  assert.equal(Object.hasOwn(JSON.parse(request.body), "merchant"), false);
 });
 
 test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, currency, reference or mode", async () => {

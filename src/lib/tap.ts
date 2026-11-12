@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { TAP_METHODS, type PaymentOptions, type TapMethod } from "./checkout-payment";
 
 const sources: Record<TapMethod, string> = {
@@ -20,9 +20,11 @@ export function tapConfig() {
   const merchant = process.env.TAP_MERCHANT_ID?.trim() ?? "";
   const site = process.env.TAP_SITE_URL?.trim() ?? "";
   const origin = URL.canParse(site) ? new URL(site).origin : "";
-  if (!/^sk_(test|live)_\S+$/.test(secret) || !/^\d+$/.test(merchant) || !origin.startsWith("https://")) return null;
+  if (!/^sk_(test|live)_\S+$/.test(secret) || (merchant && !/^\d+$/.test(merchant)) || !origin.startsWith("https://")) return null;
   const live = secret.startsWith("sk_live_");
   if (!live && process.env.VERCEL_ENV === "production") return null;
+  // Keep retries scoped to the original credentials when Tap selects the merchant.
+  const merchantScope = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
 
   const methods: PaymentOptions = {};
   const enabled = (process.env.TAP_PAYMENT_METHODS ?? "").split(",").map((method) => method.trim());
@@ -37,7 +39,7 @@ export function tapConfig() {
     if (max !== undefined && max < minimum) continue;
     methods[method] = { min: minimum, max };
   }
-  return { secret, merchant, origin, methods, live };
+  return { secret, merchant, merchantScope, origin, methods, live };
 }
 
 export type TapConfig = NonNullable<ReturnType<typeof tapConfig>>;
@@ -89,7 +91,7 @@ export function createTapCharge(config: TapConfig, attempt: {
     threeDSecure: method === "card" || method === "apple_pay",
     save_card: false,
     description: "Misk Al Ghazaal order",
-    merchant: { id: config.merchant },
+    ...(config.merchant ? { merchant: { id: config.merchant } } : {}),
     customer: attempt.customer,
     reference: { order: id, transaction: id, idempotent: id },
     source: { id: sources[method] },

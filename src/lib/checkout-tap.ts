@@ -49,7 +49,7 @@ export async function startCheckoutPayment(
 ) {
   const session = await analyticsSession(req, false, 0, order.user_id).catch(() => null);
   const { data, error } = await createAdminClient().rpc("tap_checkout_begin", {
-    p_id: proof.id, p_key_hash: keyHash(proof.key), p_method: method, p_merchant: config.merchant,
+    p_id: proof.id, p_key_hash: keyHash(proof.key), p_method: method, p_merchant: config.merchantScope,
     p_live: config.live, p_origin: config.origin, p_locale: locale, p_order: order, p_lines: lines,
     p_context: { profile, session },
   });
@@ -59,7 +59,7 @@ export async function startCheckoutPayment(
 }
 
 function matchesConfig(attempt: Attempt, config: TapConfig) {
-  return attempt.merchant_id === config.merchant && attempt.live_mode === config.live && attempt.origin === config.origin;
+  return attempt.merchant_id === config.merchantScope && attempt.live_mode === config.live && attempt.origin === config.origin;
 }
 
 async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt["state"], url?: string) {
@@ -90,7 +90,7 @@ async function applyCharge(attempt: Attempt, charge: TapCharge, config: TapConfi
   const merchant = charge.merchant?.id || charge.merchant_id;
   if (!matchesConfig(attempt, config) || charge.live_mode !== attempt.live_mode || charge.currency !== "AED" ||
       charge.amount !== attempt.order_data.total || charge.reference?.order !== attempt.id ||
-      charge.reference?.transaction !== attempt.id || (merchant && String(merchant) !== attempt.merchant_id) ||
+      charge.reference?.transaction !== attempt.id || (config.merchant && merchant && String(merchant) !== config.merchant) ||
       (attempt.charge_id && attempt.charge_id !== charge.id)) {
     throw new Error("Tap charge does not match checkout attempt");
   }
@@ -149,7 +149,7 @@ export async function reconcilePendingTapPayments() {
   const config = tapConfig();
   if (!config) return { checked: 0, errors: 0 };
   const { data, error } = await createAdminClient().rpc("tap_checkout_due", {
-    p_merchant: config.merchant, p_live: config.live, p_origin: config.origin,
+    p_merchant: config.merchantScope, p_live: config.live, p_origin: config.origin,
   });
   if (error) throw new Error("Could not load pending Tap payments");
   const results = await Promise.allSettled((data as Attempt[]).map(attempt => continueCheckoutPayment(attempt, config)));
