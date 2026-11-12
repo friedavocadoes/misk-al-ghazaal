@@ -12,6 +12,7 @@ export type CartLine = CartItem;
 
 interface CartCtx {
   hydrated: boolean;
+  checkoutReady: boolean;
   lines: CartLine[];
   count: number;
   add: (line: CartLine, feedback?: "flight") => void;
@@ -205,9 +206,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const count = useMemo(() => lines.reduce((n, l) => n + l.qty, 0), [lines]);
+  const checkoutReady = hydrated && (userId === null || (userId !== undefined && readyUser === userId));
   const value = useMemo(
-    () => ({ lines, count, add, remove, setQty, clear, hydrated }),
-    [lines, count, add, remove, setQty, clear, hydrated],
+    () => ({ lines, count, add, remove, setQty, clear, hydrated, checkoutReady }),
+    [lines, count, add, remove, setQty, clear, hydrated, checkoutReady],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

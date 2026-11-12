@@ -2,41 +2,24 @@ import { CHECKOUT_TERMS_VERSION } from "@/lib/checkout-terms";
 import { processTelegramQueue } from "@/lib/telegram";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { getOrderAccessPath, rememberOrderAccess } from "@/lib/order-access";
-import { revalidateHome, revalidateProductPaths, revalidatePagePaths } from "@/lib/revalidate";
+import { refreshCheckoutStock, saveCheckoutCustomer, type CheckoutProfileInput } from "@/lib/checkout-effects";
+import { findCheckoutAttempt, startCheckoutPayment, continueCheckoutPayment, checkoutPaymentProof } from "@/lib/checkout-tap";
+import { isTapMethod, paymentRestriction, tapPhone } from "@/lib/checkout-payment";
+import { tapConfig } from "@/lib/tap";
 import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/service";
-import { createHash } from "node:crypto";
-import { addressKey, normalizeAddress } from "@/lib/saved-address";
-import { getReferralTerms, quoteBag, type BagLine } from "@/lib/pricing";
-
-// COD checkout, now with the full working flow: live pricing via quoteBag
-// (coupons + referral + shipping in one place), gift lines, coupon usage +
-// redemptions, referral rewards (personal coupon for the referrer), account
-// links, and stock decrement. Totals can never be spoofed — the client only
-// sends lines + codes; every dirham is recomputed here.
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-function randomCode(prefix: string, len = 6): string {
-  const bytes = new Uint8Array(len);
-  crypto.getRandomValues(bytes);
-  let s = prefix;
-  for (const b of bytes) s += CODE_ALPHABET[b % CODE_ALPHABET.length];
-  return s;
-}
+import { quoteBag, type BagLine } from "@/lib/pricing";
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as {
+    const body = (await req.json()) as CheckoutProfileInput & {
       checkout_terms_version?: string;
       customer_name?: string;
       phone?: string;
       email?: string;
       address?: string;
-      address_line?: string;
-      address_building?: string;
-      city?: string;
-      emirate?: string;
       notes?: string;
       items?: BagLine[];
       sample_ids?: string[];
@@ -44,20 +27,27 @@ export async function POST(req: Request) {
       referral_code?: string;
       user_id?: string;
       country_code?: string;
-      state?: string;
-      postcode?: string;
-      address_label?: string;
-      lat?: number | null;
-      lng?: number | null;
-      save_phone?: boolean;
       whatsapp_opt_in?: boolean;
-      payment_method?: "cod";
+      payment_method?: string;
+      payment_attempt?: unknown;
+      expected_total?: number;
+      locale?: string;
     };
     if (body.checkout_terms_version !== CHECKOUT_TERMS_VERSION) {
       return NextResponse.json({ error: "terms:stale" }, { status: 409 });
     }
-    if (body.payment_method !== undefined && body.payment_method !== "cod") {
-      return NextResponse.json({ error: "This payment method is unavailable." }, { status: 400 });
+    const method = body.payment_method === undefined ? "cod" : body.payment_method;
+    if (method !== "cod" && !isTapMethod(method)) {
+      return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
+    }
+    const payment = method === "cod" ? null : tapConfig();
+    const proof = method === "cod" ? null : checkoutPaymentProof(body.payment_attempt);
+    if (method !== "cod") {
+      if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
+        return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
+      }
+      const existing = await findCheckoutAttempt(proof);
+      if (existing) return NextResponse.json(await continueCheckoutPayment(existing, payment));
     }
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -114,189 +104,84 @@ export async function POST(req: Request) {
       userId: ownerId ?? undefined,
     });
 
-    const { data: order, error: oErr } = await admin
-      .from("orders")
-      .insert({
-        ...(body.sample_ids?.length ? {sample_ids:body.sample_ids} : {}),
-        checkout_terms_version: CHECKOUT_TERMS_VERSION,
-        order_no: "", // trigger assigns MG-0001…
-        customer_name: name,
-        phone,
-        email: email || sessionEmail || null,
-        address,
-        city: (body.city ?? "Dubai").trim() || "Dubai",
-        emirate: (body.emirate ?? "Dubai").trim() || "Dubai",
-        notes: (body.notes ?? "").trim() || null,
-        subtotal: quote.subtotal,
-        shipping: quote.shipping,
-        discount: quote.discount,
-        total: quote.total,
-        coupon_code: quote.couponCode || "",
-        referral_code: quote.referralCode || "",
-        user_id: ownerId,
-        country_code: countryCode,
-        state_name: (body.state ?? "").trim(),
-        postcode: (body.postcode ?? "").trim(),
-        address_label: (body.address_label ?? "").trim(),
-        delivery_lat: typeof body.lat === "number" ? body.lat : null,
-        delivery_lng: typeof body.lng === "number" ? body.lng : null,
-        ...(body.whatsapp_opt_in === true ? {whatsapp_opt_in:true} : {}),
-        payment_method: "cod",
-        status: "new",
-      })
-      .select("id,order_no")
-      .single();
-    if (oErr || !order) throw oErr ?? new Error("order insert failed");
-    const orderId = (order as { id: string }).id;
-    after(() => recordPurchase(req,orderId,quote.total,priced.map(l=>({product_id:l.slug,product_name:l.title,price:l.unit,quantity:l.qty})),ownerId));
-    const {data:sampleRows}=body.sample_ids?.length ? await admin.from("order_items").select("title,qty,unit_price").eq("order_id",orderId).eq("product_slug","sample") : {data:[]};
-    const sampleLines=(sampleRows||[]).map(s=>({title:s.title,qty:s.qty,unit:0,slug:"sample"}));
+    const orderData = {
+      ...(body.sample_ids?.length ? {sample_ids:body.sample_ids} : {}),
+      checkout_terms_version: CHECKOUT_TERMS_VERSION,
+      customer_name: name,
+      phone,
+      email: email || sessionEmail || null,
+      address,
+      city: (body.city ?? "Dubai").trim() || "Dubai",
+      emirate: (body.emirate ?? "Dubai").trim() || "Dubai",
+      notes: (body.notes ?? "").trim() || null,
+      subtotal: quote.subtotal,
+      shipping: quote.shipping,
+      discount: quote.discount,
+      total: quote.total,
+      coupon_code: quote.couponCode || "",
+      referral_code: quote.referralCode || "",
+      user_id: ownerId,
+      country_code: countryCode,
+      state_name: (body.state ?? "").trim(),
+      postcode: (body.postcode ?? "").trim(),
+      address_label: (body.address_label ?? "").trim(),
+      delivery_lat: typeof body.lat === "number" ? body.lat : null,
+      delivery_lng: typeof body.lng === "number" ? body.lng : null,
+      ...(body.whatsapp_opt_in === true ? {whatsapp_opt_in:true} : {}),
+      payment_method: method === "apple_pay" ? "wallet" : method,
+    };
+    const orderLines: typeof priced = quote.giftTitle
+      ? [...priced, { slug: "gift", title: `Gift — ${quote.giftTitle}`, qty: 1, unit: 0 }]
+      : priced;
 
-    const itemRows = priced.map((l) => ({
-      order_id: orderId,
-      product_slug: l.slug,
-      variant_id: l.variantId ?? null,
-      title: l.title,
-      qty: l.qty,
-      unit_price: l.unit,
-    }));
-    // Gift coupons ride along as a complimentary line (visible in admin).
-    if (quote.giftTitle) {
-      itemRows.push({
-        order_id: orderId,
-        product_slug: "gift",
-        variant_id: null,
-        title: `Gift — ${quote.giftTitle}`,
-        qty: 1,
-        unit_price: 0,
-      });
+    if (isTapMethod(method) && payment && proof) {
+      if (body.expected_total !== quote.total) {
+        return NextResponse.json({ error: "checkout:price" }, { status: 409 });
+      }
+      const restriction = paymentRestriction(method, payment.methods[method], quote.total, countryCode, phone);
+      if (restriction || !tapPhone(phone)) {
+        return NextResponse.json({ error: `payment:${restriction ?? "mobile"}` }, { status: 400 });
+      }
+      return NextResponse.json(await startCheckoutPayment(req, payment, proof, method, orderData, orderLines, {
+        address_line: body.address_line, address_building: body.address_building, save_phone: body.save_phone,
+      }, body.locale === "ar" ? "ar" : "en"));
     }
-    await admin.from("order_items").insert(itemRows);
-    await admin.from("order_status_history").insert({
-      order_id: orderId,
-      from_status: null,
-      to_status: "new",
+
+    const committed = await admin.rpc("storefront_checkout_commit", {
+      p_order: orderData,
+      p_lines: orderLines,
     });
-    for (const l of priced) {
-      if (l.variantId) await admin.rpc("decrement_stock", { p_variant_id: l.variantId, p_qty: l.qty });
-    }
-    after(()=>{for(const slug of new Set(priced.map(l=>l.slug)))revalidateProductPaths(slug);revalidateHome();revalidatePagePaths("/collection/[slug]");});
-    // Legacy lifetime-sales counter: every sold unit quietly pulls the product up
-    // the maison ranking (score subtracts sales_count — see rankScore).
-    const soldBySlug = new Map<string, number>();
-    for (const l of priced) {
-      soldBySlug.set(l.slug, (soldBySlug.get(l.slug) ?? 0) + l.qty);
-    }
-    for (const [slug, qty] of soldBySlug) {
-      const { data: cur } = await admin.from("products").select("sales_count").eq("slug", slug).single();
-      await admin
-        .from("products")
-        .update({ sales_count: Number((cur as { sales_count?: number } | null)?.sales_count ?? 0) + qty })
-        .eq("slug", slug);
-    }
-
-    // Coupon redemption is reserved atomically by the order insert trigger.
-
-    // Referral reward: newcomer already saved via the quote; now mint the
-    // referrer's personal single-use coupon and record the introduction.
-    const refereeEmail = email || sessionEmail || "";
-    if (quote.referralCode && refereeEmail) {
-      const { data: referrer } = await admin.from("profiles").select("id").eq("referral_code", quote.referralCode).single();
-      const terms = await getReferralTerms();
-      if (referrer && terms.active) {
-        const percent = terms.referrerPercent;
-        let rewardCode = "";
-        for (let attempt = 0; attempt < 5 && !rewardCode; attempt++) {
-          const code = randomCode("REF-", 6);
-          const row: Record<string, string | number | boolean | null> = {
-            code,
-            kind: "percent",
-            amount: percent,
-            active: true,
-            usage_limit: 1,
-            used_count: 0,
-            icon: "gift",
-            is_public: false,
-            owner_id: (referrer as { id: string }).id,
-            max_discount: terms.referrerCap,
-          };
-          let { error } = await admin.from("coupons").insert(row);
-          if (error && /max_discount/i.test(error.message)) {
-            // Older DBs predate migration_coupons_v2 — mint uncapped.
-            delete row.max_discount;
-            ({ error } = await admin.from("coupons").insert(row));
-          }
-          if (!error) rewardCode = code;
-        }
-        let rewardId: string | null = null;
-        if (rewardCode) {
-          const { data: rc } = await admin.from("coupons").select("id").eq("code", rewardCode).single();
-          rewardId = (rc as { id: string } | null)?.id ?? null;
-        }
-        await admin.from("referrals").insert({
-          referrer_id: (referrer as { id: string }).id,
-          referee_email: refereeEmail,
-          referee_user_id: ownerId,
-          order_id: orderId,
-          reward_coupon_id: rewardId,
-          status: "rewarded",
-        });
-        const { data: prof } = await admin.from("profiles").select("referral_uses").eq("id", (referrer as { id: string }).id).single();
-        await admin.from("profiles").update({ referral_uses: Number((prof as { referral_uses: number } | null)?.referral_uses ?? 0) + 1 }).eq("id", (referrer as { id: string }).id);
-        // Remember who introduced a signed-in newcomer.
-        if (ownerId) {
-          await admin.from("profiles").update({ referred_by: (referrer as { id: string }).id }).eq("id", ownerId).is("referred_by", null);
-        }
+    let order = committed.data as { id: string; order_no: string } | null;
+    if (committed.error?.code === "PGRST202") {
+      // Existing installations can continue to accept COD before applying the Tap migration.
+      const legacy = await admin.from("orders").insert({ ...orderData, order_no: "", status: "new" }).select("id,order_no").single();
+      if (legacy.error || !legacy.data) throw legacy.error ?? new Error("order insert failed");
+      order = legacy.data;
+      await admin.from("order_items").insert(orderLines.map((line) => ({
+        order_id: legacy.data.id, product_slug: line.slug, variant_id: line.variantId ?? null, title: line.title, qty: line.qty, unit_price: line.unit,
+      })));
+      await admin.from("order_status_history").insert({ order_id: legacy.data.id, to_status: "new" });
+      const soldBySlug = new Map<string, number>();
+      for (const line of priced) {
+        if (line.variantId) await admin.rpc("decrement_stock", { p_variant_id: line.variantId, p_qty: line.qty });
+        soldBySlug.set(line.slug, (soldBySlug.get(line.slug) ?? 0) + line.qty);
       }
-    }
-
-    // Remember the shopper for next time (logged-in only): the last
-    // delivery snapshot always refreshes (autofill source), the name
-    // fills once (never clobbers), the phone ONLY with explicit consent.
-    if (ownerId) {
-      try {
-        const { data: prof } = await admin
-          .from("profiles")
-          .select("full_name, phone, default_address")
-          .eq("id", ownerId)
-          .single();
-        const saved = normalizeAddress({
-          line: body.address_line || address,
-          building: body.address_building,
-          city: (body.city ?? "Dubai").trim() || "Dubai",
-          state: (body.state ?? body.emirate ?? "Dubai").trim() || "Dubai",
-          postcode: body.postcode,
-          country_code: countryCode,
-          label: body.address_label,
-          lat: body.lat,
-          lng: body.lng,
-        });
-        const patch: Record<string, unknown> = { default_address: saved };
-        if (name && !prof?.full_name) patch.full_name = name;
-        if (body.save_phone && phone) patch.phone = phone;
-        if (saved) {
-          const key = (value: typeof saved) => createHash("sha256").update(addressKey(value)).digest("hex");
-          const previous = normalizeAddress(prof?.default_address);
-          if (previous && key(previous) !== key(saved)) {
-            const { data: existing } = await admin.from("shopper_addresses")
-              .select("id").eq("user_id", ownerId).limit(1);
-            if (existing?.length === 0) {
-              await admin.from("shopper_addresses").upsert(
-                { user_id: ownerId, address: previous, address_key: key(previous) },
-                { onConflict: "user_id,address_key", ignoreDuplicates: true },
-              );
-            }
-          }
-          await admin.from("shopper_addresses").upsert(
-            { user_id: ownerId, address: saved, address_key: key(saved), last_used_at: new Date().toISOString() },
-            { onConflict: "user_id,address_key" },
-          );
-        }
-        await admin.from("profiles").update(patch).eq("id", ownerId);
-      } catch {
-        /* profile memory must never block checkout */
+      for (const [slug, qty] of soldBySlug) {
+        const { data } = await admin.from("products").select("sales_count").eq("slug", slug).single();
+        await admin.from("products").update({ sales_count: Number(data?.sales_count ?? 0) + qty }).eq("slug", slug);
       }
+    } else if (committed.error) {
+      throw new Error(committed.error.message);
     }
+    if (!order) throw new Error("order insert failed");
+    const orderId = order.id;
+    after(() => recordPurchase(req, orderId, quote.total, priced.map(l => ({ product_id: l.slug, product_name: l.title, price: l.unit, quantity: l.qty })), ownerId));
+    after(() => refreshCheckoutStock(priced.map(l => l.slug)));
+    const { data: sampleRows } = body.sample_ids?.length
+      ? await admin.from("order_items").select("title,qty,unit_price").eq("order_id", orderId).eq("product_slug", "sample")
+      : { data: [] };
+    const sampleLines = (sampleRows ?? []).map(s => ({ title: s.title, qty: s.qty, unit: 0, slug: "sample" }));
+    await saveCheckoutCustomer(admin, orderId, orderData, body);
 
     // Customer communication starts when staff confirm the order.
     const orderPath=await getOrderAccessPath(admin,orderId).catch(()=>null);
@@ -312,7 +197,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";
-    const status = /stock|invalid|empty|required|unknown|coupon|referral|min|delivery/i.test(msg) ? 400 : 500;
+    const status = msg === "checkout:price" ? 409 : /stock|invalid|empty|required|unknown|coupon|referral|min|delivery|unavailable/i.test(msg) ? 400 : 500;
     return NextResponse.json({ error: msg }, { status });
   }
 }

@@ -386,6 +386,7 @@ export default async function OrderDetail(props: {
               title="Order contents"
               detail={`${units} ${units === 1 ? "item" : "items"} · ${paymentMethodLabel(order.payment_method)}`}
             >
+              {order.tap_charge_id && <p className="mb-3 break-all text-xs text-fog">Tap charge {order.tap_charge_id}</p>}
               {(items ?? []).map(
                 (it: {
                   id: string;
