@@ -41,7 +41,7 @@ export default function CheckoutPage() {
   const ar = locale === "ar";
   const [step, setStep] = useState<"delivery" | "payment">("delivery");
   const [method, setMethod] = useState<CheckoutMethod>("cod");
-  const { methods, appleAvailable } = useCheckoutPaymentOptions(step === "payment");
+  const { methods, appleAvailable, sandbox } = useCheckoutPaymentOptions(step === "payment");
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const goToStep = (next: typeof step) => {
     setStep(next);
@@ -319,8 +319,10 @@ export default function CheckoutPage() {
     }
     submitting.current = true;
     haptic("selection");
-    rememberFeedback({checkoutAttemptAt:Date.now()});
-    window.dispatchEvent(new Event("analytics-checkout-attempt"));
+    if (!sandbox || method === "cod") {
+      rememberFeedback({checkoutAttemptAt:Date.now()});
+      window.dispatchEvent(new Event("analytics-checkout-attempt"));
+    }
     setPlacing(true);
     setOrderError("");
     let attempt: BrowserPayment | undefined;
@@ -750,7 +752,7 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
-          <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} />
+          <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} sandbox={sandbox} />
           </>}
         </div>
 
@@ -806,7 +808,7 @@ export default function CheckoutPage() {
                 {method === "cod"
                   ? (placing ? t("placing") : t("placeOrder"))
                   : (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…")
-                    : (ar ? `ادفع ${formatAED(quote?.total ?? 0)}` : `Pay ${formatAED(quote?.total ?? 0)}`))}
+                    : (ar ? `${sandbox ? "اختبار دفع" : "ادفع"} ${formatAED(quote?.total ?? 0)}` : `${sandbox ? "Test payment" : "Pay"} ${formatAED(quote?.total ?? 0)}`))}
               </Button>
             </StockCheckoutGuard>
             )}

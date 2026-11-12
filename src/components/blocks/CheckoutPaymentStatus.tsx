@@ -8,12 +8,14 @@ import { markPurchase } from "@/lib/analytics/client";
 import { useCart } from "@/lib/cart";
 import { forgetPaymentProof, paymentBag, PAYMENT_ATTEMPT_KEY, readPaymentProof } from "@/lib/checkout-payment";
 import { haptic } from "@/lib/haptics";
+import { formatAED } from "@/lib/utils";
 import { readSamples } from "@/lib/sample-tiers";
 import { Button } from "@/components/ui/button";
 import { OrderReceived, type ReceivedOrder } from "./OrderReceived";
 
 type Receipt = { state: "paid"; order: ReceivedOrder; loggedIn: boolean; cartOwnerMatches: boolean };
-type Status = Receipt | { state: "pending" | "unavailable" | "failed"; url?: string };
+type Status = Receipt | { state: "sandbox_paid"; total: number; chargeId?: string }
+  | { state: "pending" | "unavailable" | "failed"; url?: string };
 
 export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale; id: string; chargeId?: string }) {
   const ar = locale === "ar";
@@ -42,6 +44,12 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
         });
         const result = await response.json();
         if (controller.signal.aborted) return;
+        if (result.state === "sandbox_paid") {
+          try { sessionStorage.setItem(PAYMENT_ATTEMPT_KEY, JSON.stringify({ id: proof.id, key: proof.key, settled: true })); } catch {}
+          setStatus(result);
+          setChecking(false);
+          return;
+        }
         if (result.state === "paid") {
           if (!proof.settled) {
             markPurchase(result.order.orderNo);
@@ -90,6 +98,12 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
   }, [checkoutReady, clear, id, lines, status]);
 
   if (status?.state === "paid") return <OrderReceived order={status.order} locale={locale} loggedIn={status.loggedIn} />;
+  if (status?.state === "sandbox_paid") return <section className="mx-auto max-w-xl px-5 py-16 text-center">
+    <h1 className="font-display text-3xl text-ink">{ar ? "نجح الدفع التجريبي" : "Test payment succeeded"}</h1>
+    <p className="mt-4 text-sm text-espresso">{ar ? "أكد Tap الدفعة التجريبية بقيمة" : "Tap confirmed a sandbox payment of"} {formatAED(status.total)}.</p>
+    {status.chargeId && <p className="mt-2 break-all text-xs text-fog" dir="ltr">{status.chargeId}</p>}
+    <Button asChild className="mt-6"><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>
+  </section>;
   const state = status?.state;
   const title = state === "failed" ? (ar ? "لم يكتمل الدفع" : "Payment wasn’t completed")
     : state === "unavailable" ? (ar ? "تعذر عرض حالة الدفع" : "Payment status unavailable")

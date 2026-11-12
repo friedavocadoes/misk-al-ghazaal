@@ -21,11 +21,19 @@ The checkout checks the final AED total, merchant activation, Apple Pay browser 
 
 [Tap redirect guide](https://developers.tap.company/docs/redirect) · [Tabby limits and mobile requirement](https://developers.tap.company/docs/tabby) · [Tamara activation](https://developers.tap.company/docs/tamara) · [Tap charge minimum](https://developers.tap.company/reference/create-a-charge)
 
+## Staff sandbox on the deployed storefront
+
+Apply `supabase/migration_tap_staff_sandbox.sql` after `migration_tap_checkout.sql`. Set `TAP_STAFF_SANDBOX=1` alongside your `sk_test_` key and redeploy. Set `TAP_SITE_URL` to the exact origin shown after redirects. For Gazaal this is `https://www.miskalghazaalperfumes.com`.
+
+Sign in at `/admin/login` with a super admin or orders account. In the same browser and hostname, add an item to the bag and open the storefront checkout. The payment step shows a staff sandbox notice. Select Card and use a [Tap test card](https://developers.tap.company/reference/testing-cards). A captured sandbox charge shows a test confirmation and charge ID. Sandbox attempts leave the cart, stock, orders, coupons, and order notifications untouched. Cash on delivery still places a real order. Ordinary visitors see the existing cash-on-delivery checkout until a live key is configured.
+
+The public key and Merchant ID are optional for the hosted flow. Start with `TAP_PAYMENT_METHODS=card`. Add the other methods as Tap activates them for the sandbox account. Apple Pay also needs a supported browser and Tamara needs both configured AED limits.
+
 ## Test before enabling live payments
 
 - Use [Tap’s test cards](https://developers.tap.company/reference/testing-cards) for approved and declined payments, including 3D Secure. Confirm the shopper returns to the matching English or Arabic checkout.
 - Test Apple Pay on an eligible device and browser. Test Tabby and Tamara with your enabled sandbox account and UAE shopper details. Try totals below and above the configured limits.
 - Confirm that a captured charge produces one paid order and one staff alert, including when the webhook arrives before the shopper or repeats. A declined or cancelled charge releases its stock, samples and coupon reservation. Sandbox captures create orders in the configured Supabase project, so use a staging project for this exercise.
-- For live checkout, use the Tap live secret key, the production HTTPS origin, and only the methods activated in live mode. Vercel Production declines `sk_test_` keys. Complete one live verification per enabled method using [Tap’s integration checklist](https://developers.tap.company/docs/recommendations-best-practices).
+- For live checkout, use the Tap live secret key, the production HTTPS origin, and only the methods activated in live mode. Vercel Production accepts a test key only in the staff sandbox. Complete one live verification per enabled method using [Tap’s integration checklist](https://developers.tap.company/docs/recommendations-best-practices).
 
 If a payment remains pending, compare its `tap_checkout_attempts` reference or `charge_id` with the Tap dashboard. The worker retrieves known charge IDs and uses the original idempotency reference for recent requests without a charge ID. Attempts with no charge ID past that retry window need reconciliation in Tap before their holds can be released. The order detail shows the Tap charge ID after capture.

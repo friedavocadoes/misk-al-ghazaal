@@ -22,9 +22,11 @@ export function tapConfig() {
   const origin = URL.canParse(site) ? new URL(site).origin : "";
   if (!/^sk_(test|live)_\S+$/.test(secret) || (merchant && !/^\d+$/.test(merchant)) || !origin.startsWith("https://")) return null;
   const live = secret.startsWith("sk_live_");
-  if (!live && process.env.VERCEL_ENV === "production") return null;
+  const staffSandbox = !live && process.env.TAP_STAFF_SANDBOX === "1";
+  if (!live && !staffSandbox && process.env.VERCEL_ENV === "production") return null;
   // Keep retries scoped to the original credentials when Tap selects the merchant.
-  const merchantScope = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
+  const account = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
+  const merchantScope = staffSandbox ? `sandbox:${account}` : account;
 
   const methods: PaymentOptions = {};
   const enabled = (process.env.TAP_PAYMENT_METHODS ?? "").split(",").map((method) => method.trim());
@@ -39,7 +41,7 @@ export function tapConfig() {
     if (max !== undefined && max < minimum) continue;
     methods[method] = { min: minimum, max };
   }
-  return { secret, merchant, merchantScope, origin, methods, live };
+  return { secret, merchant, merchantScope, origin, methods, live, staffSandbox };
 }
 
 export type TapConfig = NonNullable<ReturnType<typeof tapConfig>>;

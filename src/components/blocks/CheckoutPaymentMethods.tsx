@@ -9,6 +9,7 @@ import { cn, formatAED } from "@/lib/utils";
 export function useCheckoutPaymentOptions(active: boolean) {
   const [methods, setMethods] = useState<PaymentOptions | null>(null);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [sandbox, setSandbox] = useState(false);
   useEffect(() => {
     if (!active) return;
     const controller = new AbortController();
@@ -16,14 +17,16 @@ export function useCheckoutPaymentOptions(active: boolean) {
       .then(response => response.ok ? response.json() : null)
       .then(config => {
         if (controller.signal.aborted) return;
-        setMethods(config?.origin === window.location.origin ? config.methods : {});
+        const matchesOrigin = config?.origin === window.location.origin;
+        setMethods(matchesOrigin ? config.methods : {});
+        setSandbox(matchesOrigin && config.sandbox === true);
         const apple = (window as Window & { ApplePaySession?: { canMakePayments: () => boolean } }).ApplePaySession;
         try { setAppleAvailable(apple?.canMakePayments() === true); } catch { setAppleAvailable(false); }
       })
-      .catch(() => { if (!controller.signal.aborted) setMethods({}); });
+      .catch(() => { if (!controller.signal.aborted) { setMethods({}); setSandbox(false); } });
     return () => controller.abort();
   }, [active]);
-  return { methods, appleAvailable };
+  return { methods, appleAvailable, sandbox };
 }
 
 export function checkoutPaymentReason(reason: PaymentRestriction, limits: PaymentLimits | undefined, ar: boolean) {
@@ -44,16 +47,21 @@ const onlineMethods = {
   tamara: { en: "Pay later with Tamara", ar: "ادفع لاحقاً مع تمارا", images: ["tamara"] },
 } as const;
 
-export function CheckoutPaymentMethods({ ar, selected, choose, disabled, describe }: {
+export function CheckoutPaymentMethods({ ar, selected, choose, disabled, describe, sandbox }: {
   ar: boolean;
   selected: CheckoutMethod;
   choose: (method: CheckoutMethod) => void;
   disabled: boolean;
   describe: (method: typeof TAP_METHODS[number]) => string | undefined;
+  sandbox: boolean;
 }) {
   return (
     <fieldset disabled={disabled} className="space-y-3 border border-ink/10 bg-white p-5 md:p-8">
       <legend className="px-2 text-sm font-semibold text-ink">{ar ? "طريقة الدفع" : "Payment method"}</legend>
+      {sandbox && <p className="border border-gold/40 bg-gold-wash/40 p-3 text-xs leading-5 text-ink">
+        {ar ? "وضع اختبار Tap للموظفين. اختر طريقة دفع إلكترونية لإجراء دفعة تجريبية. الدفع عند الاستلام ينشئ طلباً فعلياً."
+          : "Tap sandbox for staff. Choose an online method to run a test payment. Cash on delivery places a real order."}
+      </p>}
       {(["cod", ...TAP_METHODS] as const).map(method => {
         const online = method === "cod" ? null : onlineMethods[method];
         const reason = method === "cod" ? undefined : describe(method);

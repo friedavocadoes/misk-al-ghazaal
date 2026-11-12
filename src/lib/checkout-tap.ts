@@ -25,10 +25,11 @@ type Attempt = {
   id: string; method: TapMethod; merchant_id: string; live_mode: boolean; origin: string; locale: "en" | "ar";
   created_at: string; state: "pending" | "paid" | "failed"; charge_id: string | null; order_id: string | null;
   payment_url: string | null;
+  sandbox_staff_id?: string | null;
   order_data: OrderData; lines: Line[];
   context: { profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
 };
-type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string };
+type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null };
 
 export function checkoutPaymentProof(value: unknown): PaymentProof | null {
   const proof = value as Partial<PaymentProof> | null;
@@ -45,13 +46,25 @@ export async function findCheckoutAttempt(proof: PaymentProof) {
 
 export async function startCheckoutPayment(
   req: Request, config: TapConfig, proof: PaymentProof, method: TapMethod, order: OrderData,
-  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar",
+  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar", sandboxStaffId?: string,
 ) {
-  const session = await analyticsSession(req, false, 0, order.user_id).catch(() => null);
-  const { data, error } = await createAdminClient().rpc("tap_checkout_begin", {
+  const db = createAdminClient();
+  const common = {
     p_id: proof.id, p_key_hash: keyHash(proof.key), p_method: method, p_merchant: config.merchantScope,
-    p_live: config.live, p_origin: config.origin, p_locale: locale, p_order: order, p_lines: lines,
-    p_context: { profile, session },
+    p_origin: config.origin, p_locale: locale,
+  };
+  if (config.staffSandbox) {
+    if (!sandboxStaffId) throw new Error("Staff access required");
+    const { data, error } = await db.rpc("tap_checkout_begin_sandbox", {
+      ...common, p_staff: sandboxStaffId, p_amount: order.total,
+      p_customer: { customer_name: order.customer_name, phone: order.phone, email: order.email },
+    });
+    if (error) throw new Error(error.message);
+    return continueCheckoutPayment(data as Attempt, config);
+  }
+  const session = await analyticsSession(req, false, 0, order.user_id).catch(() => null);
+  const { data, error } = await db.rpc("tap_checkout_begin", {
+    ...common, p_live: config.live, p_order: order, p_lines: lines, p_context: { profile, session },
   });
   if (error) throw new Error(error.message);
   after(() => refreshCheckoutStock(lines.map(({ slug }) => slug)));
@@ -59,14 +72,18 @@ export async function startCheckoutPayment(
 }
 
 function matchesConfig(attempt: Attempt, config: TapConfig) {
-  return attempt.merchant_id === config.merchantScope && attempt.live_mode === config.live && attempt.origin === config.origin;
+  return attempt.merchant_id === config.merchantScope && attempt.live_mode === config.live && attempt.origin === config.origin
+    && Boolean(attempt.sandbox_staff_id) === config.staffSandbox;
 }
 
 async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt["state"], url?: string) {
   const db = createAdminClient();
-  const { data, error } = await db.rpc("tap_checkout_update", { p_id: attempt.id, p_charge: id, p_state: state, p_url: url ?? null });
+  const { data, error } = await db.rpc(attempt.sandbox_staff_id ? "tap_checkout_update_sandbox" : "tap_checkout_update", {
+    p_id: attempt.id, p_charge: id, p_state: state, p_url: url ?? null,
+  });
   if (error) throw new Error("Unable to reconcile Tap payment");
   const result = data as PaymentResult & { created: boolean };
+  if (attempt.sandbox_staff_id) return result;
   if (result.state !== "pending") after(() => refreshCheckoutStock(attempt.lines.map(({ slug }) => slug)));
   if (result.created && result.order_id) {
     const orderId = result.order_id;
@@ -106,8 +123,8 @@ async function applyCharge(attempt: Attempt, charge: TapCharge, config: TapConfi
 }
 
 export async function continueCheckoutPayment(attempt: Attempt, config: TapConfig, returnedId?: string): Promise<PaymentResult> {
-  if (attempt.state !== "pending") return { state: attempt.state, order_id: attempt.order_id };
   if (!matchesConfig(attempt, config)) throw new Error("Tap configuration changed during payment");
+  if (attempt.state !== "pending") return { state: attempt.state, order_id: attempt.order_id, charge_id: attempt.charge_id };
   const chargeId = attempt.charge_id ?? returnedId;
   if (chargeId) return applyCharge(attempt, await retrieveTapCharge(config, chargeId), config);
   // Tap's idempotency window is 24 hours. Leave uncertain older attempts for reconciliation.

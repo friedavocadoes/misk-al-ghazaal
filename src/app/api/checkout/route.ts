@@ -6,6 +6,7 @@ import { refreshCheckoutStock, saveCheckoutCustomer, type CheckoutProfileInput }
 import { findCheckoutAttempt, startCheckoutPayment, continueCheckoutPayment, checkoutPaymentProof } from "@/lib/checkout-tap";
 import { isTapMethod, paymentRestriction, tapPhone } from "@/lib/checkout-payment";
 import { tapConfig } from "@/lib/tap";
+import { getAdminSession } from "@/lib/admin-auth";
 import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -42,12 +43,22 @@ export async function POST(req: Request) {
     }
     const payment = method === "cod" ? null : tapConfig();
     const proof = method === "cod" ? null : checkoutPaymentProof(body.payment_attempt);
+    let sandboxStaffId: string | undefined;
     if (method !== "cod") {
       if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
         return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
       }
+      if (payment.staffSandbox) {
+        sandboxStaffId = (await getAdminSession())?.userId;
+        if (!sandboxStaffId) return NextResponse.json({ error: "payment:unavailable" }, { status: 403 });
+      }
       const existing = await findCheckoutAttempt(proof);
-      if (existing) return NextResponse.json(await continueCheckoutPayment(existing, payment));
+      if (existing) {
+        if ((existing.sandbox_staff_id ?? undefined) !== sandboxStaffId) {
+          return NextResponse.json({ error: "payment:unavailable" }, { status: 403 });
+        }
+        return NextResponse.json(await continueCheckoutPayment(existing, payment));
+      }
     }
     const name = (body.customer_name ?? "").trim();
     const phone = (body.phone ?? "").trim();
@@ -144,7 +155,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json(await startCheckoutPayment(req, payment, proof, method, orderData, orderLines, {
         address_line: body.address_line, address_building: body.address_building, save_phone: body.save_phone,
-      }, body.locale === "ar" ? "ar" : "en"));
+      }, body.locale === "ar" ? "ar" : "en", sandboxStaffId));
     }
 
     const committed = await admin.rpc("storefront_checkout_commit", {
