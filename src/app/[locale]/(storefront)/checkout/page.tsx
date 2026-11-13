@@ -29,8 +29,8 @@ import { cn } from "@/lib/utils";
 import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/saved-address";
 import { CheckoutItems } from "@/components/blocks/CheckoutItems";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
-import { CheckoutPaymentMethods, checkoutPaymentReason, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
-import { forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
+import { CheckoutPaymentMethods, checkoutPaymentReason, tapMerchantMismatchMessage, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
+import { checkoutPaymentStatusPath, checkoutPhoneInput, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, TAP_MERCHANT_MISMATCH, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -41,7 +41,7 @@ export default function CheckoutPage() {
   const ar = locale === "ar";
   const [step, setStep] = useState<"delivery" | "payment">("delivery");
   const [method, setMethod] = useState<CheckoutMethod>("cod");
-  const { methods, appleAvailable } = useCheckoutPaymentOptions(step === "payment");
+  const { methods, appleAvailable, sandbox } = useCheckoutPaymentOptions(step === "payment");
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const goToStep = (next: typeof step) => {
     setStep(next);
@@ -94,8 +94,7 @@ export default function CheckoutPage() {
     const resumePayment = () => {
       const previous = readPaymentProof();
       if (!previous || previous.settled) return false;
-      const path = window.location.pathname.replace(/\/+$/, "");
-      window.location.replace(`${path}/payment?attempt=${encodeURIComponent(previous.id)}`);
+      window.location.replace(checkoutPaymentStatusPath(locale, previous.id));
       return true;
     };
     if (resumePayment()) return;
@@ -109,7 +108,8 @@ export default function CheckoutPage() {
         if (profile.email) setEmail((value) => value || profile.email);
         if (profile.name) setName((value) => value || profile.name);
         if (profile.phone && !phoneTouched.current) {
-          const { dial, national } = splitPhone(profile.phone);
+          const { dial, national } = /^\s*00/.test(profile.phone)
+            ? checkoutPhoneInput(profile.phone, DEFAULT_DIAL) : splitPhone(profile.phone);
           setDial(dial);
           setNational(national);
         }
@@ -137,7 +137,7 @@ export default function CheckoutPage() {
       controller.abort();
       window.removeEventListener("pageshow", resumePayment);
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -274,6 +274,7 @@ export default function CheckoutPage() {
 
   const friendlyError = (raw: unknown): string => {
     const msg = typeof raw === "string" ? raw : "";
+    if (msg === TAP_MERCHANT_MISMATCH) return tapMerchantMismatchMessage(ar);
     if (msg.startsWith("coupon:")) return msg === "coupon:min" ? t("couponMin") : t("couponBad");
     if (msg.startsWith("referral:")) return t("referralBad");
     if (msg.startsWith("delivery:")) return t("deliveryNo");
@@ -308,19 +309,19 @@ export default function CheckoutPage() {
     return reason ? checkoutPaymentReason(reason, limits, ar) : undefined;
   };
   const paymentReady = method === "cod" || !describePayment(method);
-  const paymentStatusPath = (id: string) => `${ar ? "/ar" : ""}/checkout/payment?attempt=${encodeURIComponent(id)}`;
-
   const placeOrder = async () => {
     if (submitting.current || !valid || !paymentReady || step !== "payment") return;
     const previous = readPaymentProof();
     if (previous && !previous.settled) {
-      window.location.assign(paymentStatusPath(previous.id));
+      window.location.assign(checkoutPaymentStatusPath(locale, previous.id));
       return;
     }
     submitting.current = true;
     haptic("selection");
-    rememberFeedback({checkoutAttemptAt:Date.now()});
-    window.dispatchEvent(new Event("analytics-checkout-attempt"));
+    if (!sandbox || method === "cod") {
+      rememberFeedback({checkoutAttemptAt:Date.now()});
+      window.dispatchEvent(new Event("analytics-checkout-attempt"));
+    }
     setPlacing(true);
     setOrderError("");
     let attempt: BrowserPayment | undefined;
@@ -376,7 +377,7 @@ export default function CheckoutPage() {
     });
     const j = await res.json().catch(() => null);
     if (attempt && (res.ok || res.status >= 500)) {
-      window.location.assign(res.ok && j?.url ? j.url : paymentStatusPath(attempt.id));
+      window.location.assign(res.ok && j?.url ? j.url : checkoutPaymentStatusPath(locale, attempt.id));
       return;
     }
     if (attempt) forgetPaymentProof(attempt.id);
@@ -409,7 +410,7 @@ export default function CheckoutPage() {
     }
     } catch {
       if (paymentStarted && attempt) {
-        window.location.assign(paymentStatusPath(attempt.id));
+        window.location.assign(checkoutPaymentStatusPath(locale, attempt.id));
         return;
       }
       haptic("error");
@@ -509,7 +510,9 @@ export default function CheckoutPage() {
                   value={national}
                   onChange={(e) => {
                     phoneTouched.current = true;
-                    setNational(e.target.value.replace(/\D/g, "").slice(0, 12));
+                    const next = checkoutPhoneInput(e.target.value, dial);
+                    if (next.dial !== dial) setDial(next.dial);
+                    setNational(next.national);
                   }}
                   inputMode="numeric"
                   type="tel"
@@ -750,7 +753,7 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
-          <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} />
+          <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} sandbox={sandbox} />
           </>}
         </div>
 
@@ -806,7 +809,7 @@ export default function CheckoutPage() {
                 {method === "cod"
                   ? (placing ? t("placing") : t("placeOrder"))
                   : (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…")
-                    : (ar ? `ادفع ${formatAED(quote?.total ?? 0)}` : `Pay ${formatAED(quote?.total ?? 0)}`))}
+                    : (ar ? `${sandbox ? "اختبار دفع" : "ادفع"} ${formatAED(quote?.total ?? 0)}` : `${sandbox ? "Test payment" : "Pay"} ${formatAED(quote?.total ?? 0)}`))}
               </Button>
             </StockCheckoutGuard>
             )}

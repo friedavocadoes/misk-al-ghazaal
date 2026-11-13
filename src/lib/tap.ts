@@ -9,6 +9,8 @@ const sources: Record<TapMethod, string> = {
   tamara: "src_tamara",
 };
 
+const TAP_SHARED_TEST_MERCHANT_ID = "599424";
+
 function limit(value: string | undefined) {
   if (!value || !/^\d+(?:\.\d{1,2})?$/.test(value)) return undefined;
   const amount = Number(value);
@@ -22,9 +24,14 @@ export function tapConfig() {
   const origin = URL.canParse(site) ? new URL(site).origin : "";
   if (!/^sk_(test|live)_\S+$/.test(secret) || (merchant && !/^\d+$/.test(merchant)) || !origin.startsWith("https://")) return null;
   const live = secret.startsWith("sk_live_");
-  if (!live && process.env.VERCEL_ENV === "production") return null;
+  const sharedTestMerchant = merchant === TAP_SHARED_TEST_MERCHANT_ID;
+  if (live && sharedTestMerchant) return null;
+  // The merchant and keys in Tap's docs are shared test fixtures.
+  const staffSandbox = !live && (process.env.TAP_STAFF_SANDBOX === "1" || sharedTestMerchant);
+  if (!live && !staffSandbox && process.env.VERCEL_ENV === "production") return null;
   // Keep retries scoped to the original credentials when Tap selects the merchant.
-  const merchantScope = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
+  const account = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
+  const merchantScope = staffSandbox ? `sandbox:${account}` : account;
 
   const methods: PaymentOptions = {};
   const enabled = (process.env.TAP_PAYMENT_METHODS ?? "").split(",").map((method) => method.trim());
@@ -39,7 +46,7 @@ export function tapConfig() {
     if (max !== undefined && max < minimum) continue;
     methods[method] = { min: minimum, max };
   }
-  return { secret, merchant, merchantScope, origin, methods, live };
+  return { secret, merchant, merchantScope, origin, methods, live, staffSandbox };
 }
 
 export type TapConfig = NonNullable<ReturnType<typeof tapConfig>>;
@@ -59,7 +66,7 @@ export type TapCharge = {
 export const validChargeId = (id: unknown): id is string => typeof id === "string" && /^chg_[a-zA-Z0-9_-]{1,100}$/.test(id);
 
 export class TapRequestError extends Error {
-  constructor(readonly rejected: boolean) { super("Tap request failed"); }
+  constructor(readonly rejected: boolean, readonly httpStatus: number, readonly code?: string) { super("Tap request failed"); }
 }
 
 async function tapRequest(config: TapConfig, path: string, payload?: object, locale = "en") {
@@ -72,7 +79,12 @@ async function tapRequest(config: TapConfig, path: string, payload?: object, loc
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !validChargeId(result?.id)) {
-    throw new TapRequestError(Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)));
+    const code = String(result?.errors?.[0]?.code ?? "");
+    throw new TapRequestError(
+      Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)),
+      response.status,
+      /^\d{1,6}$/.test(code) ? code : undefined,
+    );
   }
   return result as TapCharge;
 }
@@ -88,7 +100,7 @@ export function createTapCharge(config: TapConfig, attempt: {
     amount: attempt.amount,
     currency: "AED",
     customer_initiated: true,
-    threeDSecure: method === "card" || method === "apple_pay",
+    threeDSecure: true,
     save_card: false,
     description: "Misk Al Ghazaal order",
     ...(config.merchant ? { merchant: { id: config.merchant } } : {}),
