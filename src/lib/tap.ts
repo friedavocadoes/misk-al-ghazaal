@@ -100,7 +100,7 @@ export function createTapCharge(config: TapConfig, attempt: {
     amount: attempt.amount,
     currency: "AED",
     customer_initiated: true,
-    threeDSecure: method === "card" || method === "apple_pay",
+    threeDSecure: true,
     save_card: false,
     description: "Misk Al Ghazaal order",
     ...(config.merchant ? { merchant: { id: config.merchant } } : {}),

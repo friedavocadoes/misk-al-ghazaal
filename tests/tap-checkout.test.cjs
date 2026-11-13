@@ -52,6 +52,19 @@ test("merchant configuration and the final AED total determine selectable method
   assert.equal(loadTap({ ...tapEnv, TAP_MERCHANT_ID: "pk_test_fixture" }).tapConfig(), null);
 });
 
+test("checkout accepts pasted UAE numbers and passes the same normalized phone used by pay-later eligibility", () => {
+  const { combinePhone } = load("src/lib/dial-codes.ts");
+  for (const input of ["0501234567", "+971 50 123 4567", "00971501234567", "971501234567", "٠٥٠١٢٣٤٥٦٧"]) {
+    const { dial, national } = eligibility.checkoutPhoneInput(input, "971");
+    const phone = combinePhone(dial, national);
+    const tap = eligibility.tapPhone(phone);
+    assert.equal(tap.country_code, "971");
+    assert.equal(tap.number, "501234567");
+    assert.equal(eligibility.paymentRestriction("tabby", { min: 10 }, 100, "AE", phone), undefined);
+    assert.equal(eligibility.paymentRestriction("tamara", { min: 10 }, 100, "AE", phone), undefined);
+  }
+});
+
 test("Tap receives the selected source and a stable attempt reference, and signs AED with two decimals", async () => {
   const calls = [];
   const tap = loadTap(tapEnv, { fetch: async (url, options) => {
@@ -66,6 +79,10 @@ test("Tap receives the selected source and a stable attempt reference, and signs
     } });
   }
   assert.deepEqual(calls.map(call => call.body.source.id), ["src_card", "src_apple_pay", "src_tabby.installement", "src_tamara"]);
+  for (const { body } of calls) {
+    assert.equal(body.threeDSecure, true);
+    assert.deepEqual(body.customer.phone, { country_code: "971", number: "501234567" });
+  }
   assert.deepEqual(calls[0].body.reference, { order: id, transaction: id, idempotent: id });
   assert.equal(calls[0].body.currency, "AED");
   assert.deepEqual(calls[0].body.merchant, { id: "12345678" });

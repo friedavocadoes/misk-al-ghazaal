@@ -30,7 +30,7 @@ import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/sav
 import { CheckoutItems } from "@/components/blocks/CheckoutItems";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { CheckoutPaymentMethods, checkoutPaymentReason, tapMerchantMismatchMessage, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
-import { checkoutPaymentStatusPath, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, TAP_MERCHANT_MISMATCH, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
+import { checkoutPaymentStatusPath, checkoutPhoneInput, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, TAP_MERCHANT_MISMATCH, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -108,7 +108,8 @@ export default function CheckoutPage() {
         if (profile.email) setEmail((value) => value || profile.email);
         if (profile.name) setName((value) => value || profile.name);
         if (profile.phone && !phoneTouched.current) {
-          const { dial, national } = splitPhone(profile.phone);
+          const { dial, national } = /^\s*00/.test(profile.phone)
+            ? checkoutPhoneInput(profile.phone, DEFAULT_DIAL) : splitPhone(profile.phone);
           setDial(dial);
           setNational(national);
         }
@@ -509,7 +510,9 @@ export default function CheckoutPage() {
                   value={national}
                   onChange={(e) => {
                     phoneTouched.current = true;
-                    setNational(e.target.value.replace(/\D/g, "").slice(0, 12));
+                    const next = checkoutPhoneInput(e.target.value, dial);
+                    if (next.dial !== dial) setDial(next.dial);
+                    setNational(next.national);
                   }}
                   inputMode="numeric"
                   type="tel"

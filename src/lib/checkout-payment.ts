@@ -1,4 +1,4 @@
-import { DIAL_CODES } from "./dial-codes";
+import { DIAL_CODES, splitPhone } from "./dial-codes";
 import { whatsappPhone } from "./whatsapp-shared";
 
 export const TAP_METHODS = ["card", "apple_pay", "tabby", "tamara"] as const;
@@ -20,6 +20,17 @@ export function tapPhone(phone: string) {
   return { country_code: countryCode, number: digits.slice(countryCode.length) };
 }
 
+export function checkoutPhoneInput(value: string, dial: string) {
+  const text = value.trim().replace(/[٠-٩۰-۹]/g, digit => String(digit.charCodeAt(0) & 15));
+  const digits = text.replace(/\D/g, "");
+  const international = text.startsWith("+") ? digits : text.startsWith("00") ? digits.slice(2)
+    : /^9710?5\d{8}$/.test(digits) ? digits : "";
+  if (international && DIAL_CODES.some(({ code }) => international.startsWith(code) && international.length > code.length)) {
+    return splitPhone(international);
+  }
+  return { dial, national: digits.slice(0, 12) };
+}
+
 export function paymentRestriction(
   method: TapMethod,
   limits: PaymentLimits | undefined,
@@ -34,7 +45,8 @@ export function paymentRestriction(
   if (method === "apple_pay" && !appleAvailable) return "apple";
   if (method === "tabby" || method === "tamara") {
     if (country !== "AE") return "uae";
-    if (!/^9715\d{8}$/.test(whatsappPhone(phone) ?? "")) return "mobile";
+    const mobile = tapPhone(phone);
+    if (mobile?.country_code !== "971" || !/^5\d{8}$/.test(mobile.number)) return "mobile";
   }
 }
 

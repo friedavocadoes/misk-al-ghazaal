@@ -35,7 +35,7 @@ export function checkoutPaymentReason(reason: PaymentRestriction, limits: Paymen
     case "minimum": return ar ? `الحد الأدنى للدفع بهذه الطريقة ${formatAED(limits?.min ?? 0)}.` : `Available on totals of ${formatAED(limits?.min ?? 0)} or more.`;
     case "maximum": return ar ? `الحد الأقصى للدفع بهذه الطريقة ${formatAED(limits?.max ?? 0)}.` : `Available on totals up to ${formatAED(limits?.max ?? 0)}.`;
     case "uae": return ar ? "متاح للتوصيل داخل الإمارات." : "Available for delivery within the UAE.";
-    case "mobile": return ar ? "أدخل رقم هاتف متحرك إماراتياً في بيانات التوصيل." : "Enter a UAE mobile number in your delivery details.";
+    case "mobile": return ar ? "اختر ‎+971 في بيانات التوصيل وأدخل رقم هاتف متحرك إماراتياً مثل 50 123 4567." : "In delivery details, select +971 and enter a UAE mobile number, for example 50 123 4567.";
     case "apple": return ar ? "استخدم جهازاً ومتصفحاً يدعمان Apple Pay." : "Use a device and browser that support Apple Pay.";
   }
 }
