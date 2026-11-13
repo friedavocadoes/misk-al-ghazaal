@@ -15,7 +15,7 @@ import { OrderReceived, type ReceivedOrder } from "./OrderReceived";
 
 type Receipt = { state: "paid"; order: ReceivedOrder; loggedIn: boolean; cartOwnerMatches: boolean };
 type Status = Receipt | { state: "sandbox_paid"; total: number; chargeId?: string }
-  | { state: "pending" | "unavailable" | "failed"; url?: string };
+  | { state: "pending" | "unavailable" | "failed" | "sandbox_reconfigured"; url?: string };
 
 export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale; id: string; chargeId?: string }) {
   const ar = locale === "ar";
@@ -60,7 +60,7 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
           setChecking(false);
           return;
         }
-        if (result.state === "failed" || result.state === "unavailable" || (result.state === "missing" && remaining === 0)) {
+        if (result.state === "failed" || result.state === "sandbox_reconfigured" || result.state === "unavailable" || (result.state === "missing" && remaining === 0)) {
           if (result.state !== "unavailable" || result.settled) forgetPaymentProof(proof.id);
           setStatus({ state: result.state === "missing" ? "unavailable" : result.state });
           setChecking(false);
@@ -106,9 +106,11 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
   </section>;
   const state = status?.state;
   const title = state === "failed" ? (ar ? "لم يكتمل الدفع" : "Payment wasn’t completed")
+    : state === "sandbox_reconfigured" ? (ar ? "تغيّرت إعدادات اختبار Tap" : "Tap sandbox settings changed")
     : state === "unavailable" ? (ar ? "تعذر عرض حالة الدفع" : "Payment status unavailable")
     : (ar ? "حالة الدفع" : "Payment status");
   const detail = state === "failed" ? (ar ? "يمكنك العودة إلى صفحة الدفع واختيار طريقة أخرى." : "Return to checkout to try again or choose another payment method.")
+    : state === "sandbox_reconfigured" ? (ar ? "ارجع إلى صفحة الدفع وابدأ دفعة تجريبية جديدة." : "Return to checkout to start a new test payment.")
     : state === "unavailable" ? (ar ? "افتح صفحة الدفع من نفس علامة التبويب التي بدأت منها العملية." : "Open the payment status from the tab where you started checkout.")
     : checking ? (ar ? "جارٍ التحقق من الدفعة مع Tap Payments…" : "Checking your payment with Tap Payments…")
     : (ar ? "ننتظر تأكيد الدفعة. يمكنك التحقق من الحالة مرة أخرى." : "We’re waiting for payment confirmation. You can check again here.");
@@ -123,7 +125,7 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
       {state === "pending" && <Button variant="outline" disabled={checking} onClick={() => { setChecking(true); setCheck(n => n + 1); }}>
         {ar ? "التحقق من حالة الدفع" : "Check payment status"}
       </Button>}
-      {state === "failed" && <Button asChild><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>}
+      {(state === "failed" || state === "sandbox_reconfigured") && <Button asChild><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>}
       {state === "unavailable" && <Button asChild variant="outline"><Link href="/cart">{ar ? "عرض الحقيبة" : "View your bag"}</Link></Button>}
     </div>
   </section>;

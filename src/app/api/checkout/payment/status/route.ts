@@ -1,4 +1,4 @@
-import { checkoutPaymentProof, checkoutPaymentReceipt, continueCheckoutPayment, findCheckoutAttempt } from "@/lib/checkout-tap";
+import { checkoutPaymentProof, checkoutPaymentReceipt, continueCheckoutPayment, findCheckoutAttempt, sandboxConfigChanged } from "@/lib/checkout-tap";
 import { tapConfig, validChargeId } from "@/lib/tap";
 import { getAdminSession } from "@/lib/admin-auth";
 
@@ -21,6 +21,9 @@ export async function POST(req: Request) {
     if (!attempt) return Response.json({ state: "missing" }, { status: 404, headers });
     if ((attempt.sandbox_staff_id ?? undefined) !== sandboxStaffId) {
       return Response.json({ state: "unavailable" }, { status: 403, headers });
+    }
+    if (sandboxConfigChanged(attempt, config)) {
+      return Response.json({ state: "sandbox_reconfigured" }, { headers });
     }
     const result = await continueCheckoutPayment(attempt, config, validChargeId(body.tap_id) ? body.tap_id : undefined);
     if (result.state === "paid") {

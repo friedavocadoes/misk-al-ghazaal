@@ -9,6 +9,8 @@ const sources: Record<TapMethod, string> = {
   tamara: "src_tamara",
 };
 
+const TAP_SHARED_TEST_MERCHANT_ID = "599424";
+
 function limit(value: string | undefined) {
   if (!value || !/^\d+(?:\.\d{1,2})?$/.test(value)) return undefined;
   const amount = Number(value);
@@ -22,7 +24,10 @@ export function tapConfig() {
   const origin = URL.canParse(site) ? new URL(site).origin : "";
   if (!/^sk_(test|live)_\S+$/.test(secret) || (merchant && !/^\d+$/.test(merchant)) || !origin.startsWith("https://")) return null;
   const live = secret.startsWith("sk_live_");
-  const staffSandbox = !live && process.env.TAP_STAFF_SANDBOX === "1";
+  const sharedTestMerchant = merchant === TAP_SHARED_TEST_MERCHANT_ID;
+  if (live && sharedTestMerchant) return null;
+  // The merchant and keys in Tap's docs are shared test fixtures.
+  const staffSandbox = !live && (process.env.TAP_STAFF_SANDBOX === "1" || sharedTestMerchant);
   if (!live && !staffSandbox && process.env.VERCEL_ENV === "production") return null;
   // Keep retries scoped to the original credentials when Tap selects the merchant.
   const account = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;

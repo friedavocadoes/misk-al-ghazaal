@@ -46,6 +46,9 @@ test("merchant configuration and the final AED total determine selectable method
   assert.equal(sandbox.live, false);
   assert.equal(sandbox.staffSandbox, true);
   assert.equal(sandbox.merchantScope, "sandbox:12345678");
+  const shared = { ...tapEnv, TAP_MERCHANT_ID: "599424", VERCEL_ENV: "production" };
+  assert.equal(loadTap(shared).tapConfig().staffSandbox, true);
+  assert.equal(loadTap({ ...shared, TAP_SECRET_KEY: "sk_live_fixture" }).tapConfig(), null);
   assert.equal(loadTap({ ...tapEnv, TAP_MERCHANT_ID: "pk_test_fixture" }).tapConfig(), null);
 });
 
@@ -105,6 +108,7 @@ test("the deployed sandbox exposes payment options and results only to the initi
   const config = loadTap({ ...tapEnv, VERCEL_ENV: "production", TAP_STAFF_SANDBOX: "1" }).tapConfig();
   let staff = null;
   let reads = 0;
+  let changed = false;
   const options = load("src/app/api/checkout/payment/options/route.ts", {
     "@/lib/tap": { tapConfig: () => config },
     "@/lib/admin-auth": { getAdminSession: async () => staff },
@@ -123,6 +127,7 @@ test("the deployed sandbox exposes payment options and results only to the initi
     "@/lib/checkout-tap": {
       checkoutPaymentProof: () => ({ id: "test" }),
       findCheckoutAttempt: async () => ({ sandbox_staff_id: "staff-1", order_data: { total: 100 } }),
+      sandboxConfigChanged: () => changed,
       continueCheckoutPayment: async () => ({ state: "paid", charge_id: "chg_TEST" }),
       checkoutPaymentReceipt: () => assert.fail("Sandbox must not create a real receipt"),
     },
@@ -136,6 +141,8 @@ test("the deployed sandbox exposes payment options and results only to the initi
   assert.equal((await check()).status, 403);
   staff = { userId: "staff-1" };
   assert.deepEqual(await (await check()).json(), { state: "sandbox_paid", total: 100, chargeId: "chg_TEST" });
+  changed = true;
+  assert.deepEqual(await (await check()).json(), { state: "sandbox_reconfigured" });
 });
 
 test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, currency, reference or mode", async () => {

@@ -76,6 +76,10 @@ function matchesConfig(attempt: Attempt, config: TapConfig) {
     && Boolean(attempt.sandbox_staff_id) === config.staffSandbox;
 }
 
+export function sandboxConfigChanged(attempt: Attempt, config: TapConfig) {
+  return Boolean(attempt.sandbox_staff_id) && !matchesConfig(attempt, config);
+}
+
 async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt["state"], url?: string) {
   const db = createAdminClient();
   const { data, error } = await db.rpc(attempt.sandbox_staff_id ? "tap_checkout_update_sandbox" : "tap_checkout_update", {

@@ -89,6 +89,16 @@ export function CheckoutPaymentMethods({ ar, selected, choose, disabled, describ
           </label>
         );
       })}
+      {sandbox && selected === "card" && !describe("card") && (
+        <div className="border border-ink/10 p-3 text-xs leading-6 text-espresso">
+          <p className="font-medium text-ink">{ar ? "بطاقة Visa لاختبار الدفع" : "Visa test card"}</p>
+          <p dir="ltr" className="select-all text-start tabular-nums">4508 7500 1574 1019</p>
+          <p>{ar ? "الانتهاء 01/39 · رمز الأمان 100. اختر نجاح المصادقة في شاشة الاختبار أو أدخل 1234 إذا طُلب رمز." : "Expiry 01/39 · CVV 100. Choose successful authentication in the simulator, or enter 1234 if prompted for a code."}</p>
+          <a className="underline underline-offset-4" href="https://developers.tap.company/reference/testing-cards" target="_blank" rel="noreferrer">
+            {ar ? "بطاقات اختبار Tap" : "Tap test cards"}
+          </a>
+        </div>
+      )}
       <p className="text-xs leading-5 text-fog">{ar ? "تُستكمل المدفوعات الإلكترونية عبر Tap Payments." : "Online payments are completed securely through Tap Payments."}</p>
     </fieldset>
   );

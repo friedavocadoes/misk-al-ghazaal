@@ -29,6 +29,12 @@ Sign in at `/admin/login` with a super admin or orders account. In the same brow
 
 The public key and Merchant ID are optional for the hosted flow. Start with `TAP_PAYMENT_METHODS=card`. Add the other methods as Tap activates them for the sandbox account. Apple Pay also needs a supported browser and Tamara needs both configured AED limits.
 
+### Use Tap’s shared test merchant
+
+Set `TAP_MERCHANT_ID=599424` and use the **Secret Key** from the same [Tap Test Keys page](https://developers.tap.company/reference/testing-keys) for `TAP_SECRET_KEY`. Use `TAP_PAYMENT_METHODS=card` for the first test. Merchant `599424` is Tap’s shared fixture and automatically uses the staff sandbox. To test merchant-specific payment methods, use your own Tap test credentials and the Merchant ID Tap assigned to that account, if supplied.
+
+After redeploying, open a fresh checkout payment session. An open sandbox attempt tied to your previous merchant shows a message to start again. Select Card and enter Visa `4508 7500 1574 1019`, expiry `01/39`, and CVV `100` on Tap’s page. Enter a test cardholder name if requested. In the 3-D Secure simulator, choose **Authentication/Account Verification Successful** and submit. If Tap shows a code prompt instead, enter `1234`. [Tap test cards](https://developers.tap.company/reference/testing-cards) · [Tap 3-D Secure flow](https://developers.tap.company/reference/charges)
+
 ## Test before enabling live payments
 
 - Use [Tap’s test cards](https://developers.tap.company/reference/testing-cards) for approved and declined payments, including 3D Secure. Confirm the shopper returns to the matching English or Arabic checkout.
