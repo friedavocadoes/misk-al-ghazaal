@@ -187,7 +187,13 @@ export function OriginalesChrome({
             className={s.wordmark}
             aria-label="MAG Parfum — Originales"
           >
-            MAG<span>PARFUM</span>
+            <Image
+              src="/originales/MAG-logo.png"
+              alt=""
+              width={56}
+              height={56}
+              unoptimized
+            />
           </Link>
         </div>
         {collectionPage ? (
