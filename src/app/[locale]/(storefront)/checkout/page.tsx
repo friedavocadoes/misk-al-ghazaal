@@ -30,7 +30,7 @@ import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/sav
 import { CheckoutItems } from "@/components/blocks/CheckoutItems";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { CheckoutPaymentMethods, checkoutPaymentReason, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
-import { forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
+import { checkoutPaymentStatusPath, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -94,8 +94,7 @@ export default function CheckoutPage() {
     const resumePayment = () => {
       const previous = readPaymentProof();
       if (!previous || previous.settled) return false;
-      const path = window.location.pathname.replace(/\/+$/, "");
-      window.location.replace(`${path}/payment?attempt=${encodeURIComponent(previous.id)}`);
+      window.location.replace(checkoutPaymentStatusPath(locale, previous.id));
       return true;
     };
     if (resumePayment()) return;
@@ -137,7 +136,7 @@ export default function CheckoutPage() {
       controller.abort();
       window.removeEventListener("pageshow", resumePayment);
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -308,13 +307,11 @@ export default function CheckoutPage() {
     return reason ? checkoutPaymentReason(reason, limits, ar) : undefined;
   };
   const paymentReady = method === "cod" || !describePayment(method);
-  const paymentStatusPath = (id: string) => `${ar ? "/ar" : ""}/checkout/payment?attempt=${encodeURIComponent(id)}`;
-
   const placeOrder = async () => {
     if (submitting.current || !valid || !paymentReady || step !== "payment") return;
     const previous = readPaymentProof();
     if (previous && !previous.settled) {
-      window.location.assign(paymentStatusPath(previous.id));
+      window.location.assign(checkoutPaymentStatusPath(locale, previous.id));
       return;
     }
     submitting.current = true;
@@ -378,7 +375,7 @@ export default function CheckoutPage() {
     });
     const j = await res.json().catch(() => null);
     if (attempt && (res.ok || res.status >= 500)) {
-      window.location.assign(res.ok && j?.url ? j.url : paymentStatusPath(attempt.id));
+      window.location.assign(res.ok && j?.url ? j.url : checkoutPaymentStatusPath(locale, attempt.id));
       return;
     }
     if (attempt) forgetPaymentProof(attempt.id);
@@ -411,7 +408,7 @@ export default function CheckoutPage() {
     }
     } catch {
       if (paymentStarted && attempt) {
-        window.location.assign(paymentStatusPath(attempt.id));
+        window.location.assign(checkoutPaymentStatusPath(locale, attempt.id));
         return;
       }
       haptic("error");

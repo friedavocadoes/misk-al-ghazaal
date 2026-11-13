@@ -15,16 +15,19 @@ import { OrderReceived, type ReceivedOrder } from "./OrderReceived";
 
 type Receipt = { state: "paid"; order: ReceivedOrder; loggedIn: boolean; cartOwnerMatches: boolean };
 type Status = Receipt | { state: "sandbox_paid"; total: number; chargeId?: string }
-  | { state: "pending" | "unavailable" | "failed" | "sandbox_reconfigured"; url?: string };
+  | { state: "pending" | "retry" | "unavailable" | "failed" | "sandbox_reconfigured"; url?: string; canRestartSandbox?: boolean; awaitingConfirmation?: boolean };
 
 export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale; id: string; chargeId?: string }) {
   const ar = locale === "ar";
   const [status, setStatus] = useState<Status | null>(null);
   const [checking, setChecking] = useState(true);
   const [check, setCheck] = useState(0);
+  const [restarting, setRestarting] = useState(false);
+  const [restartFailed, setRestartFailed] = useState(false);
   const { lines, checkoutReady, clear } = useCart();
 
   useEffect(() => {
+    if (restarting) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     const proof = readPaymentProof();
@@ -39,7 +42,8 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
       }
       try {
         const response = await fetch("/api/checkout/payment/status", {
-          method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+          method: "POST", headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
           body: JSON.stringify({ attempt: { id: attemptId, key: proof.key }, tap_id: chargeId }),
         });
         const result = await response.json();
@@ -66,12 +70,19 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
           setChecking(false);
           return;
         }
-        setStatus({ state: "pending", url: result.url });
-        // A payment link can be opened again while the same charge is initiated.
-        if (result.url && !chargeId) remaining = 0;
+        if (result.state === "pending" && result.url && !chargeId) {
+          window.location.replace(result.url);
+          return;
+        }
+        setStatus({
+          state: result.state === "pending" ? "pending" : "retry",
+          url: result.url, canRestartSandbox: result.canRestartSandbox,
+          awaitingConfirmation: result.awaitingConfirmation ?? (result.hasCharge || Boolean(chargeId)),
+        });
+        if (result.url) remaining = 0;
       } catch {
         if (controller.signal.aborted) return;
-        setStatus({ state: "pending" });
+        setStatus({ state: "retry", awaitingConfirmation: Boolean(chargeId) });
       }
       setChecking(false);
       if (remaining > 0) timer = setTimeout(() => void verify(remaining - 1), 4000);
@@ -79,7 +90,28 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
 
     void verify(5);
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [check, id, chargeId]);
+  }, [check, id, chargeId, restarting]);
+
+  async function restartSandbox() {
+    const proof = readPaymentProof();
+    if (!proof || (id && proof.id !== id)) return;
+    setRestarting(true);
+    setRestartFailed(false);
+    try {
+      const response = await fetch("/api/checkout/payment/status", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(12000),
+        body: JSON.stringify({ attempt: { id: proof.id, key: proof.key }, restart: true }),
+      });
+      const result = await response.json();
+      if (!response.ok || result.state !== "sandbox_restart") throw new Error("Sandbox restart unavailable");
+      forgetPaymentProof(proof.id);
+      window.location.replace(ar ? "/ar/checkout" : "/checkout");
+    } catch {
+      setRestartFailed(true);
+      setRestarting(false);
+    }
+  }
 
   useEffect(() => {
     if (status?.state !== "paid" || !checkoutReady) return;
@@ -113,7 +145,9 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
     : state === "sandbox_reconfigured" ? (ar ? "ارجع إلى صفحة الدفع وابدأ دفعة تجريبية جديدة." : "Return to checkout to start a new test payment.")
     : state === "unavailable" ? (ar ? "افتح صفحة الدفع من نفس علامة التبويب التي بدأت منها العملية." : "Open the payment status from the tab where you started checkout.")
     : checking ? (ar ? "جارٍ التحقق من الدفعة مع Tap Payments…" : "Checking your payment with Tap Payments…")
-    : (ar ? "ننتظر تأكيد الدفعة. يمكنك التحقق من الحالة مرة أخرى." : "We’re waiting for payment confirmation. You can check again here.");
+    : status?.awaitingConfirmation ? (ar ? "لم نتمكن من تأكيد نتيجة الدفع بعد. تحقق من الحالة مرة أخرى." : "We haven’t verified the payment outcome yet. Check again for an update.")
+    : status?.url ? (ar ? "يمكنك متابعة الدفع على صفحة Tap." : "Continue to Tap to complete your payment.")
+    : (ar ? "تعذر فتح رابط الدفع من Tap. يمكنك إعادة محاولة فتحه." : "The Tap payment link couldn’t be opened. You can retry opening it.");
 
   return <section className="mx-auto max-w-xl px-5 py-16 text-center">
     <h1 className="font-display text-3xl text-ink md:text-4xl">{title}</h1>
@@ -122,11 +156,15 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
     </p>
     <div className="mt-6 flex flex-wrap justify-center gap-3">
       {status?.state === "pending" && status.url && <Button asChild><a href={status.url} referrerPolicy="no-referrer">{ar ? "متابعة الدفع" : "Resume payment"}</a></Button>}
-      {state === "pending" && <Button variant="outline" disabled={checking} onClick={() => { setChecking(true); setCheck(n => n + 1); }}>
-        {ar ? "التحقق من حالة الدفع" : "Check payment status"}
+      {(state === "pending" || state === "retry") && <Button variant="outline" disabled={checking || restarting} onClick={() => { setChecking(true); setCheck(n => n + 1); }}>
+        {status?.awaitingConfirmation || status?.url ? (ar ? "التحقق من حالة الدفع" : "Check payment status") : (ar ? "إعادة محاولة فتح صفحة الدفع" : "Retry opening Tap")}
+      </Button>}
+      {(state === "pending" || state === "retry") && status?.canRestartSandbox && <Button variant="outline" disabled={restarting} onClick={restartSandbox}>
+        {ar ? "بدء دفعة تجريبية جديدة" : "Start a new test payment"}
       </Button>}
       {(state === "failed" || state === "sandbox_reconfigured") && <Button asChild><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>}
-      {state === "unavailable" && <Button asChild variant="outline"><Link href="/cart">{ar ? "عرض الحقيبة" : "View your bag"}</Link></Button>}
+      {(state === "unavailable" || state === "pending" || state === "retry") && <Button asChild variant="outline"><Link href="/cart">{ar ? "عرض الحقيبة" : "View your bag"}</Link></Button>}
     </div>
+    {restartFailed && <p role="alert" className="mt-4 text-sm text-espresso">{ar ? "تعذر بدء اختبار جديد. تحقق من تسجيل الدخول ثم أعد المحاولة." : "Couldn’t start a new test. Check your staff sign-in and try again."}</p>}
   </section>;
 }

@@ -66,7 +66,7 @@ export type TapCharge = {
 export const validChargeId = (id: unknown): id is string => typeof id === "string" && /^chg_[a-zA-Z0-9_-]{1,100}$/.test(id);
 
 export class TapRequestError extends Error {
-  constructor(readonly rejected: boolean) { super("Tap request failed"); }
+  constructor(readonly rejected: boolean, readonly httpStatus: number, readonly code?: string) { super("Tap request failed"); }
 }
 
 async function tapRequest(config: TapConfig, path: string, payload?: object, locale = "en") {
@@ -79,7 +79,12 @@ async function tapRequest(config: TapConfig, path: string, payload?: object, loc
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !validChargeId(result?.id)) {
-    throw new TapRequestError(Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)));
+    const code = String(result?.errors?.[0]?.code ?? "");
+    throw new TapRequestError(
+      Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)),
+      response.status,
+      /^\d{1,6}$/.test(code) ? code : undefined,
+    );
   }
   return result as TapCharge;
 }

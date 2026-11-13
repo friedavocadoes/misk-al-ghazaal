@@ -29,7 +29,7 @@ type Attempt = {
   order_data: OrderData; lines: Line[];
   context: { profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
 };
-type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null };
+type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null; awaitingConfirmation?: boolean };
 
 export function checkoutPaymentProof(value: unknown): PaymentProof | null {
   const proof = value as Partial<PaymentProof> | null;
@@ -85,7 +85,10 @@ async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt
   const { data, error } = await db.rpc(attempt.sandbox_staff_id ? "tap_checkout_update_sandbox" : "tap_checkout_update", {
     p_id: attempt.id, p_charge: id, p_state: state, p_url: url ?? null,
   });
-  if (error) throw new Error("Unable to reconcile Tap payment");
+  if (error) {
+    console.error("Tap checkout persistence failed", { attempt: attempt.id, code: error.code });
+    throw new Error("Unable to reconcile Tap payment");
+  }
   const result = data as PaymentResult & { created: boolean };
   if (attempt.sandbox_staff_id) return result;
   if (result.state !== "pending") after(() => refreshCheckoutStock(attempt.lines.map(({ slug }) => slug)));
@@ -123,7 +126,7 @@ async function applyCharge(attempt: Attempt, charge: TapCharge, config: TapConfi
   if (bound.state !== "pending") return bound;
   if (charge.status === "CAPTURED") return updateAttempt(attempt, charge.id, "paid");
   if (failedStatuses.has(charge.status)) return updateAttempt(attempt, charge.id, "failed");
-  return { state: "pending", url };
+  return { state: "pending", url, awaitingConfirmation: !["INITIATED", "PENDING"].includes(charge.status) };
 }
 
 export async function continueCheckoutPayment(attempt: Attempt, config: TapConfig, returnedId?: string): Promise<PaymentResult> {
@@ -144,6 +147,9 @@ export async function continueCheckoutPayment(attempt: Attempt, config: TapConfi
       customer: { first_name: first, last_name: last.join(" ") || undefined, email: email || undefined, phone: number },
     });
   } catch (error) {
+    if (error instanceof TapRequestError) console.warn("Tap charge creation failed", {
+      attempt: attempt.id, sandbox: !attempt.live_mode, status: error.httpStatus, code: error.code,
+    });
     if (error instanceof TapRequestError && error.rejected) return updateAttempt(attempt, null, "failed");
     throw error;
   }

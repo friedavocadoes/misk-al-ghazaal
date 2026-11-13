@@ -41,6 +41,10 @@ export const PAYMENT_ATTEMPT_KEY = "misk-tap-attempt";
 export type PaymentProof = { id: string; key: string };
 export type BrowserPayment = PaymentProof & { bag?: string; coupon?: string; samples?: string; settled?: boolean };
 
+export function checkoutPaymentStatusPath(locale: string, id: string) {
+  return `${locale === "ar" ? "/ar" : ""}/checkout/payment?attempt=${encodeURIComponent(id)}`;
+}
+
 export function paymentBag(lines: { productSlug: string; variantId?: string; qty: number }[]) {
   return JSON.stringify(lines.map(line => JSON.stringify([line.productSlug, line.variantId ?? null, line.qty])).sort());
 }

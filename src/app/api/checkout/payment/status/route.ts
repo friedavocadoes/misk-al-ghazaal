@@ -10,20 +10,30 @@ export async function POST(req: Request) {
   if (!proof) {
     return Response.json({ state: "unavailable" }, { status: 400, headers });
   }
-  if (!config || req.headers.get("origin") !== config.origin) {
-    return Response.json({ state: "pending" }, { status: 503, headers });
+  if (req.headers.get("origin") !== new URL(req.url).origin) {
+    return Response.json({ state: "unavailable" }, { status: 403, headers });
   }
 
+  let canRestartSandbox = false;
+  let hasCharge = false;
   try {
-    const sandboxStaffId = config.staffSandbox ? (await getAdminSession())?.userId : undefined;
-    if (config.staffSandbox && !sandboxStaffId) return Response.json({ state: "unavailable" }, { status: 403, headers });
     const attempt = await findCheckoutAttempt(proof);
     if (!attempt) return Response.json({ state: "missing" }, { status: 404, headers });
-    if ((attempt.sandbox_staff_id ?? undefined) !== sandboxStaffId) {
-      return Response.json({ state: "unavailable" }, { status: 403, headers });
+    const sandboxStaffId = attempt.sandbox_staff_id;
+    if (sandboxStaffId) {
+      if ((await getAdminSession())?.userId !== sandboxStaffId) {
+        return Response.json({ state: "unavailable" }, { status: 403, headers });
+      }
+      canRestartSandbox = !attempt.live_mode;
+      if (body.restart === true && canRestartSandbox) return Response.json({ state: "sandbox_restart" }, { headers });
+      if (!config || sandboxConfigChanged(attempt, config)) {
+        return Response.json({ state: "sandbox_reconfigured" }, { headers });
+      }
     }
-    if (sandboxConfigChanged(attempt, config)) {
-      return Response.json({ state: "sandbox_reconfigured" }, { headers });
+    if (body.restart === true) return Response.json({ state: "unavailable" }, { status: 409, headers });
+    hasCharge = Boolean(attempt.charge_id);
+    if (!config || req.headers.get("origin") !== config.origin) {
+      return Response.json({ state: "retry", canRestartSandbox, hasCharge }, { status: 503, headers });
     }
     const result = await continueCheckoutPayment(attempt, config, validChargeId(body.tap_id) ? body.tap_id : undefined);
     if (result.state === "paid") {
@@ -33,8 +43,9 @@ export async function POST(req: Request) {
       const receipt = result.order_id ? await checkoutPaymentReceipt(result.order_id) : null;
       return Response.json(receipt ? { state: "paid", ...receipt } : { state: "unavailable", settled: true }, { headers });
     }
-    return Response.json({ state: result.state, url: result.url }, { headers });
-  } catch {
-    return Response.json({ state: "pending" }, { status: 503, headers });
+    return Response.json({ state: result.state, url: result.url, canRestartSandbox, awaitingConfirmation: result.awaitingConfirmation }, { headers });
+  } catch (error) {
+    console.warn("Tap checkout status check failed", { attempt: proof.id, error: error instanceof Error ? error.name : "unknown" });
+    return Response.json({ state: "retry", canRestartSandbox, hasCharge }, { status: 503, headers });
   }
 }

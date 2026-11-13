@@ -109,6 +109,8 @@ test("the deployed sandbox exposes payment options and results only to the initi
   let staff = null;
   let reads = 0;
   let changed = false;
+  let providerFails = false;
+  let owner = "staff-1";
   const options = load("src/app/api/checkout/payment/options/route.ts", {
     "@/lib/tap": { tapConfig: () => config },
     "@/lib/admin-auth": { getAdminSession: async () => staff },
@@ -126,23 +128,35 @@ test("the deployed sandbox exposes payment options and results only to the initi
     "@/lib/admin-auth": { getAdminSession: async () => staff },
     "@/lib/checkout-tap": {
       checkoutPaymentProof: () => ({ id: "test" }),
-      findCheckoutAttempt: async () => ({ sandbox_staff_id: "staff-1", order_data: { total: 100 } }),
+      findCheckoutAttempt: async () => ({ sandbox_staff_id: owner, order_data: { total: 100 } }),
       sandboxConfigChanged: () => changed,
-      continueCheckoutPayment: async () => ({ state: "paid", charge_id: "chg_TEST" }),
+      continueCheckoutPayment: async () => {
+        if (providerFails) throw new Error("Tap unavailable");
+        return { state: "paid", charge_id: "chg_TEST" };
+      },
       checkoutPaymentReceipt: () => assert.fail("Sandbox must not create a real receipt"),
     },
-  }, {}, { Response });
-  const check = () => status.POST(new Request("https://store.example/api/checkout/payment/status", {
-    method: "POST", headers: { origin: config.origin }, body: "{}",
+  }, {}, { Response, console: { warn() {} } });
+  const check = (body = {}, origin = config.origin) => status.POST(new Request("https://store.example/api/checkout/payment/status", {
+    method: "POST", headers: { origin }, body: JSON.stringify(body),
   }));
   staff = null;
   assert.equal((await check()).status, 403);
   staff = { userId: "staff-2" };
   assert.equal((await check()).status, 403);
+  assert.equal((await check({ restart: true })).status, 403);
   staff = { userId: "staff-1" };
+  assert.equal((await check({ restart: true }, "https://other.example")).status, 403);
   assert.deepEqual(await (await check()).json(), { state: "sandbox_paid", total: 100, chargeId: "chg_TEST" });
+  providerFails = true;
+  const retry = await check();
+  assert.equal(retry.status, 503);
+  assert.deepEqual(await retry.json(), { state: "retry", canRestartSandbox: true, hasCharge: false });
+  assert.deepEqual(await (await check({ restart: true })).json(), { state: "sandbox_restart" });
   changed = true;
   assert.deepEqual(await (await check()).json(), { state: "sandbox_reconfigured" });
+  owner = null;
+  assert.equal((await check({ restart: true })).status, 409);
 });
 
 test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, currency, reference or mode", async () => {
