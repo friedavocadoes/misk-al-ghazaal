@@ -63,6 +63,13 @@ export const PAGES: Record<
     eyebrowAr: "مختارات",
     html: "<p>The latest seasonal drops from the maison.</p>",
   },
+  privacy: {
+    title: "Privacy Policy",
+    titleAr: "سياسة الخصوصية",
+    eyebrow: "Client Care",
+    eyebrowAr: "خدمة العملاء",
+    html: "",
+  },
   terms: {
     title: "Returns & Terms",
     titleAr: "الإرجاع والشروط",

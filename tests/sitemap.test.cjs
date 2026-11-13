@@ -8,14 +8,14 @@ function generator(enabled=true,rules=[]){
   '@/lib/store':{getProducts:async()=>[{slug:'oud',images:['/oud.jpg']},{slug:'edition',lineupSlug:'originales',images:[]}],getCollections:async()=>[{slug:'all'},{slug:'originales'},{slug:'holy-odh'}]},
   '@/lib/site-url':{getSitemapOrigin:()=> 'https://shop.test'},
   '@/lib/supabase/public':{createPublicClient:()=>({from:()=>({select:async()=>({data:rules})})})},
-  '@/lib/info-pages':{PAGES:{about:{},contact:{},wishlist:{},sitemap:{}}},
+  '@/lib/info-pages':load('src/lib/info-pages.ts'),
   '@/features/originales/config':{ORIGINALES_ENABLED:enabled,isOriginales:p=>enabled&&p.lineupSlug==='originales',originalesPath:p=>'/originales/'+p.slug},
  }).default;
 }
 test('sitemap contains public destinations with reciprocal language alternates and actual article dates',async()=>{
  const rows=await generator()(),urls=rows.map(row=>row.url);
  assert.equal(new Set(urls).size,urls.length);
- for(const path of ['/collection/all','/find-your-scent','/gifts','/private-label','/locate-us','/pages/about','/originales/edition','/posts/journal/ritual']){
+ for(const path of ['/collection/all','/find-your-scent','/gifts','/private-label','/locate-us','/pages/about','/pages/privacy','/originales/edition','/posts/journal/ritual']){
   assert.ok(urls.includes('https://shop.test'+path),path);
   assert.ok(urls.includes('https://shop.test/ar'+path),path);
  }
