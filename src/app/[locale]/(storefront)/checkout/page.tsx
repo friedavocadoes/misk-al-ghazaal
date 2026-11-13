@@ -29,8 +29,8 @@ import { cn } from "@/lib/utils";
 import { addressIsSupported, addressSummary, type SavedAddress } from "@/lib/saved-address";
 import { CheckoutItems } from "@/components/blocks/CheckoutItems";
 import { whatsappPhone } from "@/lib/whatsapp-shared";
-import { CheckoutPaymentMethods, checkoutPaymentReason, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
-import { checkoutPaymentStatusPath, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
+import { CheckoutPaymentMethods, checkoutPaymentReason, tapMerchantMismatchMessage, useCheckoutPaymentOptions } from "@/components/blocks/CheckoutPaymentMethods";
+import { checkoutPaymentStatusPath, forgetPaymentProof, paymentBag, paymentRestriction, readPaymentProof, PAYMENT_ATTEMPT_KEY, TAP_MERCHANT_MISMATCH, type BrowserPayment, type CheckoutMethod, type TapMethod } from "@/lib/checkout-payment";
 
 const inputCls =
   "w-full rounded-[2px] border border-ink/20 bg-white px-4 py-3 text-sm text-ink placeholder:text-fog focus:border-gold focus:outline-none";
@@ -273,6 +273,7 @@ export default function CheckoutPage() {
 
   const friendlyError = (raw: unknown): string => {
     const msg = typeof raw === "string" ? raw : "";
+    if (msg === TAP_MERCHANT_MISMATCH) return tapMerchantMismatchMessage(ar);
     if (msg.startsWith("coupon:")) return msg === "coupon:min" ? t("couponMin") : t("couponBad");
     if (msg.startsWith("referral:")) return t("referralBad");
     if (msg.startsWith("delivery:")) return t("deliveryNo");

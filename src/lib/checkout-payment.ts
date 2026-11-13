@@ -7,6 +7,7 @@ export type CheckoutMethod = "cod" | TapMethod;
 export type PaymentLimits = { min: number; max?: number };
 export type PaymentOptions = Partial<Record<TapMethod, PaymentLimits>>;
 export type PaymentRestriction = "unavailable" | "minimum" | "maximum" | "uae" | "mobile" | "apple";
+export const TAP_MERCHANT_MISMATCH = "payment:merchant_mismatch";
 
 export function isTapMethod(value: unknown): value is TapMethod {
   return TAP_METHODS.some((method) => method === value);

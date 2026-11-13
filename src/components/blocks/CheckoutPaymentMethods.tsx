@@ -40,6 +40,11 @@ export function checkoutPaymentReason(reason: PaymentRestriction, limits: Paymen
   }
 }
 
+export function tapMerchantMismatchMessage(ar: boolean) {
+  return ar ? "مفتاح Tap التجريبي ومعرّف التاجر مرتبطان بحسابين مختلفين. صحّح بيانات Tap في إعدادات النشر ثم أعد المحاولة."
+    : "The Tap test secret and Merchant ID belong to different accounts. Update the Tap credentials in your deployment and try again.";
+}
+
 const onlineMethods = {
   card: { en: "Credit or debit card", ar: "بطاقة ائتمان أو خصم", images: ["visa", "mastercard"] },
   apple_pay: { en: "Apple Pay", ar: "Apple Pay", images: ["apple-pay"] },

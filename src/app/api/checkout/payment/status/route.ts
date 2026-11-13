@@ -1,6 +1,7 @@
 import { checkoutPaymentProof, checkoutPaymentReceipt, continueCheckoutPayment, findCheckoutAttempt, sandboxConfigChanged } from "@/lib/checkout-tap";
 import { tapConfig, validChargeId } from "@/lib/tap";
 import { getAdminSession } from "@/lib/admin-auth";
+import { TAP_MERCHANT_MISMATCH } from "@/lib/checkout-payment";
 
 export async function POST(req: Request) {
   const headers = { "Cache-Control": "no-store" };
@@ -45,6 +46,9 @@ export async function POST(req: Request) {
     }
     return Response.json({ state: result.state, url: result.url, canRestartSandbox, awaitingConfirmation: result.awaitingConfirmation }, { headers });
   } catch (error) {
+    if (error instanceof Error && error.message === TAP_MERCHANT_MISMATCH) {
+      return Response.json({ state: "merchant_mismatch", canRestartSandbox }, { status: 409, headers });
+    }
     console.warn("Tap checkout status check failed", { attempt: proof.id, error: error instanceof Error ? error.name : "unknown" });
     return Response.json({ state: "retry", canRestartSandbox, hasCharge }, { status: 503, headers });
   }

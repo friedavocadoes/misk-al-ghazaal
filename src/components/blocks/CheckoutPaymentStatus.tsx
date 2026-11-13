@@ -12,10 +12,11 @@ import { formatAED } from "@/lib/utils";
 import { readSamples } from "@/lib/sample-tiers";
 import { Button } from "@/components/ui/button";
 import { OrderReceived, type ReceivedOrder } from "./OrderReceived";
+import { tapMerchantMismatchMessage } from "./CheckoutPaymentMethods";
 
 type Receipt = { state: "paid"; order: ReceivedOrder; loggedIn: boolean; cartOwnerMatches: boolean };
 type Status = Receipt | { state: "sandbox_paid"; total: number; chargeId?: string }
-  | { state: "pending" | "retry" | "unavailable" | "failed" | "sandbox_reconfigured"; url?: string; canRestartSandbox?: boolean; awaitingConfirmation?: boolean };
+  | { state: "pending" | "retry" | "unavailable" | "failed" | "sandbox_reconfigured" | "merchant_mismatch"; url?: string; canRestartSandbox?: boolean; awaitingConfirmation?: boolean };
 
 export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale; id: string; chargeId?: string }) {
   const ar = locale === "ar";
@@ -72,6 +73,11 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
         }
         if (result.state === "pending" && result.url && !chargeId) {
           window.location.replace(result.url);
+          return;
+        }
+        if (result.state === "merchant_mismatch" && result.canRestartSandbox) {
+          setStatus({ state: "merchant_mismatch", canRestartSandbox: true });
+          setChecking(false);
           return;
         }
         setStatus({
@@ -142,6 +148,7 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
     : state === "unavailable" ? (ar ? "تعذر عرض حالة الدفع" : "Payment status unavailable")
     : (ar ? "حالة الدفع" : "Payment status");
   const detail = state === "failed" ? (ar ? "يمكنك العودة إلى صفحة الدفع واختيار طريقة أخرى." : "Return to checkout to try again or choose another payment method.")
+    : state === "merchant_mismatch" ? tapMerchantMismatchMessage(ar)
     : state === "sandbox_reconfigured" ? (ar ? "ارجع إلى صفحة الدفع وابدأ دفعة تجريبية جديدة." : "Return to checkout to start a new test payment.")
     : state === "unavailable" ? (ar ? "افتح صفحة الدفع من نفس علامة التبويب التي بدأت منها العملية." : "Open the payment status from the tab where you started checkout.")
     : checking ? (ar ? "جارٍ التحقق من الدفعة مع Tap Payments…" : "Checking your payment with Tap Payments…")
@@ -159,7 +166,7 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
       {(state === "pending" || state === "retry") && <Button variant="outline" disabled={checking || restarting} onClick={() => { setChecking(true); setCheck(n => n + 1); }}>
         {status?.awaitingConfirmation || status?.url ? (ar ? "التحقق من حالة الدفع" : "Check payment status") : (ar ? "إعادة محاولة فتح صفحة الدفع" : "Retry opening Tap")}
       </Button>}
-      {(state === "pending" || state === "retry") && status?.canRestartSandbox && <Button variant="outline" disabled={restarting} onClick={restartSandbox}>
+      {status?.canRestartSandbox && <Button variant="outline" disabled={restarting} onClick={restartSandbox}>
         {ar ? "بدء دفعة تجريبية جديدة" : "Start a new test payment"}
       </Button>}
       {(state === "failed" || state === "sandbox_reconfigured") && <Button asChild><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>}

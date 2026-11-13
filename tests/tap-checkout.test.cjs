@@ -124,6 +124,7 @@ test("the deployed sandbox exposes payment options and results only to the initi
   assert.equal((await (await options.GET()).json()).sandbox, true);
 
   const status = load("src/app/api/checkout/payment/status/route.ts", {
+    "@/lib/checkout-payment": eligibility,
     "@/lib/tap": { tapConfig: () => config, validChargeId: () => false },
     "@/lib/admin-auth": { getAdminSession: async () => staff },
     "@/lib/checkout-tap": {
@@ -184,12 +185,18 @@ test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, c
       updates.push(params.p_state);
       return { data: { state: params.p_state, order_id: params.p_state === "paid" ? "order-id" : null, created: false } };
     } }) },
-  });
+  }, {}, { console: { warn() {} } });
   for (const wrong of [{ amount: 10 }, { currency: "USD" }, { live_mode: true }, { reference: { order: "wrong" } }]) {
     retrieved = { ...charge, ...wrong };
     await assert.rejects(service.continueCheckoutPayment(attempt, config), /does not match/);
   }
   assert.deepEqual(updates, []);
+  retrieved = { ...charge, merchant: { id: "68095203" } };
+  await assert.rejects(service.continueCheckoutPayment(attempt, config), /payment:merchant_mismatch/);
+  assert.deepEqual(updates, []);
+  retrieved = { ...charge, status: "IN_PROGRESS", transaction: { url: "https://checkout.tap.company/example" } };
+  assert.equal((await service.continueCheckoutPayment(attempt, config)).url, "https://checkout.tap.company/example");
+  updates.length = 0;
   retrieved = charge;
   const result = await service.continueCheckoutPayment(attempt, config);
   assert.deepEqual(updates, ["pending", "paid"]);

@@ -4,7 +4,7 @@ import { whatsappPhone } from "@/lib/whatsapp-shared";
 import { getOrderAccessPath, rememberOrderAccess } from "@/lib/order-access";
 import { refreshCheckoutStock, saveCheckoutCustomer, type CheckoutProfileInput } from "@/lib/checkout-effects";
 import { findCheckoutAttempt, startCheckoutPayment, continueCheckoutPayment, checkoutPaymentProof } from "@/lib/checkout-tap";
-import { isTapMethod, paymentRestriction, tapPhone } from "@/lib/checkout-payment";
+import { isTapMethod, paymentRestriction, tapPhone, TAP_MERCHANT_MISMATCH } from "@/lib/checkout-payment";
 import { tapConfig } from "@/lib/tap";
 import { getAdminSession } from "@/lib/admin-auth";
 import { recordPurchase } from "@/lib/analytics/server";
@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/service";
 import { quoteBag, type BagLine } from "@/lib/pricing";
 
 export async function POST(req: Request) {
+  let sandboxStaffId: string | undefined;
   try {
     const body = (await req.json()) as CheckoutProfileInput & {
       checkout_terms_version?: string;
@@ -43,7 +44,6 @@ export async function POST(req: Request) {
     }
     const payment = method === "cod" ? null : tapConfig();
     const proof = method === "cod" ? null : checkoutPaymentProof(body.payment_attempt);
-    let sandboxStaffId: string | undefined;
     if (method !== "cod") {
       if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
         return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
@@ -208,6 +208,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";
+    if (msg === TAP_MERCHANT_MISMATCH && sandboxStaffId) return NextResponse.json({ error: msg }, { status: 409 });
     const status = msg === "checkout:price" ? 409 : /stock|invalid|empty|required|unknown|coupon|referral|min|delivery|unavailable/i.test(msg) ? 400 : 500;
     return NextResponse.json({ error: msg }, { status });
   }

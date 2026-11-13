@@ -7,7 +7,7 @@ import { analyticsSession, recordCheckoutPurchase } from "./analytics/server";
 import { refreshCheckoutStock, saveCheckoutCustomer, type CheckoutProfileInput } from "./checkout-effects";
 import { getOrderAccessPath, rememberOrderAccess } from "./order-access";
 import { processTelegramQueue } from "./telegram";
-import { tapPhone, type PaymentProof, type TapMethod } from "./checkout-payment";
+import { TAP_MERCHANT_MISMATCH, tapPhone, type PaymentProof, type TapMethod } from "./checkout-payment";
 import { createTapCharge, retrieveTapCharge, tapConfig, tapPaymentUrl, TapRequestError, type TapCharge, type TapConfig } from "./tap";
 
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
@@ -113,20 +113,24 @@ async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt
 async function applyCharge(attempt: Attempt, charge: TapCharge, config: TapConfig): Promise<PaymentResult> {
   const merchant = charge.merchant?.id || charge.merchant_id;
   if (!matchesConfig(attempt, config) || charge.live_mode !== attempt.live_mode || charge.currency !== "AED" ||
-      charge.amount !== attempt.order_data.total || charge.reference?.order !== attempt.id ||
-      charge.reference?.transaction !== attempt.id || (config.merchant && merchant && String(merchant) !== config.merchant) ||
+      Number(charge.amount) !== Number(attempt.order_data.total) || charge.reference?.order !== attempt.id ||
+      charge.reference?.transaction !== attempt.id ||
       (attempt.charge_id && attempt.charge_id !== charge.id)) {
     throw new Error("Tap charge does not match checkout attempt");
   }
+  if (config.merchant && merchant && String(merchant) !== config.merchant) {
+    console.warn("Tap returned a different merchant", { attempt: attempt.id, expected: config.merchant, actual: String(merchant) });
+    throw new Error(TAP_MERCHANT_MISMATCH);
+  }
 
-  const url = charge.status === "INITIATED"
-    ? tapPaymentUrl(charge.transaction?.url, attempt.method) ?? tapPaymentUrl(attempt.payment_url ?? undefined, attempt.method)
-    : undefined;
+  const terminal = charge.status === "CAPTURED" || failedStatuses.has(charge.status);
+  const url = terminal ? undefined : tapPaymentUrl(charge.transaction?.url, attempt.method)
+    ?? (charge.status === "INITIATED" ? tapPaymentUrl(attempt.payment_url ?? undefined, attempt.method) : undefined);
   const bound = await updateAttempt(attempt, charge.id, "pending", url);
   if (bound.state !== "pending") return bound;
   if (charge.status === "CAPTURED") return updateAttempt(attempt, charge.id, "paid");
   if (failedStatuses.has(charge.status)) return updateAttempt(attempt, charge.id, "failed");
-  return { state: "pending", url, awaitingConfirmation: !["INITIATED", "PENDING"].includes(charge.status) };
+  return { state: "pending", url, awaitingConfirmation: !url && !["INITIATED", "PENDING"].includes(charge.status) };
 }
 
 export async function continueCheckoutPayment(attempt: Attempt, config: TapConfig, returnedId?: string): Promise<PaymentResult> {
