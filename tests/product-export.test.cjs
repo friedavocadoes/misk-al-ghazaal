@@ -28,6 +28,8 @@ const products = [
     id: "1",
     title: "=2+2",
     slug: "amber",
+    compare_at: 250,
+    price: 199.5,
     is_active: true,
     lineups: null,
     product_notes: [
@@ -41,13 +43,15 @@ const products = [
     id: "2",
     title: "Lazvaro",
     slug: "originales-lazvaro",
+    compare_at: null,
+    price: 200,
     is_active: false,
     lineups: { slug: "originales" },
     product_notes: [],
   },
 ];
 for (const origin of ["http://localhost:3000", "https://preview.example.com"])
-  test(`Excel round trip preserves sheets, notes and full links for ${origin}`, async () => {
+  test(`Excel round trip preserves sheets, notes, prices and full links for ${origin}`, async () => {
     const data = await productWorkbook(products, origin),
       book = new ExcelJS.Workbook();
     await book.xlsx.load(data);
@@ -69,6 +73,14 @@ for (const origin of ["http://localhost:3000", "https://preview.example.com"])
     assert.equal(enabled.getCell("C2").value, "Lemon, Bergamot");
     assert.equal(enabled.getCell("D2").value, "Rose");
     assert.equal(enabled.getCell("E2").value, "Oud");
+    for (const sheet of [enabled, disabled]) {
+      assert.equal(sheet.getCell("F1").value, "Before price (AED)");
+      assert.equal(sheet.getCell("G1").value, "Listed price (AED)");
+    }
+    assert.equal(enabled.getCell("F2").value, 250);
+    assert.equal(enabled.getCell("G2").value, 199.5);
+    assert.equal(disabled.getCell("F2").value, "-nil");
+    assert.equal(disabled.getCell("G2").value, 200);
     assert.equal(enabled.views[0].ySplit, 1);
   });
 test("empty catalog still has both usable header sheets", async () => {
@@ -101,7 +113,9 @@ test("export paginates all products and uses the browser origin behind a proxy",
   const pages = [];
   let captured;
   const query = {
-    select() {
+    select(columns) {
+      assert.match(columns, /\bcompare_at\b/);
+      assert.match(columns, /\bprice\b/);
       return query;
     },
     is(field, value) {

@@ -5,6 +5,8 @@ export type ExportProduct = {
   id: string;
   title: string;
   slug: string;
+  compare_at: number | null;
+  price: number;
   is_active?: boolean | null;
   lineups: { slug: string } | { slug: string }[] | null;
   product_notes: {
@@ -33,6 +35,18 @@ export async function productWorkbook(
       { header: "Top notes", key: "top", width: 35 },
       { header: "Heart notes", key: "heart", width: 35 },
       { header: "Base notes", key: "base", width: 35 },
+      {
+        header: "Before price (AED)",
+        key: "beforePrice",
+        width: 22,
+        style: { numFmt: "0.00" },
+      },
+      {
+        header: "Listed price (AED)",
+        key: "listedPrice",
+        width: 22,
+        style: { numFmt: "0.00" },
+      },
     ];
     for (const product of products.filter(
       (p) => (p.is_active !== false) === active,
@@ -59,6 +73,8 @@ export async function productWorkbook(
         top: notes("top"),
         heart: notes("heart"),
         base: notes("base"),
+        beforePrice: product.compare_at ?? "-nil",
+        listedPrice: product.price,
       });
       row.alignment = { vertical: "top", wrapText: true };
       row.height = 42;
@@ -69,7 +85,7 @@ export async function productWorkbook(
     }
     sheet.autoFilter = {
       from: { row: 1, column: 1 },
-      to: { row: Math.max(1, sheet.rowCount), column: 5 },
+      to: { row: Math.max(1, sheet.rowCount), column: sheet.columnCount },
     };
     sheet.getRow(1).height = 28;
     sheet.getRow(1).eachCell((cell) => {

@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       const { data, error } = await sb
         .from("products")
         .select(
-          "id,title,slug,is_active,lineups(slug),product_notes(kind,position,notes(name))",
+          "id,title,slug,is_active,compare_at,price,lineups(slug),product_notes(kind,position,notes(name))",
         )
         .is("deleted_at", null)
         .order("title")
