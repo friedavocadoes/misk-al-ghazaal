@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Film, Loader2, Upload } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 export function HeroVideoUploader({
   onUploaded,
   onBusyChange,
@@ -17,11 +18,13 @@ export function HeroVideoUploader({
     [error, setError] = useState("");
   const request = useRef<XMLHttpRequest | null>(null),
     mounted = useRef(true);
+  const controller = useRef<AbortController | null>(null);
   useEffect(() => {
     mounted.current = true;
     return () => {
       mounted.current = false;
       request.current?.abort();
+      controller.current?.abort();
     };
   }, []);
   async function pick(file: File) {
@@ -34,29 +37,39 @@ export function HeroVideoUploader({
     setProgress(0);
     setStage("upload");
     onBusyChange?.(true);
+    const abort = new AbortController();
+    controller.current = abort;
+    let sourcePath: string | undefined;
     try {
-      const data = await new Promise<{ src: string; poster: string }>(
+      const prepared = await fetch("/api/admin/hero-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "prepare", size: file.size, contentType: file.type }),
+        signal: abort.signal,
+      });
+      const upload = await prepared.json();
+      if (!prepared.ok) throw new Error(upload.error || "Could not prepare video upload.");
+      sourcePath = upload.sourcePath;
+      if (!sourcePath || !upload.signedUrl) throw new Error("Could not prepare video upload.");
+      if (!mounted.current) return;
+      await new Promise<void>(
         (resolve, reject) => {
           const xhr = new XMLHttpRequest();
           request.current = xhr;
-          xhr.open("POST", "/api/admin/hero-video");
-        xhr.timeout = 300000;
+          xhr.open("PUT", upload.signedUrl);
+          xhr.timeout = 300000;
           xhr.upload.onprogress = (e) => {
             if (mounted.current && e.lengthComputable)
               setProgress(Math.round((e.loaded / e.total) * 100));
           };
-          xhr.upload.onload = () => {
-            if (mounted.current) setStage("process");
-          };
           xhr.onload = () => {
             try {
-            let body:{error?:string;src?:string;poster?:string}={};
-            try{body=JSON.parse(xhr.responseText);}catch{/* Hosting errors may return HTML. */}
-            if(xhr.status===413)throw new Error("This host rejected the file size. Try a smaller source video.");
+              let body: { error?: string; message?: string } = {};
+              try { body = JSON.parse(xhr.responseText); } catch { /* Storage may return a non-JSON error. */ }
+              if (xhr.status === 413) throw new Error("Supabase rejected the file size. Check the banners bucket's maximum file size.");
               if (xhr.status < 200 || xhr.status >= 300)
-              throw new Error(body.error || "Video upload or processing failed. Try a smaller source video.");
-            if(!body.src||!body.poster)throw new Error("Video processing returned no artwork. Please try again.");
-            resolve({src:body.src,poster:body.poster});
+                throw new Error(body.message || body.error || "Video upload failed. Check the banners bucket's allowed video types.");
+              resolve();
             } catch (e) {
               reject(e);
             }
@@ -71,11 +84,23 @@ export function HeroVideoUploader({
             );
           xhr.onabort = () => reject(new Error("Upload cancelled."));
           const form = new FormData();
-          form.set("file", file);
-          form.set("device", device);
+          form.set("cacheControl", "0");
+          form.set("", file);
           xhr.send(form);
         },
       );
+      if (!mounted.current) return;
+      request.current = null;
+      setStage("process");
+      const response = await fetch("/api/admin/hero-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourcePath, device }),
+        signal: AbortSignal.any([abort.signal, AbortSignal.timeout(180000)]),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Video processing failed.");
+      if (!data.src || !data.poster) throw new Error("Video processing returned no artwork. Please try again.");
       if (!mounted.current) return;
       setStage("save");
       await onUploaded(data.src, data.poster);
@@ -83,6 +108,15 @@ export function HeroVideoUploader({
       if (mounted.current)
         setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
+      if (sourcePath) {
+        try {
+          const { error: cleanupError } = await createClient().storage.from("banners").remove([sourcePath]);
+          if (cleanupError) console.error("Hero source cleanup failed", cleanupError);
+        } catch (cleanupError) {
+          console.error("Hero source cleanup failed", cleanupError);
+        }
+      }
+      controller.current = null;
       request.current = null;
       if (mounted.current) {
         setStage("");
