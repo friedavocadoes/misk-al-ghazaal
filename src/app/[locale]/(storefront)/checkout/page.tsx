@@ -315,8 +315,9 @@ export default function CheckoutPage() {
   const paymentReady = method === "cod" || !describePayment(method);
   const hosted = hostedMethod === method;
   const fieldsReady = !sdk || (method !== "card" && method !== "apple_pay") || hosted || (fieldStatus?.method === method && fieldStatus.status === "ready");
-  const placeOrder = async (appleToken?: string) => {
-    if (submitting.current || !valid || !paymentReady || !fieldsReady || step !== "payment") return;
+  const hostedFallback = Boolean(sdk && method === "card" && !hosted && fieldStatus?.method === method && fieldStatus.status === "unavailable");
+  const placeOrder = async (appleToken?: string, useHosted = hosted) => {
+    if (submitting.current || !valid || !paymentReady || (!fieldsReady && !useHosted) || step !== "payment") return;
     const previous = readPaymentProof();
     if (previous && !previous.settled) {
       window.location.assign(checkoutPaymentStatusPath(locale, previous.id));
@@ -333,9 +334,9 @@ export default function CheckoutPage() {
     let attempt: BrowserPayment | undefined;
     let paymentStarted = false;
     try {
-    const token = sdk && !hosted && method === "card" ? await cardFields.current?.tokenize()
-      : sdk && !hosted && method === "apple_pay" ? appleToken : undefined;
-    if (sdk && !hosted && (method === "card" || method === "apple_pay") && !token) {
+    const token = sdk && !useHosted && method === "card" ? await cardFields.current?.tokenize()
+      : sdk && !useHosted && method === "apple_pay" ? appleToken : undefined;
+    if (sdk && !useHosted && (method === "card" || method === "apple_pay") && !token) {
       setOrderError(ar ? "أكمل بيانات الدفع الآمن أولاً." : "Complete the secure payment details first.");
       return;
     }
@@ -363,7 +364,7 @@ export default function CheckoutPage() {
         checkout_terms_version: CHECKOUT_TERMS_VERSION,
         payment_method: method,
         ...(token ? { payment_token: token } : {}),
-        ...(hosted ? { payment_ui: "hosted" } : {}),
+        ...(useHosted ? { payment_ui: "hosted" } : {}),
         ...(attempt ? { payment_attempt: { id: attempt.id, key: attempt.key }, expected_total: quote.total, locale } : {}),
         customer_name: name,
         phone,
@@ -435,7 +436,7 @@ export default function CheckoutPage() {
         return;
       }
       haptic("error");
-      setOrderError(sdk && !hosted && (method === "card" || method === "apple_pay")
+      setOrderError(sdk && !useHosted && (method === "card" || method === "apple_pay")
         ? (ar ? "تحقق من بيانات الدفع الآمن وأعد المحاولة." : "Check the secure payment details and try again.")
         : (ar ? "تعذر إرسال الطلب. يرجى المحاولة مرة أخرى." : "Couldn’t send your order. Please try again."));
     }
@@ -834,14 +835,21 @@ export default function CheckoutPage() {
           <div className="mt-auto shrink-0">
             {orderError && <p role="alert" className="mb-2 text-xs font-semibold text-[#9c2b2e]">{orderError}</p>}
             {quoteFailure && <p role="alert" className="mb-2 text-xs text-[#9c2b2e]">{quoteFailure} <button type="button" className="underline" onClick={() => setQuoteAttempt(n => n + 1)}>{ar ? "إعادة المحاولة" : "Retry pricing"}</button></p>}
+            {step === "payment" && sdk && method === "card" && !hosted && !fieldsReady && <p role="status" className="mb-2 text-xs leading-5 text-espresso">
+              {hostedFallback
+                ? (ar ? "تعذر تحميل نموذج البطاقة هنا. يمكنك إدخال بيانات البطاقة على صفحة Tap الآمنة." : "The card form couldn’t load here. Continue on Tap’s secure page to enter your card details.")
+                : fieldStatus?.method === method && fieldStatus.status === "invalid"
+                  ? (ar ? "أكمل بيانات البطاقة في نموذج الدفع لتفعيل زر الدفع." : "Complete your card details in the payment form to enable Pay.")
+                  : (ar ? "جارٍ تحميل نموذج البطاقة الآمن…" : "Loading the secure card form…")}
+            </p>}
             {step === "delivery" ? (
               <Button className="w-full" size="lg" disabled={!deliveryComplete || stockIssues.length > 0} onClick={() => goToStep("payment")}>
                 {ar ? "المتابعة إلى الدفع" : "Continue to payment"}
               </Button>
             ) : (
             <StockCheckoutGuard issues={stockIssues}>
-              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || !paymentReady || !fieldsReady || placing || Boolean(sdk && !hosted && method === "apple_pay")} onClick={() => void placeOrder()}>
-                {hosted ? (ar ? "المتابعة إلى الدفع الآمن" : "Continue to secure payment") : sdk && method === "apple_pay" ? (ar ? "استخدم زر Apple Pay" : "Use the Apple Pay button") : method === "cod"
+              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || !paymentReady || (!fieldsReady && !hostedFallback) || placing || Boolean(sdk && !hosted && method === "apple_pay")} onClick={() => void placeOrder(undefined, hosted || hostedFallback)}>
+                {hostedFallback ? (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…") : (ar ? "المتابعة على Tap" : "Continue on Tap")) : hosted ? (ar ? "المتابعة إلى الدفع الآمن" : "Continue to secure payment") : sdk && method === "apple_pay" ? (ar ? "استخدم زر Apple Pay" : "Use the Apple Pay button") : method === "cod"
                   ? (placing ? t("placing") : t("placeOrder"))
                   : (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…")
                     : (ar ? `${sandbox ? "اختبار دفع" : "ادفع"} ${formatAED(quote?.total ?? 0)}` : `${sandbox ? "Test payment" : "Pay"} ${formatAED(quote?.total ?? 0)}`))}
