@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       const receipt = result.order_id ? await checkoutPaymentReceipt(result.order_id) : null;
       return Response.json(receipt ? { state: "paid", ...receipt } : { state: "unavailable", settled: true }, { headers });
     }
-    return Response.json({ state: result.state, url: result.url, canRestartSandbox, awaitingConfirmation: result.awaitingConfirmation }, { headers });
+    return Response.json({ state: result.state, url: result.url, canRestartSandbox, awaitingConfirmation: result.awaitingConfirmation, failureReason: result.failureReason }, { headers });
   } catch (error) {
     if (error instanceof Error && error.message === TAP_MERCHANT_MISMATCH) {
       return Response.json({ state: "merchant_mismatch", canRestartSandbox }, { status: 409, headers });

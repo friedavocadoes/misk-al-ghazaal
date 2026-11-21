@@ -25,15 +25,25 @@ type Attempt = {
   id: string; method: TapMethod; merchant_id: string; live_mode: boolean; origin: string; locale: "en" | "ar";
   created_at: string; state: "pending" | "paid" | "failed"; charge_id: string | null; order_id: string | null;
   payment_url: string | null;
+  failure_reason?: string | null;
   sandbox_staff_id?: string | null;
   order_data: OrderData; lines: Line[];
-  context: { sandbox?: boolean; token?: string; profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
+  context: { sandbox?: boolean; token?: string; hosted?: boolean; profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
 };
 export function isSandboxAttempt(attempt: Attempt) {
   return !attempt.live_mode && (Boolean(attempt.sandbox_staff_id) || attempt.context?.sandbox === true);
 }
 
-type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null; awaitingConfirmation?: boolean };
+type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null; awaitingConfirmation?: boolean; failureReason?: string | null };
+
+async function recordPaymentFailure(attempt: Attempt, code: string, reason: string) {
+  try {
+    const { error } = await createAdminClient().rpc("tap_checkout_record_failure", { p_id: attempt.id, p_code: code, p_reason: reason });
+    if (error) console.warn("Tap failure details could not be saved", { attempt: attempt.id, code: error.code });
+  } catch {
+    console.warn("Tap failure details could not be saved", { attempt: attempt.id });
+  }
+}
 
 export function checkoutPaymentProof(value: unknown): PaymentProof | null {
   const proof = value as Partial<PaymentProof> | null;
@@ -50,7 +60,7 @@ export async function findCheckoutAttempt(proof: PaymentProof) {
 
 export async function startCheckoutPayment(
   req: Request, config: TapConfig, proof: PaymentProof, method: TapMethod, order: OrderData,
-  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar", token?: string,
+  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar", token?: string, hosted = false,
 ) {
   const db = createAdminClient();
   const common = {
@@ -67,7 +77,7 @@ export async function startCheckoutPayment(
   }
   const session = await analyticsSession(req, false, 0, order.user_id).catch(() => null);
   const { data, error } = await db.rpc("tap_checkout_begin", {
-    ...common, p_live: config.live, p_order: order, p_lines: lines, p_context: { profile, session, ...(token ? { token } : {}) },
+    ...common, p_live: config.live, p_order: order, p_lines: lines, p_context: { profile, session, hosted, ...(token ? { token } : {}) },
   });
   if (error) throw new Error(error.message);
   after(() => refreshCheckoutStock(lines.map(({ slug }) => slug)));
@@ -132,18 +142,23 @@ async function applyCharge(attempt: Attempt, charge: TapCharge, config: TapConfi
   const bound = await updateAttempt(attempt, charge.id, "pending", url);
   if (bound.state !== "pending") return bound;
   if (charge.status === "CAPTURED") return updateAttempt(attempt, charge.id, "paid");
-  if (failedStatuses.has(charge.status)) return updateAttempt(attempt, charge.id, "failed");
+  if (failedStatuses.has(charge.status)) {
+    const reason = /merchant.code|channel.partner|not enabled|not supported/i.test(charge.gateway?.response?.message ?? "")
+      ? "method_unavailable" : "declined";
+    await recordPaymentFailure(attempt, charge.gateway?.response?.code ?? charge.response?.code ?? charge.status, reason);
+    return { ...await updateAttempt(attempt, charge.id, "failed"), failureReason: reason };
+  }
   return { state: "pending", url, awaitingConfirmation: !url && !["INITIATED", "PENDING"].includes(charge.status) };
 }
 
 export async function continueCheckoutPayment(attempt: Attempt, config: TapConfig, returnedId?: string): Promise<PaymentResult> {
   if (!matchesConfig(attempt, config)) throw new Error("Tap configuration changed during payment");
-  if (attempt.state !== "pending") return { state: attempt.state, order_id: attempt.order_id, charge_id: attempt.charge_id };
+  if (attempt.state !== "pending") return { state: attempt.state, order_id: attempt.order_id, charge_id: attempt.charge_id, failureReason: attempt.failure_reason };
   const chargeId = attempt.charge_id ?? returnedId;
   if (chargeId) return applyCharge(attempt, await retrieveTapCharge(config, chargeId), config);
   // Tap's idempotency window is 24 hours. Leave uncertain older attempts for reconciliation.
   if (Date.now() - Date.parse(attempt.created_at) >= 23 * 3600_000) return { state: "pending" };
-  if (config.live && (attempt.method === "card" || attempt.method === "apple_pay") && !attempt.context.token) {
+  if (config.live && (attempt.method === "card" || attempt.method === "apple_pay") && !attempt.context.token && !attempt.context.hosted) {
     throw new Error("Secure payment token missing");
   }
   const { customer_name: name, phone, email, total } = attempt.order_data;
@@ -160,7 +175,11 @@ export async function continueCheckoutPayment(attempt: Attempt, config: TapConfi
     if (error instanceof TapRequestError) console.warn("Tap charge creation failed", {
       attempt: attempt.id, sandbox: !attempt.live_mode, status: error.httpStatus, code: error.code,
     });
-    if (error instanceof TapRequestError && error.rejected) return updateAttempt(attempt, null, "failed");
+    if (error instanceof TapRequestError && error.rejected) {
+      const reason = error.methodUnavailable ? "method_unavailable" : /^113[0-9]$/.test(error.code ?? "") ? "customer_details" : "provider_error";
+      await recordPaymentFailure(attempt, error.code ?? String(error.httpStatus), reason);
+      return { ...await updateAttempt(attempt, null, "failed"), failureReason: reason };
+    }
     throw error;
   }
   // The Tamara guide shows an abbreviated create response. Use Retrieve a

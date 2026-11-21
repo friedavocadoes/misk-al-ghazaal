@@ -16,7 +16,7 @@ import { tapMerchantMismatchMessage } from "./CheckoutPaymentMethods";
 
 type Receipt = { state: "paid"; order: ReceivedOrder; loggedIn: boolean; cartOwnerMatches: boolean };
 type Status = Receipt | { state: "sandbox_paid"; total: number; chargeId?: string }
-  | { state: "pending" | "retry" | "unavailable" | "failed" | "sandbox_reconfigured" | "merchant_mismatch"; url?: string; canRestartSandbox?: boolean; awaitingConfirmation?: boolean };
+  | { state: "pending" | "retry" | "unavailable" | "failed" | "sandbox_reconfigured" | "merchant_mismatch"; url?: string; canRestartSandbox?: boolean; awaitingConfirmation?: boolean; failureReason?: string };
 
 export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale; id: string; chargeId?: string }) {
   const ar = locale === "ar";
@@ -67,7 +67,7 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
         }
         if (result.state === "failed" || result.state === "sandbox_reconfigured" || result.state === "unavailable" || (result.state === "missing" && remaining === 0)) {
           if (result.state !== "unavailable" || result.settled) forgetPaymentProof(proof.id);
-          setStatus({ state: result.state === "missing" ? "unavailable" : result.state });
+          setStatus({ state: result.state === "missing" ? "unavailable" : result.state, failureReason: result.failureReason });
           setChecking(false);
           return;
         }
@@ -147,7 +147,13 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
     : state === "sandbox_reconfigured" ? (ar ? "تغيّرت إعدادات اختبار Tap" : "Tap sandbox settings changed")
     : state === "unavailable" ? (ar ? "تعذر عرض حالة الدفع" : "Payment status unavailable")
     : (ar ? "حالة الدفع" : "Payment status");
-  const detail = state === "failed" ? (ar ? "يمكنك العودة إلى صفحة الدفع واختيار طريقة أخرى." : "Return to checkout to try again or choose another payment method.")
+  const detail = state === "failed" ? (status?.failureReason === "method_unavailable"
+    ? (ar ? "طريقة الدفع هذه غير متاحة حالياً. ارجع واختر طريقة أخرى." : "This payment method is currently unavailable. Return to checkout and choose another method.")
+    : status?.failureReason === "customer_details"
+      ? (ar ? "تحقق من الاسم الكامل ورقم الهاتف والبريد الإلكتروني في بيانات التوصيل." : "Check your full name, phone and email in delivery details before trying again.")
+    : status?.failureReason === "provider_error"
+      ? (ar ? "تعذر بدء الدفع مع Tap. اختر طريقة أخرى أو حاول لاحقاً." : "Tap couldn’t start this payment. Choose another method or try again later.")
+      : (ar ? "يمكنك العودة إلى صفحة الدفع واختيار طريقة أخرى." : "Return to checkout to try again or choose another payment method."))
     : state === "merchant_mismatch" ? tapMerchantMismatchMessage(ar)
     : state === "sandbox_reconfigured" ? (ar ? "ارجع إلى صفحة الدفع وابدأ دفعة تجريبية جديدة." : "Return to checkout to start a new test payment.")
     : state === "unavailable" ? (ar ? "افتح صفحة الدفع من نفس علامة التبويب التي بدأت منها العملية." : "Open the payment status from the tab where you started checkout.")

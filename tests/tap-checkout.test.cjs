@@ -195,6 +195,47 @@ test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, c
   assert.equal(result.order_id, "order-id");
 });
 
+test("hosted fallback is explicit and provider rejection releases the attempt while retaining diagnostics", async () => {
+  const config = loadTap(tapEnv).tapConfig();
+  const base = {
+    id: "00000000-0000-4000-8000-000000000001", state: "pending", method: "card", merchant_id: config.merchantScope,
+    live_mode: true, origin: config.origin, created_at: new Date().toISOString(), lines: [], context: {},
+    order_data: { total: 100, customer_name: "Test Shopper", phone: "+971501234567", email: "test@example.test" },
+  };
+  for (const [code, reason] of [["1243", "provider_error"], ["1125", "method_unavailable"], ["1137", "customer_details"]]) {
+    let calls = 0;
+    const diagnostics = [];
+    const tap = loadTap(tapEnv, { fetch: async (_url, options) => {
+      calls++;
+      assert.equal(JSON.parse(options.body).source.id, "src_card");
+      return { ok: false, status: 400, json: async () => ({ errors: [{ code }] }) };
+    } });
+    const service = load("src/lib/checkout-tap.ts", {
+      "server-only": {}, "next/server": { after() {} },
+      "./supabase/server": {}, "./analytics/server": {}, "./checkout-effects": {}, "./order-access": {}, "./telegram": {},
+      "./checkout-payment": eligibility, "./tap": tap,
+      "./supabase/service": { createAdminClient: () => ({ rpc: async (name, params) => {
+        if (name === "tap_checkout_record_failure") { diagnostics.push(params); return { error: null }; }
+        assert.equal(name, "tap_checkout_update");
+        assert.equal(params.p_charge, null);
+        assert.equal(params.p_state, "failed");
+        return { data: { state: "failed", created: false } };
+      } }) },
+    }, {}, { console: { warn() {} } });
+    await assert.rejects(service.continueCheckoutPayment(base, config), /Secure payment token missing/);
+    assert.equal(calls, 0);
+    const result = await service.continueCheckoutPayment({ ...base, context: { hosted: true } }, config);
+    assert.equal(result.state, "failed");
+    assert.equal(result.failureReason, reason);
+    assert.equal(calls, 1);
+    assert.equal(diagnostics[0].p_code, code);
+    assert.equal(diagnostics[0].p_reason, reason);
+    const settled = await service.continueCheckoutPayment({ ...base, state: "failed", failure_reason: reason }, config);
+    assert.equal(settled.failureReason, reason);
+    assert.equal(calls, 1);
+  }
+});
+
 test("actual SQL: stock and coupon holds, single paid order on retry, failure release, and COD", { skip: !process.env.ANALYTICS_PGLITE_MODULE }, async () => {
   const { PGlite } = require(process.env.ANALYTICS_PGLITE_MODULE);
   const db = new PGlite();
@@ -230,6 +271,9 @@ test("actual SQL: stock and coupon holds, single paid order on retry, failure re
     const localSql = fs.readFileSync("supabase/migration_tap_local_checkout.sql", "utf8");
     await db.exec(localSql);
     await db.exec(localSql);
+    const diagnosticSql = fs.readFileSync("supabase/migration_tap_failure_details.sql", "utf8");
+    await db.exec(diagnosticSql);
+    await db.exec(diagnosticSql);
     await db.exec("create trigger reserve_order_coupon after insert on orders for each row execute function reserve_order_coupon()");
     await db.query("insert into products(id,slug,price) values($1,'oud',100)", [id(1)]);
     await db.query("insert into variants(id,product_id,price,stock) values($1,$2,100,2)", [id(2), id(1)]);
@@ -280,6 +324,13 @@ test("actual SQL: stock and coupon holds, single paid order on retry, failure re
     await update(6, "chg_FIRST", "pending");
     await assert.rejects(update(6, "chg_WRONG", "paid"), /mismatch/);
     await update(6, "chg_FIRST", "failed");
+    await db.query("select tap_checkout_record_failure($1,'1243','provider_error')", [id(6)]);
+    const failure = (await db.query("select failure_code,failure_reason,order_data from tap_checkout_attempts where id=$1", [id(6)])).rows[0];
+    assert.equal(failure.failure_code, "1243");
+    assert.equal(failure.failure_reason, "provider_error");
+    assert.equal(failure.order_data.customer_name, undefined);
+    assert.equal((await db.query("select has_function_privilege('authenticated','tap_checkout_record_failure(uuid,text,text)','execute') as allowed")).rows[0].allowed, false);
+    assert.equal((await db.query("select has_function_privilege('service_role','tap_checkout_record_failure(uuid,text,text)','execute') as allowed")).rows[0].allowed, true);
     assert.equal(await stock("variants"), 2);
     assert.equal(await stock("samples"), 2);
     assert.equal(await count("coupon_redemptions"), 0);

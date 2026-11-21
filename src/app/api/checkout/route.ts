@@ -33,6 +33,7 @@ export async function POST(req: Request) {
       expected_total?: number;
       locale?: string;
       payment_token?: unknown;
+      payment_ui?: unknown;
     };
     if (body.checkout_terms_version !== CHECKOUT_TERMS_VERSION) {
       return NextResponse.json({ error: "terms:stale" }, { status: 409 });
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
       if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
         return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
       }
-      if (payment.live && (method === "card" || method === "apple_pay") &&
+      if (payment.live && body.payment_ui !== "hosted" && (method === "card" || method === "apple_pay") &&
           (typeof body.payment_token !== "string" || !/^tok_[a-zA-Z0-9_-]{1,150}$/.test(body.payment_token))) {
         return NextResponse.json({ error: "payment:token" }, { status: 400 });
       }
@@ -154,7 +155,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json(await startCheckoutPayment(req, payment, proof, method, orderData, orderLines, {
         address_line: body.address_line, address_building: body.address_building, save_phone: body.save_phone,
-      }, body.locale === "ar" ? "ar" : "en", payment.live && (method === "card" || method === "apple_pay") && typeof body.payment_token === "string" ? body.payment_token : undefined));
+      }, body.locale === "ar" ? "ar" : "en", payment.live && body.payment_ui !== "hosted" && (method === "card" || method === "apple_pay") && typeof body.payment_token === "string" ? body.payment_token : undefined, body.payment_ui === "hosted"));
     }
 
     const committed = await admin.rpc("storefront_checkout_commit", {

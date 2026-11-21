@@ -6,6 +6,8 @@ The server selects the environment from the request origin. Localhost, 127.0.0.1
 
 Apply supabase/migration_tap_local_checkout.sql after migration_tap_checkout.sql and migration_tap_staff_sandbox.sql. The migration allows local test attempts without a staff account and keeps their payment records isolated from orders, inventory, coupon use, analytics purchases and notifications. Test payments keep the cart so they can be repeated. COD still places a real order.
 
+Then apply `supabase/migration_tap_failure_details.sql`. It preserves a numeric provider error code and a safe failure category on the private payment attempt, including when the draft customer data is cleared. Only the service role can record these diagnostics.
+
 ## Local development
 
 Put these variables in .env.local at the repository root, then restart Next.js.
@@ -41,9 +43,13 @@ Keep the same merchant ID if Tap assigned it to both modes. Use the exact canoni
 
 Cards use [Tap Web Card SDK v2](https://developers.tap.company/docs/card-sdk-web-v2) inside our checkout. Card number and CVV are collected by Tap's secure fields. The browser sends only a token to our server. The server recalculates prices, reserves stock and starts the charge with that token. The private attempt records the token for idempotent request recovery and removes it when settled. A bank may require its own 3-D Secure page before returning to our payment status screen.
 
+Tap must register the exact checkout domain for the live public key, including `www`. On the deployed site, the card SDK returned `1220: bundle_id mismatch` before rendering its fields. Changing `TAP_SITE_URL` does not register a domain with Tap. Ask Tap to register `https://www.miskalghazaalperfumes.com` (and the apex domain if it also serves checkout). When the SDK cannot load, checkout offers an explicit hosted-payment alternative; selecting it creates a charge with the documented method source instead of a token. The normal flow remains embedded.
+
 Apple Pay uses the [Tap Apple Pay Web SDK](https://developers.tap.company/docs/apple-pay-web-sdk) button inside checkout. Register every checkout domain with Tap, including www, and host the verification file supplied for your account at /.well-known/apple-developer-merchantid-domain-association. Tap must activate Apple Pay for the live account. The integration passes the current hostname, merchant ID and live public key. Use a supported Apple device and browser for verification.
 
 Tabby and Tamara use their method-specific Tap charge sources and redirect for their approval process. TAP_PAYMENT_METHODS declares the methods activated for your merchant. Tamara requires both confirmed merchant limits. Tabby uses a minimum AED 10, with optional stricter merchant limits. Both pay-later methods require a UAE mobile and UAE delivery address in this AED checkout. Final customer eligibility is decided by the provider.
+
+A production Tabby create request was rejected with HTTP 400 and code `1243` before a charge ID was issued. The public charge error table does not document this code; ask Tap to explain it for the attempt reference and verify live method activation. Tamara activation needs separate confirmation. Adding methods to `TAP_PAYMENT_METHODS` does not activate them at Tap. Until confirmed, use `TAP_PAYMENT_METHODS=card,apple_pay` to disable pay-later options with their existing unavailable explanation.
 
 ## Payment verification and operations
 

@@ -64,6 +64,8 @@ export type TapCharge = {
   live_mode: boolean;
   merchant?: { id?: string };
   merchant_id?: string;
+  response?: { code?: string; message?: string };
+  gateway?: { response?: { code?: string; message?: string } };
   reference?: { transaction?: string; order?: string; gateway?: string; payment?: string };
   transaction?: { url?: string; created?: string };
 };
@@ -71,7 +73,7 @@ export type TapCharge = {
 export const validChargeId = (id: unknown): id is string => typeof id === "string" && /^chg_[a-zA-Z0-9_-]{1,100}$/.test(id);
 
 export class TapRequestError extends Error {
-  constructor(readonly rejected: boolean, readonly httpStatus: number, readonly code?: string) { super("Tap request failed"); }
+  constructor(readonly rejected: boolean, readonly httpStatus: number, readonly code?: string, readonly methodUnavailable = false) { super("Tap request failed"); }
 }
 
 async function tapRequest(config: TapConfig, path: string, payload?: object, locale = "en") {
@@ -89,6 +91,7 @@ async function tapRequest(config: TapConfig, path: string, payload?: object, loc
       Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)),
       response.status,
       /^\d{1,6}$/.test(code) ? code : undefined,
+      code === "1125" || /not enabled|not supported|merchant.code|channel.partner|invalid source|source.*invalid/i.test(String(result?.errors?.[0]?.description ?? "")),
     );
   }
   return result as TapCharge;
