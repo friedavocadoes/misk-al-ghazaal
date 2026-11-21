@@ -48,16 +48,18 @@ export async function POST(req: Request) {
       if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
         return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
       }
-      if (payment.live && body.payment_ui !== "hosted" && (method === "card" || method === "apple_pay") &&
-          (typeof body.payment_token !== "string" || !/^tok_[a-zA-Z0-9_-]{1,150}$/.test(body.payment_token))) {
-        return NextResponse.json({ error: "payment:token" }, { status: 400 });
-      }
       const existing = await findCheckoutAttempt(proof);
       if (existing) {
         if (Boolean(existing.sandbox_staff_id)) {
           return NextResponse.json({ error: "payment:unavailable" }, { status: 403 });
         }
         return NextResponse.json(await continueCheckoutPayment(existing, payment));
+      }
+      // Recovery uses the already-bound charge or the original private token.
+      // A fresh token is required only when starting a new embedded payment.
+      if (payment.live && body.payment_ui !== "hosted" && (method === "card" || method === "apple_pay") &&
+          (typeof body.payment_token !== "string" || !/^tok_[a-zA-Z0-9_-]{1,150}$/.test(body.payment_token))) {
+        return NextResponse.json({ error: "payment:token" }, { status: 400 });
       }
     }
     const name = (body.customer_name ?? "").trim();

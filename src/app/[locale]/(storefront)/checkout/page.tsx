@@ -780,7 +780,7 @@ export default function CheckoutPage() {
           {sdk && !hosted && quote && !quoteLoading && paymentReady && (method === "card" || method === "apple_pay") && (
             <TapPaymentFields key={method} ref={cardFields} config={sdk} method={method} total={quote.total}
               locale={locale} name={name} email={email} phone={phone} disabled={placing || !valid}
-              onAppleToken={token => void placeOrder(token)}
+              onAppleToken={token => placeOrder(token)}
               onStatus={status => setFieldStatus({ method, status })} />
           )}
           {sdk && fieldStatus?.method === method && fieldStatus.status === "unavailable" && !hosted && (

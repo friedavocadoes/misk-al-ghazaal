@@ -91,7 +91,8 @@ async function tapRequest(config: TapConfig, path: string, payload?: object, loc
       Boolean(payload && [400, 422].includes(response.status) && Array.isArray(result?.errors)),
       response.status,
       /^\d{1,6}$/.test(code) ? code : undefined,
-      code === "1125" || /not enabled|not supported|merchant.code|channel.partner|invalid source|source.*invalid/i.test(String(result?.errors?.[0]?.description ?? "")),
+      // 1243 is returned with "Requested payment method not enabled" by Tap.
+      code === "1243" || /not enabled|not supported|merchant.code|channel.partner/i.test(String(result?.errors?.[0]?.description ?? "")),
     );
   }
   return result as TapCharge;
@@ -108,7 +109,8 @@ export function createTapCharge(config: TapConfig, attempt: {
     amount: attempt.amount,
     currency: "AED",
     customer_initiated: true,
-    threeDSecure: true,
+    // Tamara's Charges guide explicitly uses false; card authentication stays enabled.
+    threeDSecure: method !== "tamara",
     save_card: false,
     description: "Misk Al Ghazaal order",
     ...(config.merchant ? { merchant: { id: config.merchant } } : {}),
@@ -136,12 +138,18 @@ export function tapPaymentUrl(url: string | undefined, method: TapMethod = "card
   if (domains.some(domain => parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`))) return parsed.href;
 }
 
-export function verifyTapWebhook(charge: TapCharge, signature: string, secret: string) {
+export function verifyTapWebhook(value: unknown, signature: string, secret: string) {
+  if (!value || typeof value !== "object") return false;
+  const charge = value as TapCharge;
   if (!/^[a-f0-9]{64}$/i.test(signature) || charge.object !== "charge" ||
       !validChargeId(charge.id) || charge.currency !== "AED" || !Number.isFinite(charge.amount) ||
-      typeof charge.status !== "string" || !charge.transaction?.created) return false;
+      typeof charge.status !== "string" ||
+      !["string", "number"].includes(typeof charge.transaction?.created) ||
+      !/^\d+$/.test(String(charge.transaction?.created))) return false;
   const { gateway, payment } = charge.reference ?? {};
-  const payload = `x_id${charge.id}x_amount${charge.amount.toFixed(2)}x_currencyAEDx_gateway_reference${gateway ?? ""}x_payment_reference${payment ?? ""}x_status${charge.status}x_created${charge.transaction.created}`;
+  if ([gateway, payment].some(reference => reference != null &&
+      typeof reference !== "string" && typeof reference !== "number")) return false;
+  const payload = `x_id${charge.id}x_amount${charge.amount.toFixed(2)}x_currencyAEDx_gateway_reference${gateway ?? ""}x_payment_reference${payment ?? ""}x_status${charge.status}x_created${charge.transaction?.created}`;
   const expected = createHmac("sha256", secret).update(payload).digest();
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }

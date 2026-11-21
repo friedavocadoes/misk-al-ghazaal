@@ -19,7 +19,7 @@ declare global {
 export function TapPaymentFields({ config, method, total, locale, name, email, phone, ref, onAppleToken, onStatus, disabled }: {
   config: TapBrowserConfig; method: "card" | "apple_pay"; total: number; locale: "en" | "ar";
   name: string; email: string; phone: string; ref: Ref<TapCardHandle>;
-  onAppleToken: (token: string) => void; disabled: boolean;
+  onAppleToken: (token: string) => Promise<void>; disabled: boolean;
   onStatus: (status: TapFieldStatus) => void;
 }) {
   const id = `tap-${useId().replace(/:/g, "")}`;
@@ -65,19 +65,21 @@ export function TapPaymentFields({ config, method, total, locale, name, email, p
       if (!active) return;
       clearTimeout(watchdog);
       setError(true);
-      report.current(initialized ? "invalid" : "unavailable");
+      report.current(initialized ? (method === "apple_pay" ? "ready" : "invalid") : "unavailable");
       if (pending.current) {
         clearTimeout(pending.current.timer);
         pending.current.reject(new Error("Please check your payment details and try again"));
         pending.current = null;
       }
     };
-    const success = (data: unknown) => {
+    const success = async (data: unknown) => {
       if (!active) return;
       const token = (data as { id?: unknown })?.id;
       if (typeof token !== "string" || !/^tok_[a-zA-Z0-9_-]{1,150}$/.test(token)) { fail(); return; }
       setError(false);
-      if (method === "apple_pay") onToken.current(token);
+      if (method === "apple_pay") {
+        try { await onToken.current(token); } catch { fail(); }
+      }
       else if (pending.current) {
         clearTimeout(pending.current.timer);
         pending.current.resolve(token);
@@ -118,7 +120,9 @@ export function TapPaymentFields({ config, method, total, locale, name, email, p
             features: { supportsCouponCode: false }, customer,
             transaction: { amount: total.toFixed(2), currency: "AED" },
             interface: { locale, theme: "light", type: "pay", edges: "curved" },
-            onReady: () => { if (active) { initialized = true; clearTimeout(watchdog); setReady(true); report.current("ready"); } }, onError: fail, onSuccess: success,
+            onReady: () => { if (active) { initialized = true; clearTimeout(watchdog); setReady(true); report.current("ready"); } },
+            onCancel: () => { if (active && initialized) { setError(false); report.current("ready"); } },
+            onError: fail, onSuccess: success,
           }, id);
         }
       } catch { fail(); }

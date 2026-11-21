@@ -83,8 +83,8 @@ test("Tap receives the selected source and a stable attempt reference, and signs
     } });
   }
   assert.deepEqual(calls.map(call => call.body.source.id), ["src_card", "src_apple_pay", "src_tabby.installement", "src_tamara"]);
-  for (const { body } of calls) {
-    assert.equal(body.threeDSecure, true);
+  for (const [index, { body }] of calls.entries()) {
+    assert.equal(body.threeDSecure, eligibility.TAP_METHODS[index] !== "tamara");
     assert.deepEqual(body.customer.phone, { country_code: "971", number: "501234567" });
   }
   assert.deepEqual(calls[0].body.reference, { order: id, transaction: id, idempotent: id });
@@ -111,6 +111,9 @@ test("Tap receives the selected source and a stable attempt reference, and signs
   assert.equal(tap.verifyTapWebhook(payload, signature, config.secret), true);
   assert.equal(tap.verifyTapWebhook({ ...payload, amount: 101 }, signature, config.secret), false);
   assert.equal(tap.verifyTapWebhook(payload, "bad-signature", config.secret), false);
+  for (const malformed of [null, {}, { ...payload, transaction: { created: {} } }, { ...payload, reference: { payment: {} } }]) {
+    assert.equal(tap.verifyTapWebhook(malformed, signature, config.secret), false);
+  }
 });
 
 test("localhost sandbox requires no staff login and remote checkout returns live SDK public configuration", async () => {
@@ -195,6 +198,75 @@ test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, c
   assert.equal(result.order_id, "order-id");
 });
 
+test("checkout resumes an existing payment without asking for a replacement token", async () => {
+  const config = loadTap(tapEnv).tapConfig();
+  const proof = { id: "fixture", key: "proof" };
+  let attempt = { state: "pending", charge_id: "chg_EXISTING" };
+  let resumed = 0;
+  const route = load("src/app/api/checkout/route.ts", {
+    "@/lib/checkout-terms": { CHECKOUT_TERMS_VERSION: "fixture" },
+    "@/lib/telegram": {}, "@/lib/whatsapp-shared": {}, "@/lib/order-access": {},
+    "@/lib/checkout-effects": {}, "@/lib/analytics/server": {}, "@/lib/supabase/server": {},
+    "@/lib/supabase/service": {}, "@/lib/pricing": {},
+    "@/lib/checkout-payment": eligibility, "@/lib/tap": { tapConfig: () => config },
+    "next/server": { NextResponse: Response },
+    "@/lib/checkout-tap": {
+      checkoutPaymentProof: () => proof,
+      findCheckoutAttempt: async () => attempt,
+      continueCheckoutPayment: async existing => {
+        assert.equal(existing.charge_id, "chg_EXISTING");
+        resumed++;
+        return { state: "pending", url: "https://checkout.tap.company/resume" };
+      },
+    },
+  });
+  const request = () => new Request("https://store.example/api/checkout", {
+    method: "POST", headers: { origin: config.origin },
+    body: JSON.stringify({ checkout_terms_version: "fixture", payment_method: "card", payment_attempt: proof }),
+  });
+  assert.equal((await (await route.POST(request())).json()).url, "https://checkout.tap.company/resume");
+  assert.equal(resumed, 1);
+  attempt = null;
+  const response = await route.POST(request());
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, "payment:token");
+});
+
+test("abbreviated Tamara responses retain the charge ID across a failed Retrieve call", async () => {
+  const config = loadTap(tapEnv).tapConfig();
+  const attempt = {
+    id: "00000000-0000-4000-8000-000000000001", state: "pending", method: "tamara", merchant_id: config.merchantScope,
+    live_mode: true, origin: config.origin, created_at: new Date().toISOString(), lines: [], context: {},
+    order_data: { total: 100, customer_name: "Test Shopper", phone: "+971501234567" },
+  };
+  let creates = 0, retrieves = 0;
+  const states = [];
+  const service = load("src/lib/checkout-tap.ts", {
+    "server-only": {}, "next/server": { after() {} },
+    "./supabase/server": {}, "./analytics/server": {}, "./checkout-effects": {}, "./order-access": {}, "./telegram": {},
+    "./checkout-payment": eligibility,
+    "./tap": { ...loadTap(tapEnv),
+      createTapCharge: async () => { creates++; return { id: "chg_TAMARA", status: "INITIATED" }; },
+      retrieveTapCharge: async () => {
+        if (++retrieves === 1) throw new Error("Network timeout");
+        return { id: "chg_TAMARA", status: "CAPTURED", amount: 100, currency: "AED", live_mode: true,
+          reference: { order: attempt.id, transaction: attempt.id }, merchant: { id: config.merchant } };
+      },
+    },
+    "./supabase/service": { createAdminClient: () => ({ rpc: async (_name, params) => {
+      attempt.charge_id = params.p_charge;
+      states.push(params.p_state);
+      return { data: { state: params.p_state, created: false } };
+    } }) },
+  });
+  await assert.rejects(service.continueCheckoutPayment(attempt, config), /Network timeout/);
+  assert.equal(attempt.charge_id, "chg_TAMARA");
+  assert.equal((await service.continueCheckoutPayment(attempt, config)).state, "paid");
+  assert.equal(creates, 1);
+  assert.equal(retrieves, 2);
+  assert.deepEqual(states, ["pending", "pending", "paid"]);
+});
+
 test("hosted fallback is explicit and provider rejection releases the attempt while retaining diagnostics", async () => {
   const config = loadTap(tapEnv).tapConfig();
   const base = {
@@ -202,7 +274,7 @@ test("hosted fallback is explicit and provider rejection releases the attempt wh
     live_mode: true, origin: config.origin, created_at: new Date().toISOString(), lines: [], context: {},
     order_data: { total: 100, customer_name: "Test Shopper", phone: "+971501234567", email: "test@example.test" },
   };
-  for (const [code, reason] of [["1243", "provider_error"], ["1125", "method_unavailable"], ["1137", "customer_details"]]) {
+  for (const [code, reason] of [["1243", "method_unavailable"], ["1125", "provider_error"], ["1109", "provider_error"], ["1137", "customer_details"]]) {
     let calls = 0;
     const diagnostics = [];
     const tap = loadTap(tapEnv, { fetch: async (_url, options) => {

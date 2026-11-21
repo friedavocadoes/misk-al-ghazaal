@@ -185,6 +185,10 @@ export async function continueCheckoutPayment(attempt: Attempt, config: TapConfi
   // The Tamara guide shows an abbreviated create response. Use Retrieve a
   // Charge when Tap omits the fields needed to match the attempt.
   if (charge.live_mode === undefined || !charge.reference?.order || !charge.reference.transaction) {
+    // Keep the provider ID before a second network call. If Retrieve times out,
+    // recovery must retrieve this charge rather than submit another create.
+    const bound = await updateAttempt(attempt, charge.id, "pending");
+    if (bound.state !== "pending") return bound;
     const retrieved = await retrieveTapCharge(config, charge.id);
     return applyCharge(attempt, {
       ...retrieved,

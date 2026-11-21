@@ -1,0 +1,1555 @@
+{
+  "retrievedAt": "2026-11-21T13:45:57.383Z",
+  "index": "https://developers.tap.company/llms.txt",
+  "coverage": {
+    "indexedPages": 121,
+    "unavailableIndexedPages": [],
+    "totalDiscovered": 143,
+    "successfullyRetrieved": 136,
+    "scope": "All pages in the official index, plus additional first-party links. Web checkout requirements reviewed against implementation; mobile SDKs, POS, marketplace, reporting, recurring payments and plugins do not create requirements for this one-time web checkout."
+  },
+  "findings": [
+    {
+      "topic": "Tamara authentication",
+      "source": "https://developers.tap.company/docs/tamara",
+      "before": "All payment sources used threeDSecure=true.",
+      "after": "Tamara uses false as shown by its integration example. Card authentication stays enabled.",
+      "validation": "Charge payload regression test and direct sandbox request."
+    },
+    {
+      "topic": "Existing checkout retries",
+      "source": "https://developers.tap.company/docs/idempotency",
+      "before": "POST /api/checkout required a browser token before checking the existing attempt.",
+      "after": "An existing proof resumes its charge/private token; only a new embedded checkout requires a new token.",
+      "validation": "Route test resumes a saved charge without a new token and still rejects a new tokenless checkout."
+    },
+    {
+      "topic": "Abbreviated create response",
+      "sources": [
+        "https://developers.tap.company/docs/tamara",
+        "https://developers.tap.company/reference/retrieve-a-charges"
+      ],
+      "before": "A follow-up Retrieve failure could leave the newly created charge ID unrecorded.",
+      "after": "Persist the provider charge ID before Retrieve; retry retrieves that ID. Full amount/mode/currency/reference checks remain required before finalization.",
+      "validation": "Timeout test verifies one Create, two Retrieves and a single paid transition."
+    },
+    {
+      "topic": "Apple Pay callbacks",
+      "source": "https://developers.tap.company/docs/apple-pay-web-sdk",
+      "before": "An SDK error could mark Apple Pay invalid permanently, and the charge callback did not return its promise.",
+      "after": "Cancellation and retry restore availability. The asynchronous token callback awaits checkout submission.",
+      "validation": "Browser SDK simulation verifies cancellation/error recovery and token submission."
+    },
+    {
+      "topic": "Webhook authenticity",
+      "source": "https://developers.tap.company/docs/webhook",
+      "before": "Malformed signed-field structures were not explicitly rejected.",
+      "after": "Reject invalid structures, preserve ISO AED two-decimal HMAC and retrieve the provider charge before reconciliation.",
+      "validation": "Webhook tampering and malformed-input tests; SQL paid-order idempotency test."
+    },
+    {
+      "topic": "Tabby eligibility",
+      "source": "https://developers.tap.company/docs/tabby",
+      "result": "The documented minimum is AED 10 and the phone must include a valid country code. Existing selected-source, minimum and normalized-phone handling verified."
+    },
+    {
+      "topic": "Tamara limits",
+      "source": "https://developers.tap.company/docs/tamara",
+      "result": "The guide does not publish AED minimum/maximum values. Current limits are merchant configuration, not universal Tap requirements. No amounts invented from sample transactions."
+    },
+    {
+      "topic": "Receipt feature",
+      "source": "https://developers.tap.company/reference/create-a-charge",
+      "result": "The current API schema marks receipt unsupported despite older examples containing it. Continue omitting it."
+    },
+    {
+      "topic": "Card and international networks",
+      "sources": [
+        "https://developers.tap.company/docs/cards",
+        "https://developers.tap.company/docs/card-sdk-web-v2"
+      ],
+      "result": "Embedded Card SDK token is passed as source.id, hosted fallback uses src_card, and debit/credit acceptance is ALL. Secret keys stay on the server; no raw card fields enter our API."
+    },
+    {
+      "topic": "Domain-linked public key",
+      "source": "https://developers.tap.company/docs/card-sdk-web-v2",
+      "result": "The current guide requires a key for the registered hosting domain and explicitly states that related subdomains are covered. Earlier claim that www necessarily needs separate card registration corrected."
+    }
+  ],
+  "runtimeObservations": [
+    {
+      "environment": "test",
+      "source": "Direct sandbox Charges API, this project test credentials",
+      "method": "src_card",
+      "threeDSecure": true,
+      "http": 200,
+      "status": "INITIATED",
+      "live_mode": false,
+      "merchantMatches": true,
+      "hasPaymentUrl": true
+    },
+    {
+      "environment": "test",
+      "source": "Direct sandbox Charges API, this project test credentials",
+      "method": "src_tamara",
+      "threeDSecure": true,
+      "http": 400,
+      "code": "1243",
+      "description": "Requested payment method not enabled. Please contact our customer support."
+    },
+    {
+      "environment": "test",
+      "source": "Direct sandbox Charges API, this project test credentials",
+      "method": "src_tamara",
+      "threeDSecure": false,
+      "http": 400,
+      "code": "1109",
+      "description": "Non 3D secure transactions are not allowed"
+    },
+    {
+      "environment": "test",
+      "source": "Direct sandbox Charges API, this project test credentials",
+      "method": "src_tabby.installement",
+      "threeDSecure": true,
+      "http": 400,
+      "code": "1243",
+      "description": "Requested payment method not enabled. Please contact our customer support."
+    },
+    {
+      "environment": "live",
+      "source": "User supplied production log",
+      "method": "src_tabby.installement",
+      "http": 400,
+      "code": "1243",
+      "descriptionAvailable": false
+    },
+    {
+      "environment": "live",
+      "source": "Prior direct browser observation of deployed SDK",
+      "method": "embedded card",
+      "code": "1220",
+      "description": "bundle_id mismatch"
+    }
+  ],
+  "limitations": [
+    "Sandbox requests do not establish live account permissions. No live charge created or completed during this audit.",
+    "The public reference table omits error 1243; its meaning above comes from an actual sandbox API response, not an invented documentation mapping.",
+    "A perfect/live-ready claim requires successful method-specific merchant tests, including Apple Pay hardware and issuer authentication.",
+    "AE delivery and UAE mobile restrictions are current storefront market policy, not a documented universal Tap BNPL restriction."
+  ],
+  "validation": [
+    "Nine automated payment tests including PostgreSQL stock/coupon/finalization tests.",
+    "Browser SDK simulation: card unavailable/fallback, token submission, pay-later retry and Apple Pay cancellation/error recovery."
+  ],
+  "pages": [
+    {
+      "url": "https://developers.tap.company/docs/acceptance-smartpos-for-merchants.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 611,
+      "sha256": "bf956e283e41b164d11f1f9e94c8000291180e3b19a3fbdcabdc657dfa1c3057",
+      "updatedAt": "2026-08-04T13:24:10.000Z",
+      "title": "Acceptance SmartPOS for Merchants",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/acceptance-smartpos-for-platforms.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2503,
+      "sha256": "34a504a4f488cc3581a744073f82ab2f5ca3f14f8c9e1205b0e1380e9ff10f96",
+      "updatedAt": "2026-08-04T12:07:42.000Z",
+      "title": "Acceptance SmartPOS for Platforms",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/accepting-transactions-platforms.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2492,
+      "sha256": "18a349772241b4ee974c2c353b1cbfdd2d389299f6cccfabe9837d7e26a72998",
+      "updatedAt": "2026-07-12T13:15:25.000Z",
+      "title": "Accepting Transactions",
+      "sectionCount": 4
+    },
+    {
+      "url": "https://developers.tap.company/docs/android-card-sdk.md",
+      "status": 404,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 240,
+      "sha256": "e91890e5dacccea41f9ec9e173987d6291cf3d718112053f3965cb22cdb4b951"
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay-csr-cer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3435,
+      "sha256": "b646f066671202c9dd981ed4e9d398e66f0c3b4117b499085be9588adb9bbf0b",
+      "updatedAt": "2025-06-11T23:54:30.000Z",
+      "title": "Apple Pay CSR CER Process",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay-decrypted-payload.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3499,
+      "sha256": "98610813f88c1671dc4abd453dac1845dfce5fd65aa095030e32f98ac30a0f34",
+      "updatedAt": "2025-07-17T05:21:10.000Z",
+      "title": "Apple Pay (Decrypted Payload)",
+      "sectionCount": 1
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7779,
+      "sha256": "220071c0b1643b761f45707d2647569df0f1e367d649527ca5ec60484f60a0a4",
+      "updatedAt": "2026-07-05T14:33:58.000Z",
+      "title": "Apple Pay Token",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay-web-sdk-v20.md",
+      "status": 404,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 240,
+      "sha256": "e91890e5dacccea41f9ec9e173987d6291cf3d718112053f3965cb22cdb4b951"
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay-web-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 26590,
+      "sha256": "e1dc2b6ff726f6489a5948a7125b78843419ab20a3ed1eeb79226159dad0b12a",
+      "updatedAt": "2026-10-28T14:03:41.000Z",
+      "title": "Apple Pay Web SDK",
+      "sectionCount": 9
+    },
+    {
+      "url": "https://developers.tap.company/docs/apple-pay.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2659,
+      "sha256": "81352e7373d98e9533545b368d58fb18ff612a22fec1443ae9fbdc4a84813f47",
+      "updatedAt": "2025-06-11T23:54:29.000Z",
+      "title": "Apple Pay",
+      "sectionCount": 4
+    },
+    {
+      "url": "https://developers.tap.company/docs/authentication.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 12563,
+      "sha256": "b6fea01898828cc54025673fa51b1e8268b9d5064831374c0e75e44e9241b39d",
+      "updatedAt": "2026-03-30T08:17:12.000Z",
+      "title": "Authentication",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/docs/authorize-and-capture.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2197,
+      "sha256": "3c8bcf1e2026177d36c6393a8f39ca5460bf4bd695d5daec3898b3cf9b57499f",
+      "updatedAt": "2025-08-13T20:29:51.000Z",
+      "title": "Authorize and Capture",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/benefit.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7988,
+      "sha256": "2b3e6f1b90295e19892cf0cef7df327f3d35a0d06d05dd8ff8d5329864688a2b",
+      "updatedAt": "2025-06-11T23:54:16.000Z",
+      "title": "Benefit",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/benefitpay-web-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 19309,
+      "sha256": "cd437cc3d68d5cb5681a1940096deb0a6eb8fb349d5f112cb743d424e197b5fa",
+      "updatedAt": "2025-11-26T08:25:35.000Z",
+      "title": "Benefit Pay Web SDK",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-js-library.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6485,
+      "sha256": "2d0ade67d67039974a25a9b28eae083c9d1956c232869e2355636aa1bda8e683",
+      "updatedAt": "2025-06-16T13:04:27.000Z",
+      "title": "Card SDK for Web",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-payments.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1675,
+      "sha256": "93ef83631a151c6a9b764f154c42b337664e2e6bbdf60c25bce94afebee8ae01",
+      "updatedAt": "2025-06-11T23:53:40.000Z",
+      "title": "Card Payments",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-sdk-android.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 57971,
+      "sha256": "e99ec607ea498ee136502fa570c3c8b20b466ccbb29368ffbd5d9bf9b063edc0",
+      "updatedAt": "2025-11-26T09:55:58.000Z",
+      "title": "Card Android SDK",
+      "sectionCount": 25
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-sdk-ios.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 45847,
+      "sha256": "fd9bd499ea5ae429017cbb7e82a729754f98a05604d66fd17b8397f6d00f400a",
+      "updatedAt": "2025-11-26T09:55:44.000Z",
+      "title": "Card-iOS SDK",
+      "sectionCount": 26
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-sdk-web-v1.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 16173,
+      "sha256": "ce1149b579a1451c20090397cbf58160b722441559c00dbcd0c2139e5b5947d0",
+      "updatedAt": "2025-11-05T10:41:41.000Z",
+      "title": "Web Card SDK V1",
+      "sectionCount": 10
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-sdk-web-v2.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 21075,
+      "sha256": "c240308d233e2bb1395aa00ba47d6db80076c11f0eab858620f7f10ed669e9c0",
+      "updatedAt": "2026-10-13T08:13:35.000Z",
+      "title": "Web Card SDK V2",
+      "sectionCount": 13
+    },
+    {
+      "url": "https://developers.tap.company/docs/card-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3805,
+      "sha256": "5c74eb383dcdc14807a9609fa30d0ea18dde22f5fb6367f5ce80a8f70eb3894b",
+      "updatedAt": "2026-10-13T08:11:27.000Z",
+      "title": "Card",
+      "sectionCount": 4
+    },
+    {
+      "url": "https://developers.tap.company/docs/cards.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1685,
+      "sha256": "7ccebded43ca83f06e24f948643fe174271a0b3ea9547abf4c518067a86f12d7",
+      "updatedAt": "2025-06-11T23:53:40.000Z",
+      "title": "Cards",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/checkout-js-library.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 25800,
+      "sha256": "550abcc0928c2c818a3c4f7f1d687783fcc1a6f9e51209c05e26a63cd22909bc",
+      "updatedAt": "2025-06-16T13:03:29.000Z",
+      "title": "Checkout SDK for Web",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/docs/checkout-sdk-flutter.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 37295,
+      "sha256": "698716de3adaba5a13fa469e431c3b5ff90ce75db972179795ad93f545230eeb",
+      "updatedAt": "2025-12-01T08:04:44.000Z",
+      "title": "Checkout Flutter SDK ",
+      "sectionCount": 54
+    },
+    {
+      "url": "https://developers.tap.company/docs/checkout.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 385,
+      "sha256": "326c4da415754599ba014188e1b3675b0621346ebc791a46dd3c4056036eba1e",
+      "updatedAt": "2025-07-16T09:52:15.000Z",
+      "title": "Checkout",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/commerce-platform-reports.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2944,
+      "sha256": "143e3e10102d055252b9e6a2b837a3e20c924133db82c387c4a93a2cb1d23fac",
+      "updatedAt": "2025-06-12T00:05:06.000Z",
+      "title": "Reports for Commerce Platforms",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/creating-a-lead.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2787,
+      "sha256": "aa89fca8b7385f0ac18833d5c739f5e99392a8c58f2fd7d2b230f80782000fd7",
+      "updatedAt": "2025-06-12T00:04:20.000Z",
+      "title": "Creating a Lead",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/docs/creating-a-merchant-account.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3337,
+      "sha256": "818c441393de269afda56bc4f3b15de8f9edba2aa013c41e3c393095f0365021",
+      "updatedAt": "2025-06-12T00:04:21.000Z",
+      "title": "Creating a Merchant Account",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/creating-a-transaction.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1303,
+      "sha256": "5e27e0e7e73a3258d3311a241fde83e63f1548a0a3306653371fa2496068cc5a",
+      "updatedAt": "2025-06-12T00:04:22.000Z",
+      "title": "Creating a Transaction",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/deema.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10203,
+      "sha256": "7f3bddc9f7ef13ab25c46301a4caac310416d139ab7b010a20e9cc3389f55b02",
+      "updatedAt": "2026-10-05T07:39:02.000Z",
+      "title": "Deema",
+      "sectionCount": 12
+    },
+    {
+      "url": "https://developers.tap.company/docs/encrypted-card-flow-pci.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 15255,
+      "sha256": "66f4d3092c4854dfa4bb6b11363f6e1a78fe0b804e099b4470d2ff0478fbd305",
+      "updatedAt": "2025-09-11T08:44:37.000Z",
+      "title": "Encrypted Card Flow (PCI)",
+      "sectionCount": 11
+    },
+    {
+      "url": "https://developers.tap.company/docs/error-handling-testing.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10659,
+      "sha256": "7a50e76d899cbf1f8c5ec447b77d0ca0d71d58b87cc976b1871f1687b712557b",
+      "updatedAt": "2026-07-12T13:15:25.000Z",
+      "title": "Error Handling & Testing",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/fawry.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 905,
+      "sha256": "08f5c1f8ad997c4fc20a30fdfb9273cdb8b3f836412cf45f0b678ac512aae485",
+      "updatedAt": "2025-06-11T23:56:06.000Z",
+      "title": "Fawry",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/flutter-card-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 38257,
+      "sha256": "f8db624c8d322729e0605b65744119c21569c05c873a49408b7f2896f514677c",
+      "updatedAt": "2025-10-07T08:37:28.000Z",
+      "title": "Flutter",
+      "sectionCount": 25
+    },
+    {
+      "url": "https://developers.tap.company/docs/get-started.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 16421,
+      "sha256": "53bd7d6190fbabcdc804cccbf1422b0da376897edea514c7c9fc21e6c527f231",
+      "updatedAt": "2026-03-04T11:53:59.000Z",
+      "title": "Overview",
+      "sectionCount": 11
+    },
+    {
+      "url": "https://developers.tap.company/docs/getting-started.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1157,
+      "sha256": "da7a11ad4f8c981bb747da9b9d776e1ab043215ae916ddb7132214714b43bab2",
+      "updatedAt": "2025-06-11T23:50:06.000Z",
+      "title": "Getting Started",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/google-pay.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 5031,
+      "sha256": "42a6cff54f7b292a3f48f3ac4d4782122f7f4bda90cf270ea2db2f11073eeca1",
+      "updatedAt": "2026-09-07T11:43:38.000Z",
+      "title": "Google Pay",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/idempotency.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4064,
+      "sha256": "5b8ab93366fcd660216e6b2b1c6894b57513a0e000b4c32dcf8d8ac0e2eb5daf",
+      "updatedAt": "2025-06-12T00:04:04.000Z",
+      "title": "Idempotency in Payment Processing",
+      "sectionCount": 1
+    },
+    {
+      "url": "https://developers.tap.company/docs/jaywan.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 13211,
+      "sha256": "6679a0d6eb1366cc83c95535ce3331df598a3cbfa2699c288e80f25ca79b998f",
+      "updatedAt": "2026-11-04T06:58:17.000Z",
+      "title": "Jaywan",
+      "sectionCount": 25
+    },
+    {
+      "url": "https://developers.tap.company/docs/kfast.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1496,
+      "sha256": "ebb5b7da5aa1b29f77112c7a939101aa69a5bb42c28c099a83a47c797e3f8d87",
+      "updatedAt": "2026-07-12T13:20:35.000Z",
+      "title": "KFAST",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/knet.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4523,
+      "sha256": "a2971fdb5b0e27352765320e19cf81850a1aa5eb1aa4081829e2dcbc9608b41d",
+      "updatedAt": "2025-06-16T13:01:25.000Z",
+      "title": "KNET",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/magento.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10837,
+      "sha256": "ee9fde6c3db830b24b323f3199ea3ce49ebd835186cf39cf7f6a4bb3fe1eddbb",
+      "updatedAt": "2025-06-12T00:00:12.000Z",
+      "title": "Magento",
+      "sectionCount": 11
+    },
+    {
+      "url": "https://developers.tap.company/docs/marketplace-getting-started.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3394,
+      "sha256": "588f948934bab6988b4971f709276d090e8301ec72d386d08645c01b45dd6d61",
+      "updatedAt": "2025-11-13T14:10:02.000Z",
+      "title": "Getting Started",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/merchant-initiated-transaction.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 13559,
+      "sha256": "4a03de993d2d064b6408f611a22134b00500823d250e8ebfe1f6df3833f8c129",
+      "updatedAt": "2025-06-16T12:58:22.000Z",
+      "title": "Merchant Initiated Transaction",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/migrating-saved-cards-from-another-payment-provider.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1128,
+      "sha256": "8e2e21c406f9d2ca5155a8be29aa1a6437ae22f2dc1a27c0c7b272ba9dd8313b",
+      "updatedAt": "2026-11-09T14:08:37.000Z",
+      "title": "Migrating Saved Cards from Another Payment Provider",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/migrating-saved-cards-from-stripe-to-tap.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3848,
+      "sha256": "0724137150ef6c57d4dbbb9b23c82a97325d04d30e052a499df950981366df02",
+      "updatedAt": "2026-11-09T14:08:37.000Z",
+      "title": "Migrating Saved Cards from Stripe to Tap",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/omannet.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7823,
+      "sha256": "d9a970266195349a1a36027b08dd583ed6213d3dd1dd02580fb6fc24b00a9041",
+      "updatedAt": "2025-06-11T23:54:15.000Z",
+      "title": "OmanNet",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/overview-of-acceptance-smartpos.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4353,
+      "sha256": "95042645ab768f86a044653690df2b8ea4dafcbea6332948437e638bd6a2bd27",
+      "updatedAt": "2026-08-18T06:48:40.000Z",
+      "title": "Overview of Acceptance SmartPOS",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/docs/payout-report.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10685,
+      "sha256": "973ab6ad415f5b410fb76a9b70f146bb3bdf60d444a786bf9fe696b2965f8bcc",
+      "updatedAt": "2025-06-12T00:05:06.000Z",
+      "title": "Payout Report",
+      "sectionCount": 8
+    },
+    {
+      "url": "https://developers.tap.company/docs/qpay.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7911,
+      "sha256": "87ab4d5c78c1d32c60dcae1e081e8d1a978715b82f0f897b2cd26efaa21faf94",
+      "updatedAt": "2025-06-11T23:56:46.000Z",
+      "title": "NAPS/QPay",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/react-native-card-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 262,
+      "sha256": "88f0c78e6d3938ab4aefb2fa7566a33e22ad9602393fa57684bc0139bda4432c",
+      "updatedAt": "2026-10-13T08:11:28.000Z",
+      "title": "Card React Native SDK",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/recommendations-best-practices.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2185,
+      "sha256": "31922ad641a2ec7bd9917e05dec861055824d295ae5f6f567e6f1056c4ddd7aa",
+      "updatedAt": "2025-06-12T00:04:01.000Z",
+      "title": "Recommendations & Best Practices",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/recurring-payments.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7524,
+      "sha256": "40ed7362fc3145562854ea4f83ba7128096472e138ba48a59731ca81cb54766b",
+      "updatedAt": "2025-06-11T23:52:04.000Z",
+      "title": "Recurring Payments",
+      "sectionCount": 4
+    },
+    {
+      "url": "https://developers.tap.company/docs/redirect.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3777,
+      "sha256": "4101873fb4f72c320f0aacff25c489141952b2d9749781c2d43ecc87fc68f562",
+      "updatedAt": "2025-06-12T00:01:07.000Z",
+      "title": "Redirect",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/reports-concepts.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1577,
+      "sha256": "6da4b7cda6cd8a6b590dce0da8ccd3385889d24251cbb3d97a5fdb020daabe39",
+      "updatedAt": "2025-06-12T00:05:02.000Z",
+      "title": "Reports Download Concepts",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/docs/samsung-pay-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6731,
+      "sha256": "ad575d1245f4b7589f73821b1566b50b23e68e508f5c251bf5c9c539f13b2c0e",
+      "updatedAt": "2025-06-11T23:53:38.000Z",
+      "title": "Samsung Pay",
+      "sectionCount": 12
+    },
+    {
+      "url": "https://developers.tap.company/docs/save-card-use-case-scenarios.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7810,
+      "sha256": "d352a475aa07e3a0f05e833777bd8a075725814ab2b5673c5cd3dabb9c7833af",
+      "updatedAt": "2025-06-12T00:04:03.000Z",
+      "title": "Save Card Use Case Scenarios",
+      "sectionCount": 11
+    },
+    {
+      "url": "https://developers.tap.company/docs/saved-cards.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1361,
+      "sha256": "e0ba2f5cf2ed23a261e1605b8a91bc05ac46405861ff54ca023418c18b6186a9",
+      "updatedAt": "2025-06-11T23:50:48.000Z",
+      "title": "Saved Cards",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/smartpos-for-platforms.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1309,
+      "sha256": "0b390c2480a5c2decb904b71218c12b1e298ea12a5d50de06beaac2a397c1b3b",
+      "updatedAt": "2026-07-12T13:15:25.000Z",
+      "title": "Onboarding Merchants",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/docs/smartpos-onboarding-merchants.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2385,
+      "sha256": "602e8514424d914ba885d141cae72d9d55ca5982aa54983f45e045274c4e7502",
+      "updatedAt": "2026-07-12T13:15:25.000Z",
+      "title": "Onboarding Merchants",
+      "sectionCount": 9
+    },
+    {
+      "url": "https://developers.tap.company/docs/tabby.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2143,
+      "sha256": "74e32a2414cefa87d3a6a74f6b4f5b946ebc891375d0047b907c6a4b5f868e55",
+      "updatedAt": "2025-06-11T23:56:49.000Z",
+      "title": "Tabby",
+      "sectionCount": 4
+    },
+    {
+      "url": "https://developers.tap.company/docs/tamara.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3873,
+      "sha256": "288c7e1904e4934f8227558676baf24b4fa0181bed91097c95ed5303ad59bd26",
+      "updatedAt": "2026-06-02T12:14:37.000Z",
+      "title": "Tamara",
+      "sectionCount": 13
+    },
+    {
+      "url": "https://developers.tap.company/docs/user-access-permissions.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1983,
+      "sha256": "a23d047ed2aed870270e784e46551c8dd212fbbd9948b3781998fdfed422e4d4",
+      "updatedAt": "2025-06-12T00:03:54.000Z",
+      "title": "User Access Permissions",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/docs/web-applepay-sdk.md",
+      "status": 404,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 240,
+      "sha256": "e91890e5dacccea41f9ec9e173987d6291cf3d718112053f3965cb22cdb4b951"
+    },
+    {
+      "url": "https://developers.tap.company/docs/web-card-sdk.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4313,
+      "sha256": "850c092059701940cd895802b3eda5845ca5e826c8cc791e941eb2254fdf0651",
+      "updatedAt": "2026-10-13T08:11:28.000Z",
+      "title": "Web",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/web-v2.md",
+      "status": 404,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 240,
+      "sha256": "e91890e5dacccea41f9ec9e173987d6291cf3d718112053f3965cb22cdb4b951"
+    },
+    {
+      "url": "https://developers.tap.company/docs/webhook.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 17186,
+      "sha256": "d9dc4a4f7255ebdde3604cc016839917bb30a6091a1f91643c1b2bc99a883c5c",
+      "updatedAt": "2026-10-04T06:47:49.000Z",
+      "title": "Webhook",
+      "sectionCount": 6
+    },
+    {
+      "url": "https://developers.tap.company/docs/webhooks-notifications.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6774,
+      "sha256": "8ea16bc6ed6195d22ab45bdca2e60da670d4943038fc77551f3ea15b978a827c",
+      "updatedAt": "2026-08-04T12:09:08.000Z",
+      "title": "Webhooks & Notifications",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/docs/woocommerce.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2762,
+      "sha256": "8f17402041fdf3d92dde3bc22bd7996f2d187f9a4291f447409fb1c218ff87ef",
+      "updatedAt": "2025-07-02T11:47:42.000Z",
+      "title": "Woocommerce",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/reference/authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7413,
+      "sha256": "45f0584a29467696972bf41dab2da8d0225b3295f4aa3814ae6442e85e29205d",
+      "updatedAt": "2025-06-12T00:05:33.000Z",
+      "title": "Authorize",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/reference/business.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 11048,
+      "sha256": "ca8c741dd67c0c5c47bc71e8a64b0a46e476a999ce3ac9cbd20a810ca2b958e5",
+      "updatedAt": "2025-06-12T00:07:15.000Z",
+      "title": "Business",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/reference/cancel-an-intent.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2591,
+      "sha256": "b43287287240aff105ee7aae5fe5e99f1ba477534a36018dc7e651d3bcb2481e",
+      "updatedAt": "2026-07-12T15:04:08.000Z",
+      "title": "Cancel an Intent",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/cards-2.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2693,
+      "sha256": "908a8cd76d096833ab663f5f3e2d9dafd3116dac689928b182c29b57fb3aec1f",
+      "updatedAt": "2025-06-12T00:06:28.000Z",
+      "title": "Cards",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/reference/charge-response-codes.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 14817,
+      "sha256": "f2c19190e6da773853179a2c93be63482fedc369d21e00ad449cfc22a5cebf92",
+      "updatedAt": "2026-01-19T06:59:00.000Z",
+      "title": "Charges Response Codes",
+      "sectionCount": 1
+    },
+    {
+      "url": "https://developers.tap.company/reference/charges.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 14261,
+      "sha256": "c9bd3a809525219886f7be1e0342d329461af0560f6bd49139ecf0282815f12c",
+      "updatedAt": "2026-06-15T11:47:20.000Z",
+      "title": "Charges",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/reference/convert-lead-to-a-retailer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6262,
+      "sha256": "d4f3a5cd54518b340f07896dca1bf5f68f30e54e0fcabf3d0a913d45ba8f8608",
+      "updatedAt": "2025-12-11T11:40:01.000Z",
+      "title": "Create an Account (Retailer)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-business.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 16207,
+      "sha256": "3f917968e64afc5e9524bf06e9be9f1aecd3dec089fdc56d811e8c1d6faa21fd",
+      "updatedAt": "2025-06-12T00:07:17.000Z",
+      "title": "Create a Business",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-charge.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 64033,
+      "sha256": "f7f0e831751c80859dd4ead9670c1aacd37fffa3103dc4d4b62ba9ff3b7f763b",
+      "updatedAt": "2025-06-12T00:06:11.000Z",
+      "title": "Create a Charge",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-connect-url.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 11843,
+      "sha256": "eb62aebfa1cc6b6d9e40bc9c99fd7c75c4c35cb986802b528077282cc6c8553b",
+      "updatedAt": "2025-09-24T13:20:05.000Z",
+      "title": "Create a Connect URL",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-customer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2962,
+      "sha256": "28843484ec9a7eb7eff6b6ccbca766d51ffc49254007ac82f06d5c2ac6ea34b5",
+      "updatedAt": "2025-06-21T11:50:20.000Z",
+      "title": "Create a Customer",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-file.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4003,
+      "sha256": "a394f03f09bf4b8fa067ddc88b33bf4c24422a65528f598664fd0dd72ce01fac",
+      "updatedAt": "2025-06-12T00:07:57.000Z",
+      "title": "Create a File",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-lead-for-retailer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 36488,
+      "sha256": "a013e0c0940016fcb949409b9b711815828f22e83d7b43c5efcceef3a1b37c24",
+      "updatedAt": "2026-06-22T11:39:15.000Z",
+      "title": "Create lead for retailer",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-lead-v3.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 45393,
+      "sha256": "2e3256ee272811a750c947c66182288c3c60559a19bd216d19bbacd1bee9a621",
+      "updatedAt": "2025-12-11T11:21:17.000Z",
+      "title": "Create a Lead (Merchant)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-merchant.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6245,
+      "sha256": "3744ce93ad2640e7acfafe61da6bf12bde44fe0c297dd266ca41a474c8760106",
+      "updatedAt": "2026-06-30T11:14:14.000Z",
+      "title": "Create a Merchant",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-refund.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 15255,
+      "sha256": "903daf3388eddf13e973b9813efaa700b0b304a0392b7e107fff7ce4307c7c8f",
+      "updatedAt": "2025-06-12T00:06:16.000Z",
+      "title": "Create a Refund",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-token-encrypted-card.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 18650,
+      "sha256": "9cdb7203b1449ee9aa3ec4e072ac242d6eead4588cb132daf21c2800f3b83cc6",
+      "updatedAt": "2025-06-12T00:06:23.000Z",
+      "title": "Create a Token (Encrypted Card)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-token-from-saved-card.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 12548,
+      "sha256": "f8cff8624c742ab4b3cd9b8e906699924555fb5a48576b59ef90827b3544dd1a",
+      "updatedAt": "2025-06-12T00:06:24.000Z",
+      "title": "Create a Token (Saved Card)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-token-network-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 7702,
+      "sha256": "75a9b5dcf2cb3b482247a364d6385eaa42aeb9bea869ecc49b43a8ea05c434e3",
+      "updatedAt": "2026-04-13T14:19:41.000Z",
+      "title": "Create a Token (Network Token)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-a-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 18253,
+      "sha256": "651d00a2b030fa945914aaf33bbec66c8af86359957dbf100fbd75636f67e1ae",
+      "updatedAt": "2025-06-12T00:06:21.000Z",
+      "title": "Create a Token (Card)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-an-authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 60903,
+      "sha256": "2b5375102f6592a5cd56511fd4a47d53aeb240642601ad98a174a9b969c1c26e",
+      "updatedAt": "2025-06-12T00:05:33.000Z",
+      "title": "Create an Authorize",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-an-intent.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 35832,
+      "sha256": "db0a2e41f3e5b95f218d0a26d52192fce187f2f23879dceeb2c49a8d9a4c8bc2",
+      "updatedAt": "2026-08-03T09:45:43.000Z",
+      "title": "Create an Intent",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-an-invoice.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 41281,
+      "sha256": "72e9809f480d289c8c8a1281ff280dd0d8bea037be5e9bd3e1c462fc1ea28554",
+      "updatedAt": "2025-06-12T00:06:32.000Z",
+      "title": "Create an Invoice",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-applepay-tap-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 14580,
+      "sha256": "99f768124402d9843611604a9315a41233de7b013544e0731c6033e41a274924",
+      "updatedAt": "2026-06-23T14:22:39.000Z",
+      "title": "Create a Token (Apple Pay token)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/create-samsungpay-token.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2968,
+      "sha256": "c4d469f72a8cdec2a603ac506e18b038f9204d0de52a051af41a2521e8944a6f",
+      "updatedAt": "2025-06-12T00:06:25.000Z",
+      "title": "Create a Token (Samsungpay token)",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/customer-list.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1706,
+      "sha256": "fb03c299a5d257ce710fcb534fb3f404a05313593638d5cd5cd01c3d75649c91",
+      "updatedAt": "2025-06-21T11:50:59.000Z",
+      "title": "List All Customers",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/delete-a-card.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4120,
+      "sha256": "29c94bce1b17b3ac2ee4dce10749b5fb9d232bc49aef81b442e36a77fbd1bcaa",
+      "updatedAt": "2025-06-12T00:06:30.000Z",
+      "title": "Delete a Card",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/destinations.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1643,
+      "sha256": "eb0bb3d0adf2304fd9599f1014bb475d5e3b94ab9545845a9f362c64a6ae9820",
+      "updatedAt": "2025-06-12T00:07:20.000Z",
+      "title": "Destinations",
+      "sectionCount": 2
+    },
+    {
+      "url": "https://developers.tap.company/reference/download-authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 15144,
+      "sha256": "74a148bcf8a39ec03c03b4ee7844e3c5e2423da79702473675312486cd7dcc50",
+      "updatedAt": "2025-06-12T00:05:38.000Z",
+      "title": "Download Authorize",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/download-charges.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 22193,
+      "sha256": "08ce9645267a4ea4adad0ee0414389c414c48388154042aa527d25aaadd3f21c",
+      "updatedAt": "2025-10-05T10:01:24.000Z",
+      "title": "Download Charges",
+      "sectionCount": 9
+    },
+    {
+      "url": "https://developers.tap.company/reference/download-disputes.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10459,
+      "sha256": "015ace60ab86de8c6afafad39b35eeb218e17bf2321e42547f98fd563cf66a57",
+      "updatedAt": "2025-06-12T00:08:28.000Z",
+      "title": "Download Disputes",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/download-payouts.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10408,
+      "sha256": "7a3acb5173f89b610367600ed49b1aa397436daeabd4294294ed0174e8f631e9",
+      "updatedAt": "2025-06-12T00:07:09.000Z",
+      "title": "Download Payouts",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/download-refunds.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 16054,
+      "sha256": "693aef1872696107f58a4ef9b967c33fc28a784aa6a2a45a01915d448a42e210",
+      "updatedAt": "2025-06-12T00:06:18.000Z",
+      "title": "Download Refunds",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/files.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 10320,
+      "sha256": "c5032b6f4360e35269212f8b0a901217a68d8c5a9cdf0eb97dfabae21f88b482",
+      "updatedAt": "2025-06-12T00:07:57.000Z",
+      "title": "Files",
+      "sectionCount": 3
+    },
+    {
+      "url": "https://developers.tap.company/reference/get_new-endpoint-1.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1070,
+      "sha256": "92ab6f9649672fcb7507299963cb98ea1cb3aebba2296a410366811b861bec97",
+      "updatedAt": "2026-10-13T07:12:52.000Z",
+      "title": "New Endpoint",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/get_new-endpoint-2.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1081,
+      "sha256": "b040df5655acd7423c09978819215866868c5b980ad9d179c0393bedb03e975d",
+      "updatedAt": "2026-10-14T18:09:37.000Z",
+      "title": "New Endpoint",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/getting-started-with-your-api-17.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 450,
+      "sha256": "1691070c6390b3f72289d161c597073ad4b0331c362a605f7727787862a67e63",
+      "updatedAt": "2025-06-12T00:08:28.000Z",
+      "title": "Getting Started With Your API",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/getting-started-with-your-api-7.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 430,
+      "sha256": "56ecd5df1107e8b78c0692cc020ae935ed19fc4e928b0b56e23ca9bfcd286edb",
+      "updatedAt": "2025-06-12T00:08:27.000Z",
+      "title": "Getting Started With Your API",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/intents.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 12546,
+      "sha256": "a11494ecb99817f6081f21dec396a3db9a2e2fff4e2212cb4363418a0c51b5db",
+      "updatedAt": "2026-08-06T13:43:47.000Z",
+      "title": "Intents",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/reference/lead.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 2320,
+      "sha256": "2c615b6d83133aec7d8ee2b3217245ee4a837975a2aabc4fb8a2e04ff36e6adc",
+      "updatedAt": "2025-07-31T08:59:07.000Z",
+      "title": "Lead",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 5403,
+      "sha256": "7607ab167b22366b41df43da9b3d78a9164d2e0a0e29b34d7ed5cb579a141e48",
+      "updatedAt": "2025-06-12T00:05:37.000Z",
+      "title": "List All Authorize",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-businesses.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 9650,
+      "sha256": "2996ad9fa01935b5e24e67f2e88bbd7a4a0446d9da22b5512d3d1acce6d8f973",
+      "updatedAt": "2025-06-12T00:07:18.000Z",
+      "title": "List All Businesses",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-cards.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6686,
+      "sha256": "18320a802cd8b0c9d731cb5b1a847c61bb5ab55d4f72c746830dee833b203a75",
+      "updatedAt": "2025-06-12T00:06:30.000Z",
+      "title": "List All Cards",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-charges.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 25585,
+      "sha256": "ff94a65deb48be4bfaa8631589f6d17d51b1b813f6c6d6e3113d7b19f7372c18",
+      "updatedAt": "2026-08-03T10:32:24.000Z",
+      "title": "List all Charges",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-destinations.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3143,
+      "sha256": "b9aabd3b15b399d5ef2b9b39585257cad58122054a649691c52feff6c5920151",
+      "updatedAt": "2025-06-12T00:07:21.000Z",
+      "title": "List All Destinations",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-intents.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 31607,
+      "sha256": "6776825bb26120c9d29ccdf82c73a40e9201e070e95fa29b501e2a51a26fed69",
+      "updatedAt": "2026-07-12T15:04:08.000Z",
+      "title": "List all Intents",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-invoices.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 5035,
+      "sha256": "11359b4d2ceda7d6454c30a9bab542c275aa736fb4174b0d1162281c2eeec04f",
+      "updatedAt": "2025-06-12T00:06:35.000Z",
+      "title": "List all Invoices",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-merchants.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3344,
+      "sha256": "ccbe7762bd5d7212de5cacb7e22b10b43173a7f4eb8c51707e65c95187c1bfdd",
+      "updatedAt": "2025-06-12T00:07:29.000Z",
+      "title": "List All Merchants",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-all-refunds.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 9946,
+      "sha256": "70227872e44602a3d37383b855ee6a5b7e8ba8c249b4a8294b9a0bb67a7de91e",
+      "updatedAt": "2025-06-12T00:06:18.000Z",
+      "title": "List All Refunds",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-destinations-transfers.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 31107,
+      "sha256": "52def5ec5869685d7b0a0b22148aab120f0e53aa564e7753dd0c8c039231cc91",
+      "updatedAt": "2026-11-16T11:21:10.000Z",
+      "title": "List Retailers Transfers",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-payouts.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 11414,
+      "sha256": "f67e1c1954013ea9151884526c53ae91a5235107a71c741e8981050c8840ea19",
+      "updatedAt": "2025-06-12T00:07:08.000Z",
+      "title": "List All Payouts",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/list-retailers-reverse-transfers.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 27393,
+      "sha256": "fff8c34a6806b2261d606d04ac130b2715aaacd5e8ce2abe9905abba81738835",
+      "updatedAt": "2026-11-16T11:21:27.000Z",
+      "title": "List Retailers Reverse Transfers",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/payout.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 778,
+      "sha256": "de4a3471345b912be80a9b1e1bdb345758efb731428bb4c9f8cdea583e2c4cef",
+      "updatedAt": "2025-06-12T00:07:08.000Z",
+      "title": "Payout",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/refunds.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 9972,
+      "sha256": "cb3d7340108048df49058fe080cdda2eb24039db1344207f9d613525f8dd9795",
+      "updatedAt": "2025-06-12T00:06:16.000Z",
+      "title": "Refund",
+      "sectionCount": 7
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-card.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 6815,
+      "sha256": "f39856f96c9a995773ebfd2135361d66e668c92c621cf82f317b27d5c2665592",
+      "updatedAt": "2025-06-12T00:06:28.000Z",
+      "title": "Retrieve a Card",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-charge.md",
+      "status": 404,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 240,
+      "sha256": "e91890e5dacccea41f9ec9e173987d6291cf3d718112053f3965cb22cdb4b951"
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-charges.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 20991,
+      "sha256": "234286d60b245f35969d491e925bbe29d756a89bffb9e8c65e4c9408b1907661",
+      "updatedAt": "2025-06-12T00:06:12.000Z",
+      "title": "Retrieve a Charge",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-customer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1257,
+      "sha256": "c4278292769a3a2ec8687a8db828be34defa96cd4c81b137c6e45a96261085c2",
+      "updatedAt": "2025-06-21T11:50:34.000Z",
+      "title": "Retrieve a Customer ",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-destination.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4263,
+      "sha256": "36b861e684b1844a330b2e18345c18eef7ab0e4f2fa9f84f10a4f79e95d36d8f",
+      "updatedAt": "2025-06-12T00:07:20.000Z",
+      "title": "Retrieve a Destination",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-lead.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 14023,
+      "sha256": "8ddd81f393f85d6ccfcb05dd676097d0b516164362ef201a8164a15d1cc42c1c",
+      "updatedAt": "2026-10-09T07:46:07.000Z",
+      "title": "Retrieve a Lead",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-payout.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 9056,
+      "sha256": "ca175f29851f239ebc8c7b1413d5502518b1fdbf608ac010ae80aefee67fbf02",
+      "updatedAt": "2025-06-12T00:07:08.000Z",
+      "title": "Retrieve a Payout",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-a-refund.md",
+      "status": 429,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 21652,
+      "sha256": "ccd7fdeea6c3ea891ab1fcc58064417f30f868a6caf4817c26159e04a1b44aa7"
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-an-authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 17697,
+      "sha256": "9f86983456e97fe6300f4f9fba8f6c5011f4381c651a00a41a9ffe97d32e30fe",
+      "updatedAt": "2025-06-12T00:05:35.000Z",
+      "title": "Retrieve an Authorize",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/retrieve-an-intent.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 11262,
+      "sha256": "5ff55de06d65aa4397442a1eededaefa67ccf7995039ec46537f7b1c2c9fc728",
+      "updatedAt": "2026-07-12T15:04:08.000Z",
+      "title": "Retrieve an Intent",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/smartpos-intent.md",
+      "status": 429,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 21625,
+      "sha256": "6e9d1197633a0baef781003740c83b4eae8753e466324e07f35c985b90b6a554"
+    },
+    {
+      "url": "https://developers.tap.company/reference/testing-cards.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 4106,
+      "sha256": "b781cb52b5219d91043618e016443fb7db7c50ac9d4a9fca1d43a1ca5266bb91",
+      "updatedAt": "2026-10-28T13:02:41.000Z",
+      "title": "Test Cards Numbers",
+      "sectionCount": 5
+    },
+    {
+      "url": "https://developers.tap.company/reference/testing-keys.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 1615,
+      "sha256": "c1e9ee144505356d26e4f25d4e8564d48bcd407da05cc79a2921a0fd5e9327b1",
+      "updatedAt": "2025-08-07T12:54:58.000Z",
+      "title": "Test Keys",
+      "sectionCount": 1
+    },
+    {
+      "url": "https://developers.tap.company/reference/update-a-charge.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 21786,
+      "sha256": "7ddf588cf8202be507263acb36d9cf80bb532adcd27437df8cf8b7e9330f5e9c",
+      "updatedAt": "2025-06-12T00:06:13.000Z",
+      "title": "Update a Charge",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/update-a-customer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 3216,
+      "sha256": "c1edf5c17a8915bded8e714a9342e4639a50e708e0d39b587c30bf939ddc095f",
+      "updatedAt": "2025-06-21T11:50:46.000Z",
+      "title": "Update a Customer ",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/update-a-lead-for-retailer.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 35448,
+      "sha256": "59651a441575823dcad4ed7f6cd33a8aa7bacf605c61749027f3a6f4f995b359",
+      "updatedAt": "2026-06-23T13:41:58.000Z",
+      "title": "Update Lead",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/update-an-authorize.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 18926,
+      "sha256": "5c11a7005a1b21399bfaa9cfec96a2f3ddc83a47320b7acb1eec3e29e845befa",
+      "updatedAt": "2025-06-12T00:05:36.000Z",
+      "title": "Update an Authorize",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/update-an-invoice.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 15501,
+      "sha256": "b1415ebeabdac444c1661102b62f816a80abd6da3ddf2d0a30bcd14d60b88761",
+      "updatedAt": "2025-06-12T00:06:33.000Z",
+      "title": "Update an Invoice",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/verify-a-card.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 18602,
+      "sha256": "aa4209b37328a604c5b61f255014e7f7354df706469c2aa37ab122023e188fd1",
+      "updatedAt": "2025-06-12T00:06:29.000Z",
+      "title": "Verify a Card",
+      "sectionCount": 0
+    },
+    {
+      "url": "https://developers.tap.company/reference/webhook-api.md",
+      "status": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "bytes": 11196,
+      "sha256": "52985ae28d1aa5fc37b935b68c1bee282001591390df76425e5845a389ee29fb",
+      "updatedAt": "2025-06-12T00:08:09.000Z",
+      "title": "Payout Webhook and Download API",
+      "sectionCount": 11
+    }
+  ]
+}
