@@ -6,7 +6,6 @@ import { refreshCheckoutStock, saveCheckoutCustomer, type CheckoutProfileInput }
 import { findCheckoutAttempt, startCheckoutPayment, continueCheckoutPayment, checkoutPaymentProof } from "@/lib/checkout-tap";
 import { isTapMethod, paymentRestriction, tapPhone, TAP_MERCHANT_MISMATCH } from "@/lib/checkout-payment";
 import { tapConfig } from "@/lib/tap";
-import { getAdminSession } from "@/lib/admin-auth";
 import { recordPurchase } from "@/lib/analytics/server";
 import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -14,7 +13,6 @@ import { createAdminClient } from "@/lib/supabase/service";
 import { quoteBag, type BagLine } from "@/lib/pricing";
 
 export async function POST(req: Request) {
-  let sandboxStaffId: string | undefined;
   try {
     const body = (await req.json()) as CheckoutProfileInput & {
       checkout_terms_version?: string;
@@ -34,6 +32,7 @@ export async function POST(req: Request) {
       payment_attempt?: unknown;
       expected_total?: number;
       locale?: string;
+      payment_token?: unknown;
     };
     if (body.checkout_terms_version !== CHECKOUT_TERMS_VERSION) {
       return NextResponse.json({ error: "terms:stale" }, { status: 409 });
@@ -42,19 +41,19 @@ export async function POST(req: Request) {
     if (method !== "cod" && !isTapMethod(method)) {
       return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
     }
-    const payment = method === "cod" ? null : tapConfig();
+    const payment = method === "cod" ? null : tapConfig(new URL(req.url).origin);
     const proof = method === "cod" ? null : checkoutPaymentProof(body.payment_attempt);
     if (method !== "cod") {
       if (!payment || req.headers.get("origin") !== payment.origin || !proof) {
         return NextResponse.json({ error: "payment:unavailable" }, { status: 400 });
       }
-      if (payment.staffSandbox) {
-        sandboxStaffId = (await getAdminSession())?.userId;
-        if (!sandboxStaffId) return NextResponse.json({ error: "payment:unavailable" }, { status: 403 });
+      if (payment.live && (method === "card" || method === "apple_pay") &&
+          (typeof body.payment_token !== "string" || !/^tok_[a-zA-Z0-9_-]{1,150}$/.test(body.payment_token))) {
+        return NextResponse.json({ error: "payment:token" }, { status: 400 });
       }
       const existing = await findCheckoutAttempt(proof);
       if (existing) {
-        if ((existing.sandbox_staff_id ?? undefined) !== sandboxStaffId) {
+        if (Boolean(existing.sandbox_staff_id)) {
           return NextResponse.json({ error: "payment:unavailable" }, { status: 403 });
         }
         return NextResponse.json(await continueCheckoutPayment(existing, payment));
@@ -155,7 +154,7 @@ export async function POST(req: Request) {
       }
       return NextResponse.json(await startCheckoutPayment(req, payment, proof, method, orderData, orderLines, {
         address_line: body.address_line, address_building: body.address_building, save_phone: body.save_phone,
-      }, body.locale === "ar" ? "ar" : "en", sandboxStaffId));
+      }, body.locale === "ar" ? "ar" : "en", payment.live && (method === "card" || method === "apple_pay") && typeof body.payment_token === "string" ? body.payment_token : undefined));
     }
 
     const committed = await admin.rpc("storefront_checkout_commit", {
@@ -208,7 +207,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Checkout failed";
-    if (msg === TAP_MERCHANT_MISMATCH && sandboxStaffId) return NextResponse.json({ error: msg }, { status: 409 });
+    if (msg === TAP_MERCHANT_MISMATCH) return NextResponse.json({ error: msg }, { status: 409 });
     const status = msg === "checkout:price" ? 409 : /stock|invalid|empty|required|unknown|coupon|referral|min|delivery|unavailable/i.test(msg) ? 400 : 500;
     return NextResponse.json({ error: msg }, { status });
   }

@@ -27,8 +27,12 @@ type Attempt = {
   payment_url: string | null;
   sandbox_staff_id?: string | null;
   order_data: OrderData; lines: Line[];
-  context: { profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
+  context: { sandbox?: boolean; token?: string; profile: CheckoutProfileInput; session: Awaited<ReturnType<typeof analyticsSession>> };
 };
+export function isSandboxAttempt(attempt: Attempt) {
+  return !attempt.live_mode && (Boolean(attempt.sandbox_staff_id) || attempt.context?.sandbox === true);
+}
+
 type PaymentResult = { state: Attempt["state"]; order_id?: string | null; url?: string; charge_id?: string | null; awaitingConfirmation?: boolean };
 
 export function checkoutPaymentProof(value: unknown): PaymentProof | null {
@@ -46,17 +50,16 @@ export async function findCheckoutAttempt(proof: PaymentProof) {
 
 export async function startCheckoutPayment(
   req: Request, config: TapConfig, proof: PaymentProof, method: TapMethod, order: OrderData,
-  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar", sandboxStaffId?: string,
+  lines: Line[], profile: CheckoutProfileInput, locale: "en" | "ar", token?: string,
 ) {
   const db = createAdminClient();
   const common = {
     p_id: proof.id, p_key_hash: keyHash(proof.key), p_method: method, p_merchant: config.merchantScope,
     p_origin: config.origin, p_locale: locale,
   };
-  if (config.staffSandbox) {
-    if (!sandboxStaffId) throw new Error("Staff access required");
+  if (config.local) {
     const { data, error } = await db.rpc("tap_checkout_begin_sandbox", {
-      ...common, p_staff: sandboxStaffId, p_amount: order.total,
+      ...common, p_staff: null, p_amount: order.total,
       p_customer: { customer_name: order.customer_name, phone: order.phone, email: order.email },
     });
     if (error) throw new Error(error.message);
@@ -64,7 +67,7 @@ export async function startCheckoutPayment(
   }
   const session = await analyticsSession(req, false, 0, order.user_id).catch(() => null);
   const { data, error } = await db.rpc("tap_checkout_begin", {
-    ...common, p_live: config.live, p_order: order, p_lines: lines, p_context: { profile, session },
+    ...common, p_live: config.live, p_order: order, p_lines: lines, p_context: { profile, session, ...(token ? { token } : {}) },
   });
   if (error) throw new Error(error.message);
   after(() => refreshCheckoutStock(lines.map(({ slug }) => slug)));
@@ -73,16 +76,16 @@ export async function startCheckoutPayment(
 
 function matchesConfig(attempt: Attempt, config: TapConfig) {
   return attempt.merchant_id === config.merchantScope && attempt.live_mode === config.live && attempt.origin === config.origin
-    && Boolean(attempt.sandbox_staff_id) === config.staffSandbox;
+    && isSandboxAttempt(attempt) === config.local;
 }
 
 export function sandboxConfigChanged(attempt: Attempt, config: TapConfig) {
-  return Boolean(attempt.sandbox_staff_id) && !matchesConfig(attempt, config);
+  return isSandboxAttempt(attempt) && !matchesConfig(attempt, config);
 }
 
 async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt["state"], url?: string) {
   const db = createAdminClient();
-  const { data, error } = await db.rpc(attempt.sandbox_staff_id ? "tap_checkout_update_sandbox" : "tap_checkout_update", {
+  const { data, error } = await db.rpc(isSandboxAttempt(attempt) ? "tap_checkout_update_sandbox" : "tap_checkout_update", {
     p_id: attempt.id, p_charge: id, p_state: state, p_url: url ?? null,
   });
   if (error) {
@@ -90,7 +93,7 @@ async function updateAttempt(attempt: Attempt, id: string | null, state: Attempt
     throw new Error("Unable to reconcile Tap payment");
   }
   const result = data as PaymentResult & { created: boolean };
-  if (attempt.sandbox_staff_id) return result;
+  if (isSandboxAttempt(attempt)) return result;
   if (result.state !== "pending") after(() => refreshCheckoutStock(attempt.lines.map(({ slug }) => slug)));
   if (result.created && result.order_id) {
     const orderId = result.order_id;
@@ -140,6 +143,9 @@ export async function continueCheckoutPayment(attempt: Attempt, config: TapConfi
   if (chargeId) return applyCharge(attempt, await retrieveTapCharge(config, chargeId), config);
   // Tap's idempotency window is 24 hours. Leave uncertain older attempts for reconciliation.
   if (Date.now() - Date.parse(attempt.created_at) >= 23 * 3600_000) return { state: "pending" };
+  if (config.live && (attempt.method === "card" || attempt.method === "apple_pay") && !attempt.context.token) {
+    throw new Error("Secure payment token missing");
+  }
   const { customer_name: name, phone, email, total } = attempt.order_data;
   const number = tapPhone(phone);
   if (!number) throw new Error("Invalid payment phone number");
@@ -147,7 +153,7 @@ export async function continueCheckoutPayment(attempt: Attempt, config: TapConfi
   let charge: TapCharge;
   try {
     charge = await createTapCharge(config, {
-      id: attempt.id, method: attempt.method, amount: total, locale: attempt.locale,
+      id: attempt.id, method: attempt.method, amount: total, locale: attempt.locale, token: attempt.context.token,
       customer: { first_name: first, last_name: last.join(" ") || undefined, email: email || undefined, phone: number },
     });
   } catch (error) {
@@ -176,8 +182,8 @@ export async function reconcileTapWebhook(config: TapConfig, chargeId: string, a
   if (data?.state === "pending") await continueCheckoutPayment(data as Attempt, config, chargeId);
 }
 
-export async function reconcilePendingTapPayments() {
-  const config = tapConfig();
+export async function reconcilePendingTapPayments(origin?: string) {
+  const config = tapConfig(origin);
   if (!config) return { checked: 0, errors: 0 };
   const { data, error } = await createAdminClient().rpc("tap_checkout_due", {
     p_merchant: config.merchantScope, p_live: config.live, p_origin: config.origin,

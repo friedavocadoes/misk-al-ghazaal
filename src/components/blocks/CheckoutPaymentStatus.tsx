@@ -172,6 +172,6 @@ export function CheckoutPaymentStatus({ locale, id, chargeId }: { locale: Locale
       {(state === "failed" || state === "sandbox_reconfigured") && <Button asChild><Link href="/checkout">{ar ? "العودة إلى الدفع" : "Back to checkout"}</Link></Button>}
       {(state === "unavailable" || state === "pending" || state === "retry") && <Button asChild variant="outline"><Link href="/cart">{ar ? "عرض الحقيبة" : "View your bag"}</Link></Button>}
     </div>
-    {restartFailed && <p role="alert" className="mt-4 text-sm text-espresso">{ar ? "تعذر بدء اختبار جديد. تحقق من تسجيل الدخول ثم أعد المحاولة." : "Couldn’t start a new test. Check your staff sign-in and try again."}</p>}
+    {restartFailed && <p role="alert" className="mt-4 text-sm text-espresso">{ar ? "تعذر بدء اختبار جديد. تحقق من اتصالك وأعد المحاولة." : "Couldn’t start a new test. Check your connection and try again."}</p>}
   </section>;
 }

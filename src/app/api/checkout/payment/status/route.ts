@@ -1,4 +1,4 @@
-import { checkoutPaymentProof, checkoutPaymentReceipt, continueCheckoutPayment, findCheckoutAttempt, sandboxConfigChanged } from "@/lib/checkout-tap";
+import { checkoutPaymentProof, checkoutPaymentReceipt, continueCheckoutPayment, findCheckoutAttempt, sandboxConfigChanged, isSandboxAttempt } from "@/lib/checkout-tap";
 import { tapConfig, validChargeId } from "@/lib/tap";
 import { getAdminSession } from "@/lib/admin-auth";
 import { TAP_MERCHANT_MISMATCH } from "@/lib/checkout-payment";
@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const headers = { "Cache-Control": "no-store" };
   const body = await req.json().catch(() => null);
   const proof = checkoutPaymentProof(body?.attempt);
-  const config = tapConfig();
+  const config = tapConfig(new URL(req.url).origin);
   if (!proof) {
     return Response.json({ state: "unavailable" }, { status: 400, headers });
   }
@@ -20,6 +20,9 @@ export async function POST(req: Request) {
   try {
     const attempt = await findCheckoutAttempt(proof);
     if (!attempt) return Response.json({ state: "missing" }, { status: 404, headers });
+    const localSandbox = isSandboxAttempt(attempt) && config?.local === true;
+    if (localSandbox) canRestartSandbox = true;
+    if (localSandbox && body.restart === true) return Response.json({ state: "sandbox_restart" }, { headers });
     const sandboxStaffId = attempt.sandbox_staff_id;
     if (sandboxStaffId) {
       if ((await getAdminSession())?.userId !== sandboxStaffId) {
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
     }
     const result = await continueCheckoutPayment(attempt, config, validChargeId(body.tap_id) ? body.tap_id : undefined);
     if (result.state === "paid") {
-      if (sandboxStaffId) {
+      if (sandboxStaffId || localSandbox) {
         return Response.json({ state: "sandbox_paid", total: attempt.order_data.total, chargeId: result.charge_id }, { headers });
       }
       const receipt = result.order_id ? await checkoutPaymentReceipt(result.order_id) : null;

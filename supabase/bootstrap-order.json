@@ -55,6 +55,7 @@
     "migration_checkout_address_delete.sql",
     "migration_tap_checkout.sql",
     "migration_tap_staff_sandbox.sql",
+    "migration_tap_local_checkout.sql",
     "migration_hero_video_direct_upload.sql"
   ],
   "catalogData": [

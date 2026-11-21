@@ -2,7 +2,7 @@ import { reconcileTapWebhook } from "@/lib/checkout-tap";
 import { tapConfig, verifyTapWebhook } from "@/lib/tap";
 
 export async function POST(req: Request) {
-  const config = tapConfig();
+  const config = tapConfig(new URL(req.url).origin);
   if (!config) return new Response(null, { status: 503 });
   const charge = await req.json().catch(() => null);
   if (!charge || !verifyTapWebhook(charge, req.headers.get("hashstring") ?? "", config.secret)) {

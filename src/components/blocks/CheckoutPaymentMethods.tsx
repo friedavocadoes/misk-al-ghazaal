@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import type { TapBrowserConfig } from "./TapPaymentFields";
 import { Banknote } from "lucide-react";
 import { TAP_METHODS, type CheckoutMethod, type PaymentLimits, type PaymentOptions, type PaymentRestriction } from "@/lib/checkout-payment";
 import { cn, formatAED } from "@/lib/utils";
@@ -10,6 +11,7 @@ export function useCheckoutPaymentOptions(active: boolean) {
   const [methods, setMethods] = useState<PaymentOptions | null>(null);
   const [appleAvailable, setAppleAvailable] = useState(false);
   const [sandbox, setSandbox] = useState(false);
+  const [sdk, setSdk] = useState<TapBrowserConfig | null>(null);
   useEffect(() => {
     if (!active) return;
     const controller = new AbortController();
@@ -20,13 +22,14 @@ export function useCheckoutPaymentOptions(active: boolean) {
         const matchesOrigin = config?.origin === window.location.origin;
         setMethods(matchesOrigin ? config.methods : {});
         setSandbox(matchesOrigin && config.sandbox === true);
+        setSdk(matchesOrigin ? config.sdk ?? null : null);
         const apple = (window as Window & { ApplePaySession?: { canMakePayments: () => boolean } }).ApplePaySession;
         try { setAppleAvailable(apple?.canMakePayments() === true); } catch { setAppleAvailable(false); }
       })
-      .catch(() => { if (!controller.signal.aborted) { setMethods({}); setSandbox(false); } });
+      .catch(() => { if (!controller.signal.aborted) { setMethods({}); setSandbox(false); setSdk(null); } });
     return () => controller.abort();
   }, [active]);
-  return { methods, appleAvailable, sandbox };
+  return { methods, appleAvailable, sandbox, sdk };
 }
 
 export function checkoutPaymentReason(reason: PaymentRestriction, limits: PaymentLimits | undefined, ar: boolean) {
@@ -41,8 +44,8 @@ export function checkoutPaymentReason(reason: PaymentRestriction, limits: Paymen
 }
 
 export function tapMerchantMismatchMessage(ar: boolean) {
-  return ar ? "مفتاح Tap التجريبي ومعرّف التاجر مرتبطان بحسابين مختلفين. صحّح بيانات Tap في إعدادات النشر ثم أعد المحاولة."
-    : "The Tap test secret and Merchant ID belong to different accounts. Update the Tap credentials in your deployment and try again.";
+  return ar ? "مفتاح Tap ومعرّف التاجر مرتبطان بحسابين مختلفين. صحّح بيانات Tap في إعدادات النشر ثم أعد المحاولة."
+    : "The Tap secret and Merchant ID belong to different accounts. Update the Tap credentials in your deployment and try again.";
 }
 
 const onlineMethods = {
@@ -64,8 +67,8 @@ export function CheckoutPaymentMethods({ ar, selected, choose, disabled, describ
     <fieldset disabled={disabled} className="space-y-3 border border-ink/10 bg-white p-5 md:p-8">
       <legend className="px-2 text-sm font-semibold text-ink">{ar ? "طريقة الدفع" : "Payment method"}</legend>
       {sandbox && <p className="border border-gold/40 bg-gold-wash/40 p-3 text-xs leading-5 text-ink">
-        {ar ? "وضع اختبار Tap للموظفين. اختر طريقة دفع إلكترونية لإجراء دفعة تجريبية. الدفع عند الاستلام ينشئ طلباً فعلياً."
-          : "Tap sandbox for staff. Choose an online method to run a test payment. Cash on delivery places a real order."}
+        {ar ? "وضع اختبار Tap المحلي. اختر طريقة دفع إلكترونية لإجراء دفعة تجريبية. الدفع عند الاستلام ينشئ طلباً فعلياً."
+          : "Local test mode. Online methods use Tap sandbox payments. Cash on delivery places a real order."}
       </p>}
       {(["cod", ...TAP_METHODS] as const).map(method => {
         const online = method === "cod" ? null : onlineMethods[method];
@@ -104,7 +107,7 @@ export function CheckoutPaymentMethods({ ar, selected, choose, disabled, describ
           </a>
         </div>
       )}
-      <p className="text-xs leading-5 text-fog">{ar ? "تُستكمل المدفوعات الإلكترونية عبر Tap Payments." : "Online payments are completed securely through Tap Payments."}</p>
+      <p className="text-xs leading-5 text-fog">{ar ? "تُستكمل المدفوعات الإلكترونية عبر Tap Payments." : "Payments are secured by Tap Payments."}</p>
     </fieldset>
   );
 }

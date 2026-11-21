@@ -22,7 +22,7 @@ const eligibility = load("src/lib/checkout-payment.ts", {
   "./whatsapp-shared": load("src/lib/whatsapp-shared.ts"),
 });
 const tapEnv = {
-  TAP_SECRET_KEY: "sk_test_fixture", TAP_MERCHANT_ID: "12345678", TAP_SITE_URL: "https://store.example",
+  TAP_SECRET_KEY: "sk_live_fixture", TAP_PUBLIC_KEY: "pk_live_fixture", TAP_MERCHANT_ID: "12345678", TAP_SITE_URL: "https://store.example",
   TAP_PAYMENT_METHODS: "card,apple_pay,tabby,tamara", TAP_TAMARA_MIN_AED: "50", TAP_TAMARA_MAX_AED: "1000",
 };
 const loadTap = (env, globals) => load("src/lib/tap.ts", { "server-only": {}, "./checkout-payment": eligibility }, env, globals);
@@ -41,15 +41,19 @@ test("merchant configuration and the final AED total determine selectable method
   assert.equal(reason("tamara", methods.tamara, 1000.01, "AE", mobile), "maximum");
   assert.equal(loadTap({ ...tapEnv, TAP_TAMARA_MIN_AED: "" }).tapConfig().methods.tamara, undefined);
   assert.equal(loadTap({ ...tapEnv, TAP_TABBY_MIN_AED: "1" }).tapConfig().methods.tabby.min, 10);
-  assert.equal(loadTap({ ...tapEnv, VERCEL_ENV: "production" }).tapConfig(), null);
-  const sandbox = loadTap({ ...tapEnv, VERCEL_ENV: "production", TAP_STAFF_SANDBOX: "1" }).tapConfig();
-  assert.equal(sandbox.live, false);
-  assert.equal(sandbox.staffSandbox, true);
-  assert.equal(sandbox.merchantScope, "sandbox:12345678");
-  const shared = { ...tapEnv, TAP_MERCHANT_ID: "599424", VERCEL_ENV: "production" };
-  assert.equal(loadTap(shared).tapConfig().staffSandbox, true);
-  assert.equal(loadTap({ ...shared, TAP_SECRET_KEY: "sk_live_fixture" }).tapConfig(), null);
-  assert.equal(loadTap({ ...tapEnv, TAP_MERCHANT_ID: "pk_test_fixture" }).tapConfig(), null);
+  assert.equal(loadTap({ ...tapEnv, TAP_SECRET_KEY: "sk_test_fixture" }).tapConfig(), null);
+  assert.equal(loadTap({ ...tapEnv, TAP_MERCHANT_ID: "599424" }).tapConfig(), null);
+  assert.equal(loadTap({ ...tapEnv, TAP_SITE_URL: "http://store.example" }).tapConfig(), null);
+  assert.equal(loadTap({ ...tapEnv, TAP_SITE_URL: "https://localhost.example" }).tapConfig().live, true);
+  const localEnv = { ...tapEnv, TAP_TEST_SECRET_KEY: "sk_test_fixture", TAP_TEST_PUBLIC_KEY: "pk_test_fixture" };
+  for (const origin of ["http://localhost:3000", "http://127.0.0.1:3001", "http://[::1]:3000"]) {
+    const local = loadTap(localEnv).tapConfig(origin);
+    assert.equal(local.local, true);
+    assert.equal(local.live, false);
+    assert.equal(local.origin, origin);
+  }
+  assert.equal(loadTap({ ...localEnv, VERCEL: "1" }).tapConfig("http://localhost:3000").live, false);
+  assert.equal(loadTap({ ...tapEnv, TAP_TEST_SECRET_KEY: "sk_live_fixture" }).tapConfig("http://localhost:3000"), null);
 });
 
 test("checkout accepts pasted UAE numbers and passes the same normalized phone used by pay-later eligibility", () => {
@@ -89,6 +93,12 @@ test("Tap receives the selected source and a stable attempt reference, and signs
   assert.equal(calls[0].options.headers.lang_code, "ar");
   assert.equal(calls[0].body.redirect.url, `https://store.example/ar/checkout/payment?attempt=${id}`);
   assert.equal(calls[0].body.post.url, "https://store.example/api/checkout/payment/webhook");
+  await tap.createTapCharge(config, { id, method: "card", amount: 100.5, locale: "en", token: "tok_secure_fixture", customer: {
+    first_name: "Test", phone: { country_code: "971", number: "501234567" },
+  } });
+  assert.equal(calls.at(-1).body.source.id, "tok_secure_fixture");
+  const local = tap.tapConfig("http://localhost:3000");
+  assert.equal(local, null); // A live-only key cannot enable the local sandbox.
   assert.equal(tap.tapPaymentUrl("https://acceptance.sandbox.tap.company/pay"), "https://acceptance.sandbox.tap.company/pay");
   assert.equal(tap.tapPaymentUrl("https://checkout.tabby.ai/pay", "tabby"), "https://checkout.tabby.ai/pay");
   assert.equal(tap.tapPaymentUrl("https://checkout.tabby.ai/pay", "card"), undefined);
@@ -103,89 +113,54 @@ test("Tap receives the selected source and a stable attempt reference, and signs
   assert.equal(tap.verifyTapWebhook(payload, "bad-signature", config.secret), false);
 });
 
-test("a merchant-scoped secret key can create a charge without a Merchant ID", async () => {
-  const env = { ...tapEnv, TAP_MERCHANT_ID: "" };
-  let request;
-  const tap = loadTap(env, { fetch: async (_url, options) => {
-    request = options;
-    return { ok: true, json: async () => ({ id: "chg_TEST" }) };
-  } });
-  const config = tap.tapConfig();
-  assert.equal(config.methods.card.min, 0.1);
-  assert.notEqual(config.merchantScope, loadTap({ ...env, TAP_SECRET_KEY: "sk_test_other" }).tapConfig().merchantScope);
-  await tap.createTapCharge(config, {
-    id: "00000000-0000-4000-8000-000000000001", method: "card", amount: 100, locale: "en",
-    customer: { first_name: "Test", phone: { country_code: "971", number: "501234567" } },
-  });
-  assert.equal(request.headers.Authorization, "Bearer sk_test_fixture");
-  assert.equal(Object.hasOwn(JSON.parse(request.body), "merchant"), false);
-});
-
-test("the deployed sandbox exposes payment options and results only to the initiating staff account", async () => {
-  const config = loadTap({ ...tapEnv, VERCEL_ENV: "production", TAP_STAFF_SANDBOX: "1" }).tapConfig();
-  let staff = null;
-  let reads = 0;
-  let changed = false;
-  let providerFails = false;
-  let owner = "staff-1";
+test("localhost sandbox requires no staff login and remote checkout returns live SDK public configuration", async () => {
+  const local = loadTap({ ...tapEnv, TAP_TEST_SECRET_KEY: "sk_test_fixture" }).tapConfig("http://localhost:3000");
   const options = load("src/app/api/checkout/payment/options/route.ts", {
-    "@/lib/tap": { tapConfig: () => config },
-    "@/lib/admin-auth": { getAdminSession: async () => staff },
-    "@/lib/supabase/service": { createAdminClient: () => ({ from: () => ({ select: column => ({ limit: async () => {
-      assert.equal(column, "sandbox_staff_id"); reads++; return { error: null };
-    } }) }) }) },
+    "@/lib/tap": { tapConfig: () => local },
+    "@/lib/supabase/service": { createAdminClient: () => ({ from: () => ({ select: () => ({ limit: async () => ({ error: null }) }) }) }) },
   }, {}, { Response });
-  assert.deepEqual(await (await options.GET()).json(), { methods: {} });
-  assert.equal(reads, 0);
-  staff = { userId: "staff-1" };
-  assert.equal((await (await options.GET()).json()).sandbox, true);
-
+  const result = await (await options.GET(new Request("http://localhost:3000/api/checkout/payment/options"))).json();
+  assert.equal(result.sandbox, true);
+  assert.equal(result.sdk, null);
   const status = load("src/app/api/checkout/payment/status/route.ts", {
     "@/lib/checkout-payment": eligibility,
-    "@/lib/tap": { tapConfig: () => config, validChargeId: () => false },
-    "@/lib/admin-auth": { getAdminSession: async () => staff },
+    "@/lib/tap": { tapConfig: () => local, validChargeId: () => false },
+    "@/lib/admin-auth": { getAdminSession: () => assert.fail("Local testing must not require staff") },
     "@/lib/checkout-tap": {
-      checkoutPaymentProof: () => ({ id: "test" }),
-      findCheckoutAttempt: async () => ({ sandbox_staff_id: owner, order_data: { total: 100 } }),
-      sandboxConfigChanged: () => changed,
-      continueCheckoutPayment: async () => {
-        if (providerFails) throw new Error("Tap unavailable");
-        return { state: "paid", charge_id: "chg_TEST" };
-      },
-      checkoutPaymentReceipt: () => assert.fail("Sandbox must not create a real receipt"),
+      checkoutPaymentProof: () => ({ id: "fixture" }),
+      findCheckoutAttempt: async () => ({ context: { sandbox: true }, order_data: { total: 100 } }),
+      isSandboxAttempt: () => true, sandboxConfigChanged: () => false,
+      continueCheckoutPayment: async () => ({ state: "paid", charge_id: "chg_TEST" }),
+      checkoutPaymentReceipt: () => assert.fail("Local sandbox must not create a real receipt"),
     },
   }, {}, { Response, console: { warn() {} } });
-  const check = (body = {}, origin = config.origin) => status.POST(new Request("https://store.example/api/checkout/payment/status", {
-    method: "POST", headers: { origin }, body: JSON.stringify(body),
+  const check = body => status.POST(new Request("http://localhost:3000/api/checkout/payment/status", {
+    method: "POST", headers: { origin: local.origin }, body: JSON.stringify(body),
   }));
-  staff = null;
-  assert.equal((await check()).status, 403);
-  staff = { userId: "staff-2" };
-  assert.equal((await check()).status, 403);
-  assert.equal((await check({ restart: true })).status, 403);
-  staff = { userId: "staff-1" };
-  assert.equal((await check({ restart: true }, "https://other.example")).status, 403);
-  assert.deepEqual(await (await check()).json(), { state: "sandbox_paid", total: 100, chargeId: "chg_TEST" });
-  providerFails = true;
-  const retry = await check();
-  assert.equal(retry.status, 503);
-  assert.deepEqual(await retry.json(), { state: "retry", canRestartSandbox: true, hasCharge: false });
+  assert.deepEqual(await (await check({})).json(), { state: "sandbox_paid", total: 100, chargeId: "chg_TEST" });
   assert.deepEqual(await (await check({ restart: true })).json(), { state: "sandbox_restart" });
-  changed = true;
-  assert.deepEqual(await (await check()).json(), { state: "sandbox_reconfigured" });
-  owner = null;
-  assert.equal((await check({ restart: true })).status, 409);
+  let sent;
+  const tap = loadTap({ ...tapEnv, TAP_TEST_SECRET_KEY: "sk_test_fixture" }, { fetch: async (_url, options) => {
+    sent = JSON.parse(options.body);
+    return { ok: true, json: async () => ({ id: "chg_LOCAL" }) };
+  } });
+  await tap.createTapCharge(local, { id: "local-reference", method: "card", amount: 100, locale: "en", customer: {
+    first_name: "Test", phone: { country_code: "971", number: "501234567" },
+  } });
+  assert.equal(sent.redirect.url, "http://localhost:3000/checkout/payment?attempt=local-reference");
+  assert.equal(Object.hasOwn(sent, "post"), false);
+  assert.equal(sent.source.id, "src_card");
 });
 
 test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, currency, reference or mode", async () => {
   const id = "00000000-0000-4000-8000-000000000001";
   const config = loadTap(tapEnv).tapConfig();
   const attempt = {
-    id, state: "pending", method: "card", merchant_id: config.merchant, live_mode: false, origin: config.origin,
+    id, state: "pending", method: "card", merchant_id: config.merchant, live_mode: true, origin: config.origin,
     charge_id: "chg_TEST", order_data: { total: 100.5 }, lines: [], context: {},
   };
   const charge = {
-    id: "chg_TEST", status: "CAPTURED", amount: 100.5, currency: "AED", live_mode: false,
+    id: "chg_TEST", status: "CAPTURED", amount: 100.5, currency: "AED", live_mode: true,
     reference: { order: id, transaction: id }, merchant: { id: config.merchant },
   };
   let retrieved = charge;
@@ -203,7 +178,7 @@ test("Tap reconciliation uses the retrieved charge and rejects a wrong amount, c
       return { data: { state: params.p_state, order_id: params.p_state === "paid" ? "order-id" : null, created: false } };
     } }) },
   }, {}, { console: { warn() {} } });
-  for (const wrong of [{ amount: 10 }, { currency: "USD" }, { live_mode: true }, { reference: { order: "wrong" } }]) {
+  for (const wrong of [{ amount: 10 }, { currency: "USD" }, { live_mode: false }, { reference: { order: "wrong" } }]) {
     retrieved = { ...charge, ...wrong };
     await assert.rejects(service.continueCheckoutPayment(attempt, config), /does not match/);
   }
@@ -252,6 +227,9 @@ test("actual SQL: stock and coupon holds, single paid order on retry, failure re
     const sandboxSql = fs.readFileSync("supabase/migration_tap_staff_sandbox.sql", "utf8");
     await db.exec(sandboxSql);
     await db.exec(sandboxSql);
+    const localSql = fs.readFileSync("supabase/migration_tap_local_checkout.sql", "utf8");
+    await db.exec(localSql);
+    await db.exec(localSql);
     await db.exec("create trigger reserve_order_coupon after insert on orders for each row execute function reserve_order_coupon()");
     await db.query("insert into products(id,slug,price) values($1,'oud',100)", [id(1)]);
     await db.query("insert into variants(id,product_id,price,stock) values($1,$2,100,2)", [id(2), id(1)]);
@@ -275,6 +253,9 @@ test("actual SQL: stock and coupon holds, single paid order on retry, failure re
       "select (tap_checkout_begin_sandbox($1,'proof','card','sandbox:1','https://store.example','en',$2,100,'{}')).id",
       [id(9), staff]);
     await assert.rejects(sandbox(id(5)), /Staff access required/);
+    await db.query("select tap_checkout_begin_sandbox($1,'local-proof','card','localhost:1','http://localhost:3000','en',null,100,'{}')", [id(10)]);
+    await db.query("select tap_checkout_update_sandbox($1,'chg_LOCAL','paid')", [id(10)]);
+    assert.equal((await db.query("select context->>'sandbox' as local from tap_checkout_attempts where id=$1", [id(10)])).rows[0].local, "true");
     await sandbox(id(8));
     await assert.rejects(update(9, "chg_SANDBOX", "paid"), /tap_staff_sandbox_isolated/);
     const settle = () => db.query("select tap_checkout_update_sandbox($1,'chg_SANDBOX','paid') as data", [id(9)]);

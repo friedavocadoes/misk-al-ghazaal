@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { TAP_METHODS, type PaymentOptions, type TapMethod } from "./checkout-payment";
 
 const sources: Record<TapMethod, string> = {
@@ -17,21 +17,26 @@ function limit(value: string | undefined) {
   return Number.isFinite(amount) ? amount : undefined;
 }
 
-export function tapConfig() {
-  const secret = process.env.TAP_SECRET_KEY?.trim() ?? "";
+export function tapConfig(requestOrigin = process.env.TAP_SITE_URL?.trim() ?? "") {
+  if (!URL.canParse(requestOrigin)) return null;
+  const requested = new URL(requestOrigin);
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(requested.hostname);
+  const mode = local ? "test" : "live";
+  const secret = (process.env[local ? "TAP_TEST_SECRET_KEY" : "TAP_LIVE_SECRET_KEY"] ?? process.env.TAP_SECRET_KEY ?? "").trim();
+  const publicKey = (process.env[local ? "TAP_TEST_PUBLIC_KEY" : "TAP_LIVE_PUBLIC_KEY"] ?? process.env.TAP_PUBLIC_KEY ?? "").trim();
   const merchant = process.env.TAP_MERCHANT_ID?.trim() ?? "";
-  const site = process.env.TAP_SITE_URL?.trim() ?? "";
-  const origin = URL.canParse(site) ? new URL(site).origin : "";
-  if (!/^sk_(test|live)_\S+$/.test(secret) || (merchant && !/^\d+$/.test(merchant)) || !origin.startsWith("https://")) return null;
-  const live = secret.startsWith("sk_live_");
-  const sharedTestMerchant = merchant === TAP_SHARED_TEST_MERCHANT_ID;
-  if (live && sharedTestMerchant) return null;
-  // The merchant and keys in Tap's docs are shared test fixtures.
-  const staffSandbox = !live && (process.env.TAP_STAFF_SANDBOX === "1" || sharedTestMerchant);
-  if (!live && !staffSandbox && process.env.VERCEL_ENV === "production") return null;
-  // Keep retries scoped to the original credentials when Tap selects the merchant.
-  const account = merchant || `key:${createHash("sha256").update(secret).digest("hex")}`;
-  const merchantScope = staffSandbox ? `sandbox:${account}` : account;
+  const origin = requested.origin;
+  if (!new RegExp(`^sk_${mode}_\\S+$`).test(secret) || !/^\d+$/.test(merchant)) return null;
+  if (local) {
+    if (!["http:", "https:"].includes(requested.protocol)) return null;
+  } else {
+    const site = process.env.TAP_SITE_URL?.trim() ?? "";
+    if (requested.protocol !== "https:" || !URL.canParse(site) || new URL(site).origin !== origin ||
+        !/^pk_live_\S+$/.test(publicKey) || merchant === TAP_SHARED_TEST_MERCHANT_ID) return null;
+  }
+  const live = !local;
+  const account = merchant;
+  const merchantScope = local ? `localhost:${account}` : account;
 
   const methods: PaymentOptions = {};
   const enabled = (process.env.TAP_PAYMENT_METHODS ?? "").split(",").map((method) => method.trim());
@@ -46,7 +51,7 @@ export function tapConfig() {
     if (max !== undefined && max < minimum) continue;
     methods[method] = { min: minimum, max };
   }
-  return { secret, merchant, merchantScope, origin, methods, live, staffSandbox };
+  return { secret, publicKey, merchant, merchantScope, origin, methods, live, local };
 }
 
 export type TapConfig = NonNullable<ReturnType<typeof tapConfig>>;
@@ -90,7 +95,7 @@ async function tapRequest(config: TapConfig, path: string, payload?: object, loc
 }
 
 export function createTapCharge(config: TapConfig, attempt: {
-  id: string; method: TapMethod; amount: number; locale: "en" | "ar";
+  id: string; method: TapMethod; amount: number; locale: "en" | "ar"; token?: string;
   customer: { first_name: string; last_name?: string; email?: string; phone: { country_code: string; number: string } };
 }) {
   const { id, method, locale } = attempt;
@@ -106,8 +111,8 @@ export function createTapCharge(config: TapConfig, attempt: {
     ...(config.merchant ? { merchant: { id: config.merchant } } : {}),
     customer: attempt.customer,
     reference: { order: id, transaction: id, idempotent: id },
-    source: { id: sources[method] },
-    post: { url: `${config.origin}/api/checkout/payment/webhook` },
+    source: { id: attempt.token ?? sources[method] },
+    ...(!config.local ? { post: { url: `${config.origin}/api/checkout/payment/webhook` } } : {}),
     redirect: { url: redirect.toString() },
   }, locale);
 }

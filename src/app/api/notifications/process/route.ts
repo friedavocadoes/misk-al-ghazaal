@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     processWhatsAppQueue(),
     processTelegramQueue(),
     processEmailCampaignQueue(),
-    reconcilePendingTapPayments(),
+    reconcilePendingTapPayments(new URL(req.url).origin),
   ]);
   return Response.json(
     Object.fromEntries(

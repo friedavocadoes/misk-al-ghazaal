@@ -1,47 +1,54 @@
-# Tap Payments setup
+# Tap Payments checkout
 
-Gazaal displays Card, Apple Pay, Tabby and Tamara in its payment step. The selected method opens its own Tap payment flow. Visa and Mastercard debit, credit and international cards use the Card option. Tap may also accept American Express when enabled for the merchant.
+The server selects the environment from the request origin. Localhost, 127.0.0.1, and ::1 use test keys and the hosted Tap payment flow. Every other host requires HTTPS, live keys, and an origin matching TAP_SITE_URL. Hosted previews therefore use live payments too.
 
-## Configure a sandbox checkout
+## Database upgrade
 
-1. Apply `supabase/migration_tap_checkout.sql` after the existing migrations on a staging Supabase project.
-2. Put the following values in `.env.local` at the repo root for local development. For a hosted test deployment, add the same names in the host’s Preview environment variables and redeploy. Use the public HTTPS checkout origin for `TAP_SITE_URL`. For local testing, open the app through that HTTPS tunnel origin so the browser can return to the same checkout and Tap can reach the webhook.
+Apply supabase/migration_tap_local_checkout.sql after migration_tap_checkout.sql and migration_tap_staff_sandbox.sql. The migration allows local test attempts without a staff account and keeps their payment records isolated from orders, inventory, coupon use, analytics purchases and notifications. Test payments keep the cart so they can be repeated. COD still places a real order.
 
-   ```dotenv
-   TAP_SECRET_KEY=sk_test_...
-   TAP_SITE_URL=https://your-preview-or-tunnel.example
-   TAP_PAYMENT_METHODS=card
-   ```
+## Local development
 
-3. Add `apple_pay`, `tabby`, and `tamara` to the comma-separated list as Tap enables them for your sandbox account. The hosted flow uses your secret key and lets Tap select the merchant by default. `TAP_MERCHANT_ID` is an optional override for an explicit numeric Merchant ID. The public key is for browser SDKs. [Tap charge API](https://developers.tap.company/reference/create-a-charge)
-4. Set `TAP_TAMARA_MIN_AED` and `TAP_TAMARA_MAX_AED` to the UAE merchant limits supplied by Tap or Tamara. Both values are required to show Tamara as available. Optional `TAP_TABBY_MIN_AED` and `TAP_TABBY_MAX_AED` reflect any tighter merchant limits. The documented Tap Tabby floor is AED 10. Card and Apple Pay use the Tap API floor of AED 0.10, with optional merchant overrides listed in `.env.example`.
-5. Verify that the existing scheduled `/api/notifications/process` worker runs every minute with `Authorization: Bearer CRON_SECRET`. It also reconciles outstanding Tap charges if the shopper leaves before returning or a webhook is missed. Each charge supplies `/api/checkout/payment/webhook` to Tap as its `post.url`.
+Put these variables in .env.local at the repository root, then restart Next.js.
 
-The checkout checks the final AED total, merchant activation, Apple Pay browser capability, and a UAE delivery address and UAE mobile number for pay later. Tabby and Tamara confirm the customer’s approval during their payment flow.
+```dotenv
+TAP_MERCHANT_ID=your_merchant_id
+TAP_TEST_SECRET_KEY=sk_test_your_secret
+TAP_TEST_PUBLIC_KEY=pk_test_your_public_key
+TAP_PAYMENT_METHODS=card,apple_pay,tabby,tamara
+TAP_TAMARA_MIN_AED=your_confirmed_minimum
+TAP_TAMARA_MAX_AED=your_confirmed_maximum
+```
 
-[Tap redirect guide](https://developers.tap.company/docs/redirect) · [Tabby limits and mobile requirement](https://developers.tap.company/docs/tabby) · [Tamara activation](https://developers.tap.company/docs/tamara) · [Tap charge minimum](https://developers.tap.company/reference/create-a-charge)
+Use your own matching merchant and credentials. The local hosted flow uses the secret key. The test public key is reserved for SDK testing. TAP_SITE_URL can keep the production URL because local requests use their actual localhost origin, including the port. The local charge omits post.url since Tap cannot deliver a webhook to localhost. The return page retrieves the charge directly and shows the sandbox result. A missing return can be resumed using the saved attempt.
 
-## Staff sandbox on the deployed storefront
+Select a method in checkout, then use [Tap's test cards](https://developers.tap.company/reference/testing-cards) on the hosted page. Visa 4508 7500 1574 1019, expiry 01/39, CVV 100 and a test cardholder name are documented fixtures. Complete the sandbox authentication screen as prompted. Tabby and Tamara need sandbox activation for your merchant.
 
-Apply `supabase/migration_tap_staff_sandbox.sql` after `migration_tap_checkout.sql`. Set `TAP_STAFF_SANDBOX=1` alongside your `sk_test_` key and redeploy. Set `TAP_SITE_URL` to the exact origin shown after redirects. For Gazaal this is `https://www.miskalghazaalperfumes.com`.
+## Deployed hosts
 
-Sign in at `/admin/login` with a super admin or orders account. In the same browser and hostname, add an item to the bag and open the storefront checkout. The payment step shows a staff sandbox notice. Select Card and use a [Tap test card](https://developers.tap.company/reference/testing-cards). A captured sandbox charge shows a test confirmation and charge ID. Sandbox attempts leave the cart, stock, orders, coupons, and order notifications untouched. Cash on delivery still places a real order. Ordinary visitors see the existing cash-on-delivery checkout until a live key is configured.
+Set these in the deployment environment and redeploy.
 
-The public key and Merchant ID are optional for the hosted flow. Start with `TAP_PAYMENT_METHODS=card`. Add the other methods as Tap activates them for the sandbox account. Apple Pay also needs a supported browser and Tamara needs both configured AED limits.
+```dotenv
+TAP_MERCHANT_ID=your_merchant_id
+TAP_LIVE_SECRET_KEY=sk_live_your_secret
+TAP_LIVE_PUBLIC_KEY=pk_live_your_public_key
+TAP_SITE_URL=https://www.miskalghazaalperfumes.com
+TAP_PAYMENT_METHODS=card,apple_pay,tabby,tamara
+TAP_TAMARA_MIN_AED=your_confirmed_minimum
+TAP_TAMARA_MAX_AED=your_confirmed_maximum
+```
 
-### Use Tap’s shared test merchant
+Keep the same merchant ID if Tap assigned it to both modes. Use the exact canonical origin after redirects. TAP_STAFF_SANDBOX is retired. Legacy TAP_SECRET_KEY and TAP_PUBLIC_KEY remain fallbacks, subject to the same strict test/live prefix checks. Prefer the explicit names above.
 
-Set `TAP_MERCHANT_ID=599424` and use the **Secret Key** from the same [Tap Test Keys page](https://developers.tap.company/reference/testing-keys) for `TAP_SECRET_KEY`. Use `TAP_PAYMENT_METHODS=card` for the first test. Merchant `599424` is Tap’s shared fixture and automatically uses the staff sandbox. To test merchant-specific payment methods, use your own Tap test credentials and the Merchant ID Tap assigned to that account, if supplied.
+Cards use [Tap Web Card SDK v2](https://developers.tap.company/docs/card-sdk-web-v2) inside our checkout. Card number and CVV are collected by Tap's secure fields. The browser sends only a token to our server. The server recalculates prices, reserves stock and starts the charge with that token. The private attempt records the token for idempotent request recovery and removes it when settled. A bank may require its own 3-D Secure page before returning to our payment status screen.
 
-Tap can return a successful charge creation response for the merchant tied to the secret, even if `merchant.id` in the request names a different merchant. If checkout reports a merchant mismatch, replace the secret and Merchant ID as a pair in the same Vercel environment, redeploy, then select **Start a new test payment** on the status screen. The fresh attempt uses a new Tap idempotency reference.
+Apple Pay uses the [Tap Apple Pay Web SDK](https://developers.tap.company/docs/apple-pay-web-sdk) button inside checkout. Register every checkout domain with Tap, including www, and host the verification file supplied for your account at /.well-known/apple-developer-merchantid-domain-association. Tap must activate Apple Pay for the live account. The integration passes the current hostname, merchant ID and live public key. Use a supported Apple device and browser for verification.
 
-After redeploying, open a fresh checkout payment session. An open sandbox attempt tied to your previous merchant shows a message to start again. Select Card and enter Visa `4508 7500 1574 1019`, expiry `01/39`, and CVV `100` on Tap’s page. Enter a test cardholder name if requested. In the 3-D Secure simulator, choose **Authentication/Account Verification Successful** and submit. If Tap shows a code prompt instead, enter `1234`. [Tap test cards](https://developers.tap.company/reference/testing-cards) · [Tap 3-D Secure flow](https://developers.tap.company/reference/charges)
+Tabby and Tamara use their method-specific Tap charge sources and redirect for their approval process. TAP_PAYMENT_METHODS declares the methods activated for your merchant. Tamara requires both confirmed merchant limits. Tabby uses a minimum AED 10, with optional stricter merchant limits. Both pay-later methods require a UAE mobile and UAE delivery address in this AED checkout. Final customer eligibility is decided by the provider.
 
-## Test before enabling live payments
+## Payment verification and operations
 
-- Use [Tap’s test cards](https://developers.tap.company/reference/testing-cards) for approved and declined payments, including 3D Secure. Confirm the shopper returns to the matching English or Arabic checkout.
-- Test Apple Pay on an eligible device and browser. Test Tabby and Tamara with your enabled sandbox account and UAE shopper details. Try totals below and above the configured limits.
-- Confirm that a captured charge produces one paid order and one staff alert, including when the webhook arrives before the shopper or repeats. A declined or cancelled charge releases its stock, samples and coupon reservation. Sandbox captures create orders in the configured Supabase project, so use a staging project for this exercise.
-- For live checkout, use the Tap live secret key, the production HTTPS origin, and only the methods activated in live mode. Vercel Production accepts a test key only in the staff sandbox. Complete one live verification per enabled method using [Tap’s integration checklist](https://developers.tap.company/docs/recommendations-best-practices).
+The server verifies the charge ID, merchant, mode, order reference, amount and currency before committing a paid order. Return and webhook paths share the same locked database finalization. Webhooks verify Tap's HMAC signature, then retrieve the charge independently. Retried create requests reuse the same Tap idempotency reference.
 
-If a payment remains pending, compare its `tap_checkout_attempts` reference or `charge_id` with the Tap dashboard. The worker retrieves known charge IDs and uses the original idempotency reference for recent requests without a charge ID. Attempts with no charge ID past that retry window need reconciliation in Tap before their holds can be released. The order detail shows the Tap charge ID after capture.
+The charge specifies /api/checkout/payment/webhook as post.url on deployed hosts. Keep the existing /api/notifications/process worker scheduled every minute with Authorization: Bearer CRON_SECRET to reconcile abandoned returns and missed webhooks. Keep credentials available until their outstanding payments settle.
+
+Test the callback, webhook, failure and retry flows before go-live. Verify a real approved payment per enabled live method with the merchant account. Local test payments do not verify live domain registration, Apple Pay hardware behavior, provider activation or live bank authentication. [Tap integration checklist](https://developers.tap.company/docs/recommendations-best-practices)

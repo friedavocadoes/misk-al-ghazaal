@@ -1,4 +1,5 @@
 "use client";
+import { TapPaymentFields, type TapCardHandle } from "@/components/blocks/TapPaymentFields";
 import { haptic } from "@/lib/haptics";
 import { rememberFeedback } from "@/lib/analytics/survey-memory";
 import { markPurchase } from "@/lib/analytics/client";
@@ -41,7 +42,8 @@ export default function CheckoutPage() {
   const ar = locale === "ar";
   const [step, setStep] = useState<"delivery" | "payment">("delivery");
   const [method, setMethod] = useState<CheckoutMethod>("cod");
-  const { methods, appleAvailable, sandbox } = useCheckoutPaymentOptions(step === "payment");
+  const { methods, appleAvailable, sandbox, sdk } = useCheckoutPaymentOptions(step === "payment");
+  const cardFields = useRef<TapCardHandle>(null);
   const stepTitle = useRef<HTMLHeadingElement>(null);
   const goToStep = (next: typeof step) => {
     setStep(next);
@@ -274,7 +276,7 @@ export default function CheckoutPage() {
 
   const friendlyError = (raw: unknown): string => {
     const msg = typeof raw === "string" ? raw : "";
-    if (msg === TAP_MERCHANT_MISMATCH) return tapMerchantMismatchMessage(ar);
+    if (msg === TAP_MERCHANT_MISMATCH) return sandbox ? tapMerchantMismatchMessage(ar) : t("serverError");
     if (msg.startsWith("coupon:")) return msg === "coupon:min" ? t("couponMin") : t("couponBad");
     if (msg.startsWith("referral:")) return t("referralBad");
     if (msg.startsWith("delivery:")) return t("deliveryNo");
@@ -309,7 +311,7 @@ export default function CheckoutPage() {
     return reason ? checkoutPaymentReason(reason, limits, ar) : undefined;
   };
   const paymentReady = method === "cod" || !describePayment(method);
-  const placeOrder = async () => {
+  const placeOrder = async (appleToken?: string) => {
     if (submitting.current || !valid || !paymentReady || step !== "payment") return;
     const previous = readPaymentProof();
     if (previous && !previous.settled) {
@@ -327,6 +329,12 @@ export default function CheckoutPage() {
     let attempt: BrowserPayment | undefined;
     let paymentStarted = false;
     try {
+    const token = sdk && method === "card" ? await cardFields.current?.tokenize()
+      : sdk && method === "apple_pay" ? appleToken : undefined;
+    if (sdk && (method === "card" || method === "apple_pay") && !token) {
+      setOrderError(ar ? "أكمل بيانات الدفع الآمن أولاً." : "Complete the secure payment details first.");
+      return;
+    }
     // Structured delivery wins; legacy manual fields are the fallback
     // when the countries service is unreachable.
     const addr = selectedAddress ?? (delivery && deliveryValid ? delivery : null);
@@ -350,6 +358,7 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         checkout_terms_version: CHECKOUT_TERMS_VERSION,
         payment_method: method,
+        ...(token ? { payment_token: token } : {}),
         ...(attempt ? { payment_attempt: { id: attempt.id, key: attempt.key }, expected_total: quote.total, locale } : {}),
         customer_name: name,
         phone,
@@ -754,6 +763,11 @@ export default function CheckoutPage() {
             </div>
           </section>
           <CheckoutPaymentMethods ar={ar} selected={method} choose={setMethod} disabled={placing} describe={describePayment} sandbox={sandbox} />
+          {sdk && quote && !quoteLoading && paymentReady && (method === "card" || method === "apple_pay") && (
+            <TapPaymentFields key={method} ref={cardFields} config={sdk} method={method} total={quote.total}
+              locale={locale} name={name} email={email} phone={phone} disabled={placing || !valid}
+              onAppleToken={token => void placeOrder(token)} />
+          )}
           </>}
         </div>
 
@@ -805,8 +819,8 @@ export default function CheckoutPage() {
               </Button>
             ) : (
             <StockCheckoutGuard issues={stockIssues}>
-              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || !paymentReady || placing} onClick={placeOrder}>
-                {method === "cod"
+              <Button data-ios-haptic="on" className="w-full" size="lg" data-haptic="none" disabled={!valid || !paymentReady || placing || Boolean(sdk && method === "apple_pay")} onClick={() => void placeOrder()}>
+                {sdk && method === "apple_pay" ? (ar ? "استخدم زر Apple Pay" : "Use the Apple Pay button") : method === "cod"
                   ? (placing ? t("placing") : t("placeOrder"))
                   : (placing ? (ar ? "جارٍ فتح صفحة الدفع…" : "Opening secure payment…")
                     : (ar ? `${sandbox ? "اختبار دفع" : "ادفع"} ${formatAED(quote?.total ?? 0)}` : `${sandbox ? "Test payment" : "Pay"} ${formatAED(quote?.total ?? 0)}`))}
